@@ -1,3 +1,6 @@
 <RCC>
-    <qresource prefix="/"/>
+    <qresource prefix="/">
+        <file>Collapsible.qml</file>
+        <file>DummySocket.qml</file>
+    </qresource>
 </RCC>

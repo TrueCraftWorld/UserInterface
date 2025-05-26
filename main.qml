@@ -15,13 +15,37 @@ Window {
         id: workingArea
         anchors.fill: parent
         spacing: 5
+        function calculateExpandedHeight() {
+            var totalFixedHeight = 0
+            var expandedCount = 0
+
+            // Calculate total fixed height and count expanded items
+            for (var i = 0; i < children.length; i++) {
+                var child = children[i]
+                if (child.isExpanded) {
+                    expandedCount++
+                } else {
+                    totalFixedHeight += child.collapsedHeight
+                }
+            }
+
+            // Add spacing (n-1 spacings for n items)
+            totalFixedHeight += (children.length - 1) * spacing
+
+            return expandedCount > 0 ?
+                (height - totalFixedHeight) / expandedCount : 0
+        }
+
         Collapsible {
             id: bi1
             width: parent.width
             socketName: "SOCKET"
 
             Layout.fillWidth: true
-            Layout.fillHeight: true
+            // Layout.fillHeight: true
+
+            Layout.preferredHeight: isExpanded ? parent.calculateExpandedHeight() : collapsedHeight
+            Layout.fillHeight: isExpanded
 
             content: DummySocket {
                 anchors.fill: parent
@@ -37,7 +61,10 @@ Window {
             socketName: "SOCKET"
 
             Layout.fillWidth: true
-            Layout.fillHeight: true
+            // Layout.fillHeight: true
+
+            Layout.preferredHeight: isExpanded ? parent.calculateExpandedHeight() : collapsedHeight
+            Layout.fillHeight: isExpanded
 
             content: DummySocket {
                 anchors.fill: parent
@@ -53,7 +80,10 @@ Window {
             socketName: "SOCKET"
 
             Layout.fillWidth: true
-            Layout.fillHeight: true
+            // Layout.fillHeight: true
+
+            Layout.preferredHeight: isExpanded ? parent.calculateExpandedHeight() : collapsedHeight
+            Layout.fillHeight: isExpanded
 
             content: DummySocket {
                 anchors.fill: parent
@@ -69,7 +99,10 @@ Window {
             socketName: "SOCKET"
 
             Layout.fillWidth: true
-            Layout.fillHeight: true
+            // Layout.fillHeight: true
+
+            Layout.preferredHeight: isExpanded ? parent.calculateExpandedHeight() : collapsedHeight
+            Layout.fillHeight: isExpanded
 
             content: DummySocket {
                 anchors.fill: parent

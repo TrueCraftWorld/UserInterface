@@ -1,7 +1,8 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 
-Item {
+Rectangle {
+    id: socketRoot
     property string cutModeName
     property string coagModeName
     property string cutModePower
@@ -13,10 +14,10 @@ Item {
         radius: 8
 
         anchors {
-            left: parent.left
-            right: parent.horizontalCenter
-            top: parent.top
-            bottom: parent.bottom
+            left: socketRoot.left
+            right: socketRoot.horizontalCenter
+            top: socketRoot.top
+            bottom: socketRoot.bottom
         }
         Label {
             id: cutMode
@@ -26,7 +27,7 @@ Item {
             color: "black"
             anchors {
                 top: parent.top
-                margins: 10
+                margins: 15
             }
         }
         Label {
@@ -37,7 +38,7 @@ Item {
             color: "black"
             anchors {
                 bottom: parent.bottom
-                margins: 10
+                margins: 15
             }
         }
     }
@@ -52,12 +53,16 @@ Item {
         id: coagMain
         color: "blue"
         radius: 8
+        border {
+            width: 2
+            color: "green"
+        }
 
         anchors {
-            left: parent.horizontalCenter
-            right: parent.right
-            top: parent.top
-            bottom: parent.bottom
+            left: socketRoot.horizontalCenter
+            right: socketRoot.right
+            top: socketRoot.top
+            bottom: socketRoot.bottom
         }
         Text {
             id: coagMode
@@ -67,7 +72,7 @@ Item {
             color: "white"
             anchors {
                 top: parent.top
-                margins: 10
+                margins: 15
             }
         }
         Text {
@@ -78,7 +83,7 @@ Item {
             color: "white"
             anchors {
                 bottom: parent.bottom
-                margins: 10
+                margins: 15
             }
         }
     }

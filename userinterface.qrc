@@ -2,5 +2,6 @@
     <qresource prefix="/">
         <file>Collapsible.qml</file>
         <file>DummySocket.qml</file>
+        <file>AccordionElement.qml</file>
     </qresource>
 </RCC>

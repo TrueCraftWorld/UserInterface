@@ -6,112 +6,192 @@ import QtQuick.Controls 2.15
 import StratifyLabs.UI 2.0
 
 Window {
+    id: container
     width: 1280
     height: 800
     visible: true
     title: qsTr("Hello World")
 
-    ColumnLayout {
-        id: workingArea
-        anchors.fill: parent
-        spacing: 5
-        function calculateExpandedHeight() {
-            var totalFixedHeight = 0
-            var expandedCount = 0
+    // Rectangle {
+    //     id: container
+    //     width: 400
+    //     height: 600
+    //     color: "#f5f5f5"
+    //     border.color: "#cccccc"
+    //     border.width: 1
 
-            // Calculate total fixed height and count expanded items
-            for (var i = 0; i < children.length; i++) {
-                var child = children[i]
-                if (child.isExpanded) {
-                    expandedCount++
-                } else {
-                    totalFixedHeight += child.collapsedHeight
+        ColumnLayout {
+            id: layout
+            anchors.fill: parent
+            anchors.margins: 5
+            spacing: 5
+
+            Repeater {
+                id: repeat
+                model: 4
+                function calculateExpandedHeight() {
+                    var totalFixedHeight = 0
+                    var expandedCount = 0
+
+                    // Calculate total fixed height and count expanded items
+                    for (var i = 0; i < count; i++) {
+
+                        if (itemAt(i).expanded) {
+                            expandedCount++
+                        } else {
+                            totalFixedHeight += 40
+                        }
+                    }
+
+                    // Add spacing (n-1 spacings for n items)
+                    // totalFixedHeight += (children.length - 1) * spacing
+
+                    return expandedCount > 0 ?
+                        (container.height - totalFixedHeight) / expandedCount : 0
+                }
+
+                Collapsible {
+                    id: section
+                    property int headerHeight: 40
+                    Layout.fillWidth: true
+                    Layout.fillHeight: expanded
+                    Layout.preferredHeight: expanded ?
+                        (container.height - layout.anchors.margins*2 - (layout.spacing*3) - (headerHeight*4)) / 4 + headerHeight :
+                        headerHeight
+
+                    title: "Section " + (index + 1)
+                    expanded: false
+                    contentItem: Rectangle {
+                        width: parent.width
+
+                        height: section.expanded ?
+                                    repeat.calculateExpandedHeight() :
+                                    0
+                        // Layout.fillHeight: expanded
+                        // height: section.expanded ?
+                        //     (container.height - layout.anchors.margins*2 - (layout.spacing*3) - (section.headerHeight*4)) / 4 :
+                        //     0
+                        color: "green"
+                        border.color: "blue"
+                        border.width: 1
+                    }
+
+                    // onExpandedChanged: {
+                    //     contentItem.height = section.expanded ?
+                    //                 repeat.calculateExpandedHeight() :
+                    //                 0
+                    // }
                 }
             }
-
-            // Add spacing (n-1 spacings for n items)
-            totalFixedHeight += (children.length - 1) * spacing
-
-            return expandedCount > 0 ?
-                (height - totalFixedHeight) / expandedCount : 0
         }
+    // }
 
-        Collapsible {
-            id: bi1
-            width: parent.width
-            socketName: "SOCKET"
+    // ColumnLayout {
+    //     id: workingArea
+    //     anchors.fill: parent
+    //     spacing: 5
+    //     function calculateExpandedHeight() {
+    //         var totalFixedHeight = 0
+    //         var expandedCount = 0
 
-            Layout.fillWidth: true
-            // Layout.fillHeight: true
+    //         // Calculate total fixed height and count expanded items
+    //         for (var i = 0; i < children.length; i++) {
+    //             var child = children[i]
+    //             if (child.expanded) {
+    //                 expandedCount++
+    //             } else {
+    //                 totalFixedHeight += child.collapsedHeight
+    //             }
+    //         }
 
-            Layout.preferredHeight: isExpanded ? parent.calculateExpandedHeight() : collapsedHeight
-            Layout.fillHeight: isExpanded
+    //         // Add spacing (n-1 spacings for n items)
+    //         totalFixedHeight += (children.length - 1) * spacing
 
-            content: DummySocket {
-                anchors.fill: parent
-                coagModeName: "FORCE"
-                coagModePower: "80"
-                cutModeName: "CUT"
-                cutModePower: "300"
-            }
-        }
-        Collapsible {
-            id: bi2
-            width: parent.width
-            socketName: "SOCKET"
+    //         return expandedCount > 0 ?
+    //             (height - totalFixedHeight) / expandedCount : 0
+    //     }
+    //     Collapsible {
+    //         // anchors.fill: parent
+    //         anchors.margins: 25
+    //         // expanded: false
+    //         Layout.fillWidth: true
+    //         // Layout.preferredHeight: collapsedHeight + (expanded ? parent.calculateExpandedHeight() : 0)
+    //         Layout.fillHeight: expanded
+    //         Layout.alignment: Qt.AlignTop
 
-            Layout.fillWidth: true
-            // Layout.fillHeight: true
+    //         contentItem: DummySocket {
+    //             // anchors.fill: parent
+    //             height: parent.expanded ? parent.calculateExpandedHeight() : parent.collapsedHeight
+    //             width: parent.width
+    //             anchors.margins: 100
+    //             coagModeName: "FORCE"
+    //             coagModePower: "80"
+    //             cutModeName: "CUT"
+    //             cutModePower: "300"
+    //         }
+    //     }
+    //     Collapsible {
+    //         // anchors.fill: parent
+    //         anchors.margins: 25
+    //         // expanded: false
+    //         Layout.fillWidth: true
+    //         // Layout.preferredHeight: collapsedHeight + (expanded ? parent.calculateExpandedHeight() : 0)
+    //         Layout.fillHeight: expanded
+    //         Layout.alignment: Qt.AlignTop
 
-            Layout.preferredHeight: isExpanded ? parent.calculateExpandedHeight() : collapsedHeight
-            Layout.fillHeight: isExpanded
+    //         contentItem: DummySocket {
+    //             // anchors.fill: parent
+    //             height: parent.expanded ? parent.calculateExpandedHeight() : parent.collapsedHeight
+    //             width: parent.width
+    //             // anchors.margins: 100
+    //             coagModeName: "FORCE"
+    //             coagModePower: "80"
+    //             cutModeName: "CUT"
+    //             cutModePower: "300"
+    //         }
+    //     }
+    //     Collapsible {
+    //         // anchors.fill: parent
+    //         anchors.margins: 25
+    //         // expanded: false
+    //         Layout.fillWidth: true
+    //         // Layout.preferredHeight: collapsedHeight + (expanded ? parent.calculateExpandedHeight() : 0)
+    //         Layout.fillHeight: expanded
+    //         Layout.alignment: Qt.AlignTop
 
-            content: DummySocket {
-                anchors.fill: parent
-                coagModeName: "FORCE"
-                coagModePower: "80"
-                cutModeName: "CUT"
-                cutModePower: "300"
-            }
-        }
-        Collapsible {
-            id: mono1
-            width: parent.width
-            socketName: "SOCKET"
+    //         contentItem: DummySocket {
+    //             // anchors.fill: parent
+    //             height: parent.expanded ? parent.calculateExpandedHeight() : parent.collapsedHeight
+    //             width: parent.width
+    //             // anchors.margins: 100
+    //             coagModeName: "FORCE"
+    //             coagModePower: "80"
+    //             cutModeName: "CUT"
+    //             cutModePower: "300"
+    //         }
+    //     }
+    //     Collapsible {
+    //         // anchors.fill: parent
+    //         anchors.margins: 25
+    //         // expanded: false
+    //         Layout.fillWidth: true
+    //         // Layout.preferredHeight:collapsedHeight + (expanded ? parent.calculateExpandedHeight() : 0)
+    //         Layout.fillHeight: expanded
+    //         Layout.alignment: Qt.AlignTop
 
-            Layout.fillWidth: true
-            // Layout.fillHeight: true
+    //         contentItem: DummySocket {
+    //             // anchors.fill: parent
+    //             height: parent.expanded ? parent.calculateExpandedHeight() : parent.collapsedHeight
+    //             width: parent.width
+    //             anchors.margins: 100
+    //             coagModeName: "FORCE"
+    //             coagModePower: "80"
+    //             cutModeName: "CUT"
+    //             cutModePower: "300"
+    //         }
+    //     }
+    // }
 
-            Layout.preferredHeight: isExpanded ? parent.calculateExpandedHeight() : collapsedHeight
-            Layout.fillHeight: isExpanded
 
-            content: DummySocket {
-                anchors.fill: parent
-                coagModeName: "FORCE"
-                coagModePower: "80"
-                cutModeName: "CUT"
-                cutModePower: "300"
-            }
-        }
-        Collapsible {
-            id: mono2
-            width: parent.width
-            socketName: "SOCKET"
-
-            Layout.fillWidth: true
-            // Layout.fillHeight: true
-
-            Layout.preferredHeight: isExpanded ? parent.calculateExpandedHeight() : collapsedHeight
-            Layout.fillHeight: isExpanded
-
-            content: DummySocket {
-                anchors.fill: parent
-                coagModeName: "FORCE"
-                coagModePower: "80"
-                cutModeName: "CUT"
-                cutModePower: "300"
-            }
-        }
-    }
 
 }

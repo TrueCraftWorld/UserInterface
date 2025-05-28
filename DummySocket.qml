@@ -22,10 +22,13 @@ Rectangle {
         Label {
             id: cutMode
             text: cutModeName
-            height: parent.height * .6
-            width: parent.width
+            // height: parent.height * .6
+            font.pixelSize: 32
+            font.bold: true
             color: "black"
             anchors {
+                left: parent.left
+                // right: cutBorder.left
                 top: parent.top
                 margins: 15
             }
@@ -33,11 +36,15 @@ Rectangle {
         Label {
             id: cutPower
             text: cutModePower
-            height: parent.height * .3
-            width: parent.width
+            // height: parent.height * .3
+            font.pixelSize: 32
+            font.bold: true
             color: "black"
             anchors {
-                bottom: parent.bottom
+                left: parent.left
+                // right: cutBorder.left
+                top: cutMode.bottom
+                // bottom: parent.bottom
                 margins: 15
             }
         }
@@ -53,10 +60,6 @@ Rectangle {
         id: coagMain
         color: "blue"
         radius: 8
-        border {
-            width: 2
-            color: "green"
-        }
 
         anchors {
             left: socketRoot.horizontalCenter
@@ -64,25 +67,32 @@ Rectangle {
             top: socketRoot.top
             bottom: socketRoot.bottom
         }
-        Text {
+        Label {
             id: coagMode
             text: coagModeName
-            height: parent.height * .6
-            width: parent.width
+            font.pixelSize: 32
+            font.bold: true
+            // height: parent.height * .6
             color: "white"
             anchors {
                 top: parent.top
+                // left: coagBorder.right
+                right: parent.right
                 margins: 15
             }
         }
-        Text {
+        Label {
             id: coagPower
             text: coagModePower
-            height: parent.height * .3
-            width: parent.width
+            // height: parent.height * .3
+            font.pixelSize: 32
+            font.bold: true
             color: "white"
             anchors {
-                bottom: parent.bottom
+                // bottom: parent.bottom
+                top: coagMode.bottom
+                // left: coagBorder.right
+                right: parent.right
                 margins: 15
             }
         }

@@ -8,4 +8,6 @@ RESOURCES += $$PWD/userinterface.qrc
 
 DISTFILES += \
     $$PWD/Collapsible.qml \
-    $$PWD/DummySocket.qml
+    $$PWD/DummySocket.qml \
+    $$PWD/SocketContainer.qml \
+    $$PWD/StatusBar.qml

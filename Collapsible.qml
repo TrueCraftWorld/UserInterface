@@ -7,7 +7,7 @@ Item {
     id: root
 
     property string title: "Section"
-    property bool expanded: false
+    property bool expanded: true
     property alias contentItem: content.data
 
     implicitHeight: header.height + content.height

@@ -11,187 +11,80 @@ Window {
     height: 800
     visible: true
     title: qsTr("Hello World")
+    color: "darkslategray"
 
-    // Rectangle {
-    //     id: container
-    //     width: 400
-    //     height: 600
-    //     color: "#f5f5f5"
-    //     border.color: "#cccccc"
-    //     border.width: 1
-
-        ColumnLayout {
-            id: layout
-            anchors.fill: parent
-            anchors.margins: 5
-            spacing: 5
-
-            Repeater {
-                id: repeat
-                model: 4
-                function calculateExpandedHeight() {
-                    var totalFixedHeight = 0
-                    var expandedCount = 0
-
-                    // Calculate total fixed height and count expanded items
-                    for (var i = 0; i < count; i++) {
-
-                        if (itemAt(i).expanded) {
-                            expandedCount++
-                        } else {
-                            totalFixedHeight += 40
-                        }
-                    }
-
-                    // Add spacing (n-1 spacings for n items)
-                    // totalFixedHeight += (children.length - 1) * spacing
-
-                    return expandedCount > 0 ?
-                        (container.height - totalFixedHeight) / expandedCount : 0
-                }
-
-                Collapsible {
-                    id: section
-                    property int headerHeight: 40
-                    Layout.fillWidth: true
-                    Layout.fillHeight: expanded
-                    Layout.preferredHeight: expanded ?
-                        (container.height - layout.anchors.margins*2 - (layout.spacing*3) - (headerHeight*4)) / 4 + headerHeight :
-                        headerHeight
-
-                    title: "Section " + (index + 1)
-                    expanded: false
-                    contentItem: Rectangle {
-                        width: parent.width
-
-                        height: section.expanded ?
-                                    repeat.calculateExpandedHeight() :
-                                    0
-                        // Layout.fillHeight: expanded
-                        // height: section.expanded ?
-                        //     (container.height - layout.anchors.margins*2 - (layout.spacing*3) - (section.headerHeight*4)) / 4 :
-                        //     0
-                        color: "green"
-                        border.color: "blue"
-                        border.width: 1
-                    }
-
-                    // onExpandedChanged: {
-                    //     contentItem.height = section.expanded ?
-                    //                 repeat.calculateExpandedHeight() :
-                    //                 0
-                    // }
-                }
-            }
+    StatusBar {
+        id: statusDummy
+        text: "Quick brown fox jumps over the lazy dog"
+        anchors {
+            bottom: socketsDummy.top
+            right: parent.right
+            left: parent.left
+            top: parent.top
+            margins: 10
         }
-    // }
+    }
 
-    // ColumnLayout {
-    //     id: workingArea
-    //     anchors.fill: parent
-    //     spacing: 5
-    //     function calculateExpandedHeight() {
-    //         var totalFixedHeight = 0
-    //         var expandedCount = 0
+    SocketContainer {
+        id: socketsDummy
+        width: 980
+        height: 700
+        radius: 8
+        anchors {
+            bottom: parent.bottom
+            right: parent.right
+            margins: 10
+        }
+    }
+    Rectangle {
+        id: argonDummy
+        // height: .75 * socketsDummy.height
+        radius: 8
+        color: "lightgray"
+        anchors {
+            left: parent.left
+            right: socketsDummy.left
+            leftMargin: 10
+            rightMargin: 10
+            bottomMargin: 10
+            topMargin: 0
+            top: socketsDummy.top
+            bottom: neutralDummy.top
+        }
+        border {
+            color: "black"
+            width: 1
+        }
+    }
+    Rectangle {
+        id: neutralDummy
+        height: .25 * socketsDummy.height
+        radius: 8
+        color: "green"
+        anchors {
+            left: parent.left
+            right: socketsDummy.left
+            bottom: parent.bottom
+            margins: 10
+        }
+        border {
+            color: "black"
+            width: 1
+        }
+    }
 
-    //         // Calculate total fixed height and count expanded items
-    //         for (var i = 0; i < children.length; i++) {
-    //             var child = children[i]
-    //             if (child.expanded) {
-    //                 expandedCount++
-    //             } else {
-    //                 totalFixedHeight += child.collapsedHeight
-    //             }
-    //         }
+    Drawer {
+        id: leftDrawer
+        width: 0.5 * container.width
+        height: container.height
+    }
 
-    //         // Add spacing (n-1 spacings for n items)
-    //         totalFixedHeight += (children.length - 1) * spacing
-
-    //         return expandedCount > 0 ?
-    //             (height - totalFixedHeight) / expandedCount : 0
-    //     }
-    //     Collapsible {
-    //         // anchors.fill: parent
-    //         anchors.margins: 25
-    //         // expanded: false
-    //         Layout.fillWidth: true
-    //         // Layout.preferredHeight: collapsedHeight + (expanded ? parent.calculateExpandedHeight() : 0)
-    //         Layout.fillHeight: expanded
-    //         Layout.alignment: Qt.AlignTop
-
-    //         contentItem: DummySocket {
-    //             // anchors.fill: parent
-    //             height: parent.expanded ? parent.calculateExpandedHeight() : parent.collapsedHeight
-    //             width: parent.width
-    //             anchors.margins: 100
-    //             coagModeName: "FORCE"
-    //             coagModePower: "80"
-    //             cutModeName: "CUT"
-    //             cutModePower: "300"
-    //         }
-    //     }
-    //     Collapsible {
-    //         // anchors.fill: parent
-    //         anchors.margins: 25
-    //         // expanded: false
-    //         Layout.fillWidth: true
-    //         // Layout.preferredHeight: collapsedHeight + (expanded ? parent.calculateExpandedHeight() : 0)
-    //         Layout.fillHeight: expanded
-    //         Layout.alignment: Qt.AlignTop
-
-    //         contentItem: DummySocket {
-    //             // anchors.fill: parent
-    //             height: parent.expanded ? parent.calculateExpandedHeight() : parent.collapsedHeight
-    //             width: parent.width
-    //             // anchors.margins: 100
-    //             coagModeName: "FORCE"
-    //             coagModePower: "80"
-    //             cutModeName: "CUT"
-    //             cutModePower: "300"
-    //         }
-    //     }
-    //     Collapsible {
-    //         // anchors.fill: parent
-    //         anchors.margins: 25
-    //         // expanded: false
-    //         Layout.fillWidth: true
-    //         // Layout.preferredHeight: collapsedHeight + (expanded ? parent.calculateExpandedHeight() : 0)
-    //         Layout.fillHeight: expanded
-    //         Layout.alignment: Qt.AlignTop
-
-    //         contentItem: DummySocket {
-    //             // anchors.fill: parent
-    //             height: parent.expanded ? parent.calculateExpandedHeight() : parent.collapsedHeight
-    //             width: parent.width
-    //             // anchors.margins: 100
-    //             coagModeName: "FORCE"
-    //             coagModePower: "80"
-    //             cutModeName: "CUT"
-    //             cutModePower: "300"
-    //         }
-    //     }
-    //     Collapsible {
-    //         // anchors.fill: parent
-    //         anchors.margins: 25
-    //         // expanded: false
-    //         Layout.fillWidth: true
-    //         // Layout.preferredHeight:collapsedHeight + (expanded ? parent.calculateExpandedHeight() : 0)
-    //         Layout.fillHeight: expanded
-    //         Layout.alignment: Qt.AlignTop
-
-    //         contentItem: DummySocket {
-    //             // anchors.fill: parent
-    //             height: parent.expanded ? parent.calculateExpandedHeight() : parent.collapsedHeight
-    //             width: parent.width
-    //             anchors.margins: 100
-    //             coagModeName: "FORCE"
-    //             coagModePower: "80"
-    //             cutModeName: "CUT"
-    //             cutModePower: "300"
-    //         }
-    //     }
-    // }
-
+    Connections {
+        target: statusDummy
+        function onDrawerCalled() {
+            leftDrawer.open()
+        }
+    }
 
 
 }

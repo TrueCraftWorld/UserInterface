@@ -2,6 +2,7 @@ import QtQuick 2.15
 import QtQuick.Layouts 1.15
 import QtQuick.Window 2.15
 import QtQuick.Controls 2.15
+import QtQuick.CuteKeyboard 1.0
 
 import StratifyLabs.UI 2.0
 
@@ -75,8 +76,11 @@ Window {
 
     Drawer {
         id: leftDrawer
-        width: 0.5 * container.width
+        width: 0.8 * container.width
         height: container.height
+        SettingsMain {
+            anchors.fill: parent
+        }
     }
 
     Connections {
@@ -85,6 +89,36 @@ Window {
             leftDrawer.open()
         }
     }
+
+    // InputPanel {
+    //     id: inputPanel
+    //     z: 99
+    //     y: root.height
+    //     availableLanguageLayouts: ["Ru","En"]
+    //     anchors.left: parent.left
+    //     anchors.right: parent.right
+
+    //     states: State {
+    //         name: "visible"
+    //         when: Qt.inputMethod.visible
+    //         PropertyChanges {
+    //             target: inputPanel
+    //             y: root.height - inputPanel.height
+    //         }
+    //     }
+    //     transitions: Transition {
+    //         from: ""
+    //         to: "visible"
+    //         reversible: true
+    //         ParallelAnimation {
+    //             NumberAnimation {
+    //                 properties: "y"
+    //                 duration: 150
+    //                 easing.type: Easing.InOutQuad
+    //             }
+    //         }
+    //     }
+    // }
 
 
 }

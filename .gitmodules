@@ -1,0 +1,3 @@
+[submodule "SettingsScreen"]
+	path = SettingsScreen
+	url = https://github.com/TrueCraftWorld/SettingsScreen.git

@@ -9,43 +9,60 @@ Item {
     property string title: "Section"
     property bool expanded: true
     property alias contentItem: content.data
+    property int headerHeight: 40
 
-    implicitHeight: header.height + content.height
+    implicitHeight: content.height ? content.height : header.height
+    height: content.height ? content.height : header.height
     clip: true
 
+    Item {
+        id: content
+        width: parent.width
+        anchors.top: header.top
+        // anchors.topMargin: header.height
+        height: childrenRect.height
+        visible: expanded
+        // z: 22
+    }
     Rectangle {
         id: header
         width: parent.width
         height: 40
-        color: "#e0e0e0"
-        border.color: "#cccccc"
+        radius: 8
+        // z: 1
+        color: root.expanded ? "transparent" : "#e0e0e0"
+        border.color: root.expanded ? "transparent" : "#cccccc"
 
         Text {
             anchors.left: parent.left
             anchors.leftMargin: 10
             anchors.verticalCenter: parent.verticalCenter
-            text: root.title
+            text: root.title.toUpperCase()
             font.bold: true
         }
 
-        Button {
+        Rectangle {
             anchors.right: parent.right
-            anchors.rightMargin: 10
+            anchors.margins: 8
             anchors.verticalCenter: parent.verticalCenter
             width: 30
             height: 30
-            text: root.expanded ? "▲" : "▼"
-            onClicked: root.expanded = !root.expanded
+            radius: 8
+            Text {
+                anchors.fill: parent
+                anchors.centerIn: parent
+                horizontalAlignment: Qt.AlignHCenter
+                verticalAlignment: Qt.AlignVCenter
+                text: root.expanded ? "▲" : "▼"
+            }
+            MouseArea {
+                anchors.fill: parent
+                onClicked: root.expanded = !root.expanded
+            }
+
         }
     }
 
-    Item {
-        id: content
-        width: parent.width
-        anchors.top: header.bottom
-        height: childrenRect.height
-        visible: expanded
-    }
 
     Behavior on implicitHeight {
         NumberAnimation { duration: 200; easing.type: Easing.InOutQuad }

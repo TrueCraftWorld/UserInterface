@@ -11,8 +11,6 @@ Rectangle {
         color: "black"
     }
 
-    // anchors.fill: parent
-
     ColumnLayout {
         id: layout
         anchors.fill: parent
@@ -25,6 +23,7 @@ Rectangle {
             function calculateExpandedHeight() {
                 var totalFixedHeight = 0
                 var expandedCount = 0
+                var spacersHeight = (count*1) * layout.spacing;
 
                 for (var i = 0; i < count; i++) {
 
@@ -36,20 +35,22 @@ Rectangle {
                 }
 
                 return expandedCount > 0 ?
-                    (container.height - totalFixedHeight) / expandedCount : 0
+                    (containerRoot.height - (totalFixedHeight + spacersHeight + containerRoot.anchors.margins*2)) / expandedCount : 0
             }
 
             Collapsible {
                 id: section
-                property int headerHeight: 40
+                headerHeight: 40
                 Layout.fillWidth: true
-                Layout.fillHeight: expanded
+                // Layout.fillHeight: expanded
                 Layout.preferredHeight: expanded ?
-                    (container.height - layout.anchors.margins*2 - (layout.spacing*3) - (headerHeight*4)) / 4 + headerHeight :
+                    repeat.calculateExpandedHeight() :
                     headerHeight
+                Layout.alignment: Qt.AlignTop
 
-                title: "Section " + (index + 1)
+                title: "socket " + (index + 1)
                 expanded: true
+
                 contentItem: DummySocket {
                     width: parent.width
                     height: section.expanded ?
@@ -63,6 +64,9 @@ Rectangle {
 
                 }
             }
+        }
+        Item {
+            Layout.fillHeight: true
         }
     }
 }

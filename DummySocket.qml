@@ -31,6 +31,7 @@ Rectangle {
                 // right: cutBorder.left
                 top: parent.top
                 margins: 15
+                topMargin: 40
             }
         }
         Label {
@@ -79,6 +80,7 @@ Rectangle {
                 // left: coagBorder.right
                 right: parent.right
                 margins: 15
+                topMargin: 40
             }
         }
         Label {

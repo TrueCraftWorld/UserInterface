@@ -1,5 +1,6 @@
-include($$PWD/userinterface.pri)
+include($$PWD/GUI/userinterface.pri)
 include($$PWD/SettingsScreen/settingsscreen.pri)
+include($$PWD/BackEnd/BackEnd.pri)
 
 QT += quick
 

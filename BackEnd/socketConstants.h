@@ -11,11 +11,22 @@
 class EshfMode {
 public:
 
-    explicit EshfMode(QObject *parent = nullptr);
-    EshfMode(QString, int, bool, QObject *parent = nullptr);
+    EshfMode(QString name,
+             bool isCoag,
+             int maximum = 400,
+             int minimum = 1,
+             QObject *parent = nullptr);
+
+    explicit EshfMode(QObject *parent = nullptr)  :
+        EshfMode("NoMode", false, 1, 1, parent) {};
+
     int maximumPower() const;
     int currentPower() const;
     const QString &modeName() const;
+
+    int minimumPower() const;
+
+    bool setCurrentpower(int newCurrentpower);
 
 private:
     void setModeName(const QString &newModeName);
@@ -24,11 +35,17 @@ private:
 
     int m_maximumPower;
     int m_minimumPower;
+    int m_currentpower;
     QString m_modeName;
     bool m_isCoag;
 };
 
-
+/**
+ * @brief Класс описывающий один электрический сокет.
+ * @details Содержит полный список присущих этому сокеты режимов,
+ * поддерживает смену режима, настройку можности, выключение выключение режима
+ * Предполагается взаимодействие с объектами типа SOCKET через модель
+ */
 class SOCKET
 {
 
@@ -47,28 +64,84 @@ public:
 
     SOCKET(SOCKET::SocType = MONOPOLAR_1);
 
+    /**
+     * @brief Возвращает внутренний индекс текущего коаг режима
+     * @return индекс
+     */
     int coagModeIndex() const;
+
+    /**
+     * @brief Возвращает внутренний индекс текущего рез режима
+     * @return индекс
+     */
     int cutModeIndex() const;
+
+    /**
+     * @brief Возвращает тип сокета - МОНО1\2 Би1\2
+     * @return тип
+     */
     SocType socketType() const;
+
+    /**
+     * @brief Возвращает статус сокета
+     * @return тип
+     */
     SocStatus socketStatus() const;
+
+    /**
+     * @brief возвращает назание сокета
+     * @return
+     */
     const QString &socketName() const;
 
-    void setCoagModeIndex(int newCoagModeIndex);    
-    void setcutModeIndex(int newCutModeIndex);    
+    /**
+     * @brief возвращает название текущего режима коаг
+     * @return
+     */
+    const QString &coagModeName() const;
+
+    /**
+     * @brief возвращает название текущего режима рез
+     * @return
+     */
+    const QString &cutModeName() const;
+
+    /**
+     * @brief Возвращает список доступных режимов реза
+     * @return
+     */
+    const QStringList& cutModes() const;
+
+    /**
+     * @brief Возвращает список доступных режимов коаг
+     * @return
+     */
+    const QStringList& coagModes() const;
+
+    bool setCoagModeIndex(int newCoagModeIndex);
+    bool setCutModeIndex(int newCutModeIndex);
+
+    void setCoagModeIndex(const QString & coagModeName);
+    void setCutModeIndex(const QString & cutModeName);
+
     void setSocketType(SOCKET::SocType newSocketType);
     void setSocketStatus(SocStatus newSocketStatus);
     void setSocketName(const QString &newSocketName);
 
-    QSharedPointer<EshfMode> getCutMode(int id);
-    QSharedPointer<EshfMode> getCoagMode(int id);
+    QSharedPointer<const EshfMode> getCutMode(const QString& name) const;
+    QSharedPointer<const EshfMode> getCoagMode(const QString& name) const;
 
     int coagModePower() const;
-    void setCoagModePower(int newCoagModePower);
+    bool setCoagModePower(int newCoagModePower);
 
     int cutModePower() const;
-    void setCutModePower(int newCutModePower);
+    bool setCutModePower(int newCutModePower);
 
 private:
+
+    QSharedPointer<const EshfMode> getMode(const QString& name, bool isCoag) const;
+    bool setModePower(int newPower, bool isCoag);
+    bool setModeIndex(int index, bool isCoag);
 
     int m_coagModeIndex;
     int m_cutModeIndex;
@@ -81,10 +154,13 @@ private:
 
     QString m_socketName;
 
-    QList<QSharedPointer<EshfMode>> cutModes;
-    QList<QSharedPointer<EshfMode>> coagModes;
+    QStringList m_coagModeNames;
+    QStringList m_cutModeNames;
 
-    QByteArray outputInfo(SOCKET *changedSocket, bool isCoag);
+    QHash<QString, QSharedPointer<EshfMode>> m_cutModes;
+    QHash<QString, QSharedPointer<EshfMode>> m_coagModes;
+
+    // QByteArray outputInfo(SOCKET *changedSocket, bool isCoag);
 };
 
 #endif // SOCKETCONSTANTS_H

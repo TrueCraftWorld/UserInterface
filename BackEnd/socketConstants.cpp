@@ -35,15 +35,8 @@ const QList<int> modesMaxPowers	{ 1, 75,
                             };
 
 
-//SOCKET::SOCKET(QObject *parent) :
-//        QObject(parent)
-//{
-//}
-
 SOCKET::SOCKET(SOCKET::SocType type)
 {
-//    Q_UNUSED(parent);
-
     m_socketStatus = S_ENABLED;
     m_cutModeIndex = 0;
     m_coagModeIndex = 0;
@@ -56,13 +49,9 @@ int SOCKET::coagModeIndex() const
     return m_coagModeIndex;
 }
 
-void SOCKET::setCoagModeIndex(int newCoagModeIndex)
+bool SOCKET::setCoagModeIndex(int newCoagModeIndex)
 {
-    if ((m_coagModeIndex == newCoagModeIndex) ||
-            (newCoagModeIndex >= coagModes.size()) ||
-            (newCoagModeIndex < 0))
-        return;
-    m_coagModeIndex = newCoagModeIndex;
+    return setModeIndex(newCoagModeIndex, true);
 }
 
 int SOCKET::cutModeIndex() const
@@ -70,13 +59,19 @@ int SOCKET::cutModeIndex() const
     return m_cutModeIndex;
 }
 
-void SOCKET::setcutModeIndex(int newCutModeIndex)
+bool SOCKET::setCutModeIndex(int newCutModeIndex)
 {
-    if ((m_cutModeIndex == newCutModeIndex) ||
-            (newCutModeIndex >= cutModes.size()) ||
-            (newCutModeIndex < 0))
-        return;
-    m_cutModeIndex = newCutModeIndex;
+    return setModeIndex(newCutModeIndex, false);
+}
+
+void SOCKET::setCoagModeIndex(const QString &coagModeName)
+{
+    setCoagModeIndex(m_coagModeNames.indexOf(coagModeName));
+}
+
+void SOCKET::setCutModeIndex(const QString &cutModeName)
+{
+    setCutModeIndex(m_cutModeNames.indexOf(cutModeName));
 }
 
 SOCKET::SocType SOCKET::socketType() const
@@ -88,21 +83,23 @@ void SOCKET::setSocketType(SOCKET::SocType newSocketType)
 {
     if (m_socketType == newSocketType)
         return;
-    cutModes.clear();
-    coagModes.clear();
+    m_cutModeNames.clear();
+    m_coagModeNames.clear();
+    m_cutModes.clear();
+    m_coagModes.clear();
     m_socketType = newSocketType;
 }
 
-EshfMode::EshfMode(QObject *parent)
+EshfMode::EshfMode(QString name,
+                   bool isCoag,
+                   int maximum,
+                   int minimum,
+                   QObject *parent)
 {
     Q_UNUSED(parent);
-}
-
-EshfMode::EshfMode(QString name, int maximum, bool isCoag, QObject *parent)
-{
-        Q_UNUSED(parent);
     m_modeName = name;
     m_maximumPower = maximum;
+    m_minimumPower = minimum;
     m_isCoag = isCoag;
 }
 
@@ -116,6 +113,22 @@ void EshfMode::setMaximumPower(int newMaximumPower)
     if (m_maximumPower == newMaximumPower)
         return;
     m_maximumPower = newMaximumPower;
+}
+
+bool EshfMode::setCurrentpower(int newCurrentpower)
+{
+    if (newCurrentpower <= m_maximumPower
+        && newCurrentpower >= m_minimumPower) {
+        m_currentpower = newCurrentpower;
+        return true;
+    } else {
+        return false;
+    }
+}
+
+int EshfMode::minimumPower() const
+{
+    return m_minimumPower;
 }
 
 const QString &EshfMode::modeName() const
@@ -147,6 +160,26 @@ const QString &SOCKET::socketName() const
     return m_socketName;
 }
 
+const QString &SOCKET::coagModeName() const
+{
+    return m_coagModeNames.at(m_coagModeIndex);
+}
+
+const QString &SOCKET::cutModeName() const
+{
+    return m_coagModeNames.at(m_cutModeIndex);
+}
+
+const QStringList &SOCKET::cutModes() const
+{
+    return m_cutModeNames;
+}
+
+const QStringList &SOCKET::coagModes() const
+{
+    return m_coagModeNames;
+}
+
 void SOCKET::setSocketName(const QString &newSocketName)
 {
     if (m_socketName == newSocketName)
@@ -159,9 +192,9 @@ int SOCKET::coagModePower() const
     return m_coagModePower;
 }
 
-void SOCKET::setCoagModePower(int newCoagModePower)
+bool SOCKET::setCoagModePower(int newCoagModePower)
 {
-    m_coagModePower = newCoagModePower;
+    return setModePower(newCoagModePower, false);
 }
 
 int SOCKET::cutModePower() const
@@ -169,23 +202,62 @@ int SOCKET::cutModePower() const
     return m_cutModePower;
 }
 
-void SOCKET::setCutModePower(int newCutModePower)
+bool SOCKET::setCutModePower(int newCutModePower)
 {
-    m_cutModePower = newCutModePower;
+    return setModePower(newCutModePower, false);
 }
 
-QSharedPointer<EshfMode> SOCKET::getCoagMode(int index)
+QSharedPointer<const EshfMode> SOCKET::getMode(const QString &name, bool isCoag) const
 {
-    if (coagModes.length() >= index) return coagModes[index];
-    
-    return nullptr;
+    const QHash<QString, QSharedPointer<EshfMode>> & container =
+        isCoag ? m_coagModes : m_cutModes;
+
+    const auto modeIter = container.find(name);
+    if (modeIter == container.cend()) {
+        return nullptr;
+    } else {
+        return *modeIter;
+    }
+
 }
 
-QSharedPointer<EshfMode> SOCKET::getCutMode(int index)
+bool SOCKET::setModePower(int newPower, bool isCoag)
 {
-    if (cutModes.length() >= index) return cutModes[index];
- 
-    return nullptr;
+    auto iter = isCoag
+        ? m_coagModes.find(m_coagModeNames.at(m_coagModeIndex))
+        : m_cutModes.find(m_cutModeNames.at(m_cutModeIndex));
+
+    if ((*iter)->setCurrentpower(newPower)) {
+        m_coagModePower = newPower;
+        return true;
+    } else {
+        return false;
+    }
+}
+
+bool SOCKET::setModeIndex(int index, bool isCoag)
+{
+    const QStringList& modeNames = isCoag ? m_coagModeNames : m_cutModeNames;
+    int& compareIdx = isCoag ? m_coagModeIndex : m_cutModeIndex;
+
+    if ((index == compareIdx) ||
+        (index >= modeNames.size()) ||
+        (index < 0)) {
+        return false;
+    } else {
+        compareIdx = index;
+        return true;
+    }
+}
+
+QSharedPointer<const EshfMode> SOCKET::getCoagMode(const QString &name) const
+{
+    return getMode(name, true);
+}
+
+QSharedPointer<const EshfMode> SOCKET::getCutMode(const QString &name) const
+{
+    return getMode(name, false);
 }
 
 
@@ -242,20 +314,20 @@ void SOCKET::generatingModeList(SOCKET* socket)
 }
 */
 
-QByteArray SOCKET::outputInfo(SOCKET *changedSocket, bool isCoag)
-{
-    QByteArray message;
-    int outNum = ((static_cast<int>(changedSocket->socketType()))*2 - (isCoag ? 0 : 1));
-    int modeNum;
-    EshfMode *changedMode;
-    int power;
+// QByteArray SOCKET::outputInfo(SOCKET *changedSocket, bool isCoag)
+// {
+//     QByteArray message;
+//     int outNum = ((static_cast<int>(changedSocket->socketType()))*2 - (isCoag ? 0 : 1));
+//     int modeNum;
+//     EshfMode *changedMode;
+//     int power;
 
-    if (isCoag) changedMode = changedSocket->getCoagMode(changedSocket->coagModeIndex());
-    else changedMode = changedSocket->getCutMode(changedSocket->cutModeIndex());
-    modeNum = modesNames.indexOf(changedMode->modeName());
-    power = changedMode->currentPower();
+//     // if (isCoag) changedMode = changedSocket->getCoagMode(changedSocket->coagModeIndex());
+//     // else changedMode = changedSocket->getCutMode(changedSocket->cutModeIndex());
+//     modeNum = modesNames.indexOf(changedMode->modeName());
+//     power = changedMode->currentPower();
 
-    QString outputInfo = QString("O%1 %2 %3     \n").arg(outNum).arg(modeNum).arg(power);
-    return message.append(outputInfo.toLatin1());
-}
+//     QString outputInfo = QString("O%1 %2 %3     \n").arg(outNum).arg(modeNum).arg(power);
+//     return message.append(outputInfo.toLatin1());
+// }
 

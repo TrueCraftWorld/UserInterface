@@ -13,6 +13,27 @@ class SocketModel : public QAbstractListModel
 {
     Q_OBJECT
 public:
+    enum SocketRoles {
+        SocketStatus = Qt::UserRole+1,
+        SocketName,
+        SocketPolarity,
+        CoagModeIndex,
+        CoagModeName,
+        CoagModePower,
+        CoagModeMinPower,
+        CoagModeMaxPower,
+        CoagModeInstrName,
+        CoagModeInstrImage,
+        CoagModeInstrIndex,
+        CutModeIndex,
+        CutModeName,
+        CutModePower,
+        CutModeMinPower,
+        CutModeMaxPower,
+        CutModeInstrName,
+        CutModeInstrImage,
+        CutModeInstrIndex
+    };
     explicit SocketModel(QObject *parent = nullptr);
     void init(QList<QSharedPointer<SOCKET>> m_items );
 
@@ -28,6 +49,10 @@ private:
 signals:
     void signalSocketStateChanged(int socketId, int state);
     void signalSocketContentChanged(int socketId, const QByteArray& content);
+
+    // QAbstractItemModel interface
+public:
+    virtual QHash<int, QByteArray> roleNames() const override;
 };
 
 #endif // SOCKETMODEL_H

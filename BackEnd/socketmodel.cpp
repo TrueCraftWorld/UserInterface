@@ -1,8 +1,11 @@
 #include "socketmodel.h"
+// #include <QQmlEngine>
 
 SocketModel::SocketModel(QObject *parent)
     : QAbstractListModel{parent}
-{}
+{
+    // QQmlEngine::setObjectOwnership(this, QQmlEngine::CppOwnership);
+}
 
 
 int SocketModel::rowCount(const QModelIndex &parent) const
@@ -67,7 +70,6 @@ QVariant SocketModel::data(const QModelIndex &index, int role) const
         return QVariant();
     }
 
-
     return QVariant();
 }
 
@@ -93,6 +95,13 @@ bool SocketModel::setData(const QModelIndex &index, const QVariant &value, int r
         break;
     }
     return false;
+}
+
+void SocketModel::setItems(const QList<QSharedPointer<SOCKET> > &newItems)
+{
+    beginResetModel();
+    m_items = newItems;
+    endResetModel();
 }
 
 

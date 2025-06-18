@@ -1,5 +1,5 @@
-#ifndef SOCKETCONSTANTS_H
-#define SOCKETCONSTANTS_H
+#ifndef SOCKET_H
+#define SOCKET_H
 
 #include <QObject>
 #include <QString>
@@ -7,6 +7,39 @@
 #include <QStringList>
 #include <QSharedPointer>
 
+namespace ESHF {
+enum eshfModes	{ NO_MODE = 0, BI_BLEND=1,
+                 BI_TUR=2, BI_ARTRO=3, BI_GISTERO=4,
+                 BI_COAG=5, BI_COAG_DISS=6, TERMOSHOV=7,
+                 CUT=8, BLEND=9, BLEND1=10, TUR=11, VAP=12,
+                 E_KNIFE1=13, E_KNIFE2=14, E_KNIFE3=15,
+                 E_LOOP1=16, E_LOOP2=17, E_LOOP3=18,
+                 FORCE=19, FULGUR=20, SOFT=21, SPRAY=22,
+                 FULGUR_A=23, SPRAY_A=24,
+                 FULGUR_P=25, SPRAY_P=26,
+                 };
+const QStringList modesNames = { "NO MODE", "BI BLEND",
+                                "BI TUR", "BI ARTRO", "BI GISTERO",
+                                "BI COAG", "BI COAG DISSECT", "TERMOSHOV",
+                                "CUT", "BLEND", "BLEND1", "TUR", "VAP",
+                                "ENDO KNIFE1", "ENDO KNIFE2", "ENDO KNIFE3",
+                                "ENDO LOOP1", "ENDO LOOP2", "ENDO LOOP3",
+                                "FORCE", "FULGUR", "SOFT", "SPRAY",
+                                "FULGUR ARGON", "SPRAY ARGON",
+                                "FULGUR PULSE ARGON", "SPRAY PULSE ARGON",
+                                };
+
+const QList<int> modesMaxPowers	{ 1, 75,
+                                8, 8, 8,
+                                150, 150, 5,
+                                400, 400, 150, 400, 400,
+                                27, 27, 27,
+                                27, 27, 27,
+                                150, 150, 300, 70,
+                                150, 70,
+                                70, 70,
+                                };
+};
 
 class EshfMode {
 public:
@@ -14,11 +47,10 @@ public:
     EshfMode(QString name,
              bool isCoag,
              int maximum = 400,
-             int minimum = 1,
-             QObject *parent = nullptr);
+             int minimum = 1);
 
-    explicit EshfMode(QObject *parent = nullptr)  :
-        EshfMode("NoMode", false, 1, 1, parent) {};
+    explicit EshfMode()  :
+        EshfMode("NoMode", false, 1, 1) {};
 
     int maximumPower() const;
     int currentPower() const;
@@ -35,7 +67,7 @@ private:
 
     int m_maximumPower;
     int m_minimumPower;
-    int m_currentpower;
+    int m_currentPower;
     QString m_modeName;
     bool m_isCoag;
 };
@@ -137,6 +169,10 @@ public:
     int cutModePower() const;
     bool setCutModePower(int newCutModePower);
 
+    void setCutModes(const QHash<QString, QSharedPointer<EshfMode> > &newCutModes);
+
+    void setCoagModes(const QHash<QString, QSharedPointer<EshfMode> > &newCoagModes);
+
 private:
 
     QSharedPointer<const EshfMode> getMode(const QString& name, bool isCoag) const;
@@ -163,4 +199,4 @@ private:
     // QByteArray outputInfo(SOCKET *changedSocket, bool isCoag);
 };
 
-#endif // SOCKETCONSTANTS_H
+#endif // SOCKET_H

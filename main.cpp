@@ -3,6 +3,8 @@
 
 #include "SettingsScreen/wifimodule/NetworkDiscover.h"
 #include "SettingsScreen/updatemodule/updateclient.h"
+#include "BackEnd/controlcenter.h"
+#include "qqmlcontext.h"
 
 int main(int argc, char *argv[])
 {
@@ -17,8 +19,18 @@ int main(int argc, char *argv[])
 
     NetworkControl::registerNetworkControl();
     UpdateClient::registerUpdateClient();
+    ControlCenter::registerControl();
+
+    ControlCenter ctrl;
+    //smthing like ctrl.init() for conf reading and uart com start
+    //for now it only prepares socket content
+    ctrl.init();
+
+
 
     QQmlApplicationEngine engine;
+    engine.rootContext()->setContextProperty("SocControl", &ctrl);
+
     const QUrl url(QStringLiteral("qrc:/main.qml"));
     QObject::connect(
         &engine,

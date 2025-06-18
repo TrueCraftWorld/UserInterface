@@ -5,7 +5,7 @@
 #include <QObject>
 #include <QSharedPointer>
 
-#include "socketConstants.h"
+#include "socket.h"
 
 
 
@@ -53,6 +53,7 @@ signals:
     // QAbstractItemModel interface
 public:
     virtual QHash<int, QByteArray> roleNames() const override;
+    void setItems(const QList<QSharedPointer<SOCKET> > &newItems);
 };
 
 #endif // SOCKETMODEL_H

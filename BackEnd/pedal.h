@@ -2,7 +2,7 @@
 #define PEDAL_H
 #include <QtQml/qqml.h>
 #include <QObject>
-#include "BackEnd/socketConstants.h"
+#include "BackEnd/socket.h"
 
 class PEDAL : public QObject
 {

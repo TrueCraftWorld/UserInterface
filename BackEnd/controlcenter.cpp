@@ -1,0 +1,134 @@
+#include "controlcenter.h"
+#include "socket.h"
+
+#include <QQmlEngine>
+
+ControlCenter::ControlCenter(QObject *parent)
+    : QObject{parent},
+    m_socketModel(new SocketModel)
+{
+    QQmlEngine::setObjectOwnership(m_socketModel, QQmlEngine::CppOwnership);
+    QQmlEngine::setObjectOwnership(this, QQmlEngine::CppOwnership);
+}
+
+void ControlCenter::registerControl()
+{
+    qmlRegisterUncreatableType<ControlCenter>("BackEnd", 1, 0, "ControlCenter", "should be one and exist not only for qml");
+    qmlRegisterUncreatableType<SocketModel>("BackEnd", 1, 0, "SocketModel", "should be one and exist not only for qml");
+}
+
+QPointer<SocketModel> ControlCenter::getSocketModel() const
+{
+    return m_socketModel;
+}
+
+void ControlCenter::init()
+{
+    readConfigs();
+    initComms();
+    initSockets();
+    prepareConnectios();
+}
+
+void ControlCenter::initComms()
+{
+
+}
+
+void ControlCenter::initSockets()
+{
+    ///todo read old socket (maybe Json or QSetting)
+    if (readPreviousSocketSettings()) {
+
+    } else {
+        defaultSocketInit();
+    }
+
+}
+
+void ControlCenter::readConfigs()
+{
+
+}
+
+void ControlCenter::prepareConnectios()
+{
+
+}
+
+bool ControlCenter::readPreviousSocketSettings()
+{
+    ///todo REALIZE
+    return false;
+}
+
+void ControlCenter::defaultSocketInit()
+{
+    QList<QSharedPointer<SOCKET>> socketList;
+
+    //may change count based on config later
+    for (int i = 0; i < 4; ++i) {
+        QSharedPointer<SOCKET> socket = QSharedPointer<SOCKET>::create(i < SOCKET::MONOPOLAR_2 ? SOCKET::SocType(i+1) : SOCKET::EMPTY);
+
+        int coagStart = 0;
+        int cutStart = 0;
+        int coagStop = 0;
+        int cutStop = 0;
+        QString socketName = "";
+        QHash<QString, QSharedPointer<EshfMode>> cutModes;
+        QHash<QString, QSharedPointer<EshfMode>> coagModes;
+        switch (socket->socketType()) {
+        case SOCKET::EMPTY:
+            socketName = QString("EMPTY");
+            cutStart = 0;  cutStop = 0;
+            coagStart = 0;   coagStop = 0;
+            break;
+        case SOCKET::BIPOLAR_1:
+            socketName = QString("BIPOLAR 1");
+            cutStart = 1;  cutStop = 4+1;
+            coagStart = 5;   coagStop = 6+1;
+            break;
+        case SOCKET::BIPOLAR_2:
+            socketName = QString("BIPOLAR 2");
+            cutStart = 1;  cutStop = 4+1;
+            coagStart = 5;   coagStop = 7+1;
+            break;
+        case SOCKET::MONOPOLAR_1:
+            socketName = QString("MONOPOLAR 1");
+            cutStart = 8;   cutStop = 18+1;
+            coagStart = 19;   coagStop = 26+1;
+            break;
+        case SOCKET::MONOPOLAR_2:
+            socketName = QString("MONOPOLAR 2");
+            cutStart = 8;  cutStop = 18+1;
+            coagStart = 19;   coagStop = 22+1;
+            break;
+        }
+        socket->setSocketName(socketName);
+        cutModes.insert(ESHF::modesNames[0], QSharedPointer<EshfMode>::create(ESHF::modesNames[0],
+                                                                         false,
+                                                                         ESHF::modesMaxPowers[0],
+                                                                         1));
+        coagModes.insert(ESHF::modesNames[0], QSharedPointer<EshfMode>::create(ESHF::modesNames[0],
+                                                                               true,
+                                                                               ESHF::modesMaxPowers[0],
+                                                                               1));
+
+        for (int i = cutStart; i < cutStop; ++i) {
+            cutModes.insert(ESHF::modesNames[i], QSharedPointer<EshfMode>::create(ESHF::modesNames[i],
+                                                                                  false,
+                                                                                  ESHF::modesMaxPowers[i],
+                                                                                  1));
+        }
+        for (int i = coagStart; i < coagStop; ++i) {
+            coagModes.insert(ESHF::modesNames[i], QSharedPointer<EshfMode>::create(ESHF::modesNames[i],
+                                                                                   false,
+                                                                                   ESHF::modesMaxPowers[i],
+                                                                                   1));
+        }
+        socket->setCoagModes(coagModes);
+        socket->setCutModes(cutModes);
+        socketList.append(socketList);
+    }
+    m_socketModel->setItems(socketList);
+}

@@ -169,9 +169,11 @@ public:
     int cutModePower() const;
     bool setCutModePower(int newCutModePower);
 
-    void setCutModes(const QHash<QString, QSharedPointer<EshfMode> > &newCutModes);
+    void setCutModes(const QHash<QString, QSharedPointer<EshfMode> > &newCutModes,
+                     const QStringList& order = {""});
 
-    void setCoagModes(const QHash<QString, QSharedPointer<EshfMode> > &newCoagModes);
+    void setCoagModes(const QHash<QString, QSharedPointer<EshfMode> > &newCoagModes,
+                      const QStringList& order = {""});
 
 private:
 

@@ -21,15 +21,13 @@ int main(int argc, char *argv[])
     UpdateClient::registerUpdateClient();
     ControlCenter::registerControl();
 
-    ControlCenter ctrl;
+    QSharedPointer<ControlCenter> ctrl  = QSharedPointer<ControlCenter>::create();
     //smthing like ctrl.init() for conf reading and uart com start
     //for now it only prepares socket content
-    ctrl.init();
-
-
+    ctrl->init();
 
     QQmlApplicationEngine engine;
-    engine.rootContext()->setContextProperty("SocControl", &ctrl);
+    engine.rootContext()->setContextProperty("theModel", ctrl->getSocketModel());
 
     const QUrl url(QStringLiteral("qrc:/main.qml"));
     QObject::connect(

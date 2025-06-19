@@ -8,6 +8,7 @@ Rectangle {
     property string cutModePower
     property string coagModePower
 
+
     Rectangle {
         id: cutMain
         color: "yellow"

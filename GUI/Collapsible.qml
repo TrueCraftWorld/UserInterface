@@ -59,7 +59,6 @@ Item {
                 anchors.fill: parent
                 onClicked: root.expanded = !root.expanded
             }
-
         }
     }
 

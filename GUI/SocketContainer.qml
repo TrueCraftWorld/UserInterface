@@ -19,11 +19,11 @@ Rectangle {
 
         Repeater {
             id: repeat
-            model: 4
+            model: theModel
             function calculateExpandedHeight() {
                 var totalFixedHeight = 0
                 var expandedCount = 0
-                var spacersHeight = (count*1) * layout.spacing;
+                var spacersHeight = (count) * layout.spacing;
 
                 for (var i = 0; i < count; i++) {
 
@@ -37,34 +37,41 @@ Rectangle {
                 return expandedCount > 0 ?
                     (containerRoot.height - (totalFixedHeight + spacersHeight + containerRoot.anchors.margins*2)) / expandedCount : 0
             }
+            clip: true
 
             Collapsible {
-                id: section
+                id: socketRoot
+                property var view: ListView.view
                 headerHeight: 40
+                expanded: true
+
                 Layout.fillWidth: true
-                // Layout.fillHeight: expanded
+                Layout.alignment: Qt.AlignTop
                 Layout.preferredHeight: expanded ?
                     repeat.calculateExpandedHeight() :
                     headerHeight
-                Layout.alignment: Qt.AlignTop
 
-                title: "socket " + (index + 1)
-                expanded: true
+                title: model.socketname
+                // anchors {
+                //     horizontalCenter: parent.horizontalCenter
+                //     topMargin: 15
+                //     bottomMargin: 5
+                // }
 
                 contentItem: DummySocket {
                     width: parent.width
-                    height: section.expanded ?
+                    height: socketRoot.expanded ?
                                 repeat.calculateExpandedHeight() :
                                 0
 
-                    cutModeName: "CUT"
-                    coagModeName: "FORCE"
-                    cutModePower: "150"
-                    coagModePower: "300"
-
+                    cutModeName: model.cutmodename
+                    coagModeName: model.coagmodename
+                    cutModePower: "%1".arg(model.cutmodepower)
+                    coagModePower: "%1".arg(model.coagmodepower)
                 }
             }
         }
+
         Item {
             Layout.fillHeight: true
         }

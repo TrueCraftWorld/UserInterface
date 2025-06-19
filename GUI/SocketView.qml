@@ -1,50 +1,57 @@
 import QtQuick 2.15
 import QtQuick.Layouts 1.15
-// import com.melije.pulltorefresh 2.0
-import StratifyLabs.UI 2.0
+// import StratifyLabs.UI 2.0
 import BackEnd 1.0
 
-ListView {
-    id: socketView
-    width: parent.width
+Repeater {
 
-    model: SocControl.getSocketModel
-    // property var passwordPopUp: null
-    // signal networkChosen(ssid: string, passwd: string)
-    // signal updateMe
+    id: socketViewRoot
+    property int spacing
 
+    function calculateExpandedHeight() {
+        console.log("tryCalculate")
+        var totalFixedHeight = 0
+        var expandedCount = 0
 
+        var spacersHeight = (model.count) * layout.spacing;
 
+        for (var i = 0; i < model.count; i++) {
+        // for (var i = 0; i < 4; i++) {
 
-    layoutDirection: Qt.LeftToRight
-    verticalLayoutDirection: ListView.TopToBottom
-    displayMarginBeginning: 15
-    displayMarginEnd: 15
+            if (itemAt(i).expanded) {
+                expandedCount++
+            } else {
+                totalFixedHeight += 40
+            }
+        }
+
+        return expandedCount > 0 ?
+            ((socketViewRoot.height
+                    - (totalFixedHeight + spacersHeight + socketViewRoot.anchors.margins*2))
+                    / expandedCount )
+            : 0
+    }
+
     spacing: 5
+    width: parent.width
 
     clip: false
 
-    // header: Item { width: parent.width; height: 15 }
-    // footer: Item { width: parent.width; height: 15 }
-
-    delegate: Collapsible {
+    Collapsible {
         id: socketRoot
         property var view: ListView.view
-        // property bool isCurrent: ListView.isCurrentItem
         headerHeight: 40
-        Layout.fillWidth: true
-        // Layout.fillHeight: expanded
-        Layout.preferredHeight: expanded ?
-            repeat.calculateExpandedHeight() :
-            headerHeight
-        Layout.alignment: Qt.AlignTop
-
-        title: socketname
         expanded: true
 
-        // style: isconnected ? "btn-success lg":"btn-outline-secondary lg"
-        anchors
-        {
+        Layout.fillWidth: true
+        Layout.alignment: Qt.AlignTop
+        Layout.preferredHeight: expanded ?
+            socketViewRoot.calculateExpandedHeight() :
+            headerHeight
+
+        title: model.socketname
+
+        anchors {
             horizontalCenter: parent.horizontalCenter
             topMargin: 15
             bottomMargin: 5
@@ -52,23 +59,14 @@ ListView {
 
         contentItem: DummySocket {
             width: parent.width
-            height: section.expanded ?
-                        repeat.calculateExpandedHeight() :
+            height: socketRoot.expanded ?
+                        socketViewRoot.calculateExpandedHeight() :
                         0
 
-            cutModeName: cutmodename
-            coagModeName: coagmodename
-            cutModePower: "%1".arg(cutmodepower)
-            coagModePower: "%1".arg(coagmodepower)
-
+            cutModeName: model.cutmodename
+            coagModeName: model.coagmodename
+            cutModePower: "%1".arg(model.cutmodepower)
+            coagModePower: "%1".arg(model.coagmodepower)
         }
     }
-
-    // PullToRefreshHandler
-    // {
-    //     onPullDownRelease:
-    //     {
-    //        updateMe() // Add your handling code here:
-    //     }
-    // }
 }

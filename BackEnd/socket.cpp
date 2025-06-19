@@ -3,6 +3,28 @@
 #include <QtQml/qqml.h>
 
 
+namespace {
+QStringList sortByExample(const QStringList& toSort, const QStringList& reference)
+{
+    //это отстойный по эффективности алгоритм, но применяем мы его только 8 раз на старте. (может как-то отпраллелить)
+    //если будет мешать - можно вхардкодить
+    QStringList result = toSort;
+
+    std::stable_sort(result.begin(), result.end(),
+                     [&reference](const QString& a, const QString& b) {
+                         int indexA = reference.indexOf(a);
+                         int indexB = reference.indexOf(b);
+
+                         if (indexA != -1 && indexB != -1) return indexA < indexB;
+                         if (indexA != -1) return true;
+                         if (indexB != -1) return false;
+                         return false;
+                     });
+
+    return result;
+}
+}
+
 
 SOCKET::SOCKET(SOCKET::SocType type) :
     m_coagModeIndex(0),
@@ -142,7 +164,7 @@ const QString &SOCKET::coagModeName() const
 
 const QString &SOCKET::cutModeName() const
 {
-    return m_coagModeNames.at(m_cutModeIndex);
+    return m_cutModeNames.at(m_cutModeIndex);
 }
 
 const QStringList &SOCKET::cutModes() const
@@ -225,14 +247,26 @@ bool SOCKET::setModeIndex(int index, bool isCoag)
     }
 }
 
-void SOCKET::setCoagModes(const QHash<QString, QSharedPointer<EshfMode> > &newCoagModes)
+void SOCKET::setCoagModes(const QHash<QString, QSharedPointer<EshfMode> > &newCoagModes,
+                          const QStringList &order)
 {
     m_coagModes = newCoagModes;
+    if (!order.isEmpty() && order.size() == m_coagModes.size()) {
+        m_coagModeNames = sortByExample(m_coagModes.keys(), order);
+    } else {
+        m_coagModeNames = m_coagModes.keys();
+    }
 }
 
-void SOCKET::setCutModes(const QHash<QString, QSharedPointer<EshfMode> > &newCutModes)
+void SOCKET::setCutModes(const QHash<QString, QSharedPointer<EshfMode> > &newCutModes,
+                         const QStringList &order)
 {
     m_cutModes = newCutModes;
+    if (!order.isEmpty() && order.size() == m_cutModes.size()) {
+        m_cutModeNames = sortByExample(m_cutModes.keys(), order);
+    } else {
+        m_cutModeNames = m_cutModes.keys();
+    }
 }
 
 QSharedPointer<const EshfMode> SOCKET::getCoagMode(const QString &name) const

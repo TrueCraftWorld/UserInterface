@@ -18,6 +18,7 @@ class ControlCenter : public QObject
     // Q_PROPERTY(WiFiListModel* wifiModel READ wifiModel CONSTANT FINAL)
 public:
     explicit ControlCenter(QObject *parent = nullptr);
+    ~ControlCenter();
 
     /**
      * @brief выполянет регистрацию класса в qml

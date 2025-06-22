@@ -8,6 +8,9 @@ Rectangle {
     property string cutModePower
     property string coagModePower
 
+    signal cutEditDialogRequest()
+    signal coagEditDialogRequset()
+    // signal socketToggled(bool isEnabled)
 
     Rectangle {
         id: cutMain
@@ -49,6 +52,10 @@ Rectangle {
                 // bottom: parent.bottom
                 margins: 15
             }
+        }
+        MouseArea {
+            anchors.fill: parent
+            onClicked: socketRoot.cutEditDialogRequest()
         }
     }
     Rectangle {
@@ -98,6 +105,10 @@ Rectangle {
                 right: parent.right
                 margins: 15
             }
+        }
+        MouseArea {
+            anchors.fill: parent
+            onClicked: socketRoot.coagEditDialogRequest()
         }
     }
     Rectangle {

@@ -60,6 +60,10 @@ QVariant SocketModel::data(const QModelIndex &index, int role) const
         return socketItem.getCutMode(socketItem.cutModeName())->minimumPower();
     case CutModeMaxPower:
         return socketItem.getCutMode(socketItem.cutModeName())->maximumPower();
+    case CoagModesNames:
+        return socketItem.coagModeNames();
+    case CutModesNames:
+        return socketItem.cutModeNames();
 
         ///todo realize smthg
     case CutModeInstrName:
@@ -97,6 +101,39 @@ bool SocketModel::setData(const QModelIndex &index, const QVariant &value, int r
     return false;
 }
 
+void SocketModel::acceptChanges(const QString &socket, const QString &mode, int power)
+{
+    QSharedPointer<SOCKET> itemPtr = nullptr;
+    QModelIndex idx ;
+    for (auto& item : m_items) {
+        if (item->socketName() == socket) {
+            itemPtr = item;
+            break;
+        }
+    }
+    if (itemPtr.isNull())
+        return;
+
+    idx = createIndex(m_items.indexOf(itemPtr), 0);
+
+    int check = itemPtr->checkMode(mode);
+    switch (check) {
+    case SOCKET::COAG:
+        itemPtr->setCoagModeIndex(mode);
+        itemPtr->setCoagModePower(power);
+        emit dataChanged(idx, idx);
+        break;
+    case SOCKET::CUT:
+        itemPtr->setCutModeIndex(mode);
+        itemPtr->setCoagModePower(power);
+        emit dataChanged(idx, idx);
+        break;
+    default:
+        break;
+    }
+
+}
+
 void SocketModel::setItems(const QList<QSharedPointer<SOCKET> > &newItems)
 {
     beginResetModel();
@@ -127,5 +164,7 @@ QHash<int, QByteArray> SocketModel::roleNames() const
     roles[CutModeInstrName] = "cutmodeinstrname";
     roles[CutModeInstrImage] = "cutmodeinstrimage";
     roles[CutModeInstrIndex] = "cutmodeinstrindex";
+    roles[CutModesNames] = "cutmodesnames";
+    roles[CoagModesNames] = "coagmodesnames";
     return roles;
 }

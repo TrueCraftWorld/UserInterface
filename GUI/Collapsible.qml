@@ -57,7 +57,9 @@ Item {
             }
             MouseArea {
                 anchors.fill: parent
-                onClicked: root.expanded = !root.expanded
+                onClicked: {
+                    root.expanded = !root.expanded
+                }
             }
         }
     }

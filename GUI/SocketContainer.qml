@@ -2,10 +2,11 @@ import QtQuick 2.15
 import QtQuick.Layouts 1.15
 import QtQuick.Window 2.15
 import QtQuick.Controls 2.15
+import StratifyLabs.UI 2.0
 
 Rectangle {
-
     id: containerRoot
+
     border {
         width: 1
         color: "black"
@@ -39,7 +40,7 @@ Rectangle {
             }
             clip: true
 
-            Collapsible {
+            delegate: Collapsible {
                 id: socketRoot
                 property var view: ListView.view
                 headerHeight: 40
@@ -52,13 +53,9 @@ Rectangle {
                     headerHeight
 
                 title: model.socketname
-                // anchors {
-                //     horizontalCenter: parent.horizontalCenter
-                //     topMargin: 15
-                //     bottomMargin: 5
-                // }
 
                 contentItem: DummySocket {
+                    id: soc
                     width: parent.width
                     height: socketRoot.expanded ?
                                 repeat.calculateExpandedHeight() :
@@ -69,11 +66,51 @@ Rectangle {
                     cutModePower: "%1".arg(model.cutmodepower)
                     coagModePower: "%1".arg(model.coagmodepower)
                 }
+
+                Connections {
+                    target: soc
+                    function onCutEditDialogRequest() {
+                        editor.title = model.socketname;
+                        editor.dropDownModel = model.cutmodesnames;
+                        editor.initialValue = soc.cutModePower;
+                        // editor.minValue =
+                        // editor.maxValue =  100
+                        editor.stepSize = 1
+                        editor.open()
+                    }
+                }
             }
         }
 
         Item {
             Layout.fillHeight: true
+        }
+    }
+    // SocketEditor {
+    Popup {
+
+        id: editor
+        modal: true
+        focus: true
+        padding: 20
+
+        width: 500
+        height: 200
+
+        property string title: "Settings"
+        property var dropDownModel: ["Option 1", "Option 2", "Option 3"]
+        property int initialValue: 50
+        property int minValue: 0
+        property int maxValue: 100
+        property int stepSize: 1
+
+        closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
+        // onAccepted: {
+        //     theModel.acceptChange(title, currentSelection, currentValue)
+        // }
+        SDropdown {
+            anchors.fill: parent
+            model: editor.dropDownModel
         }
     }
 }

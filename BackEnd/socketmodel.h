@@ -32,7 +32,9 @@ public:
         CutModeMaxPower,
         CutModeInstrName,
         CutModeInstrImage,
-        CutModeInstrIndex
+        CutModeInstrIndex,
+        CutModesNames,
+        CoagModesNames
     };
     explicit SocketModel(QObject *parent = nullptr);
     void init(QList<QSharedPointer<SOCKET>> m_items );
@@ -42,6 +44,9 @@ public:
     virtual int rowCount(const QModelIndex &parent) const override;
     virtual QVariant data(const QModelIndex &index, int role) const override;
     virtual bool setData(const QModelIndex &index, const QVariant &value, int role) override;
+
+public:
+    Q_INVOKABLE void acceptChanges(const QString& socket, const QString& mode, int power);
 
 private:
     QList<QSharedPointer<SOCKET>> m_items;

@@ -10,5 +10,6 @@ DISTFILES += \
     $$PWD/Collapsible.qml \
     $$PWD/DummySocket.qml \
     $$PWD/SocketContainer.qml \
+    $$PWD/SocketEditor.qml \
     $$PWD/SocketView.qml \
     $$PWD/StatusBar.qml

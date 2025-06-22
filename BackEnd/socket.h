@@ -44,6 +44,7 @@ const QList<int> modesMaxPowers	{ 1, 75,
 class EshfMode {
 public:
 
+
     EshfMode(QString name,
              bool isCoag,
              int maximum = 400,
@@ -93,6 +94,10 @@ public:
                     S_ACTIVE_COAG,
                     S_ACTIVE_CUT
                         };
+    enum ModeType { NONE = 0,
+                    CUT,
+                    COAG
+    };
 
     SOCKET(SOCKET::SocType = MONOPOLAR_1);
 
@@ -153,6 +158,8 @@ public:
     bool setCoagModeIndex(int newCoagModeIndex);
     bool setCutModeIndex(int newCutModeIndex);
 
+    int checkMode(const QString& modeName);
+
     void setCoagModeIndex(const QString & coagModeName);
     void setCutModeIndex(const QString & cutModeName);
 
@@ -174,6 +181,10 @@ public:
 
     void setCoagModes(const QHash<QString, QSharedPointer<EshfMode> > &newCoagModes,
                       const QStringList& order = {""});
+
+    QStringList coagModeNames() const;
+
+    QStringList cutModeNames() const;
 
 private:
 

@@ -61,6 +61,16 @@ bool SOCKET::setCutModeIndex(int newCutModeIndex)
     return setModeIndex(newCutModeIndex, false);
 }
 
+int SOCKET::checkMode(const QString &modeName)
+{
+    if (m_coagModeNames.contains(modeName))
+        return COAG;
+    if (m_cutModeNames.contains(modeName))
+        return CUT;
+
+    return NONE;
+}
+
 void SOCKET::setCoagModeIndex(const QString &coagModeName)
 {
     setCoagModeIndex(m_coagModeNames.indexOf(coagModeName));
@@ -245,6 +255,16 @@ bool SOCKET::setModeIndex(int index, bool isCoag)
         compareIdx = index;
         return true;
     }
+}
+
+QStringList SOCKET::cutModeNames() const
+{
+    return m_cutModeNames;
+}
+
+QStringList SOCKET::coagModeNames() const
+{
+    return m_coagModeNames;
 }
 
 void SOCKET::setCoagModes(const QHash<QString, QSharedPointer<EshfMode> > &newCoagModes,

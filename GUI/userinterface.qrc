@@ -4,5 +4,7 @@
         <file>DummySocket.qml</file>
         <file>SocketContainer.qml</file>
         <file>StatusBar.qml</file>
+        <file>SocketEditor.qml</file>
+        <file>SocketView.qml</file>
     </qresource>
 </RCC>

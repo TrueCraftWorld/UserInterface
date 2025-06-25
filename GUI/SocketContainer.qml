@@ -34,7 +34,7 @@ Rectangle {
     SocketEditor {
         id: socEdit
         anchors.centerIn: repeat
-        parent: repeat
+        // parent: repeat
         height: repeat.height * 0.75
         width: repeat.width * 0.75
     }

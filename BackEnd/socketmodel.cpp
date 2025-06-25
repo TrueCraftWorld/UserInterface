@@ -1,12 +1,11 @@
 #include "socketmodel.h"
-// #include <QQmlEngine>
+#include <QQmlEngine>
 
 SocketModel::SocketModel(QObject *parent)
     : QAbstractListModel{parent}
 {
-    // QQmlEngine::setObjectOwnership(this, QQmlEngine::CppOwnership);
-}
 
+}
 
 int SocketModel::rowCount(const QModelIndex &parent) const
 {
@@ -40,9 +39,9 @@ QVariant SocketModel::data(const QModelIndex &index, int role) const
     case CoagModePower:
         return socketItem.coagModePower();
     case CoagModeMinPower:
-        return socketItem.getCoagMode(socketItem.coagModeName())->minimumPower();
+        return socketItem.getMode(socketItem.coagModeName())->minimumPower();
     case CoagModeMaxPower:
-        return socketItem.getCoagMode(socketItem.coagModeName())->maximumPower();
+        return socketItem.getMode(socketItem.coagModeName())->maximumPower();
 
         ///todo realize smthg
     case CoagModeInstrName:
@@ -57,9 +56,9 @@ QVariant SocketModel::data(const QModelIndex &index, int role) const
     case CutModePower:
         return socketItem.cutModePower();
     case CutModeMinPower:
-        return socketItem.getCutMode(socketItem.cutModeName())->minimumPower();
+        return socketItem.getMode(socketItem.cutModeName())->minimumPower();
     case CutModeMaxPower:
-        return socketItem.getCutMode(socketItem.cutModeName())->maximumPower();
+        return socketItem.getMode(socketItem.cutModeName())->maximumPower();
     case CoagModesNames:
         return socketItem.coagModeNames();
     case CutModesNames:
@@ -101,20 +100,47 @@ bool SocketModel::setData(const QModelIndex &index, const QVariant &value, int r
     return false;
 }
 
+QVariantMap SocketModel::modeParam(const QString &socket, const QString &mode) const
+{
+    QSharedPointer<const SOCKET> itemPtr = socketByName(socket);
+
+    QVariantMap result;
+    if (itemPtr.isNull())
+        return result;
+
+    result = itemPtr->getMode(mode)->params();
+
+    //other params can be added as well since it is variant map
+    // result["other"] = whatever;
+    return result;
+}
+
+QStringList SocketModel::modeNames(const QString &socket, const QString &mode) const
+{
+    QSharedPointer<const SOCKET> itemPtr = socketByName(socket);
+
+    QStringList result;
+    if (itemPtr.isNull())
+        return result;
+
+    result = itemPtr->getMode(mode)->isCoag()
+                 ? itemPtr->coagModeNames()
+                 : itemPtr->cutModeNames();
+
+    //other params can be added as well since it is variant map
+    // result["other"] = whatever;
+    return result;
+
+}
+
 void SocketModel::acceptChanges(const QString &socket, const QString &mode, int power)
 {
-    QSharedPointer<SOCKET> itemPtr = nullptr;
-    QModelIndex idx ;
-    for (auto& item : m_items) {
-        if (item->socketName() == socket) {
-            itemPtr = item;
-            break;
-        }
-    }
+    QSharedPointer<SOCKET> itemPtr = socketByName(socket);
+
     if (itemPtr.isNull())
         return;
 
-    idx = createIndex(m_items.indexOf(itemPtr), 0);
+    QModelIndex idx = createIndex(m_items.indexOf(itemPtr), 0);
 
     int check = itemPtr->checkMode(mode);
     switch (check) {
@@ -132,6 +158,51 @@ void SocketModel::acceptChanges(const QString &socket, const QString &mode, int 
         break;
     }
 
+}
+
+bool SocketModel::commitModeChange(const QString &socket, const QString &mode, QVariantMap param)
+{
+    QSharedPointer<SOCKET> itemPtr = socketByName(socket);
+
+    if (itemPtr.isNull())
+        return false;
+
+    QModelIndex idx = createIndex(m_items.indexOf(itemPtr), 0);
+
+    int check = itemPtr->checkMode(mode);
+    switch (check) {
+    case SOCKET::COAG:
+        if (itemPtr->setCoagModeIndex(mode)) {
+            if (itemPtr->getNonConstMode(mode)->setParams(param)) {
+                emit dataChanged(idx, idx);
+                return true;
+            }
+        }
+        break;
+    case SOCKET::CUT:
+        if (itemPtr->setCutModeIndex(mode)) {
+            if (itemPtr->getNonConstMode(mode)->setParams(param)) {
+                emit dataChanged(idx, idx);
+                return true;
+            }
+        }
+        break;
+    default:
+        break;
+    }
+    return false;
+}
+
+QSharedPointer<SOCKET> SocketModel::socketByName(const QString &socket) const
+{
+    QSharedPointer<SOCKET> itemPtr = nullptr;
+    for (auto& item : m_items) {
+        if (item->socketName() == socket) {
+            itemPtr = item;
+            break;
+        }
+    }
+    return itemPtr;
 }
 
 void SocketModel::setItems(const QList<QSharedPointer<SOCKET> > &newItems)

@@ -1,13 +1,16 @@
 #include "controlcenter.h"
 #include "socket.h"
 
+
 #include <QQmlEngine>
 
 ControlCenter::ControlCenter(QObject *parent)
     : QObject{parent},
-    m_socketModel(new SocketModel)
+    m_socketModel(new SocketModel),
+    m_editor(new SocketModeEditor(m_socketModel,this))
 {
     QQmlEngine::setObjectOwnership(m_socketModel, QQmlEngine::CppOwnership);
+    QQmlEngine::setObjectOwnership(m_editor, QQmlEngine::CppOwnership);
     QQmlEngine::setObjectOwnership(this, QQmlEngine::CppOwnership);
 }
 
@@ -22,7 +25,8 @@ ControlCenter::~ControlCenter()
 void ControlCenter::registerControl()
 {
     // qmlRegisterUncreatableType<ControlCenter>("BackEnd", 1, 0, "ControlCenter", "should be one and exist not only for qml");
-    // qmlRegisterUncreatableType<SocketModel>("BackEnd", 1, 0, "SocketModel", "should be one and exist not only for qml");
+    qmlRegisterUncreatableType<SocketModel>("BackEnd", 1, 0, "SocketModel", "should be one and exist not only for qml");
+    qmlRegisterUncreatableType<SocketModeEditor>("BackEnd", 1, 0, "SocketModeEditor", "should be one and exist not only for qml");
 }
 
 QPointer<SocketModel> ControlCenter::getSocketModel() const
@@ -36,6 +40,11 @@ void ControlCenter::init()
     initComms();
     initSockets();
     prepareConnectios();
+}
+
+QPointer<SocketModeEditor> ControlCenter::editor() const
+{
+    return m_editor;
 }
 
 void ControlCenter::initComms()

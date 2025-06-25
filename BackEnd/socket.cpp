@@ -61,7 +61,7 @@ bool SOCKET::setCutModeIndex(int newCutModeIndex)
     return setModeIndex(newCutModeIndex, false);
 }
 
-int SOCKET::checkMode(const QString &modeName)
+int SOCKET::checkMode(const QString &modeName) const
 {
     if (m_coagModeNames.contains(modeName))
         return COAG;
@@ -122,6 +122,11 @@ void EshfMode::setMaximumPower(int newMaximumPower)
     m_maximumPower = newMaximumPower;
 }
 
+bool EshfMode::isCoag() const
+{
+    return m_isCoag;
+}
+
 bool EshfMode::setCurrentpower(int newCurrentpower)
 {
     if (newCurrentpower <= m_maximumPower
@@ -131,6 +136,41 @@ bool EshfMode::setCurrentpower(int newCurrentpower)
     } else {
         return false;
     }
+}
+
+bool EshfMode::setParams(const QVariantMap &params)
+{
+    QString tmpName = params.value("name").toString();
+    int tmpMin = params.value("minpower").toInt();
+    int tmpMax = params.value("maxpower").toInt();
+    bool tmpIsCoag = params.value("iscoag").toBool();
+
+    //проверяяем что прислали изменения к нашему режиму и не пытаются поменять константы
+    if ((tmpName != m_modeName)
+        || (tmpIsCoag != m_isCoag)
+        || (tmpMin != m_minimumPower)
+        || (tmpMax != m_maximumPower))
+        return false;
+    int tmpCur = params.value("currentpower").toInt();
+    //проверяем что мощность удовлетворяет ограничениям
+    if ( (tmpCur >= m_minimumPower)
+        && (tmpCur <= m_maximumPower) ) {
+        m_currentPower = tmpCur;
+        return true;
+    }
+    return false;
+    // QVariantMap param
+}
+
+QVariantMap EshfMode::params() const
+{
+    QVariantMap res;
+    res["name"] = m_modeName;
+    res["currentpower"] = m_currentPower;
+    res["minpower"] = m_minimumPower;
+    res["maxpower"] = m_maximumPower;
+    res["iscoag"] = m_isCoag;
+    return res;
 }
 
 int EshfMode::minimumPower() const
@@ -194,6 +234,33 @@ void SOCKET::setSocketName(const QString &newSocketName)
     m_socketName = newSocketName;
 }
 
+QSharedPointer<const EshfMode> SOCKET::getMode(const QString &name) const
+{
+    QSharedPointer<const EshfMode> res =
+        getNonConstMode(name);
+    return res;
+}
+
+QSharedPointer<EshfMode> SOCKET::getNonConstMode(const QString &name) const
+{
+    switch (checkMode(name)) {
+    case CUT:
+        if (m_cutModeNames.contains(name))
+            return m_cutModes[name];
+        else
+            break;
+    case COAG:
+        if (m_coagModeNames.contains(name))
+            return m_coagModes[name];
+        else
+            break;
+
+    default:
+        break;
+    }
+    return nullptr;
+}
+
 int SOCKET::coagModePower() const
 {
     return m_coagModePower;
@@ -214,10 +281,13 @@ bool SOCKET::setCutModePower(int newCutModePower)
     return setModePower(newCutModePower, false);
 }
 
-QSharedPointer<const EshfMode> SOCKET::getMode(const QString &name, bool isCoag) const
+QSharedPointer<const EshfMode> SOCKET::getMode(const QString &name, ModeType type) const
 {
+    if (type == NONE)
+        return nullptr;
+
     const QHash<QString, QSharedPointer<EshfMode>> & container =
-        isCoag ? m_coagModes : m_cutModes;
+        type == COAG ? m_coagModes : m_cutModes;
 
     const auto modeIter = container.find(name);
     if (modeIter == container.cend()) {
@@ -289,15 +359,15 @@ void SOCKET::setCutModes(const QHash<QString, QSharedPointer<EshfMode> > &newCut
     }
 }
 
-QSharedPointer<const EshfMode> SOCKET::getCoagMode(const QString &name) const
-{
-    return getMode(name, true);
-}
+// QSharedPointer<const EshfMode> SOCKET::getCoagMode(const QString &name) const
+// {
+//     return getMode(name, true);
+// }
 
-QSharedPointer<const EshfMode> SOCKET::getCutMode(const QString &name) const
-{
-    return getMode(name, false);
-}
+// QSharedPointer<const EshfMode> SOCKET::getCutMode(const QString &name) const
+// {
+//     return getMode(name, false);
+// }
 
 
 

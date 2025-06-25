@@ -61,6 +61,12 @@ public:
 
     bool setCurrentpower(int newCurrentpower);
 
+    bool setParams(const QVariantMap& params);
+
+    QVariantMap params() const;
+
+    bool isCoag() const;
+
 private:
     void setModeName(const QString &newModeName);
     void setMaximumPower(int newMaximumPower);
@@ -158,17 +164,19 @@ public:
     bool setCoagModeIndex(int newCoagModeIndex);
     bool setCutModeIndex(int newCutModeIndex);
 
-    int checkMode(const QString& modeName);
+    int checkMode(const QString& modeName) const;
 
-    void setCoagModeIndex(const QString & coagModeName);
-    void setCutModeIndex(const QString & cutModeName);
+    bool setCoagModeIndex(const QString & coagModeName);
+    bool setCutModeIndex(const QString & cutModeName);
 
     void setSocketType(SOCKET::SocType newSocketType);
     void setSocketStatus(SocStatus newSocketStatus);
     void setSocketName(const QString &newSocketName);
 
-    QSharedPointer<const EshfMode> getCutMode(const QString& name) const;
-    QSharedPointer<const EshfMode> getCoagMode(const QString& name) const;
+    QSharedPointer<const EshfMode> getMode(const QString& name) const;
+    QSharedPointer<EshfMode> getNonConstMode(const QString& name) const;
+    // QSharedPointer<const EshfMode> getCutMode(const QString& name) const;
+    // QSharedPointer<const EshfMode> getCoagMode(const QString& name) const;
 
     int coagModePower() const;
     bool setCoagModePower(int newCoagModePower);
@@ -188,7 +196,7 @@ public:
 
 private:
 
-    QSharedPointer<const EshfMode> getMode(const QString& name, bool isCoag) const;
+    QSharedPointer<const EshfMode> getMode(const QString& name, ModeType type) const;
     bool setModePower(int newPower, bool isCoag);
     bool setModeIndex(int index, bool isCoag);
 

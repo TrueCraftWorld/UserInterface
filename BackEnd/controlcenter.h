@@ -4,6 +4,7 @@
 #include <QObject>
 #include <QPointer>
 
+#include "BackEnd/socketmodeeditor.h"
 #include "socketmodel.h"
 
 
@@ -15,7 +16,6 @@ class ControlCenter : public QObject
 {
     Q_OBJECT
     Q_PROPERTY(QPointer<SocketModel> socketModel READ getSocketModel CONSTANT FINAL)
-    // Q_PROPERTY(WiFiListModel* wifiModel READ wifiModel CONSTANT FINAL)
 public:
     explicit ControlCenter(QObject *parent = nullptr);
     ~ControlCenter();
@@ -26,10 +26,12 @@ public:
     static void registerControl();
 
     Q_INVOKABLE QPointer<SocketModel> getSocketModel() const;
+    QPointer<SocketModeEditor> editor() const;
 
     void init();
 private:
     QPointer<SocketModel> m_socketModel;
+    QPointer<SocketModeEditor> m_editor;
     // some uart handler should be here
     void initComms();
     void initSockets();

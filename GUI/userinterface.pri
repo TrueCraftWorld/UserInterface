@@ -9,6 +9,7 @@ RESOURCES += $$PWD/userinterface.qrc
 DISTFILES += \
     $$PWD/Collapsible.qml \
     $$PWD/DummySocket.qml \
+    $$PWD/EditorPopup.qml \
     $$PWD/SocketContainer.qml \
     $$PWD/SocketEditor.qml \
     $$PWD/SocketView.qml \

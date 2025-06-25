@@ -20,7 +20,6 @@ Rectangle {
 
         SocketView {
             id: repeat
-            editor: socEdit
             repeatModel: theModel
             containerMargins: layout.anchors.margins
             containerHeight: layout.height
@@ -31,12 +30,16 @@ Rectangle {
             Layout.fillHeight: true
         }
     }
-    SocketEditor {
-        id: socEdit
-        anchors.centerIn: repeat
-        // parent: repeat
-        height: repeat.height * 0.75
-        width: repeat.width * 0.75
+    EditorPopup {
+        id: dialog
+    }
+    Connections{
+        target: repeat
+        function onSocketDialogRequest(soc: string, mode: string) {
+            dialog.socName = soc
+            dialog.modeName = mode
+            dialog.open()
+        }
     }
 
 }

@@ -63,6 +63,8 @@ bool SOCKET::setCutModeIndex(int newCutModeIndex)
 
 int SOCKET::checkMode(const QString &modeName) const
 {
+
+    ///ОШИБКА ЕСЛИ NO_MODE
     if (m_coagModeNames.contains(modeName))
         return COAG;
     if (m_cutModeNames.contains(modeName))
@@ -71,14 +73,14 @@ int SOCKET::checkMode(const QString &modeName) const
     return NONE;
 }
 
-void SOCKET::setCoagModeIndex(const QString &coagModeName)
+bool SOCKET::setCoagModeIndex(const QString &coagModeName)
 {
-    setCoagModeIndex(m_coagModeNames.indexOf(coagModeName));
+    return setCoagModeIndex(m_coagModeNames.indexOf(coagModeName));
 }
 
-void SOCKET::setCutModeIndex(const QString &cutModeName)
+bool SOCKET::setCutModeIndex(const QString &cutModeName)
 {
-    setCutModeIndex(m_cutModeNames.indexOf(cutModeName));
+    return setCutModeIndex(m_cutModeNames.indexOf(cutModeName));
 }
 
 SOCKET::SocType SOCKET::socketType() const

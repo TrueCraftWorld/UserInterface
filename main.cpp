@@ -21,7 +21,7 @@ int main(int argc, char *argv[])
     UpdateClient::registerUpdateClient();
     ControlCenter::registerControl();
 
-    QSharedPointer<ControlCenter> ctrl  = QSharedPointer<ControlCenter>::create(app);
+    QSharedPointer<ControlCenter> ctrl  = QSharedPointer<ControlCenter>::create(nullptr);
     //smthing like ctrl.init() for conf reading and uart com start
     //for now it only prepares socket content
     ctrl->init();

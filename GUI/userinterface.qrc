@@ -6,5 +6,6 @@
         <file>StatusBar.qml</file>
         <file>SocketEditor.qml</file>
         <file>SocketView.qml</file>
+        <file>EditorPopup.qml</file>
     </qresource>
 </RCC>

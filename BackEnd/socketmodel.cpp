@@ -169,10 +169,10 @@ bool SocketModel::commitModeChange(const QString &socket, const QString &mode, Q
 
     QModelIndex idx = createIndex(m_items.indexOf(itemPtr), 0);
 
-    int check = itemPtr->checkMode(mode);
+    int check = itemPtr->checkMode(param.value("name").toString());
     switch (check) {
     case SOCKET::COAG:
-        if (itemPtr->setCoagModeIndex(mode)) {
+        if (itemPtr->setCoagModeIndex(param.value("name").toString())) {
             if (itemPtr->getNonConstMode(mode)->setParams(param)) {
                 emit dataChanged(idx, idx);
                 return true;
@@ -180,8 +180,8 @@ bool SocketModel::commitModeChange(const QString &socket, const QString &mode, Q
         }
         break;
     case SOCKET::CUT:
-        if (itemPtr->setCutModeIndex(mode)) {
-            if (itemPtr->getNonConstMode(mode)->setParams(param)) {
+        if (itemPtr->setCutModeIndex(param.value("name").toString())) {
+            if (itemPtr->getNonConstMode(param.value("name").toString())->setParams(param)) {
                 emit dataChanged(idx, idx);
                 return true;
             }

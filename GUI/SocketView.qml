@@ -69,10 +69,10 @@ Repeater {
             Connections {
                 target: soc
                 function onCutEditDialogRequest() {
-                    socketDialogRequest(socketRoot.title, soc.cutModeName)
+                    repeatRoot.socketDialogRequest(socketRoot.title, soc.cutModeName)
                 }
                 function onCoagEditDialogRequest() {
-                    socketDialogRequest(socketRoot.title, soc.coagModeName)
+                    repeatRoot.socketDialogRequest(socketRoot.title, soc.coagModeName)
                 }
             }
         }

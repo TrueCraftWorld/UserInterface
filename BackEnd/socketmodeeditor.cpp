@@ -9,10 +9,13 @@ SocketModeEditor::SocketModeEditor(SocketModel *model, QObject *parent)
 
 void SocketModeEditor::initialize(const QString &socket, const QString &mode)
 {
+    if (socket.isEmpty() || mode.isEmpty())
+        return;
     m_modeNames = m_model->modeNames(socket, mode);
     m_originalParameters = m_model->modeParam(socket, mode);
     m_socketName = socket;
-    m_currentModeIndex = m_modeNames.indexOf(mode);
+    m_originalModeIndex = m_modeNames.indexOf(mode);
+    m_currentModeIndex = m_originalModeIndex;
     m_currentParameters = m_originalParameters;
     emit parametersLoaded();
 }
@@ -20,7 +23,7 @@ void SocketModeEditor::initialize(const QString &socket, const QString &mode)
 void SocketModeEditor::loadModeParameters(int modeIndex)
 {
     if (modeIndex >= m_modeNames.size())
-        retrun;
+        return;
     m_currentParameters = m_model->modeParam(m_socketName, m_modeNames.at(modeIndex));
 }
 
@@ -29,23 +32,25 @@ void SocketModeEditor::updateCurrentParameters(const QVariantMap ms)
     if (isParamsEqual(m_currentParameters, ms))
         return;
     m_currentParameters = ms;
+            checkChanges();
     emit currentParamsChanged();
 }
 
-void SocketModeEditor::updateParameters(const QString &paramName, const QVariant &value)
+void SocketModeEditor::updateParameter(const QString &paramName, const QVariant &value)
 {
     // if (paramName)
     //Пока что просто присваиваем, но по-хорошему нужна проверка что добавляем параметры с нормальными
     //ключами и проверять типа данных на соответствие хранимым, а то из QMLнапихать сможем многовато лишнего
     
     m_currentParameters[paramName] = value;
+            checkChanges();
     emit currentParamsChanged();
 }
 
 void SocketModeEditor::commitChanges()
 {
-    if (hasChanges())
-        emit editingFinished(true);
+    // if (!checkChanges())
+        // emit editingFinished(true);
 
     const bool success =
             (m_model->commitModeChange(m_socketName,
@@ -69,6 +74,11 @@ QVariantMap SocketModeEditor::currentMode() const
     return m_currentParameters;
 }
 
+QString SocketModeEditor::socketName() const
+{
+    return m_socketName;
+}
+
 int SocketModeEditor::currentModeIndex() const
 {
     return m_currentModeIndex;
@@ -76,17 +86,25 @@ int SocketModeEditor::currentModeIndex() const
 
 void SocketModeEditor::setCurrentModeIndex(int index)
 {
-    if (m_model->rowCount(QModelIndex()) >= index)
+    if (m_model->rowCount(QModelIndex()) >= index) {
         m_currentModeIndex = index;
+        checkChanges();
+        emit currentModeIndexChanged();
+    }
 }
 
-bool SocketModeEditor::hasChanges() const
+bool SocketModeEditor::checkChanges()
 {
-    return m_currentModeIndex != m_originalModeIndex ||
-           !isParamsEqual(m_currentParameters, m_originalParameters);
+    bool tmp =( m_currentModeIndex != m_originalModeIndex /*||
+           !isParamsEqual(m_currentParameters, m_originalParameters)*/);
+    if (m_hasChanges != tmp) {
+        m_hasChanges = tmp;
+        emit hasChangesChanged();
+    }
+    return tmp;
 }
 
-QVariantMap SocketModeEditor::fetchModeParameters(int m_socketRow, int modeIndex)
+QVariantMap SocketModeEditor::fetchModeParameters(int modeIndex)
 {
     if (modeIndex >= m_modeNames.size())
         return QVariantMap();
@@ -125,4 +143,9 @@ bool SocketModeEditor::isParamsEqual(const QVariantMap &a, const QVariantMap &b)
     }
     return isEqual;
 
+}
+
+bool SocketModeEditor::hasChanges() const
+{
+    return m_hasChanges;
 }

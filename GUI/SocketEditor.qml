@@ -9,7 +9,6 @@ Column {
     spacing: 10
 
     property var editor: Editor
-    // Editor { id: modeEditor }
 
     GridLayout {
         width: parent.width
@@ -35,17 +34,18 @@ Column {
             }
         }
 
-        // Frequency Control
         Label { text: qsTr("Инструмент") }
 
         RowLayout {
             Rectangle{
                 Layout.fillWidth: true
+                height: 45
                 color: "magenta"
                 Text {
                     id: txt
                     text: qsTr("Здесь моя реклама")
                     anchors.centerIn: parent
+                    color: "green"
                 }
             }
 

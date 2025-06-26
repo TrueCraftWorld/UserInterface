@@ -6,7 +6,6 @@ import BackEnd 1.0
 
 
 Repeater {
-// Item {
     id: repeatRoot
 
     required property int containerMargins
@@ -47,10 +46,7 @@ Repeater {
         Layout.preferredHeight: socketRoot.expanded ?
                                     repeatRoot.calculateExpandedHeight() :
                                     headerHeight
-        // Layout.preferredHeight: 150
-
         title: model.socketname
-
 
         contentItem: DummySocket {
             property string cutName: model.cutmodename
@@ -59,7 +55,6 @@ Repeater {
             property int coagPower: model.coagmodepower
             id: soc
             width: parent.width
-            // height: 150
             height: socketRoot.expanded ?
                         repeatRoot.calculateExpandedHeight() :
                         0

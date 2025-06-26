@@ -46,7 +46,7 @@ Repeater {
         Layout.alignment: Qt.AlignTop
         Layout.preferredHeight: socketRoot.expanded ?
                                     repeatRoot.calculateExpandedHeight() :
-                                    0
+                                    headerHeight
         // Layout.preferredHeight: 150
 
         title: model.socketname

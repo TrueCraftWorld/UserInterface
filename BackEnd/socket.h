@@ -59,7 +59,7 @@ public:
 
     int minimumPower() const;
 
-    bool setCurrentpower(int newCurrentpower);
+    bool setCurrentPower(int newCurrentpower);
 
     bool setParams(const QVariantMap& params);
 
@@ -174,9 +174,6 @@ public:
     void setSocketName(const QString &newSocketName);
 
     QSharedPointer<const EshfMode> getMode(const QString& name) const;
-    QSharedPointer<EshfMode> getNonConstMode(const QString& name) const;
-    // QSharedPointer<const EshfMode> getCutMode(const QString& name) const;
-    // QSharedPointer<const EshfMode> getCoagMode(const QString& name) const;
 
     int coagModePower() const;
     bool setCoagModePower(int newCoagModePower);
@@ -194,17 +191,23 @@ public:
 
     QStringList cutModeNames() const;
 
+    QSharedPointer<const EshfMode> curCoagMode() const;
+
+    QSharedPointer<const EshfMode> curCutMode() const;
+
 private:
 
     QSharedPointer<const EshfMode> getMode(const QString& name, ModeType type) const;
+    QSharedPointer<const EshfMode> m_curCoagMode;
+    QSharedPointer<const EshfMode> m_curCutMode;
     bool setModePower(int newPower, bool isCoag);
     bool setModeIndex(int index, bool isCoag);
 
     int m_coagModeIndex;
     int m_cutModeIndex;
 
-    int m_coagModePower;
-    int m_cutModePower;
+    // int m_coagModePower;
+    // int m_cutModePower;
 
     SocType m_socketType;
     SocStatus m_socketStatus;

@@ -25,12 +25,108 @@ QStringList sortByExample(const QStringList& toSort, const QStringList& referenc
 }
 }
 
+EshfMode::EshfMode(QString name,
+                   bool isCoag,
+                   int maximum,
+                   int minimum) :
+    m_maximumPower(maximum),
+    m_minimumPower(minimum),
+    m_currentPower(1),
+    m_modeName( name),
+    m_isCoag(isCoag)
+{
+    // Q_UNUSED(parent);
+}
+
+int EshfMode::maximumPower() const
+{
+    return m_maximumPower;
+}
+
+int EshfMode::currentPower() const
+{
+    return m_currentPower;
+}
+
+void EshfMode::setMaximumPower(int newMaximumPower)
+{
+    if (m_maximumPower == newMaximumPower)
+        return;
+    m_maximumPower = newMaximumPower;
+}
+
+bool EshfMode::isCoag() const
+{
+    return m_isCoag;
+}
+
+bool EshfMode::setCurrentPower(int newCurrentpower)
+{
+    if (newCurrentpower <= m_maximumPower
+        && newCurrentpower >= m_minimumPower) {
+        m_currentPower = newCurrentpower;
+        return true;
+    } else {
+        return false;
+    }
+}
+
+bool EshfMode::setParams(const QVariantMap &params)
+{
+    QString tmpName = params.value("name").toString();
+    int tmpMin = params.value("minpower").toInt();
+    int tmpMax = params.value("maxpower").toInt();
+    bool tmpIsCoag = params.value("iscoag").toBool();
+
+    //проверяяем что прислали изменения к нашему режиму и не пытаются поменять константы
+    if ((tmpName != m_modeName)
+        || (tmpIsCoag != m_isCoag)
+        || (tmpMin != m_minimumPower)
+        || (tmpMax != m_maximumPower))
+        return false;
+    int tmpCur = params.value("currentpower").toInt();
+    //проверяем что мощность удовлетворяет ограничениям
+    if ( (tmpCur >= m_minimumPower)
+        && (tmpCur <= m_maximumPower) ) {
+        m_currentPower = tmpCur;
+        return true;
+    }
+    return false;
+    // QVariantMap param
+}
+
+QVariantMap EshfMode::params() const
+{
+    QVariantMap res;
+    res["name"] = m_modeName;
+    res["currentpower"] = m_currentPower;
+    res["minpower"] = m_minimumPower;
+    res["maxpower"] = m_maximumPower;
+    res["iscoag"] = m_isCoag;
+    return res;
+}
+
+int EshfMode::minimumPower() const
+{
+    return m_minimumPower;
+}
+
+const QString &EshfMode::modeName() const
+{
+    return m_modeName;
+}
+
+void EshfMode::setModeName(const QString &newModeName)
+{
+    if (m_modeName == newModeName)
+        return;
+    m_modeName = newModeName;
+}
+
 
 SOCKET::SOCKET(SOCKET::SocType type) :
     m_coagModeIndex(0),
     m_cutModeIndex(0),
-    m_coagModePower(1),
-    m_cutModePower(1),
     m_socketType(type),
     m_socketStatus(S_ENABLED)
 {
@@ -99,104 +195,6 @@ void SOCKET::setSocketType(SOCKET::SocType newSocketType)
     m_socketType = newSocketType;
 }
 
-EshfMode::EshfMode(QString name,
-                   bool isCoag,
-                   int maximum,
-                   int minimum) :
-    m_maximumPower(maximum),
-    m_minimumPower(minimum),
-    m_currentPower(1),
-    m_modeName( name),
-    m_isCoag(isCoag)
-{
-    // Q_UNUSED(parent);
-}
-
-int EshfMode::maximumPower() const
-{
-    return m_maximumPower;
-}
-
-int EshfMode::currentPower() const
-{
-    return m_currentPower;
-}
-
-void EshfMode::setMaximumPower(int newMaximumPower)
-{
-    if (m_maximumPower == newMaximumPower)
-        return;
-    m_maximumPower = newMaximumPower;
-}
-
-bool EshfMode::isCoag() const
-{
-    return m_isCoag;
-}
-
-bool EshfMode::setCurrentpower(int newCurrentpower)
-{
-    if (newCurrentpower <= m_maximumPower
-        && newCurrentpower >= m_minimumPower) {
-        m_currentPower = newCurrentpower;
-        return true;
-    } else {
-        return false;
-    }
-}
-
-bool EshfMode::setParams(const QVariantMap &params)
-{
-    QString tmpName = params.value("name").toString();
-    int tmpMin = params.value("minpower").toInt();
-    int tmpMax = params.value("maxpower").toInt();
-    bool tmpIsCoag = params.value("iscoag").toBool();
-
-    //проверяяем что прислали изменения к нашему режиму и не пытаются поменять константы
-    if ((tmpName != m_modeName)
-        || (tmpIsCoag != m_isCoag)
-        || (tmpMin != m_minimumPower)
-        || (tmpMax != m_maximumPower))
-        return false;
-    int tmpCur = params.value("currentpower").toInt();
-    //проверяем что мощность удовлетворяет ограничениям
-    if ( (tmpCur >= m_minimumPower)
-        && (tmpCur <= m_maximumPower) ) {
-        m_currentPower = tmpCur;
-        return true;
-    }
-    return false;
-    // QVariantMap param
-}
-
-QVariantMap EshfMode::params() const
-{
-    QVariantMap res;
-    res["name"] = m_modeName;
-    res["currentpower"] = m_currentPower;
-    res["minpower"] = m_minimumPower;
-    res["maxpower"] = m_maximumPower;
-    res["iscoag"] = m_isCoag;
-    return res;
-}
-
-int EshfMode::minimumPower() const
-{
-    return m_minimumPower;
-}
-
-const QString &EshfMode::modeName() const
-{
-    return m_modeName;
-}
-
-void EshfMode::setModeName(const QString &newModeName)
-{
-    if (m_modeName == newModeName)
-        return;
-    m_modeName = newModeName;
-}
-
 SOCKET::SocStatus SOCKET::socketStatus() const
 {
     return m_socketStatus;
@@ -243,22 +241,15 @@ void SOCKET::setSocketName(const QString &newSocketName)
 
 QSharedPointer<const EshfMode> SOCKET::getMode(const QString &name) const
 {
-    QSharedPointer<const EshfMode> res =
-        getNonConstMode(name);
-    return res;
-}
-
-QSharedPointer<EshfMode> SOCKET::getNonConstMode(const QString &name) const
-{
     switch (checkMode(name)) {
     case CUT:
         if (m_cutModeNames.contains(name))
-            return m_cutModes[name];
+            return m_cutModes.value(name);
         else
             break;
     case COAG:
         if (m_coagModeNames.contains(name))
-            return m_coagModes[name];
+            return m_coagModes.value(name);
         else
             break;
 
@@ -270,7 +261,9 @@ QSharedPointer<EshfMode> SOCKET::getNonConstMode(const QString &name) const
 
 int SOCKET::coagModePower() const
 {
-    return m_coagModePower;
+    if (m_curCoagMode.isNull())
+        return 1;
+    return m_curCoagMode->currentPower();
 }
 
 bool SOCKET::setCoagModePower(int newCoagModePower)
@@ -280,7 +273,10 @@ bool SOCKET::setCoagModePower(int newCoagModePower)
 
 int SOCKET::cutModePower() const
 {
-    return m_cutModePower;
+    // return m_cutModePower;
+    if (m_curCutMode.isNull())
+        return 1;
+    return m_curCutMode->currentPower();
 }
 
 bool SOCKET::setCutModePower(int newCutModePower)
@@ -305,18 +301,28 @@ QSharedPointer<const EshfMode> SOCKET::getMode(const QString &name, ModeType typ
 
 }
 
+QSharedPointer<const EshfMode> SOCKET::curCutMode() const
+{
+    return m_curCutMode;
+}
+
+QSharedPointer<const EshfMode> SOCKET::curCoagMode() const
+{
+    return m_curCoagMode;
+}
+
 bool SOCKET::setModePower(int newPower, bool isCoag)
 {
     auto iter = isCoag
         ? m_coagModes.find(m_coagModeNames.at(m_coagModeIndex))
         : m_cutModes.find(m_cutModeNames.at(m_cutModeIndex));
 
-    if ((*iter)->setCurrentpower(newPower)) {
-        m_coagModePower = newPower;
+    if ((*iter)->setCurrentPower(newPower)) {
         return true;
     } else {
         return false;
     }
+    return false;
 }
 
 bool SOCKET::setModeIndex(int index, bool isCoag)
@@ -330,8 +336,8 @@ bool SOCKET::setModeIndex(int index, bool isCoag)
         return false;
     } else {
         compareIdx = index;
-        QSharedPointer<EshfMode> mode = isCoag ? m_coagModes[modeNames.at(compareIdx)] : m_cutModes[modeNames.at(compareIdx)];
-        (isCoag ? m_coagModePower : m_cutModePower) = mode->currentPower();
+        QSharedPointer<const EshfMode> mode = isCoag ? m_coagModes[modeNames.at(compareIdx)] : m_cutModes[modeNames.at(compareIdx)];
+        (isCoag ? m_curCoagMode : m_curCutMode) = mode;
         return true;
     }
 }

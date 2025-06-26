@@ -37,8 +37,10 @@ Column {
 
         // Frequency Control
         Label { text: qsTr("Инструмент") }
+
         RowLayout {
             Rectangle{
+                Layout.fillWidth: true
                 color: "magenta"
                 Text {
                     id: txt

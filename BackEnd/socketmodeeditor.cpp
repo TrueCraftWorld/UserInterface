@@ -17,7 +17,9 @@ void SocketModeEditor::initialize(const QString &socket, const QString &mode)
     m_originalModeIndex = m_modeNames.indexOf(mode);
     m_currentModeIndex = m_originalModeIndex;
     m_currentParameters = m_originalParameters;
+
     emit parametersLoaded();
+    emit currentParamsChanged();
 }
 
 void SocketModeEditor::loadModeParameters(int modeIndex)
@@ -88,15 +90,20 @@ void SocketModeEditor::setCurrentModeIndex(int index)
 {
     if (m_model->rowCount(QModelIndex()) >= index) {
         m_currentModeIndex = index;
+        loadModeParameters(index);
         checkChanges();
         emit currentModeIndexChanged();
+        emit currentParamsChanged();
     }
 }
 
 bool SocketModeEditor::checkChanges()
 {
-    bool tmp =( m_currentModeIndex != m_originalModeIndex /*||
-           !isParamsEqual(m_currentParameters, m_originalParameters)*/);
+    bool tmp = ( m_currentModeIndex != m_originalModeIndex /*||
+           !isParamsEqual(m_currentParameters, m_originalParameters)*/
+            || m_currentParameters.value("currentpower").toInt()
+                != m_originalParameters.value("currentpower").toInt());
+
     if (m_hasChanges != tmp) {
         m_hasChanges = tmp;
         emit hasChangesChanged();

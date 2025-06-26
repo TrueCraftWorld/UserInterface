@@ -20,7 +20,7 @@ Rectangle {
 
         SocketView {
             id: repeat
-            repeatModel: theModel
+            model: theModel
             containerMargins: layout.anchors.margins
             containerHeight: layout.height
             usedSpacing: layout.spacing

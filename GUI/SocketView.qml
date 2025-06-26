@@ -2,7 +2,6 @@ import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Window 2.15
 import QtQuick.Layouts 1.15
-// import StratifyLabs.UI 2.0
 import BackEnd 1.0
 
 
@@ -13,68 +12,72 @@ Repeater {
     required property int containerMargins
     required property int containerHeight
     required property int usedSpacing
-    // required property var editor
-    property alias repeatModel: repeatRoot.model
 
     signal socketDialogRequest(string socket, string mode)
-    // Repeater {
-    //     id: repeat
-        function calculateExpandedHeight() {
-            var totalFixedHeight = 0
-            var expandedCount = 0
-            var spacersHeight = (count) * repeatRoot.usedSpacing;
 
-            for (var i = 0; i < count; i++) {
-                if (itemAt(i).expanded) {
-                    expandedCount++
-                } else {
-                    totalFixedHeight += 40
-                }
+    function calculateExpandedHeight() {
+        var totalFixedHeight = 0
+        var expandedCount = 0
+        var spacersHeight = (count) * repeatRoot.usedSpacing;
+
+        for (var i = 0; i < count; i++) {
+            if (itemAt(i).expanded) {
+                expandedCount++
+            } else {
+                totalFixedHeight += 40
             }
-
-            return expandedCount > 0 ?
-                (repeatRoot.containerHeight -
-                    (totalFixedHeight + spacersHeight + repeatRoot.containerMargins*2))
-                        / expandedCount
-                : 0
         }
-        clip: true
 
-        delegate: Collapsible {
-            id: socketRoot
-            // property var view: ListView.view
-            headerHeight: 40
-            expanded: true
+        return expandedCount > 0 ?
+            (repeatRoot.containerHeight -
+                (totalFixedHeight + spacersHeight + repeatRoot.containerMargins*2))
+                    / expandedCount
+            : 0
+    }
 
-            Layout.fillWidth: true
-            Layout.alignment: Qt.AlignTop
-            Layout.preferredHeight: expanded ?
-                repeatRoot.calculateExpandedHeight() :
-                headerHeight
+    clip: true
 
-            title: model.socketname
+    delegate: Collapsible {
+        id: socketRoot
+        headerHeight: 40
+        expanded: true
 
-            contentItem: DummySocket {
-                id: soc
-                width: parent.width
-                height: socketRoot.expanded ?
-                            repeatRoot.calculateExpandedHeight() :
-                            0
+        Layout.fillWidth: true
+        Layout.alignment: Qt.AlignTop
+        Layout.preferredHeight: socketRoot.expanded ?
+                                    repeatRoot.calculateExpandedHeight() :
+                                    0
+        // Layout.preferredHeight: 150
 
-                cutModeName: model.cutmodename
-                coagModeName: model.coagmodename
-                cutModePower: "%1".arg(model.cutmodepower)
-                coagModePower: "%1".arg(model.coagmodepower)
+        title: model.socketname
+
+
+        contentItem: DummySocket {
+            property string cutName: model.cutmodename
+            property string coagName: model.coagmodename
+            property int cutPower: model.cutmodepower
+            property int coagPower: model.coagmodepower
+            id: soc
+            width: parent.width
+            // height: 150
+            height: socketRoot.expanded ?
+                        repeatRoot.calculateExpandedHeight() :
+                        0
+
+            cutModeName: cutName
+            coagModeName: coagName
+            cutModePower: cutPower
+            coagModePower: coagPower
+        }
+        Connections {
+            target: soc
+            function onCutEditDialogRequest() {
+                repeatRoot.socketDialogRequest(socketRoot.title, soc.cutModeName)
             }
-            Connections {
-                target: soc
-                function onCutEditDialogRequest() {
-                    repeatRoot.socketDialogRequest(socketRoot.title, soc.cutModeName)
-                }
-                function onCoagEditDialogRequest() {
-                    repeatRoot.socketDialogRequest(socketRoot.title, soc.coagModeName)
-                }
+            function onCoagEditDialogRequest() {
+                repeatRoot.socketDialogRequest(socketRoot.title, soc.coagModeName)
             }
         }
     }
-// }
+}
+

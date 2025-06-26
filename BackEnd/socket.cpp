@@ -117,6 +117,11 @@ int EshfMode::maximumPower() const
     return m_maximumPower;
 }
 
+int EshfMode::currentPower() const
+{
+    return m_currentPower;
+}
+
 void EshfMode::setMaximumPower(int newMaximumPower)
 {
     if (m_maximumPower == newMaximumPower)
@@ -325,6 +330,8 @@ bool SOCKET::setModeIndex(int index, bool isCoag)
         return false;
     } else {
         compareIdx = index;
+        QSharedPointer<EshfMode> mode = isCoag ? m_coagModes[modeNames.at(compareIdx)] : m_cutModes[modeNames.at(compareIdx)];
+        (isCoag ? m_coagModePower : m_cutModePower) = mode->currentPower();
         return true;
     }
 }
@@ -343,7 +350,7 @@ void SOCKET::setCoagModes(const QHash<QString, QSharedPointer<EshfMode> > &newCo
                           const QStringList &order)
 {
     m_coagModes = newCoagModes;
-    if (!order.isEmpty() && order.size() == m_coagModes.size()) {
+    if (!order.isEmpty()) {
         m_coagModeNames = sortByExample(m_coagModes.keys(), order);
     } else {
         m_coagModeNames = m_coagModes.keys();
@@ -354,91 +361,9 @@ void SOCKET::setCutModes(const QHash<QString, QSharedPointer<EshfMode> > &newCut
                          const QStringList &order)
 {
     m_cutModes = newCutModes;
-    if (!order.isEmpty() && order.size() == m_cutModes.size()) {
+    if (!order.isEmpty()) {
         m_cutModeNames = sortByExample(m_cutModes.keys(), order);
     } else {
         m_cutModeNames = m_cutModes.keys();
     }
 }
-
-// QSharedPointer<const EshfMode> SOCKET::getCoagMode(const QString &name) const
-// {
-//     return getMode(name, true);
-// }
-
-// QSharedPointer<const EshfMode> SOCKET::getCutMode(const QString &name) const
-// {
-//     return getMode(name, false);
-// }
-
-
-
-/*
-void SOCKET::generatingModeList(SOCKET* socket)
-{
-    int coagStart = 0;
-    int cutStart = 0;
-    int coagStop = 0;
-    int cutStop = 0;
-    switch (socket->socketType()) {
-    case SocType::EMPTY:
-        m_socketName = QString("EMPTY");
-        cutStart = 0;  cutStop = 0;
-        coagStart = 0;   coagStop = 0;
-        break;
-    case SocType::BIPOLAR_1:
-        m_socketName = QString("BIPOLAR 1");
-        cutStart = 1;  cutStop = 4+1;
-        coagStart = 5;   coagStop = 6+1;
-        break;
-    case SocType::BIPOLAR_2:
-        m_socketName = QString("BIPOLAR 2");
-        cutStart = 1;  cutStop = 4+1;
-        coagStart = 5;   coagStop = 7+1;
-        break;
-    case SocType::MONOPOLAR_1:
-        m_socketName = QString("MONOPOLAR 1");
-        cutStart = 8;   cutStop = 18+1;
-        coagStart = 19;   coagStop = 26+1;
-        break;
-    case SocType::MONOPOLAR_2:
-        m_socketName = QString("MONOPOLAR 2");
-        cutStart = 8;  cutStop = 18+1;
-        coagStart = 19;   coagStop = 22+1;
-        break;
-    }
-    cutModes.append(new EshfMode(modesNames[0], modesMaxPowers[0], false, this));
-    coagModes.append(new EshfMode(modesNames[0], modesMaxPowers[0],true, this));
-    QQmlEngine::setObjectOwnership(cutModes.last(), QQmlEngine::CppOwnership);
-    QQmlEngine::setObjectOwnership(coagModes.last(), QQmlEngine::CppOwnership);
-
-    for (int i = cutStart; i < cutStop; ++i) {
-        cutModes.append(new EshfMode(modesNames[i], modesMaxPowers[i], false, this));
-        QQmlEngine::setObjectOwnership(cutModes.last(), QQmlEngine::CppOwnership);
-        connect(cutModes.last(), &EshfMode::currentPowerChanged, this, &SOCKET::cutPowerChange);
-    }
-    for (int i = coagStart; i < coagStop; ++i) {
-        coagModes.append(new EshfMode(modesNames[i], modesMaxPowers[i], true, this));
-        QQmlEngine::setObjectOwnership(coagModes.last(), QQmlEngine::CppOwnership);
-        connect(coagModes.last(), &EshfMode::currentPowerChanged, this, &SOCKET::coagPowerChange);
-    }
-}
-*/
-
-// QByteArray SOCKET::outputInfo(SOCKET *changedSocket, bool isCoag)
-// {
-//     QByteArray message;
-//     int outNum = ((static_cast<int>(changedSocket->socketType()))*2 - (isCoag ? 0 : 1));
-//     int modeNum;
-//     EshfMode *changedMode;
-//     int power;
-
-//     // if (isCoag) changedMode = changedSocket->getCoagMode(changedSocket->coagModeIndex());
-//     // else changedMode = changedSocket->getCutMode(changedSocket->cutModeIndex());
-//     modeNum = modesNames.indexOf(changedMode->modeName());
-//     power = changedMode->currentPower();
-
-//     QString outputInfo = QString("O%1 %2 %3     \n").arg(outNum).arg(modeNum).arg(power);
-//     return message.append(outputInfo.toLatin1());
-// }
-

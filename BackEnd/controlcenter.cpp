@@ -4,6 +4,8 @@
 
 #include <QQmlEngine>
 
+
+
 ControlCenter::ControlCenter(QObject *parent)
     : QObject{parent},
     m_socketModel(new SocketModel),
@@ -103,23 +105,23 @@ void ControlCenter::defaultSocketInit()
             break;
         case SOCKET::BIPOLAR_1:
             socketName = QString("BIPOLAR 1");
-            cutStart = 1;  cutStop = 4+1;
-            coagStart = 5;   coagStop = 6+1;
+            cutStart = 1+1;  cutStop = 4+1+1;
+            coagStart = 5+1;   coagStop = 6+1+1;
             break;
         case SOCKET::BIPOLAR_2:
             socketName = QString("BIPOLAR 2");
-            cutStart = 1;  cutStop = 4+1;
-            coagStart = 5;   coagStop = 7+1;
+            cutStart = 1+1;  cutStop = 4+1+1;
+            coagStart = 5+1;   coagStop = 7+1+1;
             break;
         case SOCKET::MONOPOLAR_1:
             socketName = QString("MONOPOLAR 1");
-            cutStart = 8;   cutStop = 18+1;
-            coagStart = 19;   coagStop = 26+1;
+            cutStart = 8+1;   cutStop = 18+1+1;
+            coagStart = 19+1;   coagStop = 26+1+1;
             break;
         case SOCKET::MONOPOLAR_2:
             socketName = QString("MONOPOLAR 2");
-            cutStart = 8;  cutStop = 18+1;
-            coagStart = 19;   coagStop = 22+1;
+            cutStart = 8+1;  cutStop = 18+1+1;
+            coagStart = 19+1;   coagStop = 22+1+1;
             break;
         }
         socket->setSocketName(socketName);
@@ -127,9 +129,9 @@ void ControlCenter::defaultSocketInit()
                                                                          false,
                                                                          ESHF::modesMaxPowers[0],
                                                                          1));
-        coagModes.insert(ESHF::modesNames[0], QSharedPointer<EshfMode>::create(ESHF::modesNames[0],
+        coagModes.insert(ESHF::modesNames[1], QSharedPointer<EshfMode>::create(ESHF::modesNames[1],
                                                                                true,
-                                                                               ESHF::modesMaxPowers[0],
+                                                                               ESHF::modesMaxPowers[1],
                                                                                1));
 
         for (int j = cutStart; j < cutStop; ++j) {
@@ -144,8 +146,8 @@ void ControlCenter::defaultSocketInit()
                                                                                    ESHF::modesMaxPowers[j],
                                                                                    1));
         }
-        socket->setCoagModes(coagModes);
-        socket->setCutModes(cutModes);
+        socket->setCoagModes(coagModes, ESHF::modesNames);
+        socket->setCutModes(cutModes, ESHF::modesNames);
         socketList.append(socket);
     }
     m_socketModel->setItems(socketList);

@@ -5,11 +5,11 @@ Rectangle {
     id: socketRoot
     property string cutModeName
     property string coagModeName
-    property string cutModePower
-    property string coagModePower
+    property int cutModePower
+    property int coagModePower
 
     signal cutEditDialogRequest()
-    signal coagEditDialogRequset()
+    signal coagEditDialogRequest()
     // signal socketToggled(bool isEnabled)
 
     Rectangle {

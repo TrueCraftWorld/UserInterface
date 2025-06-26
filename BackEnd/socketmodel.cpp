@@ -54,7 +54,10 @@ QVariant SocketModel::data(const QModelIndex &index, int role) const
     case CutModeName:
         return socketItem.cutModeName();
     case CutModePower:
-        return socketItem.cutModePower();
+    {
+        int tmp = socketItem.cutModePower();
+        return tmp;
+    }
     case CutModeMinPower:
         return socketItem.getMode(socketItem.cutModeName())->minimumPower();
     case CutModeMaxPower:
@@ -147,12 +150,12 @@ void SocketModel::acceptChanges(const QString &socket, const QString &mode, int 
     case SOCKET::COAG:
         itemPtr->setCoagModeIndex(mode);
         itemPtr->setCoagModePower(power);
-        emit dataChanged(idx, idx);
+        emit dataChanged(idx, idx, {CoagModeIndex, CoagModePower});
         break;
     case SOCKET::CUT:
         itemPtr->setCutModeIndex(mode);
         itemPtr->setCoagModePower(power);
-        emit dataChanged(idx, idx);
+        emit dataChanged(idx, idx, {CutModeIndex, CutModePower});
         break;
     default:
         break;
@@ -168,25 +171,36 @@ bool SocketModel::commitModeChange(const QString &socket, const QString &mode, Q
         return false;
 
     QModelIndex idx = createIndex(m_items.indexOf(itemPtr), 0);
-
-    int check = itemPtr->checkMode(param.value("name").toString());
+    const QString modeName = param.value("name").toString();
+    // acceptChanges(socket, modeName, param.value("currentpower").toInt());
+    // return true;
+    int check = itemPtr->checkMode(modeName);
+    bool res = true;
     switch (check) {
     case SOCKET::COAG:
-        if (itemPtr->setCoagModeIndex(param.value("name").toString())) {
-            if (itemPtr->getNonConstMode(mode)->setParams(param)) {
-                emit dataChanged(idx, idx);
-                return true;
-            }
+
+        if (itemPtr->getNonConstMode(modeName)->setParams(param)) {
+            res = false;
         }
+        if (itemPtr->setCoagModeIndex(modeName)) {
+            res = false;
+        }
+        emit dataChanged(idx, idx, {CoagModeIndex, CoagModePower, CoagModeName});
+        // itemPtr->setSocketName(socket+"A");
+        // emit dataChanged(idx, idx, {SocketName});
+        return res;
         break;
     case SOCKET::CUT:
-        if (itemPtr->setCutModeIndex(param.value("name").toString())) {
-            if (itemPtr->getNonConstMode(param.value("name").toString())->setParams(param)) {
-                emit dataChanged(idx, idx);
-                return true;
-            }
+        if (itemPtr->getNonConstMode(modeName)->setParams(param)) {
+            res = false;
         }
-        break;
+        if (itemPtr->setCutModeIndex(modeName)) {
+            res = false;
+        }
+        emit dataChanged(idx, idx, {CutModeIndex, CutModePower, CutModeName});
+        // itemPtr->setSocketName(socket+"B");
+        // emit dataChanged(idx, idx, {SocketName});
+        return res;
     default:
         break;
     }

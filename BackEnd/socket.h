@@ -8,7 +8,7 @@
 #include <QSharedPointer>
 
 namespace ESHF {
-enum eshfModes	{ NO_MODE = 0, BI_BLEND=1,
+enum eshfModes	{ NO_CUT_MODE = 0, NO_COAG_MODE = 0, BI_BLEND=1,
                  BI_TUR=2, BI_ARTRO=3, BI_GISTERO=4,
                  BI_COAG=5, BI_COAG_DISS=6, TERMOSHOV=7,
                  CUT=8, BLEND=9, BLEND1=10, TUR=11, VAP=12,
@@ -18,7 +18,7 @@ enum eshfModes	{ NO_MODE = 0, BI_BLEND=1,
                  FULGUR_A=23, SPRAY_A=24,
                  FULGUR_P=25, SPRAY_P=26,
                  };
-const QStringList modesNames = { "NO MODE", "BI BLEND",
+const QStringList modesNames = { "NO CUT MODE", "NO COAG MODE", "BI BLEND",
                                 "BI TUR", "BI ARTRO", "BI GISTERO",
                                 "BI COAG", "BI COAG DISSECT", "TERMOSHOV",
                                 "CUT", "BLEND", "BLEND1", "TUR", "VAP",
@@ -29,7 +29,7 @@ const QStringList modesNames = { "NO MODE", "BI BLEND",
                                 "FULGUR PULSE ARGON", "SPRAY PULSE ARGON",
                                 };
 
-const QList<int> modesMaxPowers	{ 1, 75,
+const QList<int> modesMaxPowers	{ 1, 1, 75,
                                 8, 8, 8,
                                 150, 150, 5,
                                 400, 400, 150, 400, 400,
@@ -39,7 +39,7 @@ const QList<int> modesMaxPowers	{ 1, 75,
                                 150, 70,
                                 70, 70,
                                 };
-};
+}
 
 class EshfMode {
 public:

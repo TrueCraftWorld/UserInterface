@@ -58,7 +58,9 @@ void ControlCenter::initSockets()
 {
     ///todo read old socket (maybe Json or QSetting)
     if (readPreviousSocketSettings()) {
-
+        if (m_dbReader.isNull())
+            m_dbReader = new DataBaseReader("/home/kikorik/FOTEK/someShadyDB.db");
+        dataBaseSocketInit();
     } else {
         defaultSocketInit();
     }
@@ -95,8 +97,8 @@ void ControlCenter::defaultSocketInit()
         int coagStop = 0;
         int cutStop = 0;
         QString socketName = "";
-        QHash<QString, QSharedPointer<EshfMode>> cutModes;
-        QHash<QString, QSharedPointer<EshfMode>> coagModes;
+        QHash<QString, QSharedPointer<SurgicalMode>> cutModes;
+        QHash<QString, QSharedPointer<SurgicalMode>> coagModes;
         switch (socket->socketType()) {
         case SOCKET::EMPTY:
             socketName = QString("EMPTY");
@@ -125,23 +127,108 @@ void ControlCenter::defaultSocketInit()
             break;
         }
         socket->setSocketName(socketName);
-        cutModes.insert(ESHF::modesNames[0], QSharedPointer<EshfMode>::create(ESHF::modesNames[0],
+        cutModes.insert(ESHF::modesNames[0], QSharedPointer<SurgicalMode>::create(ESHF::modesNames[0],
                                                                          false,
                                                                          ESHF::modesMaxPowers[0],
                                                                          1));
-        coagModes.insert(ESHF::modesNames[1], QSharedPointer<EshfMode>::create(ESHF::modesNames[1],
+        coagModes.insert(ESHF::modesNames[1], QSharedPointer<SurgicalMode>::create(ESHF::modesNames[1],
                                                                                true,
                                                                                ESHF::modesMaxPowers[1],
                                                                                1));
 
         for (int j = cutStart; j < cutStop; ++j) {
-            cutModes.insert(ESHF::modesNames[j], QSharedPointer<EshfMode>::create(ESHF::modesNames[j],
+            cutModes.insert(ESHF::modesNames[j], QSharedPointer<SurgicalMode>::create(ESHF::modesNames[j],
                                                                                   false,
                                                                                   ESHF::modesMaxPowers[j],
                                                                                   1));
         }
         for (int j = coagStart; j < coagStop; ++j) {
-            coagModes.insert(ESHF::modesNames[j], QSharedPointer<EshfMode>::create(ESHF::modesNames[j],
+            coagModes.insert(ESHF::modesNames[j], QSharedPointer<SurgicalMode>::create(ESHF::modesNames[j],
+                                                                                   false,
+                                                                                   ESHF::modesMaxPowers[j],
+                                                                                   1));
+        }
+        socket->setCoagModes(coagModes, ESHF::modesNames);
+        socket->setCutModes(cutModes, ESHF::modesNames);
+        socketList.append(socket);
+    }
+    m_socketModel->setItems(socketList);
+}
+
+void ControlCenter::dataBaseSocketInit()
+{
+    QList<QSharedPointer<SOCKET>> socketList;
+
+    //may change count based on config later
+    //NEED to parallel cause it is on start and it does some nasty sorting
+    QString queryStr = "SELECT MaxPower, Name_RU FROM Modes Where BI_MONO = :%1, CUT_COAG = %2";
+
+    QList<QPair<int, int>> socketMagicNumbers {
+        {0, 1}, {0,0},
+        {0, 1}, {0,0},
+        {1, 1}, {1,0},
+        {1, 1}, {1,0},
+    };
+    for (int i = 0; i < 4; ++i) {
+        QSharedPointer<SOCKET> socket = QSharedPointer<SOCKET>::create(i < SOCKET::MONOPOLAR_2 ? SOCKET::SocType(i+1) : SOCKET::EMPTY);
+
+        QString cutQuery;
+        QString coagQuery;
+
+        int coagStart = 0;
+        int cutStart = 0;
+        int coagStop = 0;
+        int cutStop = 0;
+        QString socketName = "";
+        // QHash<QString, QSharedPointer<SurgicalMode>> cutModes;
+        // QHash<QString, QSharedPointer<SurgicalMode>> coagModes;
+        cutQuery = queryStr.arg(i/2).arg(1);
+        coagQuery = queryStr.arg(i/2).arg(0);
+
+        connect(m_dbReader, &DataBaseReader::signalResultReady, this, [] (const QString& query, const QVector<QVariant>& res) {
+            /* тут надоо отпарсить вектор векторов кувэриантов на предмет максимальной мощности и имени
+            * дальше по идее мы можем по имени каждого режима написать в него инструментов, обратившись к базе
+            * это составляет базовую настройку одного листа (при свободной загрузке это проще скопировать чем звать базу 4 раза)
+            *
+            **/
+        });
+
+        m_dbReader->slotSendQuery(cutQuery);
+        switch (socket->socketType()) {
+        case SOCKET::EMPTY:
+            socketName = QString("EMPTY");
+            break;
+        case SOCKET::BIPOLAR_1:
+            socketName = QString("BIPOLAR 1");
+            break;
+        case SOCKET::BIPOLAR_2:
+            socketName = QString("BIPOLAR 2");
+            break;
+        case SOCKET::MONOPOLAR_1:
+            socketName = QString("MONOPOLAR 1");
+            break;
+        case SOCKET::MONOPOLAR_2:
+            socketName = QString("MONOPOLAR 2");
+            break;
+        }
+        socket->setSocketName(socketName);
+        cutModes.insert(ESHF::modesNames[0], QSharedPointer<SurgicalMode>::create(ESHF::modesNames[0],
+                                                                         false,
+                                                                         ESHF::modesMaxPowers[0],
+                                                                         1));
+        coagModes.insert(ESHF::modesNames[1], QSharedPointer<SurgicalMode>::create(ESHF::modesNames[1],
+                                                                               true,
+                                                                               ESHF::modesMaxPowers[1],
+                                                                               1));
+
+        for (int j = cutStart; j < cutStop; ++j) {
+            cutModes.insert(ESHF::modesNames[j], QSharedPointer<SurgicalMode>::create(ESHF::modesNames[j],
+                                                                                  false,
+                                                                                  ESHF::modesMaxPowers[j],
+                                                                                  1));
+        }
+        for (int j = coagStart; j < coagStop; ++j) {
+            coagModes.insert(ESHF::modesNames[j], QSharedPointer<SurgicalMode>::create(ESHF::modesNames[j],
                                                                                    false,
                                                                                    ESHF::modesMaxPowers[j],
                                                                                    1));

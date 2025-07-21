@@ -6,6 +6,7 @@
 
 #include "BackEnd/socketmodeeditor.h"
 #include "socketmodel.h"
+#include "databasereader.h"
 
 
 /**
@@ -32,6 +33,7 @@ public:
 private:
     QPointer<SocketModel> m_socketModel;
     QPointer<SocketModeEditor> m_editor;
+    QPointer<DataBaseReader> m_dbReader;
     // some uart handler should be here
     void initComms();
     void initSockets();
@@ -41,6 +43,7 @@ private:
     bool readPreviousSocketSettings();
 
     void defaultSocketInit();
+    void dataBaseSocketInit();
 
 signals:
 };

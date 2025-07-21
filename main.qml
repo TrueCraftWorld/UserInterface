@@ -11,12 +11,13 @@ Window {
     width: 1280
     height: 800
     visible: true
-    title: qsTr("Hello World")
+    title: qsTr("Ты волшебник, Гарри!")
     color: "darkslategray"
 
     StatusBar {
         id: statusDummy
-        text: "Quick brown fox jumps over the lazy dog"
+        //я искал панграммы для русского и хорошо так посмеялся с эфы
+        text: qsTr("Вступив в бой с шипящими змеями — эфой и гадюкой — маленький, цепкий, храбрый ёж чуть не съел их")
         anchors {
             bottom: socketsDummy.top
             right: parent.right
@@ -119,6 +120,4 @@ Window {
     //         }
     //     }
     // }
-
-
 }

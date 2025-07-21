@@ -57,7 +57,7 @@ Popup {
             spacing: 10
 
             Button {
-                text: "Cancel"
+                text: qsTr("Отмена")
                 onClicked: {
                     modeEditor.rollBack()
                     root.close()
@@ -65,7 +65,7 @@ Popup {
             }
 
             Button {
-                text: "Apply"
+                text: qsTr("Принять")
                 enabled: modeEditor.hasChanges
                 onClicked: {
                     modeEditor.commitChanges()

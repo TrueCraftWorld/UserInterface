@@ -32,7 +32,6 @@ Rectangle {
         height: parent.height
         anchors.left: drawerButton.right
         anchors.right: saveButton.left
-
     }
     SButton {
         id: saveButton

@@ -6,6 +6,7 @@
 #include <QSqlDatabase>
 #include <QSqlQuery>
 #include <QSqlError>
+#include <QVariant>
 #include <QSharedPointer>
 
 class DataBaseReader : public QObject
@@ -14,12 +15,16 @@ class DataBaseReader : public QObject
 public:
     DataBaseReader(const QString& pathToDb);
     void slotSendQuery(const QString& queryStr, int valueNumbersAwaited = 1);
+    QList<QVariantList> slotSendSelectQuery(const QStringList &tables,
+                             const QStringList& columns,
+                             const QString& conditions);
 
 signals:
-    void signalResultReady(const QString& query, const QVector<QVariant>& res);
+    // void signalResultReady(const QString& query, const QVariantList res);
+    void signalResultReady(const QString& query, const QList<QVariantList> res);
 
 private:
-    QSharedPointer<QSqlDatabase> dbPointer;
+    // QSharedPointer<QSqlDatabase> dbPointer;
 
 };
 

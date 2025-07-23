@@ -5,41 +5,80 @@
 #include <QFutureWatcher>
 
 
+
 DataBaseReader::DataBaseReader(const QString& pathToDb)
     : QObject(nullptr)
 {
-    dbPointer = QSharedPointer<QSqlDatabase>::create("QSQLITE");
-    if (dbPointer.isNull())
-        return;
-    dbPointer->setDatabaseName(pathToDb);
-    if (!dbPointer->open());
-        return;
+    // dbPointer = new QSqlDatabase("QSQLITE");
+    QSqlDatabase someDb = QSqlDatabase::addDatabase("QSQLITE", "kurwa");
+    // someDb.addDatabase()
+    // someDb.set;
+    someDb.setDatabaseName(pathToDb);
+    someDb.open();
+    if (someDb.isOpen())
+        qDebug() << "at least";
 
 
 }
 
 void DataBaseReader::slotSendQuery(const QString &queryStr, int valueNumbersAwaited)
 {
-    QFuture<QVector<QVariant>> future = QtConcurrent::run([](QSharedPointer<QSqlDatabase> ptr, const QString &queryStr) {
-        QVector<QVariant> result;
-        // QSqlDatabase db = QSqlDatabase::database(); // Или создаем новое подключение
+    QList<QVariantList> result;
+    QSqlDatabase db = QSqlDatabase::database("kurwa"); // Или создаем новое подключение
+    db.open();
+    if (db.isOpen())
+        qDebug() << "at least";
 
-        QSqlQuery query(queryStr, *ptr);
-        while (query.next()) {
-            QVector<QVariant> singleRes;
-            for (int b:valueNumbersAwaited)
-                singleRes.append(query.value(b));
-            result.append(singleRes);
-        }
+    QSqlQuery query(db);
+    query.prepare(queryStr);
+    query.setForwardOnly(true);
 
-        return result;
-    });
+    if (!query.exec()) {
+        qDebug() << query.lastError().text();
+    }
 
-    QFutureWatcher<QVector<QVariant>> *watcher = new QFutureWatcher<QVector<QVariant>>(this);
-    connect(watcher, &QFutureWatcher<QVector<QVariant>>::finished, [this, watcher, &queryStr]() {
-        // QVector<Employee> employees = watcher->result();
-        // Обновление UI
-        emit signalResultReady(queryStr, watcher->result());
-    });
-    watcher->setFuture(future);
+    while (query.next()) {
+        QVariant res1 = query.value(0);
+        QVariant res2 = query.value(1);
+
+        result.append(QVariantList{res1, res2});
+    }
+
+
+    emit signalResultReady(queryStr, result);
+
+}
+
+QList<QVariantList> DataBaseReader::slotSendSelectQuery(const QStringList &tables,
+                                         const QStringList &columns,
+                                         const QString &conditions)
+{
+    QList<QVariantList> result;
+    QSqlDatabase db = QSqlDatabase::database("kurwa"); // Или создаем новое подключение
+    db.open();
+    if (db.isOpen())
+        qDebug() << "at least";
+
+    QSqlQuery query(db);
+    QString queryString("SELECT %1 FROM %2 WHERE %3");
+    QString tmp = queryString.arg(columns.join(',')).arg(tables.join(',')).arg(conditions);
+    query.prepare(tmp);
+    query.setForwardOnly(true);
+
+    if (!query.exec()) {
+        qDebug() << query.lastError().text();
+    }
+
+    int colCount = columns.size();
+    while (query.next()) {
+        QVariantList rowRes;
+        for (int i = 0; i < colCount; ++i)
+            rowRes.append(query.value(i));
+
+        result.append(rowRes);
+    }
+
+    return result;
+    // emit signalResultReady(queryStr, result);
+
 }

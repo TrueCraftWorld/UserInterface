@@ -49,13 +49,6 @@ Repeater {
         title: model.socketname
 
         contentItem: DummySocket {
-            // property string cutName: model.cutmodename
-            // property string coagName: model.coagmodename
-            // property int cutPower: model.cutmodepower
-            // property int coagPower: model.coagmodepower
-            // property int cutModeIndex: model.cutmodeindex
-            // property int coagModeIndex: model.coagmodeindex
-            // property int socketId: model.socketpolarity
             id: soc
             width: parent.width
             height: socketRoot.expanded ?
@@ -69,10 +62,6 @@ Repeater {
             cutModeIndex: model.cutmodeindex
             coagModeIndex: model.coagmodeindex
             socketId: model.socketpolarity
-            // cutModeName: cutName
-            // coagModeName: coagName
-            // cutModePower: cutPower
-            // coagModePower: coagPower
         }
         Connections {
             target: soc
@@ -81,9 +70,6 @@ Repeater {
             }
             function onCoagEditDialogRequest() {
                 repeatRoot.socketDialogRequest((soc.socketId - 1), soc.coagModeIndex, true)
-            }
-            function onCutPowerChanged() {
-                update()
             }
         }
 

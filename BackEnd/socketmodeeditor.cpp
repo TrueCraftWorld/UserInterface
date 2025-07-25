@@ -36,7 +36,7 @@ void SocketModeEditor::initialize(int socket, int mode, bool isCoag)
     m_originalModeIndex = mode;
     m_currentModeIndex = m_originalModeIndex;
     m_currentParameters = m_originalParameters;
-
+    m_hasChanges = false;
     emit parametersLoaded();
     emit currentParamsChanged();
 }

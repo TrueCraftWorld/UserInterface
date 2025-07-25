@@ -254,10 +254,10 @@ bool SOCKET::setModeIndex(int index, bool isCoag)
 {
     const QStringList& modeNames = isCoag ? m_coagModeNames : m_cutModeNames;
     int& compareIdx = isCoag ? m_coagModeIndex : m_cutModeIndex;
-
-    if ((index == compareIdx) ||
+    QSharedPointer<const SurgicalMode> curMode = isCoag ? m_curCoagMode : m_curCutMode;
+    if (((index == compareIdx) ||
         (index >= modeNames.size()) ||
-        (index < 0)) {
+        (index < 0)) && (!curMode.isNull())) {
         return false;
     } else {
         compareIdx = index;

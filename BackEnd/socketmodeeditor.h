@@ -19,7 +19,6 @@ class SocketModeEditor : public QObject
 public:
     explicit SocketModeEditor(SocketModel * model, QObject *parent = nullptr);
 
-    // Q_INVOKABLE void initialize(const QString& socket, const QString &mode);
     Q_INVOKABLE void initialize(int socket, int mode, bool isCoag);
     Q_INVOKABLE void loadModeParameters(int modeIndex);
     Q_INVOKABLE void updateCurrentParameters(const QVariantMap ms);

@@ -9,16 +9,12 @@
 DataBaseReader::DataBaseReader(const QString& pathToDb)
     : QObject(nullptr)
 {
-    // dbPointer = new QSqlDatabase("QSQLITE");
     QSqlDatabase someDb = QSqlDatabase::addDatabase("QSQLITE", "kurwa");
-    // someDb.addDatabase()
-    // someDb.set;
+
     someDb.setDatabaseName(pathToDb);
     someDb.open();
     if (someDb.isOpen())
         qDebug() << "at least";
-
-
 }
 
 void DataBaseReader::slotSendQuery(const QString &queryStr, int valueNumbersAwaited)

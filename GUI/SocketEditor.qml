@@ -40,7 +40,7 @@ Column {
             Rectangle{
                 Layout.fillWidth: true
                 height: 45
-                color: "magenta"
+                color: "darkslategray"
                 Text {
                     id: txt
                     text: qsTr("Здесь моя реклама")

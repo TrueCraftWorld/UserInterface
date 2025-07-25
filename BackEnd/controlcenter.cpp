@@ -1,7 +1,7 @@
 #include "controlcenter.h"
 #include "socket.h"
 
-
+#include <map>
 #include <QQmlEngine>
 
 
@@ -86,94 +86,92 @@ bool ControlCenter::readPreviousSocketSettings()
 
 void ControlCenter::defaultSocketInit()
 {
-    QList<QSharedPointer<SOCKET>> socketList;
+    // QList<QSharedPointer<SOCKET>> socketList;
+    // // std::map<int, QSharedPointer<SOCKET>> socketMap;
 
-    //may change count based on config later
-    //NEED to parallel cause it is on start and it does some nasty sorting
-    for (int i = 0; i < 4; ++i) {
-        QSharedPointer<SOCKET> socket = QSharedPointer<SOCKET>::create(i < SOCKET::MONOPOLAR_2 ? SOCKET::SocType(i+1) : SOCKET::EMPTY);
+    // //may change count based on config later
+    // //NEED to parallel cause it is on start and it does some nasty sorting
+    // for (int i = 0; i < 4; ++i) {
+    //     SOCKET::SocType type = SOCKET::SocType(i+1);
+    //     // socketMap.emplace(type, QSharedPointer<SOCKET>::create(type));
+    //     QSharedPointer<SOCKET> socket = QSharedPointer<SOCKET>::create(i < SOCKET::MONOPOLAR_2 ? SOCKET::SocType(i+1) : SOCKET::EMPTY);
 
-        int coagStart = 0;
-        int cutStart = 0;
-        int coagStop = 0;
-        int cutStop = 0;
-        QString socketName = "";
-        QHash<QString, QSharedPointer<SurgicalMode>> cutModes;
-        QHash<QString, QSharedPointer<SurgicalMode>> coagModes;
-        switch (socket->socketType()) {
-        case SOCKET::EMPTY:
-            socketName = QString("EMPTY");
-            cutStart = 0;  cutStop = 0;
-            coagStart = 0;   coagStop = 0;
-            break;
-        case SOCKET::BIPOLAR_1:
-            socketName = QString("BIPOLAR 1");
-            cutStart = 1+1;  cutStop = 4+1+1;
-            coagStart = 5+1;   coagStop = 6+1+1;
-            break;
-        case SOCKET::BIPOLAR_2:
-            socketName = QString("BIPOLAR 2");
-            cutStart = 1+1;  cutStop = 4+1+1;
-            coagStart = 5+1;   coagStop = 7+1+1;
-            break;
-        case SOCKET::MONOPOLAR_1:
-            socketName = QString("MONOPOLAR 1");
-            cutStart = 8+1;   cutStop = 18+1+1;
-            coagStart = 19+1;   coagStop = 26+1+1;
-            break;
-        case SOCKET::MONOPOLAR_2:
-            socketName = QString("MONOPOLAR 2");
-            cutStart = 8+1;  cutStop = 18+1+1;
-            coagStart = 19+1;   coagStop = 22+1+1;
-            break;
-        }
-        socket->setSocketName(socketName);
-        cutModes.insert(ESHF::modesNames[0], QSharedPointer<SurgicalMode>::create(ESHF::modesNames[0],
-                                                                         false,
-                                                                         ESHF::modesMaxPowers[0],
-                                                                         1));
-        coagModes.insert(ESHF::modesNames[1], QSharedPointer<SurgicalMode>::create(ESHF::modesNames[1],
-                                                                               true,
-                                                                               ESHF::modesMaxPowers[1],
-                                                                               1));
+    //     int coagStart = 0;
+    //     int cutStart = 0;
+    //     int coagStop = 0;
+    //     int cutStop = 0;
+    //     QString socketName = "";
+    //     QHash<QString, QSharedPointer<SurgicalMode>> cutModes;
+    //     QHash<QString, QSharedPointer<SurgicalMode>> coagModes;
+    //     switch (type) {
+    //     case SOCKET::EMPTY:
+    //         socketName = QString("EMPTY");
+    //         cutStart = 0;  cutStop = 0;
+    //         coagStart = 0;   coagStop = 0;
+    //         break;
+    //     case SOCKET::BIPOLAR_1:
+    //         socketName = QString("BIPOLAR 1");
+    //         cutStart = 1+1;  cutStop = 4+1+1;
+    //         coagStart = 5+1;   coagStop = 6+1+1;
+    //         break;
+    //     case SOCKET::BIPOLAR_2:
+    //         socketName = QString("BIPOLAR 2");
+    //         cutStart = 1+1;  cutStop = 4+1+1;
+    //         coagStart = 5+1;   coagStop = 7+1+1;
+    //         break;
+    //     case SOCKET::MONOPOLAR_1:
+    //         socketName = QString("MONOPOLAR 1");
+    //         cutStart = 8+1;   cutStop = 18+1+1;
+    //         coagStart = 19+1;   coagStop = 26+1+1;
+    //         break;
+    //     case SOCKET::MONOPOLAR_2:
+    //         socketName = QString("MONOPOLAR 2");
+    //         cutStart = 8+1;  cutStop = 18+1+1;
+    //         coagStart = 19+1;   coagStop = 22+1+1;
+    //         break;
+    //     }
+    //     socket->setSocketName(socketName);
+    //     cutModes.insert(ESHF::modesNames[0], QSharedPointer<SurgicalMode>::create(ESHF::modesNames[0],
+    //                                                                      false,
+    //                                                                      ESHF::modesMaxPowers[0],
+    //                                                                      1));
+    //     coagModes.insert(ESHF::modesNames[1], QSharedPointer<SurgicalMode>::create(ESHF::modesNames[1],
+    //                                                                            true,
+    //                                                                            ESHF::modesMaxPowers[1],
+    //                                                                            1));
 
-        for (int j = cutStart; j < cutStop; ++j) {
-            cutModes.insert(ESHF::modesNames[j], QSharedPointer<SurgicalMode>::create(ESHF::modesNames[j],
-                                                                                  false,
-                                                                                  ESHF::modesMaxPowers[j],
-                                                                                  1));
-        }
-        for (int j = coagStart; j < coagStop; ++j) {
-            coagModes.insert(ESHF::modesNames[j], QSharedPointer<SurgicalMode>::create(ESHF::modesNames[j],
-                                                                                   false,
-                                                                                   ESHF::modesMaxPowers[j],
-                                                                                   1));
-        }
-        socket->setCoagModes(coagModes, ESHF::modesNames);
-        socket->setCutModes(cutModes, ESHF::modesNames);
-        socketList.append(socket);
-    }
-    m_socketModel->setItems(socketList);
+    //     for (int j = cutStart; j < cutStop; ++j) {
+    //         cutModes.insert(ESHF::modesNames[j], QSharedPointer<SurgicalMode>::create(ESHF::modesNames[j],
+    //                                                                               false,
+    //                                                                               ESHF::modesMaxPowers[j],
+    //                                                                               1));
+    //     }
+    //     for (int j = coagStart; j < coagStop; ++j) {
+    //         coagModes.insert(ESHF::modesNames[j], QSharedPointer<SurgicalMode>::create(ESHF::modesNames[j],
+    //                                                                                false,
+    //                                                                                ESHF::modesMaxPowers[j],
+    //                                                                                1));
+    //     }
+    //     socket->setCoagModes(coagModes, ESHF::modesNames);
+    //     socket->setCutModes(cutModes, ESHF::modesNames);
+    //     socketList.append(socket);
+    // }
+    // m_socketModel->setItems(socketList);
 }
 
 void ControlCenter::dataBaseSocketInit()
 {
-    QList<QSharedPointer<SOCKET>> socketList;
+    std::map<int, QSharedPointer<SOCKET>> socketMap;
 
-    // ПОКА ТУТ НАПРЯМУЮ нАФИГАЧИМ
     QString queryCondition = "BI_MONO = %1 AND CUT_COAG = %2";
 
-    QList<QPair<int, int>> socketMagicNumbers {
-        {0, 1}, {0,0},
-        {0, 1}, {0,0},
-        {1, 1}, {1,0},
-        {1, 1}, {1,0},
-    };
     for (int i = 0; i < 4; ++i) {
-        QSharedPointer<SOCKET> socket = QSharedPointer<SOCKET>::create(i < SOCKET::MONOPOLAR_2 ? SOCKET::SocType(i+1) : SOCKET::EMPTY);
+        SOCKET::SocType type = SOCKET::SocType(i+1);
+        QSharedPointer<SOCKET> socket = QSharedPointer<SOCKET>::create(type);
+        socketMap[i] = socket;
 
         QString socketName = "";
-        switch (socket->socketType()) {
+        switch (type) {
         case SOCKET::EMPTY:
             socketName = QString("EMPTY");
             break;
@@ -194,6 +192,12 @@ void ControlCenter::dataBaseSocketInit()
         QHash<QString, QSharedPointer<SurgicalMode>> cutModes;
         QHash<QString, QSharedPointer<SurgicalMode>> coagModes;
 
+        QList<QVariantList> modeNamesListV = m_dbReader->slotSendSelectQuery(QStringList{"Modes"},
+                                                                            QStringList{"Name_RU"},
+                                                                            "");
+        QStringList modeNamesList;
+        for (const auto& iter : modeNamesListV)
+            modeNamesList.append(iter.at(0).toString());
         QList<QVariantList> cutModesList = m_dbReader->slotSendSelectQuery(QStringList{"Modes"},
                     QStringList{"MaxPower","Name_RU"},
                     queryCondition.arg(socket->socketType() <= SOCKET::BIPOLAR_2 ? 0 : 1).arg(1));
@@ -204,7 +208,7 @@ void ControlCenter::dataBaseSocketInit()
                                                                          false,
                                                                          1,
                                                                          1));
-        coagModes.insert(ESHF::modesNames[1], QSharedPointer<SurgicalMode>::create(ESHF::modesNames[1],
+        coagModes.insert(ESHF::modesNames[0], QSharedPointer<SurgicalMode>::create(ESHF::modesNames[0],
                                                                                true,
                                                                                1,
                                                                                1));
@@ -220,10 +224,9 @@ void ControlCenter::dataBaseSocketInit()
                                                                                         item.at(0).toInt(),
                                                                                         1));
         }
-        socket->setCoagModes(coagModes, ESHF::modesNames);
-        socket->setCutModes(cutModes, ESHF::modesNames);
+        socket->setCoagModes(coagModes, /*ESHF::modesNames*/modeNamesList);
+        socket->setCutModes(cutModes, /*ESHF::modesNames*/modeNamesList);
 
-        socketList.append(socket);
     }
-    m_socketModel->setItems(socketList);
+    m_socketModel->setItemsMap(socketMap);
 }

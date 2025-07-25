@@ -7,6 +7,9 @@ Rectangle {
     property string coagModeName
     property int cutModePower
     property int coagModePower
+    property int cutModeIndex
+    property int coagModeIndex
+    property int socketId
 
     signal cutEditDialogRequest()
     signal coagEditDialogRequest()

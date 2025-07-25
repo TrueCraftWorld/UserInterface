@@ -104,6 +104,7 @@ public:
     void setSocketName(const QString &newSocketName);
 
     QSharedPointer<const SurgicalMode> getMode(const QString& name) const;
+    QSharedPointer<const SurgicalMode> getMode(int modeIndex, bool isCoag) const;
 
     int coagModePower() const;
     bool setCoagModePower(int newCoagModePower);
@@ -139,8 +140,8 @@ private:
     bool setModePower(int newPower, bool isCoag);
     bool setModeIndex(int index, bool isCoag);
 
-    int m_coagModeIndex;
-    int m_cutModeIndex;
+    int m_coagModeIndex = 0;
+    int m_cutModeIndex = 0;
 
     // int m_coagModePower;
     // int m_cutModePower;

@@ -60,9 +60,16 @@ QList<QVariantList> DataBaseReader::slotSendSelectQuery(const QStringList &table
         qDebug() << "at least";
 
     QSqlQuery query(db);
-    QString queryString("SELECT %1 FROM %2 WHERE %3");
-    QString tmp = queryString.arg(columns.join(',')).arg(tables.join(',')).arg(conditions);
-    query.prepare(tmp);
+    if (conditions.isEmpty()) {
+        QString queryString("SELECT %1 FROM %2");
+        QString tmp = queryString.arg(columns.join(',')).arg(tables.join(','));
+        query.prepare(tmp);
+    } else {
+        QString queryString("SELECT %1 FROM %2 WHERE %3");
+        QString tmp = queryString.arg(columns.join(',')).arg(tables.join(',')).arg(conditions);
+        query.prepare(tmp);
+
+    }
     query.setForwardOnly(true);
 
     if (!query.exec()) {

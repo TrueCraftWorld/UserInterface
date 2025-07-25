@@ -13,10 +13,14 @@ Popup {
 
     property string socName: ""
     property string modeName: ""
+    property int socId: -1
+    property int modeIndex: -1
+    property bool isCoag: false
     property var modeEditor: Editor
 
     onOpened: {
-        modeEditor.initialize(socName, modeName)
+        // modeEditor.initialize(socName, modeName)
+        modeEditor.initialize(socId, modeIndex, isCoag)
         paramEditorLoader.active = true
     }
     onClosed: paramEditorLoader.active = false

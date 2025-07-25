@@ -35,9 +35,12 @@ Rectangle {
     }
     Connections{
         target: repeat
-        function onSocketDialogRequest(soc: string, mode: string) {
-            dialog.socName = soc
-            dialog.modeName = mode
+        function onSocketDialogRequest(soc, mode, isCoag) {
+            // dialog.socName = soc
+            // dialog.modeName = mode
+            dialog.socId = soc
+            dialog.modeIndex = mode
+            dialog.isCoag = isCoag
             dialog.open()
         }
     }

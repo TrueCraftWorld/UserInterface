@@ -7,14 +7,33 @@ SocketModeEditor::SocketModeEditor(SocketModel *model, QObject *parent)
 
 }
 
-void SocketModeEditor::initialize(const QString &socket, const QString &mode)
+// void SocketModeEditor::initialize(const QString &socket, const QString &mode)
+// {
+//     if (socket.isEmpty() || mode.isEmpty())
+//         return;
+//     m_modeNames = m_model->modeNames(socket, mode);
+//     m_originalParameters = m_model->modeParam(socket, mode);
+//     m_socketName = socket;
+//     m_originalModeIndex = m_modeNames.indexOf(mode);
+//     m_currentModeIndex = m_originalModeIndex;
+//     m_currentParameters = m_originalParameters;
+
+//     emit parametersLoaded();
+//     emit currentParamsChanged();
+// }
+
+void SocketModeEditor::initialize(int socket, int mode, bool isCoag)
 {
-    if (socket.isEmpty() || mode.isEmpty())
+    if (socket == -1|| mode == -1)
         return;
-    m_modeNames = m_model->modeNames(socket, mode);
-    m_originalParameters = m_model->modeParam(socket, mode);
+    m_isCoag = isCoag;
+    m_socketID = socket;
+    // m_modeNames = m_model->modeNames(socket, mode);
+    m_modeNames = m_model->modeNames(socket, isCoag);
+    m_originalParameters = m_model->modeParam(socket, mode, isCoag);
     m_socketName = socket;
-    m_originalModeIndex = m_modeNames.indexOf(mode);
+    // m_originalModeIndex = m_modeNames.indexOf(mode);
+    m_originalModeIndex = mode;
     m_currentModeIndex = m_originalModeIndex;
     m_currentParameters = m_originalParameters;
 
@@ -26,7 +45,7 @@ void SocketModeEditor::loadModeParameters(int modeIndex)
 {
     if (modeIndex >= m_modeNames.size())
         return;
-    m_currentParameters = m_model->modeParam(m_socketName, m_modeNames.at(modeIndex));
+    m_currentParameters = m_model->modeParam(m_socketID, /*m_modeNames.at*/(modeIndex), m_isCoag);
 }
 
 void SocketModeEditor::updateCurrentParameters(const QVariantMap ms)
@@ -55,8 +74,9 @@ void SocketModeEditor::commitChanges()
         // emit editingFinished(true);
 
     const bool success =
-            (m_model->commitModeChange(m_socketName,
-                                       m_modeNames.at(m_currentModeIndex),
+            (m_model->commitModeChange(m_socketID,
+                                       // m_modeNames.at(m_currentModeIndex),
+                                       m_currentModeIndex,
                                        m_currentParameters));
     emit editingFinished(success);
 }
@@ -88,7 +108,7 @@ int SocketModeEditor::currentModeIndex() const
 
 void SocketModeEditor::setCurrentModeIndex(int index)
 {
-    if (m_model->rowCount(QModelIndex()) >= index) {
+    if (m_modeNames.size() >= index) {
         m_currentModeIndex = index;
         loadModeParameters(index);
         checkChanges();
@@ -116,7 +136,7 @@ QVariantMap SocketModeEditor::fetchModeParameters(int modeIndex)
     if (modeIndex >= m_modeNames.size())
         return QVariantMap();
 
-    return m_model->modeParam(m_socketName, m_modeNames.at(modeIndex));
+    return m_model->modeParam(m_socketID, /*m_modeNames.at*/(modeIndex), m_isCoag);
 }
 
 bool SocketModeEditor::isParamsEqual(const QVariantMap &a, const QVariantMap &b) const

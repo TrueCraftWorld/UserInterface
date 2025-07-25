@@ -160,6 +160,16 @@ QSharedPointer<const SurgicalMode> SOCKET::getMode(const QString &name) const
     return nullptr;
 }
 
+QSharedPointer<const SurgicalMode> SOCKET::getMode(int modeIndex, bool isCoag) const
+{
+    bool hasMode = isCoag ? m_coagModeNames.size() > modeIndex : m_cutModeNames.size() > modeIndex;
+
+    if (!hasMode)
+        return nullptr;
+    const QString& name = isCoag ? m_coagModeNames.at(modeIndex) : m_cutModeNames.at(modeIndex);
+    return isCoag ? m_coagModes.value(name) : m_cutModes.value(name);
+}
+
 int SOCKET::coagModePower() const
 {
     if (m_curCoagMode.isNull())
@@ -169,7 +179,7 @@ int SOCKET::coagModePower() const
 
 bool SOCKET::setCoagModePower(int newCoagModePower)
 {
-    return setModePower(newCoagModePower, false);
+    return setModePower(newCoagModePower, true);
 }
 
 int SOCKET::cutModePower() const
@@ -276,6 +286,8 @@ void SOCKET::setCoagModes(const QHash<QString, QSharedPointer<SurgicalMode> > &n
     } else {
         m_coagModeNames = m_coagModes.keys();
     }
+    if (m_coagModeNames.size())
+        setCoagModeIndex(0);
 }
 
 void SOCKET::setCutModes(const QHash<QString, QSharedPointer<SurgicalMode> > &newCutModes,
@@ -287,4 +299,6 @@ void SOCKET::setCutModes(const QHash<QString, QSharedPointer<SurgicalMode> > &ne
     } else {
         m_cutModeNames = m_cutModes.keys();
     }
+    if (m_cutModeNames.size())
+        setCutModeIndex(0);
 }

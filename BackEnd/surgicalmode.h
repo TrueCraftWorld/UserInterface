@@ -17,7 +17,8 @@ enum eshfModes	{ NO_CUT_MODE = 0, NO_COAG_MODE = 0, BI_BLEND=1,
                  FULGUR_A=23, SPRAY_A=24,
                  FULGUR_P=25, SPRAY_P=26,
                  };
-const QStringList modesNames = { QObject::tr("РЕЖИМ РЕЗ НЕ ВЫБРАН"), QObject::tr("РЕЖИМ КОАГ НЕ ВЫБРАН"),
+const QStringList modesNames = { /*QObject::tr("РЕЖИМ РЕЗ НЕ ВЫБРАН"), QObject::tr("РЕЖИМ КОАГ НЕ ВЫБРАН"),*/
+                                 QObject::tr("РЕЖИМ НЕ ВЫБРАН"),
                                  QObject::tr("БИ-СМЕСЬ"),
                                  QObject::tr("БИ-ТУР"), QObject::tr("БИ-АРТРО"),
                                  QObject::tr("БИ-ГИСТЕРО"),
@@ -44,7 +45,7 @@ const QStringList modesNames = { QObject::tr("РЕЖИМ РЕЗ НЕ ВЫБРА�
 //                                  "FULGUR PULSE ARGON", "SPRAY PULSE ARGON",
 //                                };
 
-const QList<int> modesMaxPowers	{ 1, 1, 75,
+const QList<int> modesMaxPowers	{ 1, /*1,*/ 75,
                                 8, 8, 8,
                                 150, 150, 5,
                                 400, 400, 150, 400, 400,

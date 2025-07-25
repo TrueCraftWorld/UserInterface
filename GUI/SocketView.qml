@@ -12,7 +12,7 @@ Repeater {
     required property int containerHeight
     required property int usedSpacing
 
-    signal socketDialogRequest(string socket, string mode)
+    signal socketDialogRequest(int socketId, int modeIndex, bool isCoag)
 
     function calculateExpandedHeight() {
         var totalFixedHeight = 0
@@ -49,30 +49,44 @@ Repeater {
         title: model.socketname
 
         contentItem: DummySocket {
-            property string cutName: model.cutmodename
-            property string coagName: model.coagmodename
-            property int cutPower: model.cutmodepower
-            property int coagPower: model.coagmodepower
+            // property string cutName: model.cutmodename
+            // property string coagName: model.coagmodename
+            // property int cutPower: model.cutmodepower
+            // property int coagPower: model.coagmodepower
+            // property int cutModeIndex: model.cutmodeindex
+            // property int coagModeIndex: model.coagmodeindex
+            // property int socketId: model.socketpolarity
             id: soc
             width: parent.width
             height: socketRoot.expanded ?
                         repeatRoot.calculateExpandedHeight() :
                         0
 
-            cutModeName: cutName
-            coagModeName: coagName
-            cutModePower: cutPower
-            coagModePower: coagPower
+            cutModeName: model.cutmodename
+            coagModeName: model.coagmodename
+            cutModePower: model.cutmodepower
+            coagModePower: model.coagmodepower
+            cutModeIndex: model.cutmodeindex
+            coagModeIndex: model.coagmodeindex
+            socketId: model.socketpolarity
+            // cutModeName: cutName
+            // coagModeName: coagName
+            // cutModePower: cutPower
+            // coagModePower: coagPower
         }
         Connections {
             target: soc
             function onCutEditDialogRequest() {
-                repeatRoot.socketDialogRequest(socketRoot.title, soc.cutModeName)
+                repeatRoot.socketDialogRequest((soc.socketId - 1), soc.cutModeIndex, false)
             }
             function onCoagEditDialogRequest() {
-                repeatRoot.socketDialogRequest(socketRoot.title, soc.coagModeName)
+                repeatRoot.socketDialogRequest((soc.socketId - 1), soc.coagModeIndex, true)
+            }
+            function onCutPowerChanged() {
+                update()
             }
         }
+
     }
 }
 

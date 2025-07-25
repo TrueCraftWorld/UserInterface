@@ -19,7 +19,8 @@ class SocketModeEditor : public QObject
 public:
     explicit SocketModeEditor(SocketModel * model, QObject *parent = nullptr);
 
-    Q_INVOKABLE void initialize(const QString& socket, const QString &mode);
+    // Q_INVOKABLE void initialize(const QString& socket, const QString &mode);
+    Q_INVOKABLE void initialize(int socket, int mode, bool isCoag);
     Q_INVOKABLE void loadModeParameters(int modeIndex);
     Q_INVOKABLE void updateCurrentParameters(const QVariantMap ms);
     Q_INVOKABLE void updateParameter(const QString& paramName, const QVariant& value);
@@ -46,6 +47,7 @@ private:
     bool checkChanges();
 
     int m_socketRow;
+    int m_socketID;
     QStringList m_modeNames;
     QVariantMap m_currentParameters;
     QString m_socketName;
@@ -57,5 +59,6 @@ private:
 
     bool isParamsEqual(const QVariantMap& a, const QVariantMap& b) const;
     bool m_hasChanges;
+    bool m_isCoag;
 };
 #endif // SOCKETMODEEDITOR_H

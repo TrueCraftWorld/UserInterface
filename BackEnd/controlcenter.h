@@ -3,10 +3,13 @@
 
 #include <QObject>
 #include <QPointer>
+#include <map>
 
 #include "BackEnd/socketmodeeditor.h"
 #include "socketmodel.h"
 #include "databasereader.h"
+#include "instrument.h"
+#include "surgicalmode.h"
 
 
 /**
@@ -44,6 +47,8 @@ private:
 
     void defaultSocketInit();
     void dataBaseSocketInit();
+    std::map<int, std::map<int, InstrInfo>> getConstarints(const QList<int> &idList);
+    std::map<int, InstrPtr> getInstrums();
 
 signals:
 };

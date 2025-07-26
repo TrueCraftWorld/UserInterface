@@ -126,6 +126,25 @@ QStringList SocketModel::modeNames(int socketID, bool isCoag) const
     return isCoag ? iter->second->coagModeNames() : iter->second->cutModeNames();
 }
 
+QStringList SocketModel::instrumNames(int socketId, int modeIndex, bool isCoag)
+{
+    auto iter = m_itemsMap.find(socketId);
+    if (iter == m_itemsMap.end() || iter->second.isNull())
+        return {};
+
+    SockPtr sock = iter->second;
+    CSurgModePtr mode = sock->getMode(modeIndex, isCoag);
+    const std::map<int, InstrInfo>& compatible = mode->InstrConstraints();
+
+    QStringList names;
+    for (const auto&[key, item] : compatible) {
+        const auto instIter = m_instrumMap.find(item.id);
+        if (instIter != m_instrumMap.end())
+            names.append(instIter->second->name());
+    }
+    return names;
+}
+
 bool SocketModel::commitModeChange(int socketId, int modeINdex, const QVariantMap &param)
 {
     auto iter = m_itemsMap.find(socketId);
@@ -173,9 +192,9 @@ bool SocketModel::commitModeChange(int socketId, int modeINdex, const QVariantMa
     return false;
 }
 
-QSharedPointer<SOCKET> SocketModel::socketByName(const QString &socket) const
+SockPtr SocketModel::socketByName(const QString &socket) const
 {
-    QSharedPointer<SOCKET> itemPtr = nullptr;
+    SockPtr itemPtr = nullptr;
     for (auto& item : m_itemsMap) {
         if (item.second->socketName() == socket) {
             itemPtr = item.second;
@@ -185,7 +204,12 @@ QSharedPointer<SOCKET> SocketModel::socketByName(const QString &socket) const
     return itemPtr;
 }
 
-void SocketModel::setItemsMap(const std::map<int, QSharedPointer<SOCKET> > &newItemsMap)
+void SocketModel::setInstrumMap(const std::map<int, QSharedPointer<Instrument>> &newInstrumMap)
+{
+    m_instrumMap = newInstrumMap;
+}
+
+void SocketModel::setItemsMap(const std::map<int, SockPtr > &newItemsMap)
 {
     beginResetModel();
     m_itemsMap = newItemsMap;
@@ -203,27 +227,15 @@ void SocketModel::setItemsMap(const std::map<int, QSharedPointer<SOCKET> > &newI
 
 QHash<int, QByteArray> SocketModel::roleNames() const
 {
+    //грёбаная мета-магия, но это приятное
+    QMetaEnum metaEnum = QMetaEnum::fromType<SocketRoles>();
     static QHash<int, QByteArray> roles;
-    roles[SocketStatus] = "socketstatus";
-    roles[SocketName] = "socketname";
-    roles[SocketPolarity] = "socketpolarity";
-    roles[CoagModeIndex] = "coagmodeindex";
-    roles[CoagModeName] = "coagmodename";
-    roles[CoagModePower] = "coagmodepower";
-    roles[CoagModeMinPower] = "coagmodeminpower";
-    roles[CoagModeMaxPower] = "coagmodemaxpower";
-    roles[CoagModeInstrName] = "coagmodeinstrname";
-    roles[CoagModeInstrImage] = "coagmodeinstrimage";
-    roles[CoagModeInstrIndex] = "coagmodeinstrindex";
-    roles[CutModeIndex] = "cutmodeindex";
-    roles[CutModeName] = "cutmodename";
-    roles[CutModePower] = "cutmodepower";
-    roles[CutModeMinPower] = "cutmodeminpower";
-    roles[CutModeMaxPower] = "cutmodemaxpower";
-    roles[CutModeInstrName] = "cutmodeinstrname";
-    roles[CutModeInstrImage] = "cutmodeinstrimage";
-    roles[CutModeInstrIndex] = "cutmodeinstrindex";
-    roles[CutModesNames] = "cutmodesnames";
-    roles[CoagModesNames] = "coagmodesnames";
+    for (int k = 0; k < metaEnum.keyCount(); k++)
+    {
+        int roleKey = metaEnum.value(k);
+        QString roleName = metaEnum.valueToKey(roleKey);
+        roleName = roleName.toLower();
+        roles.insert(roleKey, roleName.toUtf8());
+    }
     return roles;
 }

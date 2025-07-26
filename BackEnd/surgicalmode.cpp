@@ -1,17 +1,21 @@
 #include "surgicalmode.h"
 
 
-SurgicalMode::SurgicalMode(QString name,
-                   bool isCoag,
-                   int maximum,
-                   int minimum) :
+SurgicalMode::SurgicalMode( const QString& name,
+                            bool isCoag,
+                            int maximum,
+                            int minimum,
+                            const std::map<int, InstrInfo>& _instrs) :
     m_maximumPower(maximum),
     m_minimumPower(minimum),
     m_currentPower(1),
     m_modeName( name),
-    m_isCoag(isCoag)
+    m_isCoag(isCoag),
+    m_InstrConstraints(_instrs)
 {
     // Q_UNUSED(parent);
+    if (m_InstrConstraints.size())
+        setSelectedInstrIndex(0);
 }
 
 int SurgicalMode::maximumPower() const
@@ -29,6 +33,59 @@ void SurgicalMode::setMaximumPower(int newMaximumPower)
     if (m_maximumPower == newMaximumPower)
         return;
     m_maximumPower = newMaximumPower;
+}
+
+int SurgicalMode::selectedInstrIndex() const
+{
+    return m_selectedInstrIndex;
+}
+
+void SurgicalMode::setSelectedInstrIndex(int newSelectedInstrIndex)
+{
+    if (newSelectedInstrIndex >= m_InstrConstraints.size())
+        return;
+    m_selectedInstrIndex = newSelectedInstrIndex;
+    //элементы map отсортированы по возрастанию ключа
+    for (const auto& iter : m_InstrConstraints) {
+        if (newSelectedInstrIndex == 0)
+            m_selectedInstrId = iter.second.id;
+        else
+            newSelectedInstrIndex--;
+    }
+}
+
+int SurgicalMode::selectedInstrId() const
+{
+    return m_selectedInstrId;
+}
+
+void SurgicalMode::setSelectedInstrId(int newSelectedInstrId)
+{
+    auto iter = m_InstrConstraints.find(newSelectedInstrId);
+
+    if (iter != m_InstrConstraints.end()) {
+        m_selectedInstrId = newSelectedInstrId;
+        int id = 0;
+        const InstrInfo& check = iter->second;
+        for (const auto& [key, item] : m_InstrConstraints)
+        {
+            if (check.id == item.id) {
+                m_selectedInstrIndex = id;
+                break;
+            }
+            id++;
+        }
+    }
+}
+
+std::map<int, InstrInfo> SurgicalMode::InstrConstraints() const
+{
+    return m_InstrConstraints;
+}
+
+void SurgicalMode::setInstrConstraints(const std::map<int, InstrInfo> &newInstrConstraints)
+{
+    m_InstrConstraints = newInstrConstraints;
 }
 
 bool SurgicalMode::isCoag() const
@@ -79,6 +136,8 @@ QVariantMap SurgicalMode::params() const
     res["minpower"] = m_minimumPower;
     res["maxpower"] = m_maximumPower;
     res["iscoag"] = m_isCoag;
+    res["instrid"] = m_selectedInstrId;
+    res["instrindex"] = m_selectedInstrIndex;
     return res;
 }
 

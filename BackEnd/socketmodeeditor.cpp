@@ -7,33 +7,19 @@ SocketModeEditor::SocketModeEditor(SocketModel *model, QObject *parent)
 
 }
 
-// void SocketModeEditor::initialize(const QString &socket, const QString &mode)
-// {
-//     if (socket.isEmpty() || mode.isEmpty())
-//         return;
-//     m_modeNames = m_model->modeNames(socket, mode);
-//     m_originalParameters = m_model->modeParam(socket, mode);
-//     m_socketName = socket;
-//     m_originalModeIndex = m_modeNames.indexOf(mode);
-//     m_currentModeIndex = m_originalModeIndex;
-//     m_currentParameters = m_originalParameters;
-
-//     emit parametersLoaded();
-//     emit currentParamsChanged();
-// }
-
 void SocketModeEditor::initialize(int socket, int mode, bool isCoag)
 {
     if (socket == -1|| mode == -1)
         return;
     m_isCoag = isCoag;
     m_socketID = socket;
-    // m_modeNames = m_model->modeNames(socket, mode);
     m_modeNames = m_model->modeNames(socket, isCoag);
     m_originalParameters = m_model->modeParam(socket, mode, isCoag);
-    m_socketName = socket;
-    // m_originalModeIndex = m_modeNames.indexOf(mode);
+    m_instrList = m_model->instrumNames(socket, mode, isCoag);
+
+    m_socketName = m_model->index(socket,0).data(SocketModel::SocketName).toString();
     m_originalModeIndex = mode;
+
     m_currentModeIndex = m_originalModeIndex;
     m_currentParameters = m_originalParameters;
     m_hasChanges = false;
@@ -124,11 +110,16 @@ bool SocketModeEditor::checkChanges()
             || m_currentParameters.value("currentpower").toInt()
                 != m_originalParameters.value("currentpower").toInt());
 
-    if (m_hasChanges != tmp) {
+    if (tmp && m_hasChanges != tmp) {
         m_hasChanges = tmp;
         emit hasChangesChanged();
     }
     return tmp;
+}
+
+QStringList SocketModeEditor::instrList() const
+{
+    return m_instrList;
 }
 
 QVariantMap SocketModeEditor::fetchModeParameters(int modeIndex)
@@ -175,4 +166,17 @@ bool SocketModeEditor::isParamsEqual(const QVariantMap &a, const QVariantMap &b)
 bool SocketModeEditor::hasChanges() const
 {
     return m_hasChanges;
+}
+
+int SocketModeEditor::currentInstrIndex() const
+{
+    return m_currentInstrIndex;
+    // return m_currentParameters.value("instrindex").toInt();
+}
+
+void SocketModeEditor::setCurrentInstrIndex(int newCurrentInstrIndex)
+{
+    m_currentInstrIndex = newCurrentInstrIndex;
+    updateParameter("instrindex", m_currentInstIndex);
+    emit currentInstrChanged();
 }

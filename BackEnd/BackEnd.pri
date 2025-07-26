@@ -4,6 +4,7 @@ QT += serialport multimedia sql concurrent
 HEADERS += \
     $$PWD/controlcenter.h \
     $$PWD/databasereader.h \
+    $$PWD/instrument.h \
     $$PWD/pedal.h \
     $$PWD/socket.h \
     $$PWD/socketmodeeditor.h \
@@ -14,6 +15,7 @@ HEADERS += \
 SOURCES += \
     $$PWD/controlcenter.cpp \
     $$PWD/databasereader.cpp \
+    $$PWD/instrument.cpp \
     $$PWD/pedal.cpp \
     $$PWD/socket.cpp \
     $$PWD/socketmodeeditor.cpp \

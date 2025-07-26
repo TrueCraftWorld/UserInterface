@@ -56,6 +56,14 @@ Popup {
             }
         }
 
+        ComboBox {
+            id: instrSelector
+            Layout.fillWidth: true
+            model: modeEditor.instrList
+            currentIndex: modeEditor.currentInstrIndex
+            onActivated: modeEditor.currentInstrIndex = index
+        }
+
         RowLayout {
             Layout.alignment: Qt.AlignRight
             spacing: 10

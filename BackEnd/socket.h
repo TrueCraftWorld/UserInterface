@@ -103,8 +103,8 @@ public:
     void setSocketStatus(SocStatus newSocketStatus);
     void setSocketName(const QString &newSocketName);
 
-    QSharedPointer<const SurgicalMode> getMode(const QString& name) const;
-    QSharedPointer<const SurgicalMode> getMode(int modeIndex, bool isCoag) const;
+    CSurgModePtr getMode(const QString& name) const;
+    CSurgModePtr getMode(int modeIndex, bool isCoag) const;
 
     int coagModePower() const;
     bool setCoagModePower(int newCoagModePower);
@@ -112,19 +112,19 @@ public:
     int cutModePower() const;
     bool setCutModePower(int newCutModePower);
 
-    void setCutModes(const QHash<QString, QSharedPointer<SurgicalMode> > &newCutModes,
+    void setCutModes(const QHash<QString, SurgModePtr > &newCutModes,
                      const QStringList& order = {""});
 
-    void setCoagModes(const QHash<QString, QSharedPointer<SurgicalMode> > &newCoagModes,
+    void setCoagModes(const QHash<QString, SurgModePtr > &newCoagModes,
                       const QStringList& order = {""});
 
     QStringList coagModeNames() const;
 
     QStringList cutModeNames() const;
 
-    QSharedPointer<const SurgicalMode> curCoagMode() const;
+    CSurgModePtr curCoagMode() const;
 
-    QSharedPointer<const SurgicalMode> curCutMode() const;
+    CSurgModePtr curCutMode() const;
 
     /**
      * @brief формарование байт-массива текущих настроек сокета
@@ -134,9 +134,9 @@ public:
 
 private:
 
-    QSharedPointer<const SurgicalMode> getMode(const QString& name, ModeType type) const;
-    QSharedPointer<const SurgicalMode> m_curCoagMode;
-    QSharedPointer<const SurgicalMode> m_curCutMode;
+    CSurgModePtr getMode(const QString& name, ModeType type) const;
+    CSurgModePtr m_curCoagMode;
+    CSurgModePtr m_curCutMode;
     bool setModePower(int newPower, bool isCoag);
     bool setModeIndex(int index, bool isCoag);
 
@@ -154,10 +154,12 @@ private:
     QStringList m_coagModeNames;
     QStringList m_cutModeNames;
 
-    QHash<QString, QSharedPointer<SurgicalMode>> m_cutModes;
-    QHash<QString, QSharedPointer<SurgicalMode>> m_coagModes;
+    QHash<QString, SurgModePtr> m_cutModes;
+    QHash<QString, SurgModePtr> m_coagModes;
 
     // QByteArray outputInfo(SOCKET *changedSocket, bool isCoag);
 };
+
+using SockPtr=QSharedPointer<SOCKET>;
 
 #endif // SOCKET_H

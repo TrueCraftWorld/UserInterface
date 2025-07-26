@@ -3,8 +3,11 @@
 
 #include <QString>
 #include <QVariantMap>
+#include <QSharedPointer>
 #include <QList>
 #include <QObject>
+
+#include <map>
 
 namespace ESHF {
 enum eshfModes	{ NO_CUT_MODE = 0, NO_COAG_MODE = 0, BI_BLEND=1,
@@ -57,14 +60,22 @@ const QList<int> modesMaxPowers	{ 1, /*1,*/ 75,
                                 };
 }
 
+struct InstrInfo {
+    int id;
+    int miniPower;
+    int midiPower;
+    int maxiPower;
+
+};
+
 class SurgicalMode {
 public:
 
-
-    SurgicalMode(QString name,
-             bool isCoag,
-             int maximum = 400,
-             int minimum = 1);
+    SurgicalMode(const QString& name,
+                bool isCoag,
+                int maximum = 400,
+                int minimum = 1,
+                const std::map<int, InstrInfo>& _instrs = {});
 
     explicit SurgicalMode()  :
         SurgicalMode("NoMode", false, 1, 1) {}
@@ -83,6 +94,18 @@ public:
 
     bool isCoag() const;
 
+    void setInstrConstraints(const std::map<int, InstrInfo> &newInstrConstraints);
+
+    std::map<int, InstrInfo> InstrConstraints() const;
+
+    QString curInstrName() const;
+
+    int selectedInstrId() const;
+    void setSelectedInstrId(int newSelectedInstrId);
+
+    int selectedInstrIndex() const;
+    void setSelectedInstrIndex(int newSelectedInstrIndex);
+
 private:
     void setModeName(const QString &newModeName);
     void setMaximumPower(int newMaximumPower);
@@ -91,7 +114,15 @@ private:
     int m_maximumPower;
     int m_minimumPower;
     int m_currentPower;
+    int m_selectedInstrId;
+    int m_selectedInstrIndex;
+    // QString m_curInstrN?ame;
     QString m_modeName;
     bool m_isCoag;
+    int m_id;
+    std::map<int, InstrInfo> m_InstrConstraints;
 };
+
+using SurgModePtr=QSharedPointer<SurgicalMode>;
+using CSurgModePtr=QSharedPointer<const SurgicalMode>;
 #endif // SURGICALMODE_H

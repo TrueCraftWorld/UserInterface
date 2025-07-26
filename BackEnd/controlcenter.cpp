@@ -5,7 +5,6 @@
 #include <QQmlEngine>
 
 
-
 ControlCenter::ControlCenter(QObject *parent)
     : QObject{parent},
     m_socketModel(new SocketModel),
@@ -160,13 +159,26 @@ void ControlCenter::defaultSocketInit()
 
 void ControlCenter::dataBaseSocketInit()
 {
-    std::map<int, QSharedPointer<SOCKET>> socketMap;
+    std::map<int, SockPtr> socketMap;
 
     QString queryCondition = "BI_MONO = %1 AND CUT_COAG = %2";
 
+    QList<QVariantList> modeNamesListV = m_dbReader->slotSendSelectQuery(QStringList{"Modes"},
+                                                                        QStringList{"Name_RU","id"},
+                                                                        "");
+    QStringList modeNamesList;
+    QList<int> modesIdList;
+    for (const auto& iter : modeNamesListV) {
+        modeNamesList.append(iter.at(0).toString());
+        modesIdList.append(iter.at(1).toInt());
+    }
+
+
+    std::map<int, std::map<int, InstrInfo>> instrConstraintsByMode = getConstarints(modesIdList);
+
     for (int i = 0; i < 4; ++i) {
         SOCKET::SocType type = SOCKET::SocType(i+1);
-        QSharedPointer<SOCKET> socket = QSharedPointer<SOCKET>::create(type);
+        SockPtr socket = SockPtr::create(type);
         socketMap[i] = socket;
 
         QString socketName = "";
@@ -188,44 +200,85 @@ void ControlCenter::dataBaseSocketInit()
             break;
         }
         socket->setSocketName(socketName);
-        QHash<QString, QSharedPointer<SurgicalMode>> cutModes;
-        QHash<QString, QSharedPointer<SurgicalMode>> coagModes;
+        QHash<QString, SurgModePtr> cutModes;
+        QHash<QString, SurgModePtr> coagModes;
 
-        QList<QVariantList> modeNamesListV = m_dbReader->slotSendSelectQuery(QStringList{"Modes"},
-                                                                            QStringList{"Name_RU"},
-                                                                            "");
-        QStringList modeNamesList;
-        for (const auto& iter : modeNamesListV)
-            modeNamesList.append(iter.at(0).toString());
+
         QList<QVariantList> cutModesList = m_dbReader->slotSendSelectQuery(QStringList{"Modes"},
                     QStringList{"MaxPower","Name_RU"},
                     queryCondition.arg(socket->socketType() <= SOCKET::BIPOLAR_2 ? 0 : 1).arg(1));
+
         QList<QVariantList> coagModesList = m_dbReader->slotSendSelectQuery(QStringList{"Modes"},
                     QStringList{"MaxPower","Name_RU"},
                     queryCondition.arg(socket->socketType() <= SOCKET::BIPOLAR_2 ? 0 : 1).arg(0));
-        cutModes.insert(ESHF::modesNames[0], QSharedPointer<SurgicalMode>::create(ESHF::modesNames[0],
+
+        cutModes.insert(ESHF::modesNames[0], SurgModePtr::create(ESHF::modesNames[0],
                                                                          false,
                                                                          1,
                                                                          1));
-        coagModes.insert(ESHF::modesNames[0], QSharedPointer<SurgicalMode>::create(ESHF::modesNames[0],
+        coagModes.insert(ESHF::modesNames[0], SurgModePtr::create(ESHF::modesNames[0],
                                                                                true,
                                                                                1,
                                                                                1));
         for (const auto& item : cutModesList) {
-            cutModes.insert(item.at(1).toString(), QSharedPointer<SurgicalMode>::create(item.at(1).toString(),
-                                                                                        false,
-                                                                                        item.at(0).toInt(),
-                                                                                        1));
+            cutModes.insert(item.at(1).toString(),
+                            SurgModePtr::create(item.at(1).toString(),
+                                                false,
+                                                item.at(0).toInt(),
+                                                1,
+                                                instrConstraintsByMode.at(modesIdList.at(modeNamesList.indexOf(item.at(1).toString())))));
         }
         for (const auto& item : coagModesList) {
-            coagModes.insert(item.at(1).toString(), QSharedPointer<SurgicalMode>::create(item.at(1).toString(),
-                                                                                        true,
-                                                                                        item.at(0).toInt(),
-                                                                                        1));
+            coagModes.insert(item.at(1).toString(),
+                             SurgModePtr::create(item.at(1).toString(),
+                                                true,
+                                                item.at(0).toInt(),
+                                                1,
+                                                instrConstraintsByMode.at(modesIdList.at(modeNamesList.indexOf(item.at(1).toString())))));
         }
         socket->setCoagModes(coagModes, /*ESHF::modesNames*/modeNamesList);
         socket->setCutModes(cutModes, /*ESHF::modesNames*/modeNamesList);
 
     }
     m_socketModel->setItemsMap(socketMap);
+    m_socketModel->setInstrumMap(getInstrums());
+
+}
+
+std::map<int, std::map<int, InstrInfo> > ControlCenter::getConstarints(const QList<int>& idList)
+{
+    std::map<int, std::map<int, InstrInfo> > result;
+    QString queryCondition = "Mode_ID = %1";
+
+    for (int i : idList) {
+        QList<QVariantList> intstrListForMode = m_dbReader->slotSendSelectQuery(QStringList{"ModInstr"},
+                                                                            QStringList{"Instr_ID","Min_Power","Mid_Power","Max_Power"},
+                                                                            queryCondition.arg(i));
+        std::map<int, InstrInfo>& modeMap = result[i];
+        for (const auto& item : intstrListForMode) {
+            modeMap.emplace(item.at(0).toInt(), InstrInfo{item.at(0).toInt(),
+                                                            item.at(1).toInt(),
+                                                            item.at(2).toInt(),
+                                                            item.at(3).toInt()});
+        }
+    }
+    return result;
+}
+
+std::map<int, InstrPtr > ControlCenter::getInstrums()
+{
+    std::map<int, InstrPtr> result;
+    QList<QVariantList> instrListForMode = m_dbReader->slotSendSelectQuery(QStringList{"Instruments"},
+                                                                        QStringList{"id","Num","BI_MONO","Name_Ru","Brief_Ru"},
+                                                                        "");
+    /* int id, int legacyNumber, const QString& name, bool mono */
+    for (const auto& item : instrListForMode) {
+        InstrPtr ptr = InstrPtr::create(item.at(0).toInt(),
+                                        item.at(1).toInt(),
+                                        item.at(3).toString(),
+                                        item.at(2).toInt() == 1 ? true : false);
+        ptr->setDescription(item.at(4).toString());
+        result[item.at(0).toInt()] = ptr;
+    }
+    return result;
 }

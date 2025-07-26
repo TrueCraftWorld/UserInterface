@@ -5,6 +5,7 @@
 #include <QObject>
 #include <QSharedPointer>
 #include <map>
+#include "instrument.h"
 
 #include "socket.h"
 
@@ -35,8 +36,10 @@ public:
         CutModesNames,
         CoagModesNames
     };
+    Q_ENUM(SocketRoles)
+
     explicit SocketModel(QObject *parent = nullptr);
-    void init(QList<QSharedPointer<SOCKET>> m_items );
+    void init(QList<SockPtr> m_items );
 
     // QAbstractItemModel interface
 public:
@@ -45,14 +48,16 @@ public:
     virtual bool setData(const QModelIndex &index, const QVariant &value, int role) override;
     Q_INVOKABLE QVariantMap modeParam(int socketId, int modeIndeex, bool isCoag) const;
     QStringList modeNames(int socketID, bool isCoag) const;
+    QStringList instrumNames(int socketId, int modeIndex, bool isCoag);
 
 public:
-    // Q_INVOKABLE void acceptChanges(int socket, int mode, int power, bool isCoag);
     bool commitModeChange(int socketId, int modeINdex, const QVariantMap& param);
-    QSharedPointer<SOCKET> socketByName(const QString& socket) const;
-    std::map<int, QSharedPointer<SOCKET>> m_itemsMap;
-    QStringList m_socketNames;
+    SockPtr socketByName(const QString& socket) const;
+
 private:
+    std::map<int, SockPtr> m_itemsMap;
+    std::map<int, QSharedPointer<Instrument>> m_instrumMap;
+    QStringList m_socketNames;
     // SocketModeEditor * editor;
 
 signals:
@@ -61,8 +66,9 @@ signals:
 
     // QAbstractItemModel interface
 public:
-    virtual QHash<int, QByteArray> roleNames() const override;
-    void setItemsMap(const std::map<int, QSharedPointer<SOCKET> > &newItemsMap);
+    virtual QHash<int, QByteArray> roleNames() const override final;
+    void setItemsMap(const std::map<int, SockPtr > &newItemsMap);
+    void setInstrumMap(const std::map<int, QSharedPointer<Instrument> > &newInstrumMap);
 };
 
 #endif // SOCKETMODEL_H

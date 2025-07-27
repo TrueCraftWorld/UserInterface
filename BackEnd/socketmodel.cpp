@@ -45,7 +45,7 @@ QVariant SocketModel::data(const QModelIndex &index, int role) const
     case CoagModeMinPower:
         return socketItem.curCoagMode()->minimumPower();
     case CoagModeMaxPower:
-        return socketItem.curCutMode()->maximumPower();
+        return socketItem.curCoagMode()->maximumPower();
 
         ///todo realize smthg
     case CoagModeInstrName:
@@ -60,9 +60,9 @@ QVariant SocketModel::data(const QModelIndex &index, int role) const
     case CutModePower:
         return socketItem.cutModePower();
     case CutModeMinPower:
-        return socketItem.getMode(socketItem.cutModeName())->minimumPower();
+        return socketItem.curCutMode()->minimumPower();
     case CutModeMaxPower:
-        return socketItem.getMode(socketItem.cutModeName())->maximumPower();
+        return socketItem.curCutMode()->maximumPower();
     case CoagModesNames:
         return socketItem.coagModeNames();
     case CutModesNames:

@@ -70,16 +70,6 @@ int SOCKET::checkMode(const QString &modeName) const
     return NONE;
 }
 
-bool SOCKET::setCoagModeIndex(const QString &coagModeName)
-{
-    return setCoagModeIndex(m_coagModeNames.indexOf(coagModeName));
-}
-
-bool SOCKET::setCutModeIndex(const QString &cutModeName)
-{
-    return setCutModeIndex(m_cutModeNames.indexOf(cutModeName));
-}
-
 SOCKET::SocType SOCKET::socketType() const
 {
     return m_socketType;
@@ -140,25 +130,6 @@ void SOCKET::setSocketName(const QString &newSocketName)
     m_socketName = newSocketName;
 }
 
-CSurgModePtr SOCKET::getMode(const QString &name) const
-{
-    switch (checkMode(name)) {
-    case CUT:
-        if (m_cutModeNames.contains(name))
-            return m_cutModes.value(name);
-        else
-            break;
-    case COAG:
-        if (m_coagModeNames.contains(name))
-            return m_coagModes.value(name);
-        else
-            break;
-
-    default:
-        break;
-    }
-    return nullptr;
-}
 
 CSurgModePtr SOCKET::getMode(int modeIndex, bool isCoag) const
 {

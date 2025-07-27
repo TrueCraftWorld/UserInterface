@@ -29,10 +29,25 @@ public:
      */
     static void registerControl();
 
+    /**
+     * @brief возвращает указатель на модель сокетов, используемоую для
+     * отображения и редактирования текущих режимов
+     * @return
+     */
     Q_INVOKABLE QPointer<SocketModel> getSocketModel() const;
+
+    /**
+     * @brief возвращает указатель на класс-редактор
+     * сокета для внемения изменений через QML
+     * @return
+     */
     QPointer<SocketModeEditor> editor() const;
 
+    /**
+     * @brief инициализация - чтение предыдущих настроек, загрузка режимов из БД и т.д.
+     */
     void init();
+
 private:
     QPointer<SocketModel> m_socketModel;
     QPointer<SocketModeEditor> m_editor;

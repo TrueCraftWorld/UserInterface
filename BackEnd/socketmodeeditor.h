@@ -10,12 +10,73 @@
 class SocketModeEditor : public QObject
 {
     Q_OBJECT
+    /**
+     * @property Q_PROPERTY(bool hasChanges READ hasChanges NOTIFY hasChangesChanged)
+     * @brief Флаг наличия изменений для сокета
+     *
+     * Это свойство содержит фдаг наличия изменения в настройках сокета по сравнению с изначальными
+     *
+     * @accessors hasChanges()
+     * @notifier hasChangesChanged()
+     */
     Q_PROPERTY(bool hasChanges READ hasChanges NOTIFY hasChangesChanged)
+
+    /**
+     * @property Q_PROPERTY(QStringList modeNames READ modeNames NOTIFY parametersLoaded)
+     * @brief Список имён режимов
+     *
+     * Это свойство содержит список доступных имён режимов для редактируемого сокета
+     *
+     * @accessors modeNames()
+     * @notifier parametersLoaded()
+     */
     Q_PROPERTY(QStringList modeNames READ modeNames NOTIFY parametersLoaded)
+
+    /**
+     * @property Q_PROPERTY(QStringList instrList READ instrList NOTIFY parametersLoaded)
+     * @brief Список имён доступных инструменто для выбранного режима
+     *
+     * @accessors instrList()
+     * @notifier parametersLoaded()
+     */
     Q_PROPERTY(QStringList instrList READ instrList NOTIFY parametersLoaded)
+
+    /**
+     * @property Q_PROPERTY(QString socketName READ socketName NOTIFY parametersLoaded)
+     * @brief Текущее имя редактируемого сокета
+     *
+     * @accessors socketName()
+     * @notifier parametersLoaded()
+     */
     Q_PROPERTY(QString socketName READ socketName NOTIFY parametersLoaded)
+
+    /**
+     * @property Q_PROPERTY(QVariantMap currentMode READ currentMode NOTIFY currentParamsChanged)
+     * @brief Полный перечень текущих настроек в диалоге
+     *
+     * Это свойство содержит QVariantMap всех настроек для редактируемого режима
+     *
+     * @accessors currentMode()
+     * @notifier currentParamsChanged()
+     */
     Q_PROPERTY(QVariantMap currentMode READ currentMode NOTIFY currentParamsChanged)
+
+    /**
+     * @property Q_PROPERTY(int currentModeIndex READ currentModeIndex WRITE setCurrentModeIndex NOTIFY currentModeIndexChanged)
+     * @brief Относительный индекс выбранного режима
+     *
+     * @accessors currentModeIndex(), setCurrentModeIndex
+     * @notifier currentModeIndexChanged()
+     */
     Q_PROPERTY(int currentModeIndex READ currentModeIndex WRITE setCurrentModeIndex NOTIFY currentModeIndexChanged)
+
+    /**
+     * @property Q_PROPERTY(int currentInstrIndex READ currentInstrIndex WRITE setCurrentInstrIndex NOTIFY currentInstrChanged)
+     * @brief Индекс выбранного инструмента
+     *
+     * @accessors currentInstrIndex(), setCurrentInstrIndex()
+     * @notifier currentInstrChanged()
+     */
     Q_PROPERTY(int currentInstrIndex READ currentInstrIndex WRITE setCurrentInstrIndex NOTIFY currentInstrChanged)
 
 public:
@@ -36,7 +97,6 @@ public:
     Q_INVOKABLE void setCurrentModeIndex(int index);
 
     Q_INVOKABLE bool hasChanges() const;
-
 
     int currentInstIndex() const;
 

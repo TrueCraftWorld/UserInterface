@@ -10,10 +10,13 @@ Rectangle {
     property int cutModeIndex
     property int coagModeIndex
     property int socketId
+    property int cutInstrumId
+    property int coagInstrumId
+    property string cutInstrumName: qsTr("не выбран")
+    property string coagInstrumName: qsTr("не выбран")
 
     signal cutEditDialogRequest()
     signal coagEditDialogRequest()
-    // signal socketToggled(bool isEnabled)
 
     Rectangle {
         id: cutMain
@@ -29,13 +32,11 @@ Rectangle {
         Label {
             id: cutMode
             text: cutModeName
-            // height: parent.height * .6
             font.pixelSize: 32
             font.bold: true
             color: "black"
             anchors {
                 left: parent.left
-                // right: cutBorder.left
                 top: parent.top
                 margins: 15
                 topMargin: 40
@@ -44,16 +45,26 @@ Rectangle {
         Label {
             id: cutPower
             text: cutModePower
-            // height: parent.height * .3
-            font.pixelSize: 32
+            font.pixelSize: 45
             font.bold: true
             color: "black"
             anchors {
                 left: parent.left
-                // right: cutBorder.left
                 top: cutMode.bottom
-                // bottom: parent.bottom
                 margins: 15
+            }
+        }
+        Label {
+            id: cutInstrum
+            text: cutInstrumName
+            font.pixelSize: 22
+            font.bold: true
+            color: "black"
+            anchors {
+                top: cutPower.top
+                left: cutPower.left
+                margins: 15
+                topMargin: 40
             }
         }
         MouseArea {
@@ -84,31 +95,38 @@ Rectangle {
             text: coagModeName
             font.pixelSize: 32
             font.bold: true
-            // height: parent.height * .6
             color: "white"
             anchors {
                 top: parent.top
-                // left: coagBorder.right
                 right: parent.right
                 margins: 15
-                topMargin: 40
             }
         }
         Label {
             id: coagPower
             text: coagModePower
-            // height: parent.height * .3
-            font.pixelSize: 32
+            font.pixelSize: 45
             font.bold: true
             color: "white"
             anchors {
-                // bottom: parent.bottom
                 top: coagMode.bottom
-                // left: coagBorder.right
                 right: parent.right
                 margins: 15
             }
         }
+        Label {
+            id: coagInstrum
+            text: coagInstrumName
+            font.pixelSize: 22
+            font.bold: true
+            color: "white"
+            anchors {
+                top: coagPower.top
+                right: coagPower.right
+                margins: 15
+            }
+        }
+
         MouseArea {
             anchors.fill: parent
             onClicked: socketRoot.coagEditDialogRequest()

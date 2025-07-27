@@ -256,10 +256,19 @@ std::map<int, std::map<int, InstrInfo> > ControlCenter::getConstarints(const QLi
                                                                             queryCondition.arg(i));
         std::map<int, InstrInfo>& modeMap = result[i];
         for (const auto& item : intstrListForMode) {
-            modeMap.emplace(item.at(0).toInt(), InstrInfo{item.at(0).toInt(),
-                                                            item.at(1).toInt(),
-                                                            item.at(2).toInt(),
-                                                            item.at(3).toInt()});
+            int a = item.at(0).toInt();
+            int b = item.at(1).toInt();
+            int c = item.at(2).toInt();
+            int d = item.at(3).toInt();
+            // modeMap.emplace(item.at(0).toInt(), InstrInfo{item.at(0).toInt(),
+            //                                                 item.at(1).toInt(),
+            //                                                 item.at(2).toInt(),
+            //                                                 item.at(3).toInt()});
+            InstrInfo bla = InstrInfo(a,
+                                      b,
+                                      c,
+                                      d);
+            modeMap[a] = bla;
         }
     }
     return result;

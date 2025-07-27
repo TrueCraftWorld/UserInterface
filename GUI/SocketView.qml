@@ -61,6 +61,8 @@ Repeater {
             coagModePower: model.coagmodepower
             cutModeIndex: model.cutmodeindex
             coagModeIndex: model.coagmodeindex
+            cutInstrumName: model.cutmodeinstrname
+            coagInstrumName: model.coagmodeinstrname
             socketId: model.socketpolarity
         }
         Connections {

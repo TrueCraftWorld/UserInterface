@@ -40,18 +40,21 @@ int SurgicalMode::selectedInstrIndex() const
     return m_selectedInstrIndex;
 }
 
-void SurgicalMode::setSelectedInstrIndex(int newSelectedInstrIndex)
+bool SurgicalMode::setSelectedInstrIndex(int newSelectedInstrIndex)
 {
     if (newSelectedInstrIndex >= m_InstrConstraints.size())
-        return;
+        return false;
     m_selectedInstrIndex = newSelectedInstrIndex;
     //элементы map отсортированы по возрастанию ключа
     for (const auto& iter : m_InstrConstraints) {
-        if (newSelectedInstrIndex == 0)
+        if (newSelectedInstrIndex == 0) {
             m_selectedInstrId = iter.second.id;
-        else
+            return true;
+        } else {
             newSelectedInstrIndex--;
+        }
     }
+    return false;
 }
 
 int SurgicalMode::selectedInstrId() const
@@ -59,7 +62,7 @@ int SurgicalMode::selectedInstrId() const
     return m_selectedInstrId;
 }
 
-void SurgicalMode::setSelectedInstrId(int newSelectedInstrId)
+bool SurgicalMode::setSelectedInstrId(int newSelectedInstrId)
 {
     auto iter = m_InstrConstraints.find(newSelectedInstrId);
 
@@ -71,11 +74,12 @@ void SurgicalMode::setSelectedInstrId(int newSelectedInstrId)
         {
             if (check.id == item.id) {
                 m_selectedInstrIndex = id;
-                break;
+                return true;
             }
             id++;
         }
     }
+    return false;
 }
 
 std::map<int, InstrInfo> SurgicalMode::InstrConstraints() const
@@ -110,6 +114,7 @@ bool SurgicalMode::setParams(const QVariantMap &params)
     int tmpMin = params.value("minpower").toInt();
     int tmpMax = params.value("maxpower").toInt();
     bool tmpIsCoag = params.value("iscoag").toBool();
+    int instrIndex = params.value("instrindex").toInt();
 
     //проверяяем что прислали изменения к нашему режиму и не пытаются поменять константы
     if ((tmpName != m_modeName)
@@ -118,6 +123,7 @@ bool SurgicalMode::setParams(const QVariantMap &params)
         || (tmpMax != m_maximumPower))
         return false;
     int tmpCur = params.value("currentpower").toInt();
+    setSelectedInstrIndex(instrIndex);
     //проверяем что мощность удовлетворяет ограничениям
     if ( (tmpCur >= m_minimumPower)
         && (tmpCur <= m_maximumPower) ) {

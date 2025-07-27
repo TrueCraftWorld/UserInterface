@@ -177,6 +177,6 @@ int SocketModeEditor::currentInstrIndex() const
 void SocketModeEditor::setCurrentInstrIndex(int newCurrentInstrIndex)
 {
     m_currentInstrIndex = newCurrentInstrIndex;
-    updateParameter("instrindex", m_currentInstIndex);
+    updateParameter("instrindex", m_currentInstrIndex);
     emit currentInstrChanged();
 }

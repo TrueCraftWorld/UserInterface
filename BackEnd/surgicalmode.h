@@ -65,7 +65,9 @@ struct InstrInfo {
     int miniPower;
     int midiPower;
     int maxiPower;
-
+    InstrInfo() = default;
+    InstrInfo(int _id, int min, int mid, int max)
+        : id(_id), miniPower(min), midiPower(mid), maxiPower(max) {;}
 };
 
 class SurgicalMode {
@@ -98,13 +100,13 @@ public:
 
     std::map<int, InstrInfo> InstrConstraints() const;
 
-    QString curInstrName() const;
+    // QString curInstrName() const;
 
     int selectedInstrId() const;
-    void setSelectedInstrId(int newSelectedInstrId);
+    bool setSelectedInstrId(int newSelectedInstrId);
 
     int selectedInstrIndex() const;
-    void setSelectedInstrIndex(int newSelectedInstrIndex);
+    bool setSelectedInstrIndex(int newSelectedInstrIndex);
 
 private:
     void setModeName(const QString &newModeName);

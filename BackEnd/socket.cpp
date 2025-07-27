@@ -202,6 +202,22 @@ QByteArray SOCKET::toByteArray()
     return res;
 }
 
+bool SOCKET::setInstrumIndex(int index, bool isCoag)
+{
+    QHash<QString, SurgModePtr>& modes = isCoag ? m_coagModes : m_cutModes;
+    int curModeIdx = isCoag ? m_coagModeIndex : m_cutModeIndex;
+    QStringList& names = isCoag ? m_coagModeNames : m_cutModeNames;
+
+    if (curModeIdx >= names.size())
+        return false;
+
+    const QString& name = names.at(curModeIdx);
+
+    SurgModePtr mode = modes[name];
+
+    return mode->setSelectedInstrIndex(index);
+}
+
 CSurgModePtr SOCKET::curCoagMode() const
 {
     return m_curCoagMode;

@@ -222,6 +222,8 @@ public:
      */
     QByteArray toByteArray();
 
+    bool setInstrumIndex(int index, bool isCoag);
+
 private:
 
     CSurgModePtr getMode(const QString& name, ModeType type) const;

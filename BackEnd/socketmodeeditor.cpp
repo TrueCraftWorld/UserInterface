@@ -22,6 +22,10 @@ void SocketModeEditor::initialize(int socket, int mode, bool isCoag)
 
     m_currentModeIndex = m_originalModeIndex;
     m_currentParameters = m_originalParameters;
+
+    m_currentInstrIndex = m_model->index(socket,0).data(m_isCoag ? SocketModel::CoagModeInstrIndex
+                                                               : SocketModel::CutModeInstrIndex).toInt();
+
     m_hasChanges = false;
     emit parametersLoaded();
     emit currentParamsChanged();
@@ -32,6 +36,12 @@ void SocketModeEditor::loadModeParameters(int modeIndex)
     if (modeIndex >= m_modeNames.size())
         return;
     m_currentParameters = m_model->modeParam(m_socketID, /*m_modeNames.at*/(modeIndex), m_isCoag);
+    m_instrList = m_model->instrumNames(m_socketID, modeIndex, m_isCoag);
+
+    emit parametersLoaded();
+
+    setCurrentInstrIndex(m_model->index(m_socketID,0).data(m_isCoag ? SocketModel::CoagModeInstrIndex
+                                                              : SocketModel::CutModeInstrIndex).toInt());
 }
 
 void SocketModeEditor::updateCurrentParameters(const QVariantMap ms)

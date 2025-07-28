@@ -57,14 +57,14 @@ Rectangle {
         Label {
             id: cutInstrum
             text: cutInstrumName
-            font.pixelSize: 22
+            font.pixelSize: 14
             font.bold: true
             color: "black"
             anchors {
                 top: cutPower.top
                 left: cutPower.left
                 margins: 15
-                topMargin: 40
+                topMargin: 0
             }
         }
         MouseArea {
@@ -117,13 +117,14 @@ Rectangle {
         Label {
             id: coagInstrum
             text: coagInstrumName
-            font.pixelSize: 22
+            font.pixelSize: 14
             font.bold: true
             color: "white"
             anchors {
                 top: coagPower.top
                 right: coagPower.right
                 margins: 15
+                topMargin: 0
             }
         }
 

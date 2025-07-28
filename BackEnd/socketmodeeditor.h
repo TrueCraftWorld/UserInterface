@@ -126,7 +126,7 @@ private:
     QString m_socketName;
     int m_currentModeIndex = -1;
     int m_originalModeIndex = -1;
-    int m_currentInstIndex = -1;
+    int m_currentInstrIndex = -1;
     QVariantMap m_originalParameters;
     QVariantMap fetchModeParameters(int modeIndex);
     SocketModel * m_model;
@@ -134,6 +134,5 @@ private:
     bool isParamsEqual(const QVariantMap& a, const QVariantMap& b) const;
     bool m_hasChanges;
     bool m_isCoag;
-    int m_currentInstrIndex;
 };
 #endif // SOCKETMODEEDITOR_H

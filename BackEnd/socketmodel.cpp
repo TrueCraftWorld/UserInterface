@@ -203,7 +203,7 @@ bool SocketModel::commitModeChange(int socketId, int modeINdex, const QVariantMa
             roles.append(CutModePower);
             res = true;
         }
-        if (iter->second->setInstrumIndex(param.value("instrindex").toInt(), true)) {
+        if (iter->second->setInstrumIndex(param.value("instrindex").toInt(), false)) {
             roles.append(CutModeInstrName);
             roles.append(CutModeInstrIndex);
             res = true;

@@ -53,6 +53,7 @@ public:
 public:
     bool commitModeChange(int socketId, int modeINdex, const QVariantMap& param);
     SockPtr socketByName(const QString& socket) const;
+    SockPtr socketById(int id) const;
 
 private:
     std::map<int, SockPtr> m_itemsMap;

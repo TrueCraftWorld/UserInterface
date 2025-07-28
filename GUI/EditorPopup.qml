@@ -23,6 +23,11 @@ Popup {
         modeEditor.initialize(socId, modeIndex, isCoag)
         paramEditorLoader.active = true
     }
+
+    function setPower(power) {
+        modeEditor.updateParameter("currentpower", Number(power))
+    }
+
     onClosed: paramEditorLoader.active = false
 
     ColumnLayout {
@@ -52,7 +57,10 @@ Popup {
                 id: paramEditorLoader
                 width: parent.width
                 active: false
-                sourceComponent: SocketEditor {}
+                sourceComponent:
+                    SocketEditor {
+                        instrImageName: "" //тут нужно будет обращение к imageprovider
+                }
             }
         }
 
@@ -64,6 +72,41 @@ Popup {
             onActivated: modeEditor.currentInstrIndex = index
         }
 
+
+        RowLayout {
+            Layout.alignment: Qt.AlignCenter
+            spacing: 10
+
+            Button {
+                id: lowPower
+                visible: text != '0'
+                text: modeEditor.lowPowerBound
+                // background.c: "blue"
+                // color: "blue"
+                onClicked: {
+                    root.setPower(text);
+                }
+            }
+
+            Button {
+                id: midPower
+                text: modeEditor.midPowerBound
+                visible: text != '0'
+                // background: "lightgreen"
+                onClicked: {
+                    root.setPower(text);
+                }
+            }
+            Button {
+                id: maxPower
+                text: modeEditor.highPowerBound
+                visible: text != '0'
+                // background: "lightred"
+                onClicked: {
+                    root.setPower(text);
+                }
+            }
+        }
         RowLayout {
             Layout.alignment: Qt.AlignRight
             spacing: 10

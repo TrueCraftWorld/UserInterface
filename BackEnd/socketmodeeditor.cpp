@@ -1,5 +1,7 @@
 #include "socketmodeeditor.h"
 
+#include <optional>
+
 SocketModeEditor::SocketModeEditor(SocketModel *model, QObject *parent)
     : QObject{parent},
     m_model{model}
@@ -66,12 +68,8 @@ void SocketModeEditor::updateParameter(const QString &paramName, const QVariant 
 
 void SocketModeEditor::commitChanges()
 {
-    // if (!checkChanges())
-        // emit editingFinished(true);
-
     const bool success =
             (m_model->commitModeChange(m_socketID,
-                                       // m_modeNames.at(m_currentModeIndex),
                                        m_currentModeIndex,
                                        m_currentParameters));
     emit editingFinished(success);
@@ -166,7 +164,7 @@ bool SocketModeEditor::isParamsEqual(const QVariantMap &a, const QVariantMap &b)
             break;
         }
         // тут нужна конверсия названия полей интересующих нас в типы для явного сравнения
-        //
+        // или type_traits для сравнения только одинаковых типов имеющих оператор ==
         // if (aValueRef.() != bValueRef.value())
     }
     return isEqual;
@@ -181,12 +179,37 @@ bool SocketModeEditor::hasChanges() const
 int SocketModeEditor::currentInstrIndex() const
 {
     return m_currentInstrIndex;
-    // return m_currentParameters.value("instrindex").toInt();
 }
 
 void SocketModeEditor::setCurrentInstrIndex(int newCurrentInstrIndex)
 {
     m_currentInstrIndex = newCurrentInstrIndex;
     updateParameter("instrindex", m_currentInstrIndex);
+
+    CSurgModePtr mode = m_model->socketById(m_socketID)->getMode(m_currentModeIndex, m_isCoag);
+    std::optional<InstrInfo> info = mode->getConstraints(m_currentInstrIndex);
+    if (info != std::nullopt) {
+        m_lowPowerBound = info->miniPower;
+        m_midPowerBound = info->midiPower;
+        m_highPowerBound = info->maxiPower;
+    } else {
+        m_lowPowerBound = m_midPowerBound = m_highPowerBound = 0;
+    }
+
     emit currentInstrChanged();
+}
+
+int SocketModeEditor::lowPowerBound() const
+{
+    return m_lowPowerBound;
+}
+
+int SocketModeEditor::midPowerBound() const
+{
+    return m_midPowerBound;
+}
+
+int SocketModeEditor::highPowerBound() const
+{
+    return m_highPowerBound;
 }

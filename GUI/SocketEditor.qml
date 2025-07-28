@@ -9,6 +9,7 @@ Column {
     spacing: 10
 
     property var editor: Editor
+    property string instrImageName
 
     GridLayout {
         width: parent.width
@@ -46,6 +47,10 @@ Column {
                     text: qsTr("Здесь моя реклама")
                     anchors.centerIn: parent
                     color: "green"
+                }
+                Image {
+                    id: instrImage
+                    source: ""
                 }
             }
 

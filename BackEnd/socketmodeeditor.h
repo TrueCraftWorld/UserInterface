@@ -79,6 +79,11 @@ class SocketModeEditor : public QObject
      */
     Q_PROPERTY(int currentInstrIndex READ currentInstrIndex WRITE setCurrentInstrIndex NOTIFY currentInstrChanged)
 
+
+    Q_PROPERTY(int lowPowerBound READ lowPowerBound NOTIFY currentInstrChanged)
+    Q_PROPERTY(int midPowerBound READ midPowerBound NOTIFY currentInstrChanged)
+    Q_PROPERTY(int highPowerBound READ highPowerBound NOTIFY currentInstrChanged)
+
 public:
     explicit SocketModeEditor(SocketModel * model, QObject *parent = nullptr);
 
@@ -104,6 +109,12 @@ public:
 
     int currentInstrIndex() const;
     void setCurrentInstrIndex(int newCurrentInstrIndex);
+
+    int lowPowerBound() const;
+
+    int midPowerBound() const;
+
+    int highPowerBound() const;
 
 signals:
     void currentParamsChanged();
@@ -134,5 +145,8 @@ private:
     bool isParamsEqual(const QVariantMap& a, const QVariantMap& b) const;
     bool m_hasChanges;
     bool m_isCoag;
+    int m_lowPowerBound;
+    int m_midPowerBound;
+    int m_highPowerBound;
 };
 #endif // SOCKETMODEEDITOR_H

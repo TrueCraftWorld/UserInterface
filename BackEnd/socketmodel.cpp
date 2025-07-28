@@ -229,6 +229,14 @@ SockPtr SocketModel::socketByName(const QString &socket) const
     return itemPtr;
 }
 
+SockPtr SocketModel::socketById(int id) const
+{
+    auto iter = m_itemsMap.find(id);
+    if (iter == m_itemsMap.end())
+        return nullptr;
+    return iter->second;
+}
+
 void SocketModel::setInstrumMap(const std::map<int, QSharedPointer<Instrument>> &newInstrumMap)
 {
     m_instrumMap = newInstrumMap;

@@ -87,6 +87,21 @@ std::map<int, InstrInfo> SurgicalMode::InstrConstraints() const
     return m_InstrConstraints;
 }
 
+std::optional<InstrInfo> SurgicalMode::getConstraints(int index) const
+{
+    if (index >= m_InstrConstraints.size())
+        return std::nullopt;
+    //элементы map отсортированы по возрастанию ключа
+    for (const auto& iter : m_InstrConstraints) {
+        if (index == 0) {
+            return iter.second;
+        } else {
+            index--;
+        }
+    }
+    return std::nullopt;
+}
+
 void SurgicalMode::setInstrConstraints(const std::map<int, InstrInfo> &newInstrConstraints)
 {
     m_InstrConstraints = newInstrConstraints;

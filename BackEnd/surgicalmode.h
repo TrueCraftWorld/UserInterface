@@ -8,6 +8,7 @@
 #include <QObject>
 
 #include <map>
+#include <optional>
 
 namespace ESHF {
 enum eshfModes	{ NO_CUT_MODE = 0, NO_COAG_MODE = 0, BI_BLEND=1,
@@ -99,6 +100,8 @@ public:
     void setInstrConstraints(const std::map<int, InstrInfo> &newInstrConstraints);
 
     std::map<int, InstrInfo> InstrConstraints() const;
+
+    std::optional<InstrInfo> getConstraints(int index) const;
 
     // QString curInstrName() const;
 

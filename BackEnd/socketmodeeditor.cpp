@@ -25,8 +25,8 @@ void SocketModeEditor::initialize(int socket, int mode, bool isCoag)
     m_currentModeIndex = m_originalModeIndex;
     m_currentParameters = m_originalParameters;
 
-    m_currentInstrIndex = m_model->index(socket,0).data(m_isCoag ? SocketModel::CoagModeInstrIndex
-                                                               : SocketModel::CutModeInstrIndex).toInt();
+    setCurrentInstrIndex(m_model->index(socket,0).data(m_isCoag ? SocketModel::CoagModeInstrIndex
+                                                               : SocketModel::CutModeInstrIndex).toInt());
 
     m_hasChanges = false;
     emit parametersLoaded();

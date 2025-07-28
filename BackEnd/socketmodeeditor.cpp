@@ -171,6 +171,11 @@ bool SocketModeEditor::isParamsEqual(const QVariantMap &a, const QVariantMap &b)
 
 }
 
+bool SocketModeEditor::isCoag() const
+{
+    return m_isCoag;
+}
+
 bool SocketModeEditor::hasChanges() const
 {
     return m_hasChanges;
@@ -189,11 +194,15 @@ void SocketModeEditor::setCurrentInstrIndex(int newCurrentInstrIndex)
     CSurgModePtr mode = m_model->socketById(m_socketID)->getMode(m_currentModeIndex, m_isCoag);
     std::optional<InstrInfo> info = mode->getConstraints(m_currentInstrIndex);
     if (info != std::nullopt) {
+        //должно быть ID
+        // m_instrID = info->id;
+        // но пока картинок мало - для примера берём индекс
+        m_instrID = newCurrentInstrIndex+1;
         m_lowPowerBound = info->miniPower;
         m_midPowerBound = info->midiPower;
         m_highPowerBound = info->maxiPower;
     } else {
-        m_lowPowerBound = m_midPowerBound = m_highPowerBound = 0;
+        m_instrID = m_lowPowerBound = m_midPowerBound = m_highPowerBound = 0;
     }
 
     emit currentInstrChanged();
@@ -212,4 +221,9 @@ int SocketModeEditor::midPowerBound() const
 int SocketModeEditor::highPowerBound() const
 {
     return m_highPowerBound;
+}
+
+int SocketModeEditor::instrID() const
+{
+    return m_instrID;
 }

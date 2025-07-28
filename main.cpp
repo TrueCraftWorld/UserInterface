@@ -4,6 +4,7 @@
 #include "SettingsScreen/wifimodule/NetworkDiscover.h"
 #include "SettingsScreen/updatemodule/updateclient.h"
 #include "BackEnd/controlcenter.h"
+#include "BackEnd/instrimageprovider.h"
 #include "qqmlcontext.h"
 
 int main(int argc, char *argv[])
@@ -29,6 +30,7 @@ int main(int argc, char *argv[])
     QQmlApplicationEngine engine;
     engine.rootContext()->setContextProperty("theModel", ctrl->getSocketModel());
     engine.rootContext()->setContextProperty("Editor", ctrl->editor());
+    engine.addImageProvider(QLatin1String("instrums"), new InstrImageProvider);
 
     const QUrl url(QStringLiteral("qrc:/main.qml"));
     QObject::connect(

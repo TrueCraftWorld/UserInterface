@@ -6,6 +6,7 @@ CONFIG += c++17
 HEADERS += \
     $$PWD/controlcenter.h \
     $$PWD/databasereader.h \
+    $$PWD/instrimageprovider.h \
     $$PWD/instrument.h \
     $$PWD/pedal.h \
     $$PWD/socket.h \
@@ -17,6 +18,7 @@ HEADERS += \
 SOURCES += \
     $$PWD/controlcenter.cpp \
     $$PWD/databasereader.cpp \
+    $$PWD/instrimageprovider.cpp \
     $$PWD/instrument.cpp \
     $$PWD/pedal.cpp \
     $$PWD/socket.cpp \

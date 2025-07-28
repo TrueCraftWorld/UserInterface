@@ -59,7 +59,8 @@ Popup {
                 active: false
                 sourceComponent:
                     SocketEditor {
-                        instrImageName: "" //тут нужно будет обращение к imageprovider
+                    //тут нейминг запоролся - для примера норм, для боевого релиза нудо править
+                        instrImageName: "image://instrums/" + (modeEditor.isCoag ? ("Cut_" + modeEditor.instrID) : modeEditor.instrID) //тут нужно будет обращение к imageprovider
                 }
             }
         }

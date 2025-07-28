@@ -9,7 +9,7 @@ Column {
     spacing: 10
 
     property var editor: Editor
-    property string instrImageName
+    property alias instrImageName: instrImage.source
 
     GridLayout {
         width: parent.width
@@ -38,19 +38,21 @@ Column {
         Label { text: qsTr("Инструмент") }
 
         RowLayout {
+
             Rectangle{
                 Layout.fillWidth: true
-                height: 45
-                color: "darkslategray"
-                Text {
-                    id: txt
-                    text: qsTr("Здесь моя реклама")
-                    anchors.centerIn: parent
-                    color: "green"
-                }
+                height: 60
+                color: editor.isCoag ? "royalblue" : "yellow"
+                // Text {
+                //     id: txt
+                //     text: qsTr("Здесь моя реклама")
+                //     anchors.centerIn: parent
+                //     color: "green"
+                // }
                 Image {
                     id: instrImage
-                    source: ""
+                    anchors.centerIn: parent
+                    // source: "image://instrums/" + root.instrImageName
                 }
             }
 

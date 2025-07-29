@@ -16,7 +16,7 @@ InstrImageProvider::InstrImageProvider()
 
 QPixmap InstrImageProvider::requestPixmap(const QString &id, QSize *size, const QSize &requestedSize)
 {
-    static QSize defaultSize = QSize(160, 60);
+    static QSize defaultSize = QSize(800, 300);
     static double widthToHeight = 160.0/60.0;
 
     QSize mySize;

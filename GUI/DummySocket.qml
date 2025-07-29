@@ -7,13 +7,9 @@ Rectangle {
     property string coagModeName
     property int cutModePower
     property int coagModePower
-    property int cutModeIndex
-    property int coagModeIndex
     property int socketId
     property int cutInstrumId
     property int coagInstrumId
-    // property alias cutInstrPath: cutInstrImage.source
-    // property alias coagInstrPath: coagInstrImage.source
     property string cutInstrumName: qsTr("не выбран")
     property string coagInstrumName: qsTr("не выбран")
 
@@ -73,7 +69,7 @@ Rectangle {
             id: cutInstrImage
             // anchors.centerIn: parent
             asynchronous: true
-            source: "image://instrums/" + (cutInstrumId)
+            source: "image://instrums/" + (cutInstrumId+1)
             fillMode: Image.PreserveAspectFit
             anchors {
                 left: parent.left
@@ -116,6 +112,7 @@ Rectangle {
                 top: parent.top
                 right: parent.right
                 margins: 15
+                topMargin: 40
             }
         }
         Label {
@@ -147,7 +144,7 @@ Rectangle {
             id: coagInstrImage
             // anchors.centerIn: parent
             asynchronous: true
-            source: "image://instrums/" + ("Cut_" + coagInstrumId)
+            source: "image://instrums/" + ("Cut_" + (coagInstrumId+1))
             fillMode: Image.PreserveAspectFit
             anchors {
                 left: parent.left
@@ -171,6 +168,6 @@ Rectangle {
         height: coagMain.height
         anchors.left: coagMain.left
     }
-    onCoagInstrumIdChanged: coagInstrImage.update()
-    onCutInstrumIdChanged: cutInstrImage.update()
+    // onCoagInstrumIdChanged: coagInstrImage.update()
+    // onCutInstrumIdChanged: cutInstrImage.update()
 }

@@ -51,7 +51,8 @@ Column {
                 // }
                 Image {
                     id: instrImage
-                    anchors.centerIn: parent
+                    anchors.fill: parent
+                    fillMode: Image.PreserveAspectFit
                     // source: "image://instrums/" + root.instrImageName
                 }
             }

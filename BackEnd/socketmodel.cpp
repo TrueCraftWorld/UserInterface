@@ -57,7 +57,10 @@ QVariant SocketModel::data(const QModelIndex &index, int role) const
         return QVariant();
     }
     case CoagModeInstrID:
-        return socketItem.curCoagMode()->selectedInstrId();
+        //это по боевому
+        // return socketItem.curCoagMode()->selectedInstrId();
+        // а это для альфа теста
+        return socketItem.curCoagMode()->selectedInstrIndex();
     case CoagModeInstrImage:
 
     case CoagModeInstrIndex:
@@ -89,7 +92,10 @@ QVariant SocketModel::data(const QModelIndex &index, int role) const
     }
         // return socketItem.curCutMode()->curInstrName();
     case CutModeInstrID:
-        return socketItem.curCutMode()->selectedInstrId();
+        //это по боевому
+        // return socketItem.curCutMode()->selectedInstrId();
+        // а это для альфа теста
+        return socketItem.curCutMode()->selectedInstrIndex();
     case CutModeInstrImage:
     case CutModeInstrIndex:
         return QVariant();

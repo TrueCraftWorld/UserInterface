@@ -17,12 +17,19 @@ InstrImageProvider::InstrImageProvider()
 QPixmap InstrImageProvider::requestPixmap(const QString &id, QSize *size, const QSize &requestedSize)
 {
     static QSize defaultSize = QSize(160, 60);
+    static double widthToHeight = 160.0/60.0;
 
     QSize mySize;
     if (requestedSize.width() > 0 && requestedSize.height() > 0) {
+        double reqWidthToHeight = double(requestedSize.width()) / double(requestedSize.height());
+        if (reqWidthToHeight > widthToHeight)
+            mySize = QSize(int(requestedSize.height() * widthToHeight), requestedSize.height());
+        else
+            mySize = QSize(requestedSize.width(), int(requestedSize.width()/ widthToHeight));
+
+
         if (size)
-            *size = requestedSize;
-        mySize = requestedSize;
+            *size = mySize;
     } else {
         if (size)
             *size = defaultSize;
@@ -30,7 +37,7 @@ QPixmap InstrImageProvider::requestPixmap(const QString &id, QSize *size, const 
     }
     
     if (m_cache.contains(id))
-        return (m_cache.value(id).scaled(mySize, Qt::KeepAspectRatio));
+        return (m_cache.value(id).scaled(mySize, Qt::KeepAspectRatioByExpanding));
     for (const auto& item : m_knownFiles){
         if (item.baseName() == id) {
             // QPixmap

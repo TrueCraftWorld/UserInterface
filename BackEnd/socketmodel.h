@@ -25,6 +25,7 @@ public:
         CoagModeInstrName,
         CoagModeInstrImage,
         CoagModeInstrIndex,
+        CoagModeInstrID,
         CutModeIndex,
         CutModeName,
         CutModePower,
@@ -33,6 +34,7 @@ public:
         CutModeInstrName,
         CutModeInstrImage,
         CutModeInstrIndex,
+        CutModeInstrID,
         CutModesNames,
         CoagModesNames
     };

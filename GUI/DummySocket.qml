@@ -12,6 +12,8 @@ Rectangle {
     property int socketId
     property int cutInstrumId
     property int coagInstrumId
+    // property alias cutInstrPath: cutInstrImage.source
+    // property alias coagInstrPath: coagInstrImage.source
     property string cutInstrumName: qsTr("не выбран")
     property string coagInstrumName: qsTr("не выбран")
 
@@ -66,6 +68,20 @@ Rectangle {
                 margins: 15
                 topMargin: 0
             }
+        }
+        Image {
+            id: cutInstrImage
+            // anchors.centerIn: parent
+            asynchronous: true
+            source: "image://instrums/" + (cutInstrumId)
+            fillMode: Image.PreserveAspectFit
+            anchors {
+                left: parent.left
+                right: parent.right
+                bottom: parent.bottom
+                top: cutInstrum.bottom
+            }
+            // source: "image://instrums/" + root.instrImageName
         }
         MouseArea {
             anchors.fill: parent
@@ -127,6 +143,21 @@ Rectangle {
                 topMargin: 0
             }
         }
+        Image {
+            id: coagInstrImage
+            // anchors.centerIn: parent
+            asynchronous: true
+            source: "image://instrums/" + ("Cut_" + coagInstrumId)
+            fillMode: Image.PreserveAspectFit
+            anchors {
+                left: parent.left
+                right: parent.right
+                bottom: parent.bottom
+                top: coagInstrum.bottom
+            }
+
+            // source: "image://instrums/" + root.instrImageName
+        }
 
         MouseArea {
             anchors.fill: parent
@@ -140,4 +171,6 @@ Rectangle {
         height: coagMain.height
         anchors.left: coagMain.left
     }
+    onCoagInstrumIdChanged: coagInstrImage.update()
+    onCutInstrumIdChanged: cutInstrImage.update()
 }

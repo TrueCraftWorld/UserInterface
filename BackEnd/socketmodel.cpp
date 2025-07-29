@@ -56,7 +56,10 @@ QVariant SocketModel::data(const QModelIndex &index, int role) const
         else
         return QVariant();
     }
+    case CoagModeInstrID:
+        return socketItem.curCoagMode()->selectedInstrId();
     case CoagModeInstrImage:
+
     case CoagModeInstrIndex:
         return QVariant();
 
@@ -85,6 +88,8 @@ QVariant SocketModel::data(const QModelIndex &index, int role) const
             return QVariant();
     }
         // return socketItem.curCutMode()->curInstrName();
+    case CutModeInstrID:
+        return socketItem.curCutMode()->selectedInstrId();
     case CutModeInstrImage:
     case CutModeInstrIndex:
         return QVariant();
@@ -187,6 +192,7 @@ bool SocketModel::commitModeChange(int socketId, int modeINdex, const QVariantMa
         if (iter->second->setInstrumIndex(param.value("instrindex").toInt(), true)) {
             roles.append(CoagModeInstrName);
             roles.append(CoagModeInstrIndex);
+            roles.append(CoagModeInstrID);
             res = true;
         }
         if (res)
@@ -206,6 +212,7 @@ bool SocketModel::commitModeChange(int socketId, int modeINdex, const QVariantMa
         if (iter->second->setInstrumIndex(param.value("instrindex").toInt(), false)) {
             roles.append(CutModeInstrName);
             roles.append(CutModeInstrIndex);
+            roles.append(CutModeInstrID);
             res = true;
         }
         if (res)

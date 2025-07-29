@@ -105,11 +105,8 @@ public:
 
     Q_INVOKABLE bool hasChanges() const;
 
-    // int currentInstIndex() const;
-
-    // void setCurrentInstIndex(int newCurrentInstIndex);
-
     int currentInstrIndex() const;
+
     void setCurrentInstrIndex(int newCurrentInstrIndex);
 
     int lowPowerBound() const;

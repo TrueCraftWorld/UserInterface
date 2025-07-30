@@ -13,7 +13,6 @@ InstrImageProvider::InstrImageProvider()
     }
 }
 
-
 QPixmap InstrImageProvider::requestPixmap(const QString &id, QSize *size, const QSize &requestedSize)
 {
     static QSize defaultSize = QSize(800, 300);
@@ -37,7 +36,7 @@ QPixmap InstrImageProvider::requestPixmap(const QString &id, QSize *size, const 
     }
     
     if (m_cache.contains(id))
-        return (m_cache.value(id).scaled(mySize, Qt::KeepAspectRatioByExpanding));
+        return (m_cache.value(id).scaled(mySize, Qt::KeepAspectRatio));
     for (const auto& item : m_knownFiles){
         if (item.baseName() == id) {
             // QPixmap

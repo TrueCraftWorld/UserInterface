@@ -4,26 +4,19 @@
 #include <QFuture>
 #include <QFutureWatcher>
 
-
-
 DataBaseReader::DataBaseReader(const QString& pathToDb)
     : QObject(nullptr)
 {
-    QSqlDatabase someDb = QSqlDatabase::addDatabase("QSQLITE", "kurwa");
+    QSqlDatabase someDb = QSqlDatabase::addDatabase("QSQLITE", "etoBasa");
 
     someDb.setDatabaseName(pathToDb);
-    someDb.open();
-    if (someDb.isOpen())
-        qDebug() << "at least";
 }
 
 void DataBaseReader::slotSendQuery(const QString &queryStr, int valueNumbersAwaited)
 {
     QList<QVariantList> result;
-    QSqlDatabase db = QSqlDatabase::database("kurwa"); // Или создаем новое подключение
+    QSqlDatabase db = QSqlDatabase::database("etoBasa");
     db.open();
-    if (db.isOpen())
-        qDebug() << "at least";
 
     QSqlQuery query(db);
     query.prepare(queryStr);
@@ -50,10 +43,8 @@ QList<QVariantList> DataBaseReader::slotSendSelectQuery(const QStringList &table
                                          const QString &conditions)
 {
     QList<QVariantList> result;
-    QSqlDatabase db = QSqlDatabase::database("kurwa"); // Или создаем новое подключение
+    QSqlDatabase db = QSqlDatabase::database("etoBasa");
     db.open();
-    if (db.isOpen())
-        qDebug() << "at least";
 
     QSqlQuery query(db);
     if (conditions.isEmpty()) {
@@ -64,8 +55,8 @@ QList<QVariantList> DataBaseReader::slotSendSelectQuery(const QStringList &table
         QString queryString("SELECT %1 FROM %2 WHERE %3");
         QString tmp = queryString.arg(columns.join(',')).arg(tables.join(',')).arg(conditions);
         query.prepare(tmp);
-
     }
+
     query.setForwardOnly(true);
 
     if (!query.exec()) {
@@ -82,6 +73,4 @@ QList<QVariantList> DataBaseReader::slotSendSelectQuery(const QStringList &table
     }
 
     return result;
-    // emit signalResultReady(queryStr, result);
-
 }

@@ -20,7 +20,6 @@ ControlCenter::~ControlCenter()
     if (!m_socketModel.isNull()) {
         m_socketModel->deleteLater();
     }
-    qDebug() << "COntrolDeleted";
 }
 
 void ControlCenter::registerControl()
@@ -48,9 +47,7 @@ QPointer<SocketModeEditor> ControlCenter::editor() const
 }
 
 void ControlCenter::initComms()
-{
-
-}
+{}
 
 void ControlCenter::initSockets()
 {
@@ -63,18 +60,13 @@ void ControlCenter::initSockets()
     } else {
         defaultSocketInit();
     }
-
 }
 
 void ControlCenter::readConfigs()
-{
-
-}
+{ }
 
 void ControlCenter::prepareConnectios()
-{
-
-}
+{ }
 
 bool ControlCenter::readPreviousSocketSettings()
 {
@@ -173,7 +165,6 @@ void ControlCenter::dataBaseSocketInit()
         modesIdList.append(iter.at(1).toInt());
     }
 
-
     std::map<int, std::map<int, InstrInfo>> instrConstraintsByMode = getConstarints(modesIdList);
 
     for (int i = 0; i < 4; ++i) {
@@ -245,6 +236,23 @@ void ControlCenter::dataBaseSocketInit()
 
 }
 
+void ControlCenter::programmLoadSocketInit()
+{
+}
+
+void ControlCenter::getListOfPrograms(int scopeID)
+{
+    //захардкодили, но это нужно знать
+    bool isMyselfArgon = false;
+
+    QString queryCondition = "Scope_ID = %1 AND (Argon = 0 OR Argon = %2)";
+
+    QList<QVariantList> progList = m_dbReader->slotSendSelectQuery(QStringList{"Progs"},
+                                                                        QStringList{"Name_RU","id"},
+                                                                        queryCondition.arg(scopeID).arg(isMyselfArgon ? 2 : 1));
+
+}
+
 std::map<int, std::map<int, InstrInfo> > ControlCenter::getConstarints(const QList<int>& idList)
 {
     std::map<int, std::map<int, InstrInfo> > result;
@@ -260,10 +268,6 @@ std::map<int, std::map<int, InstrInfo> > ControlCenter::getConstarints(const QLi
             int b = item.at(1).toInt();
             int c = item.at(2).toInt();
             int d = item.at(3).toInt();
-            // modeMap.emplace(item.at(0).toInt(), InstrInfo{item.at(0).toInt(),
-            //                                                 item.at(1).toInt(),
-            //                                                 item.at(2).toInt(),
-            //                                                 item.at(3).toInt()});
             InstrInfo bla = InstrInfo(a,
                                       b,
                                       c,

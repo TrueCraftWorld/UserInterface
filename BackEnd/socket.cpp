@@ -58,6 +58,19 @@ bool SOCKET::setCutModeIndex(int newCutModeIndex)
     return setModeIndex(newCutModeIndex, false);
 }
 
+bool SOCKET::setModeId(int id, bool isCoag)
+{
+    const QHash<QString, SurgModePtr>& modes = isCoag ? m_coagModes : m_cutModes;
+
+    for (auto& item : m_coagModes) {
+        if (item->id() == id) {
+            isCoag ? m_curCoagMode = item : m_curCutMode = item;
+            return true;
+        }
+    }
+    return false;
+}
+
 int SOCKET::checkMode(const QString &modeName) const
 {
 
@@ -216,6 +229,22 @@ bool SOCKET::setInstrumIndex(int index, bool isCoag)
     SurgModePtr mode = modes[name];
 
     return mode->setSelectedInstrIndex(index);
+}
+
+bool SOCKET::setInstrumId(int id, bool isCoag)
+{
+    QHash<QString, SurgModePtr>& modes = isCoag ? m_coagModes : m_cutModes;
+    int curModeIdx = isCoag ? m_coagModeIndex : m_cutModeIndex;
+    QStringList& names = isCoag ? m_coagModeNames : m_cutModeNames;
+
+    if (curModeIdx >= names.size())
+        return false;
+
+    const QString& name = names.at(curModeIdx);
+
+    SurgModePtr mode = modes[name];
+
+    return mode->setSelectedInstrId(id);
 }
 
 CSurgModePtr SOCKET::curCoagMode() const

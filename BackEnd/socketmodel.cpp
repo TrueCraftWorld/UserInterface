@@ -10,7 +10,9 @@ SocketModel::SocketModel(QObject *parent)
 int SocketModel::rowCount(const QModelIndex &parent) const
 {
     Q_UNUSED(parent)
-    return m_itemsMap.size();
+    if (m_itemsMap == nullptr)
+        return 0;
+    return m_itemsMap->size();
 }
 
 QVariant SocketModel::data(const QModelIndex &index, int role) const
@@ -21,8 +23,11 @@ QVariant SocketModel::data(const QModelIndex &index, int role) const
     if (index.row() >= m_socketNames.size())
         return QVariant();
 
-    const auto socketIter = m_itemsMap.find(index.row());
-    if (socketIter == m_itemsMap.cend())
+    if (m_itemsMap == nullptr)
+        return QVariant();
+
+    const auto socketIter = m_itemsMap->find(index.row());
+    if (socketIter == m_itemsMap->cend())
         return QVariant();
 
     const SOCKET& socketItem = *(socketIter->second);
@@ -114,9 +119,12 @@ bool SocketModel::setData(const QModelIndex &index, const QVariant &value, int r
     if (index.row() >= m_socketNames.size())
         return false;
 
-    if (m_itemsMap.find((index.row())) == m_itemsMap.end())
+    if (m_itemsMap == nullptr)
         return false;
-    auto socketIter = m_itemsMap[(index.row())];
+
+    if (m_itemsMap->find((index.row())) == m_itemsMap->end())
+        return false;
+    auto socketIter = (*m_itemsMap)[(index.row())];
 
     SOCKET& socketItem = *(socketIter);
 
@@ -137,8 +145,11 @@ bool SocketModel::setData(const QModelIndex &index, const QVariant &value, int r
 
 QVariantMap SocketModel::modeParam(int socketId, int modeIndeex, bool isCoag) const
 {
-    auto iter = m_itemsMap.find(socketId);
-    if (iter == m_itemsMap.end() || iter->second.isNull())
+    if (m_itemsMap == nullptr)
+        return QVariantMap{};
+
+    auto iter = m_itemsMap->find(socketId);
+    if (iter == m_itemsMap->end() || iter->second.isNull())
         return QVariantMap{};
 
     return iter->second->getMode(modeIndeex, isCoag)->params();
@@ -146,16 +157,22 @@ QVariantMap SocketModel::modeParam(int socketId, int modeIndeex, bool isCoag) co
 
 QStringList SocketModel::modeNames(int socketID, bool isCoag) const
 {
-    auto iter = m_itemsMap.find(socketID);
-    if (iter == m_itemsMap.end() || iter->second.isNull())
+    if (m_itemsMap == nullptr)
+        return QStringList{};
+
+    auto iter = m_itemsMap->find(socketID);
+    if (iter == m_itemsMap->end() || iter->second.isNull())
         return QStringList{};
     return isCoag ? iter->second->coagModeNames() : iter->second->cutModeNames();
 }
 
 QStringList SocketModel::instrumNames(int socketId, int modeIndex, bool isCoag)
 {
-    auto iter = m_itemsMap.find(socketId);
-    if (iter == m_itemsMap.end() || iter->second.isNull())
+    if (m_itemsMap == nullptr)
+        return QStringList{};
+
+    auto iter = m_itemsMap->find(socketId);
+    if (iter == m_itemsMap->end() || iter->second.isNull())
         return {};
 
     SockPtr sock = iter->second;
@@ -173,8 +190,11 @@ QStringList SocketModel::instrumNames(int socketId, int modeIndex, bool isCoag)
 
 bool SocketModel::commitModeChange(int socketId, int modeINdex, const QVariantMap &param)
 {
-    auto iter = m_itemsMap.find(socketId);
-    if (iter == m_itemsMap.end() || iter->second.isNull())
+    if (m_itemsMap == nullptr)
+        return false;
+
+    auto iter = m_itemsMap->find(socketId);
+    if (iter == m_itemsMap->end() || iter->second.isNull())
         return false;
 
     QModelIndex idx = createIndex(m_socketNames.indexOf(iter->second->socketName()), 0);
@@ -233,7 +253,11 @@ bool SocketModel::commitModeChange(int socketId, int modeINdex, const QVariantMa
 SockPtr SocketModel::socketByName(const QString &socket) const
 {
     SockPtr itemPtr = nullptr;
-    for (auto& item : m_itemsMap) {
+
+    if (m_itemsMap == nullptr)
+        return itemPtr;
+
+    for (auto& item : (*m_itemsMap)) {
         if (item.second->socketName() == socket) {
             itemPtr = item.second;
             break;
@@ -244,8 +268,11 @@ SockPtr SocketModel::socketByName(const QString &socket) const
 
 SockPtr SocketModel::socketById(int id) const
 {
-    auto iter = m_itemsMap.find(id);
-    if (iter == m_itemsMap.end())
+    if (m_itemsMap == nullptr)
+        return nullptr;
+
+    auto iter = m_itemsMap->find(id);
+    if (iter == m_itemsMap->end())
         return nullptr;
     return iter->second;
 }
@@ -255,18 +282,70 @@ void SocketModel::setInstrumMap(const std::map<int, QSharedPointer<Instrument>> 
     m_instrumMap = newInstrumMap;
 }
 
-void SocketModel::setItemsMap(const std::map<int, SockPtr > &newItemsMap)
+bool SocketModel::setCurrentProgSubIndex(int newIndex)
 {
+    if (newIndex >= m_itemsMapVect.size() || newIndex < 0)
+        return false;
+    // if (newIndex == m_curMapIdx)
+    //     return true;
+
     beginResetModel();
-    m_itemsMap = newItemsMap;
+    m_curMapIdx = newIndex;
+    m_itemsMap = &(m_itemsMapVect.at(m_curMapIdx));
     m_socketNames.clear();
     for (int i = SOCKET::BIPOLAR_1; i <= SOCKET::MONOPOLAR_2; ++i) {
-        const auto iter = m_itemsMap.find(i - 1);
-        if (iter == m_itemsMap.cend())
+        const auto iter = m_itemsMap->find(i - 1);
+        if (iter == m_itemsMap->cend())
             continue;
         m_socketNames.append(iter->second->socketName());
     }
-    // m_socketNames.append(m_itemsMap.SOCKET::BIPOLAR_1);
+    // m_socketNames.append(m_itemsMap->SOCKET::BIPOLAR_1);
+    endResetModel();
+
+}
+
+void SocketModel::setItemsMap(const std::map<int, SockPtr > &newItemsMap, bool add)
+{
+    beginResetModel();
+    m_itemsMap = nullptr;
+    if (!add) m_itemsMapVect.clear();
+    m_itemsMapVect.push_back(newItemsMap);
+    // setCurrentProgSubIndex(m_itemsMapVect.size() - 1);
+
+    m_curMapIdx = m_itemsMapVect.size() - 1;
+    m_itemsMap = &(m_itemsMapVect.at(m_curMapIdx));
+    m_socketNames.clear();
+    for (int i = SOCKET::BIPOLAR_1; i <= SOCKET::MONOPOLAR_2; ++i) {
+        const auto iter = m_itemsMap->find(i - 1);
+        if (iter == m_itemsMap->cend())
+            continue;
+        m_socketNames.append(iter->second->socketName());
+    }
+    // m_curMapIdx = 0;
+    // m_itemsMap = newItemsMap;
+    endResetModel();
+
+}
+
+void SocketModel::setItemsMapVector(const std::vector<std::map<int, SockPtr> > &newItemsMapVector)
+{
+    beginResetModel();
+    m_itemsMap = nullptr;
+    m_itemsMapVect.clear();
+    m_itemsMapVect = newItemsMapVector;
+
+    m_curMapIdx = 0;
+    m_itemsMap = &(m_itemsMapVect.at(m_curMapIdx));
+    m_socketNames.clear();
+    for (int i = SOCKET::BIPOLAR_1; i <= SOCKET::MONOPOLAR_2; ++i) {
+        const auto iter = m_itemsMap->find(i - 1);
+        if (iter == m_itemsMap->cend())
+            continue;
+        m_socketNames.append(iter->second->socketName());
+    }
+
+    // setCurrentProgSubIndex(0);,
+    // m_curMapIdx = 0;
     endResetModel();
 }
 

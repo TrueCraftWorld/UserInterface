@@ -2,8 +2,120 @@
 #include "socket.h"
 
 #include <map>
+#include <vector>
+#include <unordered_set>
 #include <QQmlEngine>
+#include <QString>
 
+namespace {
+
+template <typename T>
+void filterMapByKey(std::map<int, T>& map, const std::vector<int>& keys_to_keep) {
+    // Создаем временный набор для быстрого поиска
+    std::unordered_set<int> keep_set(keys_to_keep.begin(), keys_to_keep.end());
+
+    // Используем идиому erase-remove для map
+    auto it = map.begin();
+    while (it != map.end()) {
+        if (keep_set.find(it->first) == keep_set.end()) {
+            it = map.erase(it);  // Удаляем элемент, если его ключа нет в векторе
+        } else {
+            ++it;
+        }
+    }
+}
+
+std::vector<int> parseCommaSeparatedNumbers(const QString& input) {
+    std::vector<int> result;
+
+    if (input.isEmpty()) {
+        return result;  // Возвращаем пустой вектор, если строка пуста
+    }
+
+    // Разделяем строку по запятым
+    QStringList parts = input.split(',', Qt::SkipEmptyParts);
+
+    // Преобразуем каждую часть в число и добавляем в вектор
+    for (const QString& part : parts) {
+        bool ok = false;
+        int number = part.trimmed().toInt(&ok);  // Удаляем пробелы и конвертируем
+
+        if (ok) {
+            result.push_back(number);
+        }
+        // Можно добавить обработку ошибок, если нужно
+    }
+
+    return result;
+}
+
+QString makeCommaSeparatedNumbers(QList<int> list) {
+    QString res;
+    for (int a : list) {
+        res += QString("%1,").arg(a);
+    }
+    if (res.size() != 0)
+        res = res.left(res.size()-1);
+    return res;
+}
+
+QString makeSocketName(SOCKET::SocType type) {
+    QString socketName = "";
+    switch (type) {
+    case SOCKET::EMPTY:
+        socketName = QString("EMPTY");
+        break;
+    case SOCKET::BIPOLAR_1:
+        socketName = QString("BIPOLAR 1");
+        break;
+    case SOCKET::BIPOLAR_2:
+        socketName = QString("BIPOLAR 2");
+        break;
+    case SOCKET::MONOPOLAR_1:
+        socketName = QString("MONOPOLAR 1");
+        break;
+    case SOCKET::MONOPOLAR_2:
+        socketName = QString("MONOPOLAR 2");
+        break;
+    }
+    return socketName;
+}
+
+void makeModes(QHash<QString, SurgModePtr>& container,
+               const QList<QVariantList>& modes,
+               const std::map<int, std::map<int, InstrInfo>>& instMap,
+               const QVariantList& progItem,
+               int socketNum,
+               bool isCoag ) {
+    int start = isCoag ? 6 : 3;
+
+    // const std::map<int, InstrPtr>tmp = inst;
+
+    container.insert(ESHF::modesNames[0], SurgModePtr::create(ESHF::modesNames[0],
+                                                                     false,
+                                                                     1,
+                                                                     1));
+
+
+    for (const auto& item : modes) {
+        auto instrs = instMap.find(item.at(0).toInt());
+        if (instrs == instMap.end())
+            continue;
+        std::map<int, InstrInfo> tmp = instrs->second;
+        filterMapByKey(tmp, parseCommaSeparatedNumbers(progItem.at(start + 6*socketNum).toString()));
+        if (tmp.size() == 0)
+            continue;
+        SurgModePtr ptr = SurgModePtr::create(item.at(1).toString(),
+                                                                      isCoag,
+                                                                      item.at(0).toInt(),
+                                                                      1,
+                                                                      tmp);
+        container.insert(item.at(1).toString(),
+                        ptr);
+
+    }
+}
+}
 
 ControlCenter::ControlCenter(QObject *parent)
     : QObject{parent},
@@ -56,7 +168,8 @@ void ControlCenter::initSockets()
     if (true) {
         if (m_dbReader.isNull())
             m_dbReader = new DataBaseReader("/home/kikorik/FOTEK/someShadyDB.db");
-        dataBaseSocketInit();
+        // dataBaseSocketInit();
+        programmLoadSocketInit(5);
     } else {
         defaultSocketInit();
     }
@@ -172,25 +285,7 @@ void ControlCenter::dataBaseSocketInit()
         SockPtr socket = SockPtr::create(type);
         socketMap[i] = socket;
 
-        QString socketName = "";
-        switch (type) {
-        case SOCKET::EMPTY:
-            socketName = QString("EMPTY");
-            break;
-        case SOCKET::BIPOLAR_1:
-            socketName = QString("BIPOLAR 1");
-            break;
-        case SOCKET::BIPOLAR_2:
-            socketName = QString("BIPOLAR 2");
-            break;
-        case SOCKET::MONOPOLAR_1:
-            socketName = QString("MONOPOLAR 1");
-            break;
-        case SOCKET::MONOPOLAR_2:
-            socketName = QString("MONOPOLAR 2");
-            break;
-        }
-        socket->setSocketName(socketName);
+        socket->setSocketName(makeSocketName(type));
         QHash<QString, SurgModePtr> cutModes;
         QHash<QString, SurgModePtr> coagModes;
 
@@ -207,10 +302,6 @@ void ControlCenter::dataBaseSocketInit()
                                                                          false,
                                                                          1,
                                                                          1));
-        coagModes.insert(ESHF::modesNames[0], SurgModePtr::create(ESHF::modesNames[0],
-                                                                               true,
-                                                                               1,
-                                                                               1));
         for (const auto& item : cutModesList) {
             cutModes.insert(item.at(1).toString(),
                             SurgModePtr::create(item.at(1).toString(),
@@ -219,6 +310,10 @@ void ControlCenter::dataBaseSocketInit()
                                                 1,
                                                 instrConstraintsByMode.at(modesIdList.at(modeNamesList.indexOf(item.at(1).toString())))));
         }
+        coagModes.insert(ESHF::modesNames[0], SurgModePtr::create(ESHF::modesNames[0],
+                                                                               true,
+                                                                               1,
+                                                                               1));
         for (const auto& item : coagModesList) {
             coagModes.insert(item.at(1).toString(),
                              SurgModePtr::create(item.at(1).toString(),
@@ -236,21 +331,160 @@ void ControlCenter::dataBaseSocketInit()
 
 }
 
-void ControlCenter::programmLoadSocketInit()
+
+/**
+ * @brief ControlCenter::programmLoadSocketInit
+ * @param progId
+ * @details я тут с ума сойду - вся эта функция за раз в голове не помещается
+ * Шаг 1 - получить строки таблицы Lists, с соответствующими id (каждая строка - 1 рабочий экран)
+ * Шаг 2 - поличить строки таблицы EnabledMods, с соответствующими id
+ *         (каждая строка - 1 разрещённый режим)
+ * Шаг 3 - поличить строки таблицы EnabledInstr, с соответствующими id
+ *         (каждая строка - 1 разрещённый инструмент)
+ * Шаг 4 - из таблицы Instrum получить список допустимых инструментов
+ *         для каждого режима в списке режимов (Шаг 2)
+ * Шаг 5 - Проредить полученный список инструментов оставив в нём только
+ *         те, которые разрешены в данной программе (Шаг 3)
+ * Шаг 6 - Поселедовательная инициализация полусокетов по строкам из (Шаг 1)
+ *         Если сокет включён:
+ *         6.1 - для каждого полусокета прореживания списка инструментов
+ *         6.2 инициализация сокета полученным списком допустимыз режимов и инструментов
+ *         6.3 установка режима, мощностии и инструмента по умолчанию
+ *
+ */
+void ControlCenter::programmLoadSocketInit(int progId)
 {
+    //начинаем прорабатывать прогрузку несекольких экранов
+    std::vector<std::map<int, SockPtr>> socketMapVector;
+    std::map<int, std::map<int, InstrInfo>>  instrumConstraints;
+
+    //ПОТОМУ ЧТО ЕСЛИ SELECT * то Qt говорит, что порядок следования полей может быть случаен
+    //Шаг1---------------------------------------------------------
+    QString queryCondition = "Prog_ID = %1";
+    QStringList fields = {"id", "Num", "Prog_ID", /* 0 1 2*/
+                          "Bi1Cut_INSTR", "Bi1Cut_MODE", "Bi1Cut_POWER", /* 3 4 5 6*/
+                          "Bi1Coag_INSTR", "Bi1Coag_MODE", "Bi1Coag_POWER", /* 7 8 9 10*/
+                          "Bi2Cut_INSTR", "Bi2Cut_MODE", "Bi2Cut_POWER", /* 11 12 13 14*/
+                          "Bi2Coag_INSTR", "Bi2Coag_MODE", "Bi2Coag_POWER", /* 15 16 17 18*/
+                          "Mono1Cut_INSTR", "Mono1Cut_MODE", "Mono1Cut_POWER", /* 19 20 21 22*/
+                          "Mono1Coag_INSTR", "Mono1Coag_MODE", "Mono1Coag_POWER", /* 23 24 25 26*/
+                          "Mono2Cut_INSTR", "Mono2Cut_MODE", "Mono2Cut_POWER", /* 27 28 29 30*/
+                          "Mono2Coag_INSTR", "Mono2Coag_MODE", "Mono2Coag_POWER", /* 31 32 33 34*/
+                          "Pedal_1", "Pedal_2", "OutEnabled_MASK"};/* 35 36 37*/
+
+    QList<QVariantList> progListVariant = m_dbReader->slotSendSelectQuery(QStringList{"Lists"},
+                                                                        fields,
+                                                                        queryCondition.arg(progId));
+    //--------------------------------------------------------------
+
+    //Шаг2---------------------------------------------------------
+    QList<QVariantList> allowedModes = m_dbReader->slotSendSelectQuery(QStringList{"EnableModes"},
+                                                                      QStringList{"Mode_ID"},
+                                                                      QString("Prog_ID = %1").arg(progId));
+    QList<int> allowedModesId;
+    for (const auto& item : allowedModes)
+        allowedModesId.append(item.at(0).toInt());
+
+    //Шаг3---------------------------------------------------------
+    QList<QVariantList> allowedInstr = m_dbReader->slotSendSelectQuery(QStringList{"EnableInstr"},
+                                                                       QStringList{"Instr_ID"},
+                                                                       QString("Prog_ID = %1").arg(progId));
+    // QList<int> allowedInstrId;
+    std::vector<int> allowedInstrId;
+
+    for (const auto& item : allowedInstr)
+        allowedInstrId.push_back(item.at(0).toInt());
+
+    //Шаг4---------------------------------------------------------
+    QString queryConditionModes = "BI_MONO = %1 AND CUT_COAG = %2 AND id IN (%3)";
+    instrumConstraints = getConstarints(allowedModesId);
+
+    //Шаг5---------------------------------------------------------
+    // for (auto item : instrumConstraints) {
+    for (auto iterItem = instrumConstraints.begin(); iterItem != instrumConstraints.end(); ++iterItem) {
+        std::map<int, InstrInfo>& item = iterItem->second;
+        filterMapByKey<InstrInfo>(item, allowedInstrId);
+    }
+
+
+    //Шаг 6--------------------------------------------------------
+    QList<QVariantList> modeNamesListV = m_dbReader->slotSendSelectQuery(QStringList{"Modes"},
+                                                                        QStringList{"Name_RU","id"},
+                                                                        "");
+    QStringList modeNamesList;
+    for (const auto& iter : modeNamesListV) {
+        modeNamesList.append(iter.at(0).toString());
+    }
+
+    for (const auto& progItem : progListVariant) {
+        socketMapVector.push_back(std::map<int, SockPtr>());
+        std::map<int, SockPtr>& socketMap = socketMapVector[socketMapVector.size() - 1];
+        for (int i = 0; i < 4; ++i) {
+            SOCKET::SocType type = SOCKET::SocType(i+1);
+            SockPtr socket = SockPtr::create(type);
+            socketMap[i] = socket;
+
+            socket->setSocketName(makeSocketName(type));
+
+            for (int halfSocket = 0; halfSocket < 2; ++halfSocket ) {
+                bool isCoag = (halfSocket == 0);
+                QHash<QString, SurgModePtr> modes;
+                QList<QVariantList> modesList = m_dbReader->slotSendSelectQuery(QStringList{"Modes"},
+                            QStringList{"MaxPower","Name_RU"},
+                            queryConditionModes
+                                        .arg(socket->socketType() <= SOCKET::BIPOLAR_2 ? 0 : 1)
+                                        .arg(halfSocket)
+                                        .arg(makeCommaSeparatedNumbers(allowedModesId)));
+
+                makeModes(modes,
+                          modesList,
+                          instrumConstraints,
+                          progItem,
+                          i,
+                          isCoag);
+                if (isCoag) socket->setCoagModes(modes, modeNamesList);
+                else socket->setCutModes(modes, modeNamesList);
+                int start = isCoag ? 6 : 3;
+                std::vector<int> instId = parseCommaSeparatedNumbers(progItem.at(start + 6*i).toString());
+                int firstInstrId = instId.size() == 0 ? 0 : instId.at(0);
+                std::vector<int> modeId = parseCommaSeparatedNumbers(progItem.at(start + 1 + 6*i).toString());
+                int firstModeId = modeId.size() == 0 ? 0 : instId.at(0);
+                int defaultPower = progItem.at(start + 2 + 6*i).toInt();
+                defaultPower = std::max(1, defaultPower);
+                // if (isCoag) {
+                socket->setModeId(firstModeId, isCoag);
+                socket->setInstrumId(firstInstrId, isCoag);
+                isCoag ? socket->setCoagModePower(defaultPower) : socket->setCutModePower(defaultPower);
+                // }
+
+            }
+        }
+    }
+    m_socketModel->setItemsMap(socketMapVector.at(0));
+    m_socketModel->setInstrumMap(getInstrums());
 }
 
-void ControlCenter::getListOfPrograms(int scopeID)
+QStringList ControlCenter::getListOfPrograms(int scopeID)
 {
     //захардкодили, но это нужно знать
     bool isMyselfArgon = false;
 
     QString queryCondition = "Scope_ID = %1 AND (Argon = 0 OR Argon = %2)";
 
-    QList<QVariantList> progList = m_dbReader->slotSendSelectQuery(QStringList{"Progs"},
-                                                                        QStringList{"Name_RU","id"},
+    QList<QVariantList> progListVariant = m_dbReader->slotSendSelectQuery(QStringList{"Progs"},
+                                                                        QStringList{"Name_RU","id", "Prog_NUM", "Subprog_RU"},
                                                                         queryCondition.arg(scopeID).arg(isMyselfArgon ? 2 : 1));
 
+    QList<Prog> progList;
+    progList.reserve(progListVariant.size());
+    // QStringList progNameList;
+    for (const auto& item : progListVariant) {
+        Prog tmp;
+        tmp.isMainProg = item.at(2).toInt() % 10 == 0 ? true : false;
+        tmp.id = item.at(1).toInt();
+        tmp.name = item.at(tmp.isMainProg ? 0 : 3).toString();
+        progList.append(tmp);
+    }
 }
 
 std::map<int, std::map<int, InstrInfo> > ControlCenter::getConstarints(const QList<int>& idList)

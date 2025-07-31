@@ -113,6 +113,8 @@ public:
      */
     bool setCutModeIndex(int newCutModeIndex);
 
+    bool setModeId(int id, bool isCoag);
+
     /**
      * @brief Проверка типа режима по его названию
      * @param modeName - текущее локализованное название режима
@@ -223,6 +225,8 @@ public:
     QByteArray toByteArray();
 
     bool setInstrumIndex(int index, bool isCoag);
+    bool setInstrumId(int id, bool isCoag);
+
 
 private:
 

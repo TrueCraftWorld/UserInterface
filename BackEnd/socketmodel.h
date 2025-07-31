@@ -57,11 +57,6 @@ public:
     SockPtr socketByName(const QString& socket) const;
     SockPtr socketById(int id) const;
 
-private:
-    std::map<int, SockPtr> m_itemsMap;
-    std::map<int, QSharedPointer<Instrument>> m_instrumMap;
-    QStringList m_socketNames;
-    // SocketModeEditor * editor;
 
 signals:
     void signalSocketStateChanged(int socketId, int state);
@@ -70,8 +65,18 @@ signals:
     // QAbstractItemModel interface
 public:
     virtual QHash<int, QByteArray> roleNames() const override final;
-    void setItemsMap(const std::map<int, SockPtr > &newItemsMap);
+    void setItemsMap(const std::map<int, SockPtr > &newItemsMap, bool add = false);
+    void setItemsMapVector(const std::vector<std::map<int, SockPtr >> &newItemsMapVector);
     void setInstrumMap(const std::map<int, QSharedPointer<Instrument> > &newInstrumMap);
+    bool setCurrentProgSubIndex(int newIndex);
+
+private:
+    std::map<int, SockPtr>* m_itemsMap = nullptr;
+    std::vector<std::map<int, SockPtr >> m_itemsMapVect;
+    int m_curMapIdx = 0;
+    std::map<int, QSharedPointer<Instrument>> m_instrumMap;
+    QStringList m_socketNames;
+    // SocketModeEditor * editor;
 };
 
 #endif // SOCKETMODEL_H

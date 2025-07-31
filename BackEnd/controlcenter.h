@@ -11,6 +11,11 @@
 #include "instrument.h"
 #include "surgicalmode.h"
 
+struct Prog {
+    QString name;
+    int id;
+    bool isMainProg;
+};
 
 /**
  * @brief Управляющий класс бэкэнда, осуществляющий
@@ -62,8 +67,8 @@ private:
 
     void defaultSocketInit();
     void dataBaseSocketInit();
-    void programmLoadSocketInit();
-    void getListOfPrograms(int scopeID);
+    void programmLoadSocketInit(int progId);
+    QStringList getListOfPrograms(int scopeID);
     std::map<int, std::map<int, InstrInfo>> getConstarints(const QList<int> &idList);
     std::map<int, InstrPtr> getInstrums();
 

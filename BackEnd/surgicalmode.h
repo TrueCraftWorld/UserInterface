@@ -75,10 +75,11 @@ class SurgicalMode {
 public:
 
     SurgicalMode(const QString& name,
-                bool isCoag,
-                int maximum = 400,
-                int minimum = 1,
-                const std::map<int, InstrInfo>& _instrs = {});
+                 bool isCoag,
+                 int maximum = 400,
+                 int minimum = 1,
+                 const std::map<int, InstrInfo>& _instrs = {},
+                 int id=0);
 
     explicit SurgicalMode()  :
         SurgicalMode("NoMode", false, 1, 1) {}
@@ -110,6 +111,10 @@ public:
 
     int selectedInstrIndex() const;
     bool setSelectedInstrIndex(int newSelectedInstrIndex);
+
+    // void setId(int newId);
+
+    int id() const;
 
 private:
     void setModeName(const QString &newModeName);

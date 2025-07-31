@@ -1,17 +1,19 @@
 #include "surgicalmode.h"
 
 
-SurgicalMode::SurgicalMode( const QString& name,
-                            bool isCoag,
-                            int maximum,
-                            int minimum,
-                            const std::map<int, InstrInfo>& _instrs) :
+SurgicalMode::SurgicalMode(const QString& name,
+                           bool isCoag,
+                           int maximum,
+                           int minimum,
+                           const std::map<int, InstrInfo>& _instrs,
+                           int id) :
     m_maximumPower(maximum),
     m_minimumPower(minimum),
     m_currentPower(1),
     m_modeName( name),
     m_isCoag(isCoag),
-    m_InstrConstraints(_instrs)
+    m_InstrConstraints(_instrs),
+    m_id(id)
 {
     // Q_UNUSED(parent);
     if (m_InstrConstraints.size())
@@ -33,6 +35,11 @@ void SurgicalMode::setMaximumPower(int newMaximumPower)
     if (m_maximumPower == newMaximumPower)
         return;
     m_maximumPower = newMaximumPower;
+}
+
+int SurgicalMode::id() const
+{
+    return m_id;
 }
 
 int SurgicalMode::selectedInstrIndex() const

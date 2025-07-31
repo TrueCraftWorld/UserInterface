@@ -47,20 +47,21 @@ QList<QVariantList> DataBaseReader::slotSendSelectQuery(const QStringList &table
     db.open();
 
     QSqlQuery query(db);
+    QString tmp;
     if (conditions.isEmpty()) {
         QString queryString("SELECT %1 FROM %2");
-        QString tmp = queryString.arg(columns.join(',')).arg(tables.join(','));
+        tmp = queryString.arg(columns.join(',')).arg(tables.join(','));
         query.prepare(tmp);
     } else {
         QString queryString("SELECT %1 FROM %2 WHERE %3");
-        QString tmp = queryString.arg(columns.join(',')).arg(tables.join(',')).arg(conditions);
+        tmp = queryString.arg(columns.join(',')).arg(tables.join(',')).arg(conditions);
         query.prepare(tmp);
     }
 
     query.setForwardOnly(true);
 
     if (!query.exec()) {
-        qDebug() << query.lastError().text();
+        qDebug() << query.lastError().text() << tmp;
     }
 
     int colCount = columns.size();

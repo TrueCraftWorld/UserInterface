@@ -68,7 +68,7 @@ private:
     void defaultSocketInit();
     void dataBaseSocketInit();
     void programmLoadSocketInit(int progId);
-    QStringList getListOfPrograms(int scopeID);
+    QList<Prog> getListOfPrograms(int scopeID);
     std::map<int, std::map<int, InstrInfo>> getConstarints(const QList<int> &idList);
     std::map<int, InstrPtr> getInstrums();
 

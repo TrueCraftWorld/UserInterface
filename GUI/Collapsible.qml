@@ -10,6 +10,7 @@ Item {
     property bool expanded: true
     property alias contentItem: content.data
     property int headerHeight: 40
+    property bool expansionAllowed: true
 
     implicitHeight: content.height ? content.height : header.height
     height: content.height ? content.height : header.height
@@ -48,6 +49,7 @@ Item {
             width: 30
             height: 30
             radius: 8
+            visible: expansionAllowed
             Text {
                 anchors.fill: parent
                 anchors.centerIn: parent

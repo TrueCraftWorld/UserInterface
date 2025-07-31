@@ -39,7 +39,8 @@ Repeater {
     delegate: Collapsible {
         id: socketRoot
         headerHeight: 40
-        expanded: true
+        expanded: model.socketenabled
+        expansionAllowed: model.socketallowed
 
         Layout.fillWidth: true
         Layout.alignment: Qt.AlignTop

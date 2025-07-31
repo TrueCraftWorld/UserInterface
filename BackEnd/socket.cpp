@@ -247,6 +247,19 @@ bool SOCKET::setInstrumId(int id, bool isCoag)
     return mode->setSelectedInstrId(id);
 }
 
+void SOCKET::setAllowed(bool allow)
+{
+    if (m_socketStatus >= S_DISABLED && allow)
+        return;
+    if (m_socketStatus == S_OFF && (!allow))
+        return;
+
+    if (allow)
+        m_socketStatus = S_ENABLED;
+    else
+        m_socketStatus = S_OFF;
+}
+
 CSurgModePtr SOCKET::curCoagMode() const
 {
     return m_curCoagMode;

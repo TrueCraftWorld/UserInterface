@@ -15,6 +15,8 @@ class SocketModel : public QAbstractListModel
 public:
     enum SocketRoles {
         SocketStatus = Qt::UserRole+1,
+        SocketEnabled,
+        SocketAllowed,
         SocketName,
         SocketPolarity,
         CoagModeIndex,

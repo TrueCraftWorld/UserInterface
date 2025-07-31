@@ -35,8 +35,12 @@ QVariant SocketModel::data(const QModelIndex &index, int role) const
     switch (role) {
     case Qt::DisplayRole:
         return QVariant();
+    case SocketEnabled:
+        return socketItem.socketStatus() >= SOCKET::S_ENABLED;
+    case SocketAllowed:
+        return socketItem.socketStatus() != SOCKET::S_OFF;
     case SocketStatus:
-        return socketItem.socketStatus();
+        return static_cast<int>(socketItem.socketStatus());
     case SocketName:
         return socketItem.socketName();
     case SocketPolarity:
@@ -129,6 +133,14 @@ bool SocketModel::setData(const QModelIndex &index, const QVariant &value, int r
     SOCKET& socketItem = *(socketIter);
 
     switch (role) {
+    case SocketEnabled:
+    {
+        if (socketItem.socketStatus() == SOCKET::S_OFF)
+            return false;
+        bool isOk = value.toBool();
+        socketItem.setSocketStatus(isOk ? SOCKET::S_ENABLED : SOCKET::S_DISABLED);
+        return true;
+    }
     case CoagModeIndex:
         return socketItem.setCoagModeIndex(value.toInt());
     case CutModeIndex:

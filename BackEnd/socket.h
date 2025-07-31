@@ -28,7 +28,8 @@ public:
                         };
 
     /*! Перечисление возможных состояний сокета */
-    enum SocStatus {S_OFF, /*!< Выключен, активация запрещена */
+    enum SocStatus {S_OFF, /*!< ОТКЛЮЧЕН */
+                    S_DISABLED, /*!< Выключен, активация запрещена */
                     S_ENABLED, /*!< Включен, активация разрешена */
                     S_ACTIVE_COAG, /*!< Активирован, коагуляция */
                     S_ACTIVE_CUT, /*!< Активирован, резание */
@@ -226,6 +227,7 @@ public:
 
     bool setInstrumIndex(int index, bool isCoag);
     bool setInstrumId(int id, bool isCoag);
+    void setAllowed(bool allow);
 
 
 private:

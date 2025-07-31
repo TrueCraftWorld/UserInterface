@@ -1,9 +1,11 @@
 #include "controlcenter.h"
 #include "socket.h"
 
+#include <cmath>
 #include <map>
 #include <vector>
 #include <unordered_set>
+
 #include <QQmlEngine>
 #include <QString>
 
@@ -98,13 +100,13 @@ void makeModes(QHash<QString, SurgModePtr>& container,
 
 
     for (const auto& item : modes) {
-        auto instrs = instMap.find(item.at(0).toInt());
+        auto instrs = instMap.find(item.at(2).toInt());
         if (instrs == instMap.end())
             continue;
         std::map<int, InstrInfo> tmp = instrs->second;
         filterMapByKey(tmp, parseCommaSeparatedNumbers(progItem.at(start + 6*socketNum).toString()));
-        if (tmp.size() == 0)
-            continue;
+        // if (tmp.size() == 0)
+        //     continue;
         SurgModePtr ptr = SurgModePtr::create(item.at(1).toString(),
                                                                       isCoag,
                                                                       item.at(0).toInt(),
@@ -114,6 +116,31 @@ void makeModes(QHash<QString, SurgModePtr>& container,
                         ptr);
 
     }
+}
+
+
+bool hasNonZeroDigit(int number, int digitPosition) {
+    // Проверяем, что позиция разряда корректна (начиная с 0)
+    if (digitPosition < 0) {
+        return false;
+    }
+
+    // Приводим число к положительному виду для упрощения
+    number = abs(number);
+
+    // Делим число на 10^digitPosition, чтобы перенести нужный разряд в конец
+    int shiftedNumber = number / static_cast<int>(std::pow(10, digitPosition));
+
+    // Если после сдвига число стало нулём, значит разряд отсутствует
+    if (shiftedNumber == 0) {
+        return false;
+    }
+
+    // Получаем последнюю цифру (нужный разряд)
+    int digit = shiftedNumber % 10;
+
+    // Проверяем, что цифра не равна нулю
+    return (digit != 0);
 }
 }
 
@@ -362,15 +389,15 @@ void ControlCenter::programmLoadSocketInit(int progId)
     //Шаг1---------------------------------------------------------
     QString queryCondition = "Prog_ID = %1";
     QStringList fields = {"id", "Num", "Prog_ID", /* 0 1 2*/
-                          "Bi1Cut_INSTR", "Bi1Cut_MODE", "Bi1Cut_POWER", /* 3 4 5 6*/
-                          "Bi1Coag_INSTR", "Bi1Coag_MODE", "Bi1Coag_POWER", /* 7 8 9 10*/
-                          "Bi2Cut_INSTR", "Bi2Cut_MODE", "Bi2Cut_POWER", /* 11 12 13 14*/
-                          "Bi2Coag_INSTR", "Bi2Coag_MODE", "Bi2Coag_POWER", /* 15 16 17 18*/
-                          "Mono1Cut_INSTR", "Mono1Cut_MODE", "Mono1Cut_POWER", /* 19 20 21 22*/
-                          "Mono1Coag_INSTR", "Mono1Coag_MODE", "Mono1Coag_POWER", /* 23 24 25 26*/
-                          "Mono2Cut_INSTR", "Mono2Cut_MODE", "Mono2Cut_POWER", /* 27 28 29 30*/
-                          "Mono2Coag_INSTR", "Mono2Coag_MODE", "Mono2Coag_POWER", /* 31 32 33 34*/
-                          "Pedal_1", "Pedal_2", "OutEnabled_MASK"};/* 35 36 37*/
+                          "Bi1Cut_INSTR", "Bi1Cut_MODE", "Bi1Cut_POWER", /* 3 4 5*/
+                          "Bi1Coag_INSTR", "Bi1Coag_MODE", "Bi1Coag_POWER", /* 6 7 8*/
+                          "Bi2Cut_INSTR", "Bi2Cut_MODE", "Bi2Cut_POWER", /* 9 10 11*/
+                          "Bi2Coag_INSTR", "Bi2Coag_MODE", "Bi2Coag_POWER", /* 12 13 14*/
+                          "Mono1Cut_INSTR", "Mono1Cut_MODE", "Mono1Cut_POWER", /* 15 16 17*/
+                          "Mono1Coag_INSTR", "Mono1Coag_MODE", "Mono1Coag_POWER", /* 18 19 20*/
+                          "Mono2Cut_INSTR", "Mono2Cut_MODE", "Mono2Cut_POWER", /* 21 22 23*/
+                          "Mono2Coag_INSTR", "Mono2Coag_MODE", "Mono2Coag_POWER", /* 24 25 26*/
+                          "Pedal_1", "Pedal_2", "OutEnabled_MASK"};/* 27 28 29*/
 
     QList<QVariantList> progListVariant = m_dbReader->slotSendSelectQuery(QStringList{"Lists"},
                                                                         fields,
@@ -430,7 +457,7 @@ void ControlCenter::programmLoadSocketInit(int progId)
                 bool isCoag = (halfSocket == 0);
                 QHash<QString, SurgModePtr> modes;
                 QList<QVariantList> modesList = m_dbReader->slotSendSelectQuery(QStringList{"Modes"},
-                            QStringList{"MaxPower","Name_RU"},
+                            QStringList{"MaxPower","Name_RU", "id"},
                             queryConditionModes
                                         .arg(socket->socketType() <= SOCKET::BIPOLAR_2 ? 0 : 1)
                                         .arg(halfSocket)
@@ -442,6 +469,7 @@ void ControlCenter::programmLoadSocketInit(int progId)
                           progItem,
                           i,
                           isCoag);
+
                 if (isCoag) socket->setCoagModes(modes, modeNamesList);
                 else socket->setCutModes(modes, modeNamesList);
                 int start = isCoag ? 6 : 3;
@@ -458,13 +486,17 @@ void ControlCenter::programmLoadSocketInit(int progId)
                 // }
 
             }
+            //МОНО2 КОАГ = 1, БИ1РЕЗ 8
+            bool allowSock = hasNonZeroDigit(progItem.at(29).toInt(), (8 - 2*i) - 1 )
+                    || hasNonZeroDigit(progItem.at(29).toInt(), (8 - 2*i));
+            socket->setAllowed(allowSock);
         }
     }
-    m_socketModel->setItemsMap(socketMapVector.at(0));
+    m_socketModel->setItemsMapVector(socketMapVector);
     m_socketModel->setInstrumMap(getInstrums());
 }
 
-QStringList ControlCenter::getListOfPrograms(int scopeID)
+QList<Prog> ControlCenter::getListOfPrograms(int scopeID)
 {
     //захардкодили, но это нужно знать
     bool isMyselfArgon = false;
@@ -485,6 +517,7 @@ QStringList ControlCenter::getListOfPrograms(int scopeID)
         tmp.name = item.at(tmp.isMainProg ? 0 : 3).toString();
         progList.append(tmp);
     }
+    return progList;
 }
 
 std::map<int, std::map<int, InstrInfo> > ControlCenter::getConstarints(const QList<int>& idList)

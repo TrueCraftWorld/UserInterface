@@ -12,6 +12,7 @@ Rectangle {
     property int coagInstrumId
     property string cutInstrumName: qsTr("не выбран")
     property string coagInstrumName: qsTr("не выбран")
+    property int socketDispMode: 3
 
     signal cutEditDialogRequest()
     signal coagEditDialogRequest()
@@ -20,10 +21,12 @@ Rectangle {
         id: cutMain
         color: "yellow"
         radius: 8
+        visible: (socketDispMode == 2) || (socketDispMode == 3)
+        // width: socketDispMode == 2 ? socketRoot.
 
         anchors {
             left: socketRoot.left
-            right: socketRoot.horizontalCenter
+            // right: cutMain.visible ? socketRoot.horizontalCenter : socketRoot.left
             top: socketRoot.top
             bottom: socketRoot.bottom
         }
@@ -95,6 +98,7 @@ Rectangle {
         id: coagMain
         color: "blue"
         radius: 8
+        visible: (socketDispMode == 1) || (socketDispMode == 3)
 
         anchors {
             left: socketRoot.horizontalCenter

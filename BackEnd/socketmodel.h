@@ -17,6 +17,7 @@ public:
         SocketStatus = Qt::UserRole+1,
         SocketEnabled,
         SocketAllowed,
+        SocketDisplayMode,
         SocketName,
         SocketPolarity,
         CoagModeIndex,

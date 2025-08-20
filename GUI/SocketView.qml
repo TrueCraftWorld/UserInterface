@@ -65,6 +65,7 @@ Repeater {
             coagInstrumId: model.coagmodeinstrid
             cutInstrumId: model.cutmodeinstrid
             socketId: model.socketpolarity
+            socketDispMode: model.socketdisplaymode
         }
         Connections {
             target: soc

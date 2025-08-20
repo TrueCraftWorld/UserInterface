@@ -8,6 +8,7 @@
 #include <QSharedPointer>
 
 #include "surgicalmode.h"
+#include "halfsocket.h"
 
 /**
  * @brief Класс описывающий один электрический сокет.
@@ -34,7 +35,14 @@ public:
                     S_ACTIVE_COAG, /*!< Активирован, коагуляция */
                     S_ACTIVE_CUT, /*!< Активирован, резание */
                     S_ERROR /*!< Ошибка, активация запрещена */
-                        };
+                        }; 
+
+    /*! Перечисление возможных отображений сокета */
+    enum SocDisplayMode {S_NO_SOCKET, /*!< Скрыт (в ыданной программе нельзя настраивать */
+                    S_CUT_ONLY, /*!< Настраиваевается только резание */
+                    S_COAG_ONLY, /*!< НАстраивается только коагуляция */
+                    S_FULL, /*!< Полностью настраиваемый сокет */
+                   };
 
     /*! Перечисление возможных типоа режима */
     enum ModeType { NONE = 0, /*!< Никакой - для режима-заглушки,  */
@@ -90,13 +98,13 @@ public:
      * @brief Возвращает список доступных режимов реза
      * @return
      */
-    const QStringList& cutModes() const;
+    // const QStringList& cutModeNamess() const;
 
     /**
      * @brief Возвращает список доступных режимов коаг
      * @return
      */
-    const QStringList& coagModes() const;
+    // const QStringList& coagModeNames() const;
 
     /**
      * @brief устанавливает новый относительный индекс режима коагуляции
@@ -115,13 +123,6 @@ public:
     bool setCutModeIndex(int newCutModeIndex);
 
     bool setModeId(int id, bool isCoag);
-
-    /**
-     * @brief Проверка типа режима по его названию
-     * @param modeName - текущее локализованное название режима
-     * @return ModeType заданного режима
-     */
-    int checkMode(const QString& modeName) const;
 
     /**
      * @brief установка типа сокеты
@@ -229,29 +230,23 @@ public:
     bool setInstrumId(int id, bool isCoag);
     void setAllowed(bool allow);
 
+    int displayMode() const;
+    void setDisplayMode(SocDisplayMode newDisplayMode);
 
 private:
+    HalfSockPtr m_cutHalf;
+    HalfSockPtr m_coagHalf;
 
-    CSurgModePtr getMode(const QString& name, ModeType type) const;
-    CSurgModePtr m_curCoagMode;
-    CSurgModePtr m_curCutMode;
+    CSurgModePtr getMode(const QString& name, bool isCoag) const;
 
     bool setModePower(int newPower, bool isCoag);
     bool setModeIndex(int index, bool isCoag);
 
-    int m_coagModeIndex = 0;
-    int m_cutModeIndex = 0;
-
     SocType m_socketType;
     SocStatus m_socketStatus;
+    SocDisplayMode m_displayMode;
 
     QString m_socketName;
-
-    QStringList m_coagModeNames;
-    QStringList m_cutModeNames;
-
-    QHash<QString, SurgModePtr> m_cutModes;
-    QHash<QString, SurgModePtr> m_coagModes;
 };
 
 using SockPtr=QSharedPointer<SOCKET>;

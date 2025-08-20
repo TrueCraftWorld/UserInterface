@@ -26,8 +26,6 @@ QStringList sortByExample(const QStringList& toSort, const QStringList& referenc
 }
 
 SOCKET::SOCKET(SOCKET::SocType type) :
-    m_coagModeIndex(0),
-    m_cutModeIndex(0),
     m_socketType(type),
     m_socketStatus(S_ENABLED)
 {
@@ -40,7 +38,7 @@ SOCKET::SOCKET(SOCKET::SocType type) :
 
 int SOCKET::coagModeIndex() const
 {
-    return m_coagModeIndex;
+    return m_coagHalf->modeIndex();
 }
 
 bool SOCKET::setCoagModeIndex(int newCoagModeIndex)
@@ -50,7 +48,7 @@ bool SOCKET::setCoagModeIndex(int newCoagModeIndex)
 
 int SOCKET::cutModeIndex() const
 {
-    return m_cutModeIndex;
+    return m_cutHalf->modeIndex();
 }
 
 bool SOCKET::setCutModeIndex(int newCutModeIndex)
@@ -71,18 +69,6 @@ bool SOCKET::setModeId(int id, bool isCoag)
     return false;
 }
 
-int SOCKET::checkMode(const QString &modeName) const
-{
-
-    ///ОШИБКА ЕСЛИ NO_MODE
-    if (m_coagModeNames.contains(modeName))
-        return COAG;
-    if (m_cutModeNames.contains(modeName))
-        return CUT;
-
-    return NONE;
-}
-
 SOCKET::SocType SOCKET::socketType() const
 {
     return m_socketType;
@@ -97,6 +83,8 @@ void SOCKET::setSocketType(SOCKET::SocType newSocketType)
     m_cutModes.clear();
     m_coagModes.clear();
     m_socketType = newSocketType;
+    m_cutHalf = HalfSockPtr::create(false);
+    m_coagHalf = HalfSockPtr::create(true);
 }
 
 SOCKET::SocStatus SOCKET::socketStatus() const
@@ -118,22 +106,31 @@ const QString &SOCKET::socketName() const
 
 const QString &SOCKET::coagModeName() const
 {
-    return m_coagModeNames.at(m_coagModeIndex);
+    if (m_coagHalf.isNull())
+        return "";
+    return m_coagHalf->modeName();
 }
 
 const QString &SOCKET::cutModeName() const
 {
-    return m_cutModeNames.at(m_cutModeIndex);
+    if (m_cutHalf.isNull())
+        return "";
+    return m_cutHalf->modeName();
 }
 
-const QStringList &SOCKET::cutModes() const
+const QStringList &SOCKET::cutModeNamess() const
 {
-    return m_cutModeNames;
+    if (m_cutHalf.isNull())
+        return {};
+    return m_cutHalf->modeNames();
 }
 
-const QStringList &SOCKET::coagModes() const
+const QStringList &SOCKET::coagModeNames() const
 {
-    return m_coagModeNames;
+    // HalfSockPtr half = isCoag ? m_coagHalf : m_cutHalf;
+    if (m_coagHalf.isNull())
+        return {};
+    return m_coagHalf->modeNames();
 }
 
 void SOCKET::setSocketName(const QString &newSocketName)
@@ -146,19 +143,22 @@ void SOCKET::setSocketName(const QString &newSocketName)
 
 CSurgModePtr SOCKET::getMode(int modeIndex, bool isCoag) const
 {
-    bool hasMode = isCoag ? m_coagModeNames.size() > modeIndex : m_cutModeNames.size() > modeIndex;
+    HalfSockPtr half = isCoag ? m_coagHalf : m_cutHalf;
+    if (half.isNull())
+        return nullptr;
+    bool hasMode = half->modeNames().size() > modeIndex;
 
     if (!hasMode)
         return nullptr;
-    const QString& name = isCoag ? m_coagModeNames.at(modeIndex) : m_cutModeNames.at(modeIndex);
-    return isCoag ? m_coagModes.value(name) : m_cutModes.value(name);
+    const QString& name = half->modeNames().at(modeIndex);
+    return half->modes().value(name);
 }
 
 int SOCKET::coagModePower() const
 {
-    if (m_curCoagMode.isNull())
+    if (m_coagHalf.isNull())
         return 1;
-    return m_curCoagMode->currentPower();
+    return m_coagHalf->modePower();
 }
 
 bool SOCKET::setCoagModePower(int newCoagModePower)
@@ -169,9 +169,9 @@ bool SOCKET::setCoagModePower(int newCoagModePower)
 int SOCKET::cutModePower() const
 {
     // return m_cutModePower;
-    if (m_curCutMode.isNull())
+    if (m_cutHalf.isNull())
         return 1;
-    return m_curCutMode->currentPower();
+    return m_cutHalf->modePower();
 }
 
 bool SOCKET::setCutModePower(int newCutModePower)
@@ -179,13 +179,14 @@ bool SOCKET::setCutModePower(int newCutModePower)
     return setModePower(newCutModePower, false);
 }
 
-CSurgModePtr SOCKET::getMode(const QString &name, ModeType type) const
+CSurgModePtr SOCKET::getMode(const QString &name, bool isCoag) const
 {
-    if (type == NONE)
+    HalfSockPtr half = isCoag ? m_coagHalf : m_cutHalf;
+    if (half.isNull())
         return nullptr;
 
     const QHash<QString, SurgModePtr> & container =
-        type == COAG ? m_coagModes : m_cutModes;
+        half->modes();
 
     const auto modeIter = container.find(name);
     if (modeIter == container.cend()) {
@@ -211,15 +212,21 @@ QByteArray SOCKET::toByteArray()
     /// Итого 9 байт - 4 16бит значения и 1 8бит
     ///
     QByteArray res;
+    QDataStream stream(res);
+    stream << m_socketType << m_cutHalf->toByteArray() << m_coagHalf->toByteArray();
 
     return res;
 }
 
 bool SOCKET::setInstrumIndex(int index, bool isCoag)
 {
-    QHash<QString, SurgModePtr>& modes = isCoag ? m_coagModes : m_cutModes;
-    int curModeIdx = isCoag ? m_coagModeIndex : m_cutModeIndex;
-    QStringList& names = isCoag ? m_coagModeNames : m_cutModeNames;
+    HalfSockPtr half = isCoag ? m_coagHalf : m_cutHalf;
+    if (half.isNull())
+        return false;
+
+    QHash<QString, SurgModePtr>& modes = half->modes();
+    int curModeIdx = half->modeIndex();
+    QStringList& names = half->modeNames();
 
     if (curModeIdx >= names.size())
         return false;
@@ -233,9 +240,13 @@ bool SOCKET::setInstrumIndex(int index, bool isCoag)
 
 bool SOCKET::setInstrumId(int id, bool isCoag)
 {
-    QHash<QString, SurgModePtr>& modes = isCoag ? m_coagModes : m_cutModes;
-    int curModeIdx = isCoag ? m_coagModeIndex : m_cutModeIndex;
-    QStringList& names = isCoag ? m_coagModeNames : m_cutModeNames;
+    HalfSockPtr half = isCoag ? m_coagHalf : m_cutHalf;
+    if (half.isNull())
+        return false;
+
+    QHash<QString, SurgModePtr>& modes = half->modes();
+    int curModeIdx = half->modeIndex();
+    QStringList& names = half->modeNames();
 
     if (curModeIdx >= names.size())
         return false;
@@ -262,38 +273,57 @@ void SOCKET::setAllowed(bool allow)
 
 CSurgModePtr SOCKET::curCoagMode() const
 {
-    return m_curCoagMode;
+    return m_coagHalf->curMode();
 }
 
 bool SOCKET::setModePower(int newPower, bool isCoag)
 {
-    auto iter = isCoag
-        ? m_coagModes.find(m_coagModeNames.at(m_coagModeIndex))
-        : m_cutModes.find(m_cutModeNames.at(m_cutModeIndex));
-
-    if ((*iter)->setCurrentPower(newPower)) {
-        return true;
-    } else {
+    HalfSockPtr half = isCoag ? m_coagHalf : m_cutHalf;
+    if (half.isNull())
         return false;
-    }
-    return false;
+    return half->setModePower(newPower);
+    // auto iter = isCoag
+    //     ? m_coagModes.find(m_coagModeNames.at(m_coagModeIndex))
+    //     : m_cutModes.find(m_cutModeNames.at(m_cutModeIndex));
+
+    // if ((*iter)->setCurrentPower(newPower)) {
+    //     return true;
+    // } else {
+    //     return false;
+    // }
+    // return false;
 }
 
 bool SOCKET::setModeIndex(int index, bool isCoag)
 {
-    const QStringList& modeNames = isCoag ? m_coagModeNames : m_cutModeNames;
-    int& compareIdx = isCoag ? m_coagModeIndex : m_cutModeIndex;
-    CSurgModePtr curMode = isCoag ? m_curCoagMode : m_curCutMode;
-    if (((index == compareIdx) ||
-        (index >= modeNames.size()) ||
-        (index < 0)) && (!curMode.isNull())) {
+    HalfSockPtr half = isCoag ? m_coagHalf : m_cutHalf;
+    if (half.isNull())
+        return false;
+    const QStringList& modeNames = half->modeNames();
+    int& compareIdx = half->modeIndex();
+    CSurgModePtr curMode = half->curMode();
+    if (index == compareIdx) {
+        return true;
+    } else if (((index >= modeNames.size()) ||
+            (index < 0)) && (!curMode.isNull())) {
         return false;
     } else {
-        compareIdx = index;
-        CSurgModePtr mode = isCoag ? m_coagModes[modeNames.at(compareIdx)] : m_cutModes[modeNames.at(compareIdx)];
-        (isCoag ? m_curCoagMode : m_curCutMode) = mode;
+        return half->setModeIndex(index);
+        // compareIdx = index;
+        // CSurgModePtr mode = isCoag ? m_coagModes[modeNames.at(compareIdx)] : m_cutModes[modeNames.at(compareIdx)];
+        // (isCoag ? m_curCoagMode : m_curCutMode) = mode;
         return true;
     }
+}
+
+int SOCKET::displayMode() const
+{
+    return m_displayMode;
+}
+
+void SOCKET::setDisplayMode(SocDisplayMode newDisplayMode)
+{
+    m_displayMode = newDisplayMode;
 }
 
 QStringList SOCKET::cutModeNames() const

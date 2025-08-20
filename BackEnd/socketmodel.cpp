@@ -41,6 +41,8 @@ QVariant SocketModel::data(const QModelIndex &index, int role) const
         return socketItem.socketStatus() != SOCKET::S_OFF;
     case SocketStatus:
         return static_cast<int>(socketItem.socketStatus());
+    case SocketDisplayMode:
+        return static_cast<int>(socketItem.displayMode());
     case SocketName:
         return socketItem.socketName();
     case SocketPolarity:
@@ -63,15 +65,16 @@ QVariant SocketModel::data(const QModelIndex &index, int role) const
         if (iter != m_instrumMap.end())
             return iter->second->name();
         else
-        return QVariant();
+        return tr("Не выбран");
     }
     case CoagModeInstrID:
         //это по боевому
         // return socketItem.curCoagMode()->selectedInstrId();
         // а это для альфа теста
         return socketItem.curCoagMode()->selectedInstrIndex();
-    case CoagModeInstrImage:
 
+    case CoagModeInstrImage:
+        //тут можно возращеть строку с именем или даже целиком с нужным ImageProvider
     case CoagModeInstrIndex:
         return QVariant();
 

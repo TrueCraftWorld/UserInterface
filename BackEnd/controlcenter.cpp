@@ -374,9 +374,10 @@ void ControlCenter::dataBaseSocketInit()
  *         те, которые разрешены в данной программе (Шаг 3)
  * Шаг 6 - Поселедовательная инициализация полусокетов по строкам из (Шаг 1)
  *         Если сокет включён:
- *         6.1 - для каждого полусокета прореживания списка инструментов
- *         6.2 инициализация сокета полученным списком допустимыз режимов и инструментов
- *         6.3 установка режима, мощностии и инструмента по умолчанию
+ *         6.1 - для каждого полусокета прореживание списка режимов
+ *         6.2 - для каждого полусокета прореживания списка инструментов
+ *         6.3 инициализация сокета полученным списком допустимыз режимов и инструментов
+ *         6.4 установка режима, мощностии и инструмента по умолчанию
  *
  */
 void ControlCenter::programmLoadSocketInit(int progId)
@@ -487,9 +488,19 @@ void ControlCenter::programmLoadSocketInit(int progId)
 
             }
             //МОНО2 КОАГ = 1, БИ1РЕЗ 8
-            bool allowSock = hasNonZeroDigit(progItem.at(29).toInt(), (8 - 2*i) - 1 )
-                    || hasNonZeroDigit(progItem.at(29).toInt(), (8 - 2*i));
+            bool coagEna = hasNonZeroDigit(progItem.at(29).toInt(), (8 - 2*i) - 1 );
+            bool cutEna = hasNonZeroDigit(progItem.at(29).toInt(), (8 - 2*i) );
+            bool allowSock = cutEna || coagEna;
             socket->setAllowed(allowSock);
+            if (cutEna && coagEna) {
+                socket->setDisplayMode(SOCKET::S_FULL);
+            } else if (coagEna) {
+                socket->setDisplayMode(SOCKET::S_COAG_ONLY);
+            } else if (cutEna) {
+                socket->setDisplayMode(SOCKET::S_CUT_ONLY);
+            } else {
+                socket->setDisplayMode(SOCKET::S_NO_SOCKET);
+            }
         }
     }
     m_socketModel->setItemsMapVector(socketMapVector);

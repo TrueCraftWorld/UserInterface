@@ -7,5 +7,11 @@
         <file>SocketEditor.qml</file>
         <file>SocketView.qml</file>
         <file>EditorPopup.qml</file>
+        <file>HalfSocket.qml</file>
+        <file>InstrumRect.qml</file>
+        <file>ModePowerRect.qml</file>
+        <file>SocketRepeater.qml</file>
+        <file>StatesSocket.qml</file>
+        <file>SocketContainerV2.qml</file>
     </qresource>
 </RCC>

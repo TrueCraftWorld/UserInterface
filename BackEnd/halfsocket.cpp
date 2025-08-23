@@ -39,17 +39,17 @@ HalfSocket::HS_State HalfSocket::halfSocketState() const
     return static_cast<HS_State>(m_state);
 }
 
-const QString &HalfSocket::modeName() const
+QString HalfSocket::modeName() const
 {
     return m_curMode->modeName();
 }
 
-QHash<QString, CSurgModePtr> &HalfSocket::modes() const
+QHash<QString, SurgModePtr> HalfSocket::modes() const
 {
     return m_modes;
 }
 
-const QStringList &HalfSocket::modeNames() const
+QStringList HalfSocket::modeNames() const
 {
     return m_modeNames;
 }
@@ -71,12 +71,14 @@ bool HalfSocket::setModeId(int id)
 int HalfSocket::checkMode(const QString &modeName) const
 {
 //bad idea
+    Q_UNUSED(modeName)
     return -1;
 }
 
 void HalfSocket::setHalfSocketState(HS_State newSocketStatus)
 {
-
+    Q_UNUSED(newSocketStatus)
+    ;
 }
 
 int HalfSocket::modePower() const
@@ -97,11 +99,6 @@ void HalfSocket::setModes(const QHash<QString, SurgModePtr> &newModes, const QSt
     setModeIndex(0);
 }
 
-QStringList HalfSocket::modeNames() const
-{
-    return m_modeNames;
-}
-
 CSurgModePtr HalfSocket::curMode() const
 {
     return m_curMode;
@@ -109,7 +106,7 @@ CSurgModePtr HalfSocket::curMode() const
 
 QByteArray HalfSocket::toByteArray()
 {
-
+    return QByteArray{};
 }
 
 bool HalfSocket::setInstrumIndex(int index)
@@ -119,7 +116,7 @@ bool HalfSocket::setInstrumIndex(int index)
 
 bool HalfSocket::setInstrumId(int id)
 {
-    return m_modes[m_modeNames.at(m_modeIndex)]->setSelectedInstrId(index);
+    return m_modes[m_modeNames.at(m_modeIndex)]->setSelectedInstrId(id);
 }
 
 CSurgModePtr HalfSocket::getMode(int index) const

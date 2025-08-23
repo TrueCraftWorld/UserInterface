@@ -71,7 +71,7 @@ public:
     void setItemsMap(const std::map<int, SockPtr > &newItemsMap, bool add = false);
     void setItemsMapVector(const std::vector<std::map<int, SockPtr >> &newItemsMapVector);
     void setInstrumMap(const std::map<int, QSharedPointer<Instrument> > &newInstrumMap);
-    bool setCurrentProgSubIndex(int newIndex);
+    void setCurrentProgSubIndex(int newIndex);
 
 private:
     std::map<int, SockPtr>* m_itemsMap = nullptr;

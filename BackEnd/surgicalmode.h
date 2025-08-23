@@ -129,8 +129,8 @@ private:
     // QString m_curInstrN?ame;
     QString m_modeName;
     bool m_isCoag;
-    int m_id;
     std::map<int, InstrInfo> m_InstrConstraints;
+    int m_id;
 };
 
 using SurgModePtr=QSharedPointer<SurgicalMode>;

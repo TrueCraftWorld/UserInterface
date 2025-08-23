@@ -3,8 +3,8 @@ import QtQuick.Layouts 1.15
 import QtQuick.Window 2.15
 import QtQuick.Controls 2.15
 import QtQuick.CuteKeyboard 1.0
-
 import StratifyLabs.UI 2.0
+// import "/home/kikorik/FOTEK/UserInterface/GUI/ScreenOfSockets"
 
 Window {
     id: container
@@ -27,11 +27,11 @@ Window {
         }
     }
 
-    SocketContainer {
+    SocketContainerV2 {
         id: socketsDummy
+        innerModel: theModel
         width: 980
         height: 700
-        radius: 8
         anchors {
             bottom: parent.bottom
             right: parent.right
@@ -40,7 +40,6 @@ Window {
     }
     Rectangle {
         id: argonDummy
-        // height: .75 * socketsDummy.height
         radius: 8
         color: "lightgray"
         anchors {
@@ -98,7 +97,6 @@ Window {
     //     availableLanguageLayouts: ["Ru","En"]
     //     anchors.left: parent.left
     //     anchors.right: parent.right
-
     //     states: State {
     //         name: "visible"
     //         when: Qt.inputMethod.visible

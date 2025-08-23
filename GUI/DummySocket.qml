@@ -22,11 +22,9 @@ Rectangle {
         color: "yellow"
         radius: 8
         visible: (socketDispMode == 2) || (socketDispMode == 3)
-        // width: socketDispMode == 2 ? socketRoot.
 
         anchors {
             left: socketRoot.left
-            // right: cutMain.visible ? socketRoot.horizontalCenter : socketRoot.left
             top: socketRoot.top
             bottom: socketRoot.bottom
         }

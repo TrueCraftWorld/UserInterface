@@ -1,0 +1,168 @@
+import QtQuick 2.15
+import QtQuick.Controls 2.15
+
+Rectangle {
+    id: socketRoot
+
+    // property color leftColor: "yellow"
+    property color middleColor: "black"
+    // property color rightColor: "blue"
+
+    property string title
+
+    property int socketId
+
+    property string cutModeName
+    property int cutModePower
+    property int cutMaxPower
+    property int cutInstrumId
+    property string cutInstrumName: qsTr("не выбран")
+
+    property string coagModeName
+    property int coagModePower
+    property int coagMaxPower
+    property int coagInstrumId
+    property string coagInstrumName: qsTr("не выбран")
+
+    signal modeEditDialogRequest(int socketId, bool isCoag)
+    signal instrumEditDialogRequest(int socketId, bool isCoag)
+
+    state: "collapsed"
+
+    HalfSocket {
+        id: leftRect
+        isCoag: false
+        state: socketRoot.state
+        modeName: cutModeName
+        modePower: cutModePower
+        maxPower: cutMaxPower
+        instrumId: cutInstrumId
+        instrumName: cutInstrumName
+        onModeEditDialogRequest:
+            socketRoot.modeEditDialogRequest(socketRoot.socketId, false)
+        onInstrumEditDialogRequest:
+            socketRoot.instrumEditDialogRequest(socketRoot.socketId, false)
+    }
+    HalfSocket {
+        id: rightRect
+        isCoag: true
+        state: socketRoot.state
+        modeName:   coagModeName
+        modePower:  coagModePower
+        maxPower:   coagMaxPower
+        instrumId:  coagInstrumId
+        instrumName: coagInstrumName
+        onModeEditDialogRequest:
+            socketRoot.modeEditDialogRequest(socketRoot.socketId, true)
+        onInstrumEditDialogRequest:
+            socketRoot.instrumEditDialogRequest(socketRoot.socketId, true)
+    }
+    // Средний прямоугольник
+    Rectangle {
+        id: middleRect
+        color: socketRoot.middleColor
+        width: fontMetrics.advanceWidth("MONO 2")
+        Label {
+            id: socketNameLabel
+            anchors.fill: parent
+            anchors.margins: 10
+            text: title
+            font.pixelSize: 24
+            font.bold: true
+            horizontalAlignment: Qt.AlignHCenter
+            verticalAlignment: Qt.AlignVCenter
+        }
+        FontMetrics {
+            id: fontMetrics
+            font: socketNameLabel.font
+        }
+        MouseArea {
+            anchors.fill: parent
+            onClicked: {
+                if (socketRoot.state === "collapsed") {
+                    socketRoot.state = "expanded"
+                } else {
+                    socketRoot.state = "collapsed"
+                }
+            }
+        }
+    }
+
+    states: [
+        // Свернутое состояние
+        State {
+            name: "collapsed"
+            AnchorChanges {
+                target: middleRect
+                anchors.horizontalCenter: parent.horizontalCenter
+                anchors.left: undefined
+                anchors.right: undefined
+                anchors.top: parent.top
+                anchors.bottom: parent.bottom
+            }
+            PropertyChanges {
+                target: middleRect
+                // width: root.middleRectWidth
+                width: fontMetrics.advanceWidth("MONO 2")
+            }
+            AnchorChanges {
+                target: leftRect
+                anchors.left: parent.left
+                anchors.right: middleRect.left
+                anchors.top: parent.top
+                anchors.bottom: parent.bottom
+            }
+            AnchorChanges {
+                target: rightRect
+                anchors.left: middleRect.right
+                anchors.right: parent.right
+                anchors.top: parent.top
+                anchors.bottom: parent.bottom
+            }
+        },
+        // Развернутое состояние
+        State {
+            name: "expanded"
+            AnchorChanges {
+                target: middleRect
+                anchors.horizontalCenter: undefined
+                anchors.left: parent.left
+                anchors.right: parent.right
+                anchors.top: parent.top
+                anchors.bottom: undefined
+            }
+            PropertyChanges {
+                target: middleRect
+                // height: root.middleRectHeight
+                height: fontMetrics.height + socketNameLabel.anchors.margins
+            }
+            AnchorChanges {
+                target: leftRect
+                anchors.left: parent.left
+                anchors.right: parent.horizontalCenter
+                anchors.top: middleRect.bottom
+                anchors.bottom: parent.bottom
+            }
+            AnchorChanges {
+                target: rightRect
+                anchors.left: parent.horizontalCenter
+                anchors.right: parent.right
+                anchors.top: middleRect.bottom
+                anchors.bottom: parent.bottom
+            }
+        }
+    ]
+    // Переходы между состояниями (опционально)
+    transitions: [
+        Transition {
+            from: "collapsed"
+            to: "expanded"
+            NumberAnimation {  duration: 300 }
+        },
+        Transition {
+            from: "expanded"
+            to: "collapsed"
+            NumberAnimation { duration: 300 }
+        }
+    ]
+}

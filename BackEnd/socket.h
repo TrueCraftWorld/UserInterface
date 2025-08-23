@@ -38,11 +38,9 @@ public:
                         }; 
 
     /*! Перечисление возможных отображений сокета */
-    enum SocDisplayMode {S_NO_SOCKET, /*!< Скрыт (в ыданной программе нельзя настраивать */
-                    S_CUT_ONLY, /*!< Настраиваевается только резание */
-                    S_COAG_ONLY, /*!< НАстраивается только коагуляция */
-                    S_FULL, /*!< Полностью настраиваемый сокет */
-                   };
+    enum SocDisplayMode {   S_COLLAPSED, /*!< свёрнут  */
+                            S_EXPANDED, /*!< развёрнут */
+                        };
 
     /*! Перечисление возможных типоа режима */
     enum ModeType { NONE = 0, /*!< Никакой - для режима-заглушки,  */
@@ -86,13 +84,13 @@ public:
      * @brief возвращает название текущего режима коаг
      * @return
      */
-    const QString &coagModeName() const;
+    QString coagModeName() const;
 
     /**
      * @brief возвращает название текущего режима рез
      * @return
      */
-    const QString &cutModeName() const;
+    QString cutModeName() const;
 
     /**
      * @brief Возвращает список доступных режимов реза
@@ -234,8 +232,8 @@ public:
     void setDisplayMode(SocDisplayMode newDisplayMode);
 
 private:
-    HalfSockPtr m_cutHalf;
-    HalfSockPtr m_coagHalf;
+    HalfSockPtr m_cutHalf = nullptr;
+    HalfSockPtr m_coagHalf = nullptr;
 
     CSurgModePtr getMode(const QString& name, bool isCoag) const;
 

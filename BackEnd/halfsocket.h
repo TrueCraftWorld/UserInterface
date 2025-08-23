@@ -34,13 +34,13 @@ public:
      * @brief возвращает название текущего режима коаг
      * @return
      */
-    const QString &modeName() const;
+    QString modeName() const;
 
     /**
      * @brief Возвращает список доступных режимов реза
      * @return
      */
-    QHash<QString, CSurgModePtr> &modes() const;
+    QHash<QString, SurgModePtr> modes() const;
 
     // /**
     //  * @brief Возвращает список доступных режимов коаг
@@ -125,23 +125,18 @@ public:
     bool setInstrumId(int id);
 
 private:
-
-    // CSurgModePtr getMode(const int index) const;
     int getModeIndex(const QString& name) const;
     int getModeIndex(int id) const;
     CSurgModePtr m_curMode;
-
-    // bool setModePower(int newPower);
-    // bool setModeIndex(int index);
-    // bool setModeId(int id);
 
     int m_modeIndex = 0;
 
     QStringList m_modeNames;
 
     QHash<QString, SurgModePtr> m_modes;
-    int m_state;
+
     bool m_isCoag;
+    int m_state;
 };
 
 using CHalfSockPtr = QSharedPointer<const HalfSocket>;

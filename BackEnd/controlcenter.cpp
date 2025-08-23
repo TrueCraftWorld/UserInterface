@@ -492,15 +492,16 @@ void ControlCenter::programmLoadSocketInit(int progId)
             bool cutEna = hasNonZeroDigit(progItem.at(29).toInt(), (8 - 2*i) );
             bool allowSock = cutEna || coagEna;
             socket->setAllowed(allowSock);
-            if (cutEna && coagEna) {
-                socket->setDisplayMode(SOCKET::S_FULL);
-            } else if (coagEna) {
-                socket->setDisplayMode(SOCKET::S_COAG_ONLY);
-            } else if (cutEna) {
-                socket->setDisplayMode(SOCKET::S_CUT_ONLY);
-            } else {
-                socket->setDisplayMode(SOCKET::S_NO_SOCKET);
-            }
+            socket->setDisplayMode(SOCKET::S_COLLAPSED);
+            // if (cutEna && coagEna) {
+            //     socket->setDisplayMode(SOCKET::S_FULL);
+            // } else if (coagEna) {
+            //     socket->setDisplayMode(SOCKET::S_COAG_ONLY);
+            // } else if (cutEna) {
+            //     socket->setDisplayMode(SOCKET::S_CUT_ONLY);
+            // } else {
+            //     socket->setDisplayMode(SOCKET::S_NO_SOCKET);
+            // }
         }
     }
     m_socketModel->setItemsMapVector(socketMapVector);

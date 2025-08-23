@@ -68,16 +68,16 @@ QString makeSocketName(SOCKET::SocType type) {
         socketName = QString("EMPTY");
         break;
     case SOCKET::BIPOLAR_1:
-        socketName = QString("BIPOLAR 1");
+        socketName = QString("БИ 1");
         break;
     case SOCKET::BIPOLAR_2:
-        socketName = QString("BIPOLAR 2");
+        socketName = QString("БИ 2");
         break;
     case SOCKET::MONOPOLAR_1:
-        socketName = QString("MONOPOLAR 1");
+        socketName = QString("МОНО 1");
         break;
     case SOCKET::MONOPOLAR_2:
-        socketName = QString("MONOPOLAR 2");
+        socketName = QString("МОНО 2");
         break;
     }
     return socketName;

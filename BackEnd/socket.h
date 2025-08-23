@@ -93,18 +93,6 @@ public:
     QString cutModeName() const;
 
     /**
-     * @brief Возвращает список доступных режимов реза
-     * @return
-     */
-    // const QStringList& cutModeNamess() const;
-
-    /**
-     * @brief Возвращает список доступных режимов коаг
-     * @return
-     */
-    // const QStringList& coagModeNames() const;
-
-    /**
      * @brief устанавливает новый относительный индекс режима коагуляции
      * @param newCoagModeIndex - устанавливаемый относительный индекс
      * @return true - индекс установлен

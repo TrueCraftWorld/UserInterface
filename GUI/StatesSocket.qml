@@ -3,7 +3,7 @@ import QtQuick.Controls 2.15
 
 Rectangle {
     id: socketRoot
-
+    // property int socState
     // property color leftColor: "yellow"
     property color middleColor: "black"
     // property color rightColor: "blue"
@@ -26,6 +26,8 @@ Rectangle {
 
     signal modeEditDialogRequest(int socketId, bool isCoag)
     signal instrumEditDialogRequest(int socketId, bool isCoag)
+    signal socketExpandRequest()
+    signal socketCollapseRequest()
 
     state: "collapsed"
 
@@ -80,13 +82,17 @@ Rectangle {
             anchors.fill: parent
             onClicked: {
                 if (socketRoot.state === "collapsed") {
-                    socketRoot.state = "expanded"
+                    // socketRoot.state = "expanded"
+                    socketRoot.socketExpandRequest()
                 } else {
-                    socketRoot.state = "collapsed"
+                    socketRoot.socketCollapseRequest()
+                    // socketRoot.state = "collapsed"
                 }
             }
         }
     }
+    // socState: {socketRoot.state == "collapsed" ? 0 : 1}
+
 
     states: [
         // Свернутое состояние
@@ -157,12 +163,12 @@ Rectangle {
         Transition {
             from: "collapsed"
             to: "expanded"
-            NumberAnimation {  duration: 300 }
+            NumberAnimation {  duration: 100 }
         },
         Transition {
             from: "expanded"
             to: "collapsed"
-            NumberAnimation { duration: 300 }
+            NumberAnimation { duration: 100 }
         }
     ]
 }

@@ -2,7 +2,7 @@ import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Window 2.15
 import QtQuick.Layouts 1.15
-// import BackEnd 1.0
+import BackEnd 1.0
 
 
 Repeater {
@@ -58,10 +58,16 @@ Repeater {
         coagModeName:      model.coagmodename
         coagInstrumName:   model.coagmodeinstrname
 
-        state:             model.socketdisplaymode
+        state:          model.socketdisplaymode
 
         onModeEditDialogRequest: console.log("prosim dialog rezhima")
         onInstrumEditDialogRequest: console.log("prosim dislog instrumenta")
+        onSocketExpandRequest: {
+            theModel.expandSocket(index)
+        }
+        onSocketCollapseRequest: {
+            theModel.collapseSocket(index)
+        }
     }
 }
 

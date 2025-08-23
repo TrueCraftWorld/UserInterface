@@ -52,6 +52,8 @@ public:
     virtual QVariant data(const QModelIndex &index, int role) const override;
     virtual bool setData(const QModelIndex &index, const QVariant &value, int role) override;
     Q_INVOKABLE QVariantMap modeParam(int socketId, int modeIndeex, bool isCoag) const;
+    Q_INVOKABLE void expandSocket(int row);
+    Q_INVOKABLE void collapseSocket(int row);
     QStringList modeNames(int socketID, bool isCoag) const;
     QStringList instrumNames(int socketId, int modeIndex, bool isCoag);
 

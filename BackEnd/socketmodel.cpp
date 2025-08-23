@@ -46,6 +46,7 @@ QVariant SocketModel::data(const QModelIndex &index, int role) const
         return static_cast<int>(socketItem.socketStatus());
     case SocketDisplayMode:
     {
+        // return static_cast<int>(socketItem.displayMode());
         switch (socketItem.displayMode()) {
         case SOCKET::S_COLLAPSED:
             return "collapsed";
@@ -195,6 +196,45 @@ QVariantMap SocketModel::modeParam(int socketId, int modeIndeex, bool isCoag) co
         return QVariantMap{};
 
     return iter->second->getMode(modeIndeex, isCoag)->params();
+}
+
+void SocketModel::collapseSocket(int row)
+{
+    if (row >= rowCount(QModelIndex()))
+        return;
+    if (m_itemsMap == nullptr)
+        return;
+
+    if (m_itemsMap->find(row) == m_itemsMap->end())
+        return;
+    auto socketIter = (*m_itemsMap)[row];
+    SOCKET& socketItem = *(socketIter);
+    if (socketItem.displayMode() == SOCKET::S_COLLAPSED)
+        return;
+    socketItem.setDisplayMode(SOCKET::S_COLLAPSED);
+    emit dataChanged(index(row, 0), index(row, 0), {SocketDisplayMode});
+}
+
+void SocketModel::expandSocket(int row)
+{
+    if (row >= rowCount(QModelIndex()))
+        return;
+    if (m_itemsMap == nullptr)
+        return;
+
+    if (m_itemsMap->find(row) == m_itemsMap->end())
+        return;
+    auto socketIter = (*m_itemsMap)[row];
+    SOCKET& socketItem = *(socketIter);
+    if (socketItem.displayMode() == SOCKET::S_EXPANDED)
+        return;
+    socketItem.setDisplayMode(SOCKET::S_EXPANDED);
+    for (int i = 0; i < m_itemsMap->size(); ++i) {
+        if(i == row)
+            continue;
+        collapseSocket(i);
+    }
+    emit dataChanged(index(row, 0), index(row, 0), {SocketDisplayMode});
 }
 
 QStringList SocketModel::modeNames(int socketID, bool isCoag) const

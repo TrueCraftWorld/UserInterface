@@ -27,7 +27,8 @@ namespace {
 
 SOCKET::SOCKET(SOCKET::SocType type) :
     m_socketType(type),
-    m_socketStatus(S_ENABLED)
+    m_socketStatus(S_ENABLED),
+    m_displayMode(S_COLLAPSED)
 {
     // m_socketStatus = S_ENABLED;
     // m_cutModeIndex = 0;

@@ -78,7 +78,6 @@ Rectangle {
                 bottom: parent.bottom
                 top: cutInstrum.bottom
             }
-            // source: "image://instrums/" + root.instrImageName
         }
         MouseArea {
             anchors.fill: parent

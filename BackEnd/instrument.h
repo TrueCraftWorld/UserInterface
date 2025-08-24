@@ -12,6 +12,9 @@ public:
 
     QString name() const;
 
+
+    int Id() const;
+
 private:
     QString m_coagImagePath;
     QString m_cutImagePath;

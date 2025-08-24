@@ -504,8 +504,8 @@ void ControlCenter::programmLoadSocketInit(int progId)
             // }
         }
     }
-    m_socketModel->setItemsMapVector(socketMapVector);
     m_socketModel->setInstrumMap(getInstrums());
+    m_socketModel->setItemsMapVector(socketMapVector);
 }
 
 QList<Prog> ControlCenter::getListOfPrograms(int scopeID)

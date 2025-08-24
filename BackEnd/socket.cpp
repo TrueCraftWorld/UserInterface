@@ -139,13 +139,26 @@ QStringList SOCKET::coagModeNames() const
     return m_coagHalf->modeNames();
 }
 
+QStringList SOCKET::coagModeNamesIds() const
+{
+    if (m_coagHalf.isNull())
+        return {};
+    return m_coagHalf->modeNamesIds();
+}
+
+QStringList SOCKET::cutModeNamesIds() const
+{
+    if (m_cutHalf.isNull())
+        return {};
+    return m_cutHalf->modeNamesIds();
+}
+
 void SOCKET::setSocketName(const QString &newSocketName)
 {
     if (m_socketName == newSocketName)
         return;
     m_socketName = newSocketName;
 }
-
 
 CSurgModePtr SOCKET::getMode(int modeIndex, bool isCoag) const
 {

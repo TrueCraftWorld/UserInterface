@@ -56,6 +56,10 @@ public:
     Q_INVOKABLE void collapseSocket(int row);
     QStringList modeNames(int socketID, bool isCoag) const;
     QStringList instrumNames(int socketId, int modeIndex, bool isCoag);
+    QStringList modeNamesIds(int socketID, bool isCoag) const;
+    QStringList instrumNamesIds(int socketId, int modeIndex, bool isCoag);
+    int selectedInstrumIndexByMode(int socketId, int modeIndex, bool isCoag);
+    int selectedInstrumIdByMode(int socketId, int modeIndex, bool isCoag);
 
 public:
     bool commitModeChange(int socketId, int modeINdex, const QVariantMap& param);

@@ -21,4 +21,19 @@ Rectangle {
             Layout.fillHeight: true
         }
     }
+
+    InstrumEditor {
+        id: dialog
+    }
+
+    Connections {
+        target: repeat
+        function onInstrumDialogRequest(soc, mod, iscoag) {
+            dialog.socId = soc
+            dialog.modeIndex = mod
+            dialog.isCoag = iscoag
+            dialog.open()
+        }
+    }
 }
+

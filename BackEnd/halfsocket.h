@@ -121,6 +121,8 @@ public:
      */
     QByteArray toByteArray();
 
+    QStringList modeNamesIds() const;
+
     bool setInstrumIndex(int index);
     bool setInstrumId(int id);
 

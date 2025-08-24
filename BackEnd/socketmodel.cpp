@@ -270,6 +270,81 @@ QStringList SocketModel::instrumNames(int socketId, int modeIndex, bool isCoag)
     return names;
 }
 
+QStringList SocketModel::modeNamesIds(int socketID, bool isCoag) const
+{
+    if (m_itemsMap == nullptr)
+        return QStringList{};
+
+    auto iter = m_itemsMap->find(socketID);
+    if (iter == m_itemsMap->end() || iter->second.isNull())
+        return QStringList{};
+    return isCoag ? iter->second->coagModeNamesIds() : iter->second->cutModeNamesIds();
+}
+
+QStringList SocketModel::instrumNamesIds(int socketId, int modeIndex, bool isCoag)
+{
+    if (m_itemsMap == nullptr)
+        return QStringList{};
+
+    auto iter = m_itemsMap->find(socketId);
+    if (iter == m_itemsMap->end() || iter->second.isNull())
+        return {};
+
+    SockPtr sock = iter->second;
+    CSurgModePtr mode = sock->getMode(modeIndex, isCoag);
+    const std::map<int, InstrInfo>& compatible = mode->InstrConstraints();
+
+    QStringList names;
+    for (const auto&[key, item] : compatible) {
+        const auto instIter = m_instrumMap.find(item.id);
+        if (instIter != m_instrumMap.end())
+            names.append(QString("%1").arg(instIter->second->Id()));
+    }
+    return names;
+}
+
+int SocketModel::selectedInstrumIdByMode(int socketId, int modeIndex, bool isCoag)
+{
+    if (socketId >= m_socketNames.size())
+        return -1;
+
+    if (m_itemsMap == nullptr)
+        return -1;
+
+    const auto socketIter = m_itemsMap->find(socketId);
+    if (socketIter == m_itemsMap->end())
+        return -1;
+    if (socketIter->second.isNull())
+        return -1;
+
+    const SOCKET& socketItem = *(socketIter->second);
+    CSurgModePtr ptr =  socketItem.getMode(modeIndex, isCoag);
+    if (ptr.isNull())
+        return -1;
+    return ptr->selectedInstrId();
+}
+
+int SocketModel::selectedInstrumIndexByMode(int socketId, int modeIndex, bool isCoag)
+{
+    if (socketId >= m_socketNames.size())
+        return -1;
+
+    if (m_itemsMap == nullptr)
+        return -1;
+
+    const auto socketIter = m_itemsMap->find(socketId);
+    if (socketIter == m_itemsMap->end())
+        return -1;
+    if (socketIter->second.isNull())
+        return -1;
+
+    const SOCKET& socketItem = *(socketIter->second);
+    CSurgModePtr ptr =  socketItem.getMode(modeIndex, isCoag);
+    if (ptr.isNull())
+        return -1;
+    return ptr->selectedInstrIndex();
+}
+
 bool SocketModel::commitModeChange(int socketId, int modeINdex, const QVariantMap &param)
 {
     if (m_itemsMap == nullptr)

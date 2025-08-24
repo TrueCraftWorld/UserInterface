@@ -16,8 +16,11 @@ void SocketModeEditor::initialize(int socket, int mode, bool isCoag)
     m_isCoag = isCoag;
     m_socketID = socket;
     m_modeNames = m_model->modeNames(socket, isCoag);
+    m_modeNameIds = m_model->modeNamesIds(socket, isCoag);
+
     m_originalParameters = m_model->modeParam(socket, mode, isCoag);
     m_instrList = m_model->instrumNames(socket, mode, isCoag);
+    m_instrListIds = m_model->instrumNamesIds(socket, mode, isCoag);
 
     m_socketName = m_model->index(socket,0).data(SocketModel::SocketName).toString();
     m_originalModeIndex = mode;
@@ -39,11 +42,15 @@ void SocketModeEditor::loadModeParameters(int modeIndex)
         return;
     m_currentParameters = m_model->modeParam(m_socketID, /*m_modeNames.at*/(modeIndex), m_isCoag);
     m_instrList = m_model->instrumNames(m_socketID, modeIndex, m_isCoag);
+    m_instrListIds = m_model->instrumNamesIds(m_socketID, modeIndex, m_isCoag);
 
     emit parametersLoaded();
+    //это не правильно
+    // setCurrentInstrIndex(m_model->index(m_socketID,0).data(m_isCoag ? SocketModel::CoagModeInstrIndex
+    //                                                           : SocketModel::CutModeInstrIndex).toInt());
 
-    setCurrentInstrIndex(m_model->index(m_socketID,0).data(m_isCoag ? SocketModel::CoagModeInstrIndex
-                                                              : SocketModel::CutModeInstrIndex).toInt());
+    //а это должно быть правильно
+    setCurrentInstrIndex(m_model->selectedInstrumIndexByMode(m_socketID, modeIndex, m_isCoag));
 }
 
 void SocketModeEditor::updateCurrentParameters(const QVariantMap ms)
@@ -130,6 +137,16 @@ QStringList SocketModeEditor::instrList() const
     return m_instrList;
 }
 
+QStringList SocketModeEditor::modeNamesIds() const
+{
+    return m_modeNameIds;
+}
+
+QStringList SocketModeEditor::instrListIds() const
+{
+    return m_instrListIds;
+}
+
 QVariantMap SocketModeEditor::fetchModeParameters(int modeIndex)
 {
     if (modeIndex >= m_modeNames.size())
@@ -190,8 +207,10 @@ void SocketModeEditor::setCurrentInstrIndex(int newCurrentInstrIndex)
 {
     m_currentInstrIndex = newCurrentInstrIndex;
     updateParameter("instrindex", m_currentInstrIndex);
-
+    // if (m_model->)
     CSurgModePtr mode = m_model->socketById(m_socketID)->getMode(m_currentModeIndex, m_isCoag);
+    if (mode.isNull())
+        return;
     std::optional<InstrInfo> info = mode->getConstraints(m_currentInstrIndex);
     if (info != std::nullopt) {
         //должно быть ID

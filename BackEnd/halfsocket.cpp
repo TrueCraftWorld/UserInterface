@@ -109,6 +109,14 @@ QByteArray HalfSocket::toByteArray()
     return QByteArray{};
 }
 
+QStringList HalfSocket::modeNamesIds() const
+{
+    QStringList tmp;
+    for (const QString& name: m_modeNames)
+        tmp.append(QString("%1").arg(m_modes.value(name)->id()));
+    return tmp;
+}
+
 bool HalfSocket::setInstrumIndex(int index)
 {
     return m_modes[m_modeNames.at(m_modeIndex)]->setSelectedInstrIndex(index);

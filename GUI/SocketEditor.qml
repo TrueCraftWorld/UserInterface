@@ -17,7 +17,6 @@ Column {
         rowSpacing: 10
         columnSpacing: 10
 
-        // Power Control
         Label { text: qsTr("Мощность")}
         RowLayout {
             Slider {
@@ -43,17 +42,11 @@ Column {
                 Layout.fillWidth: true
                 height: 60
                 color: editor.isCoag ? "royalblue" : "yellow"
-                // Text {
-                //     id: txt
-                //     text: qsTr("Здесь моя реклама")
-                //     anchors.centerIn: parent
-                //     color: "green"
-                // }
+
                 Image {
                     id: instrImage
                     anchors.fill: parent
                     fillMode: Image.PreserveAspectFit
-                    // source: "image://instrums/" + root.instrImageName
                 }
             }
 

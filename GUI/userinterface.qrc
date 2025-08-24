@@ -13,5 +13,7 @@
         <file>SocketRepeater.qml</file>
         <file>StatesSocket.qml</file>
         <file>SocketContainerV2.qml</file>
+        <file>InstrumEditor.qml</file>
+        <file>ItemList.qml</file>
     </qresource>
 </RCC>

@@ -195,6 +195,18 @@ public:
     QStringList cutModeNames() const;
 
     /**
+     * @brief айдишники доступных режимов коагуляции
+     * @return
+     */
+    QStringList coagModeNamesIds() const;
+
+    /**
+     * @brief айдишники доступных режимов резания
+     * @return
+     */
+    QStringList cutModeNamesIds() const;
+
+    /**
      * @brief возвращает указатель на КОНСТАНТНЫЙ текущий режим коагуляции
      * @return
      */

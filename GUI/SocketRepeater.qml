@@ -12,7 +12,8 @@ Repeater {
     required property int containerHeight
     required property int usedSpacing
 
-    signal socketDialogRequest(int dialogType, int socketId, bool isCoag)
+    signal modeDialogRequest(int socketId, bool isCoag)
+    signal instrumDialogRequest(int socketId, int modeIndex, bool isCoag)
 
     function calculateExpandedHeight() {
         var totalFixedHeight = 0
@@ -37,6 +38,7 @@ Repeater {
     clip: true
 
     delegate: StatesSocket {
+        id: delegateSoc
         Layout.fillWidth: true
         Layout.alignment: Qt.AlignTop
         Layout.preferredHeight: state === "expanded" ?
@@ -61,7 +63,19 @@ Repeater {
         state:          model.socketdisplaymode
 
         onModeEditDialogRequest: console.log("prosim dialog rezhima")
-        onInstrumEditDialogRequest: console.log("prosim dislog instrumenta")
+
+        Connections {
+            target: delegateSoc
+            function onInstrumEditDialogRequest(socketid, modeindex, iscoag) {
+
+                repeatRoot.instrumDialogRequest(socketid-1, modeindex, iscoag)
+                console.log("prosim dislog instrumenta")
+            }
+        }
+
+        // onInstrumEditDialogRequest: {
+
+        // }
         onSocketExpandRequest: {
             theModel.expandSocket(index)
         }

@@ -19,3 +19,8 @@ QString Instrument::name() const
 {
     return m_name;
 }
+
+int Instrument::Id() const
+{
+    return m_Id;
+}

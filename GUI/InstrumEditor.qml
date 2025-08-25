@@ -3,23 +3,18 @@ import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
 
 Popup {
-    property string socName: ""
-    property string modeName: ""
     property int socId: -1
     property int modeIndex: -1
     property bool isCoag: false
     property var modeEditor: Editor
     property string imageNameTemplate
     
-
     id: root
     modal: true
     parent: Overlay.overlay
     width: parent.width
     height: parent.height
-    // x: (parent.width - width) / 2
     x: 0
-    // y: (parent.height - height) / 2
     y: 0
     
     property var itemIdArr: []
@@ -38,7 +33,6 @@ Popup {
             console.warn("Lists from C++ have different lengths!")
             return
         }
-        
         for (var i = 0; i < itemIdArr.length; i++) {
             combinedModel.append({
                 itemId: itemIdArr[i],
@@ -47,8 +41,9 @@ Popup {
             })
         }
         instrumListView.innerModel = combinedModel
-        root.update()
+        // root.update()
     }
+
     onOpened: {
         modeEditor.initialize(socId, modeIndex, isCoag)
 
@@ -63,15 +58,23 @@ Popup {
         anchors.left: parent.left
         anchors.right: parent.right
         height: 100
+        color: "darkgray"
         
         Label {
             id: titleLable
-            text: qsTr("Выбор инструмента для режима %1, выход %2").arg(modeName).arg(socName)
+            text: qsTr("Выбор инструмента для режима %1, выход %2")
+                    .arg(modeEditor.currentMode.name).arg(modeEditor.socketName)
+            horizontalAlignment: Qt.AlignHCenter
+            verticalAlignment: Qt.AlignVCenter
+            wrapMode: Text.WordWrap
+            font.pixelSize: 28
+            font.bold: true
             anchors.horizontalCenter: parent.horizontalCenter
             anchors.top: parent.top
             anchors.bottom: parent.bottom
             width: parent.width * 0.8
         }
+
         Button {
             id: cancelButton
             anchors {
@@ -79,6 +82,15 @@ Popup {
                 bottom: parent.bottom
                 right: parent.right
                 left: titleLable.right
+            }
+            Text {
+                id: cancelText
+                text: qsTr("X")
+                font.pixelSize: 34
+                font.bold: true
+                anchors.fill: parent
+                horizontalAlignment: Qt.AlignHCenter
+                verticalAlignment: Qt.AlignVCenter
             }
             onPressed: root.close()
         }
@@ -90,11 +102,21 @@ Popup {
                 left: parent.left
                 right: titleLable.left
             }
+            Text {
+                id: upText
+                text: qsTr("▲")
+                font.pixelSize: 34
+                font.bold: true
+                anchors.fill: parent
+                horizontalAlignment: Qt.AlignHCenter
+                verticalAlignment: Qt.AlignVCenter
+            }
         }
     }
     
     Rectangle {
         id: instrumList
+        color: "darkgray"
         anchors {
             left: parent.left
             bottom: parent.bottom
@@ -102,19 +124,20 @@ Popup {
         }
         width: .3 * parent.width
         ItemList {
+            id: instrumListView
             anchors {
                 top: parent.top
                 bottom: footer.top
                 left: parent.left
                 right: parent.right
             }
-
-            id: instrumListView
             innerModel: combinedModel
+            imageSource: "image://instrums/miniInstr%1"
         }
         Rectangle {
             id: footer
             height: 100
+            color: "darkgray"
             anchors {
                 bottom: parent.bottom
                 left: parent.left
@@ -122,22 +145,39 @@ Popup {
             }
             Button {
                 id: downButton
-                width: height
+                width: upButton.width
                 anchors {
                     top: parent.top
                     bottom: parent.bottom
                     left: parent.left
-                    // right: parent.left
+                }
+                Text {
+                    id: downText
+                    text: qsTr("▼")
+                    font.pixelSize: 34
+                    font.bold: true
+                    anchors.fill: parent
+                    horizontalAlignment: Qt.AlignHCenter
+                    verticalAlignment: Qt.AlignVCenter
                 }
             }
             Button {
                 id: acceptButton
-
                 anchors {
                     top: parent.top
                     bottom: parent.bottom
                     left: downButton.right
                     right: parent.right
+                }
+                Text {
+                    id: acceptText
+                    text: qsTr("Принять")
+                    font.pixelSize: 34
+                    font.bold: true
+                    color: "green"
+                    anchors.fill: parent
+                    horizontalAlignment: Qt.AlignHCenter
+                    verticalAlignment: Qt.AlignVCenter
                 }
             }
         }
@@ -151,10 +191,13 @@ Popup {
             right: parent.right
             left: instrumList.right
         }
+        color: "darkgray"
         Image {
             id: previewImage
             fillMode: Image.PreserveAspectFit
-            source: "file"
+            asynchronous: true
+            source: ("image://instrums/maxiInstr%1").arg(modeEditor.currentInstrIndex)
+            // source: "file"
             anchors {
                 left: parent.left
                 right: parent.right
@@ -162,7 +205,6 @@ Popup {
                 top: parent.top
                 margins: 10
             }
-
         }
         Rectangle {
             id: buttonRow
@@ -172,17 +214,40 @@ Popup {
                 right: parent.right
                 bottom: parent.bottom
             }
-
+            color: "darkgray"
             RowLayout {
                 anchors.fill: parent
-                Button {
+                spacing: 5
+
+                PowerRect {
                     id: but1
+                    Layout.fillHeight: true
+                    Layout.fillWidth: true
+                    Layout.alignment: Qt.AlignCenter
+                    Layout.margins: 10
+                    borderColor: "lightcyan"
+                    power: modeEditor.lowPowerBound
+                    onPowerChanged: modeEditor.updateParameter("currentpower", but1.power)
                 }
-                Button {
+                PowerRect {
                     id: but2
+                    Layout.fillHeight: true
+                    Layout.fillWidth: true
+                    Layout.alignment: Qt.AlignCenter
+                    Layout.margins: 10
+                    borderColor: "lightgreen"
+                    power: modeEditor.midPowerBound
+                    onPowerChanged: modeEditor.updateParameter("currentpower", but2.power)
                 }
-                Button {
+                PowerRect {
                     id: but3
+                    Layout.fillHeight: true
+                    Layout.fillWidth: true
+                    Layout.alignment: Qt.AlignCenter
+                    Layout.margins: 10
+                    borderColor: "gold"
+                    power: modeEditor.highPowerBound
+                    onPowerChanged: modeEditor.updateParameter("currentpower", but3.power)
                 }
             }
         }

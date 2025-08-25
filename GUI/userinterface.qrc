@@ -15,5 +15,6 @@
         <file>SocketContainerV2.qml</file>
         <file>InstrumEditor.qml</file>
         <file>ItemList.qml</file>
+        <file>PowerRect.qml</file>
     </qresource>
 </RCC>

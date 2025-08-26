@@ -25,9 +25,7 @@ QStringList sortByExample(const QStringList& toSort, const QStringList& referenc
 HalfSocket::HalfSocket(bool isCoag, int state)
     : m_isCoag(isCoag),
       m_state(state)
-{
-
-}
+{}
 
 int HalfSocket::modeIndex() const
 {

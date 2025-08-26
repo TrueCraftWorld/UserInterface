@@ -12,7 +12,7 @@ Repeater {
     required property int containerHeight
     required property int usedSpacing
 
-    signal modeDialogRequest(int socketId, bool isCoag)
+    signal modeDialogRequest(int socketId, int modeIndex, bool isCoag)
     signal instrumDialogRequest(int socketId, int modeIndex, bool isCoag)
 
     function calculateExpandedHeight() {
@@ -62,8 +62,6 @@ Repeater {
 
         state:              model.socketdisplaymode
 
-        onModeEditDialogRequest: console.log("prosim dialog rezhima")
-
         Connections {
             target: delegateSoc
             function onInstrumEditDialogRequest(socketid, iscoag) {
@@ -72,6 +70,13 @@ Repeater {
                                                 iscoag ? model.coagmodeindex : model.cutmodeindex,
                                                 iscoag)
                 console.log("prosim dislog instrumenta ", iscoag)
+            }
+            function onModeEditDialogRequest(socketid, iscoag) {
+
+                repeatRoot.modeDialogRequest(socketid,
+                                            iscoag ? model.coagmodeindex : model.cutmodeindex,
+                                            iscoag)
+                console.log("prosim dialog rezhima")
             }
         }
         onSocketExpandRequest: {

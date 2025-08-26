@@ -108,10 +108,11 @@ void makeModes(QHash<QString, SurgModePtr>& container,
         // if (tmp.size() == 0)
         //     continue;
         SurgModePtr ptr = SurgModePtr::create(item.at(1).toString(),
-                                                                      isCoag,
-                                                                      item.at(0).toInt(),
-                                                                      1,
-                                                                      tmp);
+                                              isCoag,
+                                              item.at(0).toInt(),
+                                              1,
+                                              tmp,
+                                              item.at(2).toInt());
         container.insert(item.at(1).toString(),
                         ptr);
 

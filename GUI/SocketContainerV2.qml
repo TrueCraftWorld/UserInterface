@@ -23,16 +23,25 @@ Rectangle {
     }
 
     InstrumEditor {
-        id: dialog
+        id: instrDialog
+    }
+    ModeEditor {
+        id: modeDialog
     }
 
     Connections {
         target: repeat
         function onInstrumDialogRequest(soc, mod, iscoag) {
-            dialog.socId = soc
-            dialog.modeIndex = mod
-            dialog.isCoag = iscoag
-            dialog.open()
+            instrDialog.socId = soc
+            instrDialog.modeIndex = mod
+            instrDialog.isCoag = iscoag
+            instrDialog.open()
+        }
+        function onModeDialogRequest(soc, mod, iscoag) {
+            modeDialog.socId = soc
+            modeDialog.modeIndex = mod
+            modeDialog.isCoag = iscoag
+            modeDialog.open()
         }
     }
 }

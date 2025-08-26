@@ -358,7 +358,7 @@ bool SocketModel::commitModeChange(int socketId, int modeINdex, const QVariantMa
 
     // const QString modeName = param.value("name").toString();
     // int check = iter->second->checkMode(modeName);
-    bool isModeCoag = param.value("isCoag").toBool();
+    bool isModeCoag = param.value("iscoag").toBool();
     bool res = false;
     QVector<int> roles;
     // switch (check) {
@@ -403,7 +403,7 @@ bool SocketModel::commitModeChange(int socketId, int modeINdex, const QVariantMa
         }
         if (res)
             emit dataChanged(idx, idx, roles);
-        // return res;
+        return res;
     // default:
     //     break;
     }

@@ -21,11 +21,11 @@ QPixmap InstrImageProvider::requestPixmap(const QString &id, QSize *size, const 
     QSize mySize;
     if (requestedSize.width() > 0 && requestedSize.height() > 0) {
         double reqWidthToHeight = double(requestedSize.width()) / double(requestedSize.height());
+
         if (reqWidthToHeight > widthToHeight)
             mySize = QSize(int(requestedSize.height() * widthToHeight), requestedSize.height());
         else
             mySize = QSize(requestedSize.width(), int(requestedSize.width()/ widthToHeight));
-
 
         if (size)
             *size = mySize;
@@ -37,7 +37,8 @@ QPixmap InstrImageProvider::requestPixmap(const QString &id, QSize *size, const 
     
     if (m_cache.contains(id))
         return (m_cache.value(id).scaled(mySize, Qt::KeepAspectRatio));
-    for (const auto& item : m_knownFiles){
+
+    for (const auto& item : m_knownFiles) {
         if (item.baseName() == id) {
             // QPixmap
             m_cache.insert(id, QPixmap(item.absoluteFilePath()));
@@ -45,5 +46,5 @@ QPixmap InstrImageProvider::requestPixmap(const QString &id, QSize *size, const 
         }
     }
     // pixmap = QPixmap::load();
-    return QPixmap(mySize);
+    return (QPixmap("/home/kikorik/FOTEK/Images/miniInstr11.png").scaled(mySize, Qt::KeepAspectRatio));
 }

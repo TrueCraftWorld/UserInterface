@@ -117,7 +117,7 @@ Rectangle {
         value: modePower
         from: 1
         to: maxPower
-        onValueChanged: modePower = value
+        // onValueChanged: modePower = value
     }
     states: [
         State {

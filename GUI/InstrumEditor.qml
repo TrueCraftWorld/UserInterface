@@ -1,6 +1,7 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
+import BackEnd 1.0
 
 Popup {
     property int socId: -1
@@ -62,8 +63,8 @@ Popup {
         
         Label {
             id: titleLable
-            text: qsTr("Выбор инструмента для режима %1, выход %2")
-                    .arg(modeEditor.currentMode.name).arg(modeEditor.socketName)
+            text: qsTr("Выбор инструмента для выхода %1")
+                    .arg(modeEditor.socketName)
             horizontalAlignment: Qt.AlignHCenter
             verticalAlignment: Qt.AlignVCenter
             wrapMode: Text.WordWrap
@@ -71,7 +72,34 @@ Popup {
             font.bold: true
             anchors.horizontalCenter: parent.horizontalCenter
             anchors.top: parent.top
+            height: parent.height / 2
+            // anchors.bottom: parent.bottom
+            width: parent.width * 0.8
+        }
+        Rectangle {
+            id: titleLowerRect
+            color: isCoag ? "blue" : "yellow"
+            anchors.horizontalCenter: parent.horizontalCenter
+            // anchors.top: parent.top
             anchors.bottom: parent.bottom
+            height: parent.height / 2
+            width: titleLableLower.contentWidth + 50
+        }
+
+        Label {
+            id: titleLableLower
+            text: qsTr("РЕЖИМ: %1")
+                    .arg(modeEditor.currentMode.name)
+            horizontalAlignment: Qt.AlignHCenter
+            verticalAlignment: Qt.AlignVCenter
+            wrapMode: Text.WordWrap
+            font.pixelSize: 28
+            font.bold: true
+            color: isCoag ? "white" : "black"
+            anchors.horizontalCenter: parent.horizontalCenter
+            // anchors.top: parent.top
+            anchors.bottom: parent.bottom
+            height: parent.height / 2
             width: parent.width * 0.8
         }
 
@@ -92,7 +120,10 @@ Popup {
                 horizontalAlignment: Qt.AlignHCenter
                 verticalAlignment: Qt.AlignVCenter
             }
-            onPressed: root.close()
+            onClicked: {
+                modeEditor.rollBack()
+                root.close()
+            }
         }
         Button {
             id: upButton
@@ -163,6 +194,7 @@ Popup {
             }
             Button {
                 id: acceptButton
+                enabled: modeEditor.hasChanges
                 anchors {
                     top: parent.top
                     bottom: parent.bottom
@@ -178,6 +210,10 @@ Popup {
                     anchors.fill: parent
                     horizontalAlignment: Qt.AlignHCenter
                     verticalAlignment: Qt.AlignVCenter
+                }
+                onClicked: {
+                    modeEditor.commitChanges()
+                    root.close();
                 }
             }
         }
@@ -216,8 +252,10 @@ Popup {
             }
             color: "darkgray"
             RowLayout {
+                id:lay
                 anchors.fill: parent
                 spacing: 5
+                property int pwr
 
                 PowerRect {
                     id: but1
@@ -225,9 +263,10 @@ Popup {
                     Layout.fillWidth: true
                     Layout.alignment: Qt.AlignCenter
                     Layout.margins: 10
-                    borderColor: "lightcyan"
+                    borderColor: "darkcyan"
                     power: modeEditor.lowPowerBound
-                    onPowerChanged: modeEditor.updateParameter("currentpower", but1.power)
+                    selected: (modeEditor.currentPower === power)
+                    onPowerChosen: modeEditor.updateParameter("currentpower", but1.power)
                 }
                 PowerRect {
                     id: but2
@@ -237,6 +276,8 @@ Popup {
                     Layout.margins: 10
                     borderColor: "lightgreen"
                     power: modeEditor.midPowerBound
+                    selected: (modeEditor.currentPower === power)
+                    onPowerChosen: modeEditor.updateParameter("currentpower", but2.power)
                     onPowerChanged: modeEditor.updateParameter("currentpower", but2.power)
                 }
                 PowerRect {
@@ -247,10 +288,18 @@ Popup {
                     Layout.margins: 10
                     borderColor: "gold"
                     power: modeEditor.highPowerBound
-                    onPowerChanged: modeEditor.updateParameter("currentpower", but3.power)
+                    selected: (modeEditor.currentPower === power)
+                    onPowerChosen: modeEditor.updateParameter("currentpower", but3.power)
                 }
             }
         }
     }
+    Connections {
+        target: instrumListView
+        function onCurIndexChanged() {
+            console.log("arrr", instrumListView.curIndex)
+            modeEditor.currentInstrIndex = instrumListView.curIndex
 
+        }
+    }
 }

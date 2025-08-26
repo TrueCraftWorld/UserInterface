@@ -2,13 +2,15 @@ import QtQuick 2.15
 import QtQuick.Controls 2.15
 
 Rectangle {
-    property alias borderColor: but.border.color
+    property color borderColor: "transparent"
     property int power
+    property bool selected: false
     signal powerChosen(int pwr)
     id: but
     radius: 6
     border.width: 2
-    color: "darkslategray"
+    border.color: borderColor
+    color: selected ? borderColor : "darkslategray"
 
     Label {
         id:powerText

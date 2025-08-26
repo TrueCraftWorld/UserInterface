@@ -46,7 +46,7 @@ Repeater {
                                     60
         // title: "WAGU " + index
         title: model.socketname
-        socketId: index + 1
+        socketId: index
 
         cutInstrumId:      model.cutmodeinstrid
         cutMaxPower:       model.cutmodemaxpower
@@ -60,22 +60,20 @@ Repeater {
         coagModeName:      model.coagmodename
         coagInstrumName:   model.coagmodeinstrname
 
-        state:          model.socketdisplaymode
+        state:              model.socketdisplaymode
 
         onModeEditDialogRequest: console.log("prosim dialog rezhima")
 
         Connections {
             target: delegateSoc
-            function onInstrumEditDialogRequest(socketid, modeindex, iscoag) {
+            function onInstrumEditDialogRequest(socketid, iscoag) {
 
-                repeatRoot.instrumDialogRequest(socketid-1, modeindex, iscoag)
-                console.log("prosim dislog instrumenta")
+                repeatRoot.instrumDialogRequest(socketid,
+                                                iscoag ? model.coagmodeindex : model.cutmodeindex,
+                                                iscoag)
+                console.log("prosim dislog instrumenta ", iscoag)
             }
         }
-
-        // onInstrumEditDialogRequest: {
-
-        // }
         onSocketExpandRequest: {
             theModel.expandSocket(index)
         }

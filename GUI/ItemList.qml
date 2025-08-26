@@ -1,11 +1,15 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
+import BackEnd 1.0
 
 Rectangle {
     property alias innerModel: theView.model
     property string imageSource
     // property alias imageSource: itemImage.source
+    property alias curIndex: theView.currentIndex
+
+
 
     color: "darkgray"
     ColumnLayout {
@@ -22,37 +26,21 @@ Rectangle {
             verticalLayoutDirection: ListView.TopToBottom
             displayMarginBeginning: 15
             displayMarginEnd: 15
-            spacing: 5
+            spacing: 10
 
             clip: true
 
             delegate: Rectangle {
+                property bool isCurrent: (index == theView.currentIndex)
                 height: 100
                 width: ListView.view.width
-                color: "green"
                 radius: 8
-                Rectangle {
-                    id: itemImageRect
-                    height: parent.height
-                    width: parent.height
-                    radius: 8
-                    anchors {
-                        top:parent.top
-                        left: parent.left
-                    }
-                    color: "cyan"
-                    Image {
-                        id: itemImage
-                        asynchronous: true
-                        source: imageSource.arg(model.itemId)
-                        anchors.fill: parent
-                        fillMode: Image.PreserveAspectFit
-                    }
-                }
+
                 Rectangle {
                     id: itemImageRectBorder
                     width: 10
                     color: "cyan"
+
                     anchors {
                         top:parent.top
                         bottom: parent.bottom
@@ -67,6 +55,24 @@ Rectangle {
                         top:parent.top
                         bottom: parent.bottom
                         left: itemNameRect.left
+                    }
+                }
+                Rectangle {
+                    id: itemImageRect
+                    height: parent.height
+                    width: parent.height
+                    radius: 8
+                    anchors {
+                        top:parent.top
+                        left: parent.left
+                    }
+                    color: /*isCurrent ? "magenta" : */"cyan"
+                    Image {
+                        id: itemImage
+                        asynchronous: true
+                        source: imageSource.arg(model.itemId)
+                        anchors.fill: parent
+                        fillMode: Image.PreserveAspectFit
                     }
                 }
                 Rectangle {
@@ -87,6 +93,21 @@ Rectangle {
                         wrapMode: Text.WordWrap
                         font.bold: true
                         font.pixelSize: 18
+                    }
+                }
+                Rectangle {
+                    id: selectionBorder
+                    anchors.fill: parent
+                    color: "transparent"
+                    border.width: isCurrent ? 3 : 0
+                    radius: 8
+                    border.color: "white"
+                }
+
+                MouseArea {
+                    anchors.fill: parent
+                    onClicked: {
+                        theView.currentIndex = index
                     }
                 }
             }

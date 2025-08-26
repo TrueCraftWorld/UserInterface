@@ -40,8 +40,7 @@ Rectangle {
         Image {
             id: theImage
             asynchronous: true
-            source: isCoag ? "image://instrums/" + (instrumId+1)
-                           :  "image://instrums/" + "Cut_No"
+            source: "image://instrums/miniInstr" + (instrumId+1)
             // source: "qrc:/test.jpg"
             fillMode: Image.PreserveAspectFit
             anchors.fill: parent

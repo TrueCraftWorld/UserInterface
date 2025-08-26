@@ -246,3 +246,8 @@ int SocketModeEditor::instrID() const
 {
     return m_instrID;
 }
+
+int SocketModeEditor::currentPower() const
+{
+    return m_currentParameters.value("currentpower").toInt();
+}

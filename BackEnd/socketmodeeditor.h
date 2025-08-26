@@ -79,6 +79,15 @@ class SocketModeEditor : public QObject
      */
     Q_PROPERTY(int currentInstrIndex READ currentInstrIndex WRITE setCurrentInstrIndex NOTIFY currentInstrChanged)
 
+    /**
+     * @property Q_PROPERTY(int currentInstrIndex READ currentInstrIndex WRITE setCurrentInstrIndex NOTIFY currentInstrChanged)
+     * @brief текущая мощность
+     *
+     * @accessors currentInstrIndex(), setCurrentInstrIndex()
+     * @notifier currentInstrChanged()
+     */
+    Q_PROPERTY(int currentPower READ currentPower NOTIFY currentParamsChanged)
+
 
     Q_PROPERTY(int instrID READ instrID NOTIFY currentInstrChanged)
     Q_PROPERTY(int lowPowerBound READ lowPowerBound NOTIFY currentInstrChanged)
@@ -121,6 +130,8 @@ public:
 
     bool isCoag() const;
 
+    int currentPower() const;
+
 signals:
     void currentParamsChanged();
     void currentModeIndexChanged();
@@ -130,6 +141,8 @@ signals:
     void hasChangesChanged();
 
     void currentInstrChanged();
+
+    void currentPowerChang();
 
 private:
     bool checkChanges();

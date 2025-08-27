@@ -54,6 +54,8 @@ public:
     Q_INVOKABLE QVariantMap modeParam(int socketId, int modeIndeex, bool isCoag) const;
     Q_INVOKABLE void expandSocket(int row);
     Q_INVOKABLE void collapseSocket(int row);
+    Q_INVOKABLE void setModePower(int socketId, int pwr, bool isCoag);
+
     QStringList modeNames(int socketID, bool isCoag) const;
     QStringList instrumNames(int socketId, int modeIndex, bool isCoag);
     QStringList modeNamesIds(int socketID, bool isCoag) const;

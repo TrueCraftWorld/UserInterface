@@ -10,6 +10,7 @@ Rectangle {
     property int maxPower: 400
 
     signal modeEditDialogRequest()
+    signal newPower(int pwr)
 
     color: isCoag ? "blue" : "yellow"
     radius: 8
@@ -20,7 +21,7 @@ Rectangle {
         Label {
             id: modeLabel
             text: modeName
-            font.pixelSize: 24
+            font.pixelSize: 22
             font.bold: true
             wrapMode: Text.Wrap
             height: 60
@@ -45,7 +46,7 @@ Rectangle {
             text: modePower
             width: fontMetrics.advanceWidth("999")
             height: 31
-            font.pixelSize: 24
+            font.pixelSize: 30
             font.bold: true
             color: isCoag ? "white" : "black"
             anchors {
@@ -60,15 +61,15 @@ Rectangle {
     }
     Rectangle {
         id: powerPlusButton
-        width: 40
-        height: 40
+        width: 60
+        height: 60
         color: "transparent"
         radius: 8
         border {
             color: modePowerRect.isCoag ? "white" : "color"
             width: 2
         }
-        anchors.margins: 10
+        anchors.margins: 15
         Label {
             anchors {
                 margins: 10
@@ -87,15 +88,15 @@ Rectangle {
     }
     Rectangle {
         id: powerMinusButton
-        width: 40
-        height: 40
+        width: 60
+        height: 60
         color: "transparent"
         radius: 8
         border {
             color: modePowerRect.isCoag ? "white" : "color"
             width: 2
         }
-        anchors.margins: 10
+        anchors.margins: 15
         Label {
             anchors {
                 margins: 10
@@ -117,7 +118,7 @@ Rectangle {
         value: modePower
         from: 1
         to: maxPower
-        // onValueChanged: modePower = value
+        onValueChanged: modePowerRect.newPower(value);
     }
     states: [
         State {
@@ -128,10 +129,12 @@ Rectangle {
             PropertyChanges {
                 target: powerLabel;
                 horizontalAlignment: isCoag ? Text.AlignLeft : Text.AlignRight
+                font.pixelSize: 34
             }
             PropertyChanges {
                 target: modeLabel;
                 horizontalAlignment: isCoag ? Text.AlignRight : Text.AlignLeft
+                font.pixelSize: 20
             }
             PropertyChanges {
                 target: power;
@@ -176,10 +179,12 @@ Rectangle {
             PropertyChanges {
                 target: powerLabel;
                 horizontalAlignment: Text.AlignHCenter
+                font.pixelSize: 44
             }
             PropertyChanges {
                 target: modeLabel;
                 horizontalAlignment: Text.AlignHCenter
+                font.pixelSize: 28
             }
             PropertyChanges {
                 target: power;
@@ -215,6 +220,18 @@ Rectangle {
                 anchors.top: modePowerRect.top
                 anchors.bottom: undefined
             }
+        }
+    ]
+    transitions: [
+        Transition {
+            from: "collapsed"
+            to: "expanded"
+            NumberAnimation {  duration: 100; easing.type: Easing.InQuad }
+        },
+        Transition {
+            from: "expanded"
+            to: "collapsed"
+            NumberAnimation { duration: 100; easing.type: Easing.InQuad }
         }
     ]
 }

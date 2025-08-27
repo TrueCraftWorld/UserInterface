@@ -3,8 +3,7 @@ import QtQuick.Controls 2.15
 
 Rectangle {
     id: halfSocketRoot
-    // required property ломает передачу свойсвт по умолчанию из делегата....
-    // required property bool isCoag
+
     property bool isCoag
     property string modeName
     property int modePower
@@ -15,10 +14,13 @@ Rectangle {
 
     signal modeEditDialogRequest()
     signal instrumEditDialogRequest()
+    signal newPower(int power)
 
     InstrumRect {
         id: instrumRect
         isCoag: halfSocketRoot.isCoag
+        instrumName: halfSocketRoot.instrumName
+        instrumId: halfSocketRoot.instrumId
         anchors {
             top: parent.top
             left: parent.left
@@ -32,6 +34,7 @@ Rectangle {
         isCoag: halfSocketRoot.isCoag
         modeName: halfSocketRoot.modeName
         modePower: halfSocketRoot.modePower
+        maxPower: halfSocketRoot.maxPower
         anchors {
             top: instrumRect.bottom
             left: parent.left
@@ -39,7 +42,16 @@ Rectangle {
             bottom: parent.bottom
         }
         onModeEditDialogRequest: halfSocketRoot.modeEditDialogRequest()
+
     }
+
+    Connections {
+        target: modePower
+        function onNewPower(pwr) {
+            halfSocketRoot.newPower(pwr)
+        }
+    }
+
     states: [
         State {
             name: "collapsed"
@@ -54,8 +66,20 @@ Rectangle {
             PropertyChanges {
                 target: instrumRect;
                 visible: true
-                height: halfSocketRoot.height/2
+                height: halfSocketRoot.height * .4
             }
+        }
+    ]
+    transitions: [
+        Transition {
+            from: "collapsed"
+            to: "expanded"
+            NumberAnimation { duration: 100; easing.type: Easing.InQuad }
+        },
+        Transition {
+            from: "expanded"
+            to: "collapsed"
+            NumberAnimation { duration: 100; easing.type: Easing.InQuad }
         }
     ]
 }

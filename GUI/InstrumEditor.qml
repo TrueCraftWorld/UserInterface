@@ -297,7 +297,6 @@ Popup {
     Connections {
         target: instrumListView
         function onCurIndexChanged() {
-            console.log("arrr", instrumListView.curIndex)
             modeEditor.currentInstrIndex = instrumListView.curIndex
 
         }

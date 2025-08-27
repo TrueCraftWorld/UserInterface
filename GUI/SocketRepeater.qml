@@ -27,12 +27,26 @@ Repeater {
                 totalFixedHeight += 60
             }
         }
-
         return expandedCount > 0 ?
             (repeatRoot.containerHeight -
                 (totalFixedHeight + spacersHeight + repeatRoot.containerMargins*2))
                     / expandedCount
             : 0
+    }
+    function calculateCollapsedHeight() {
+        var totalFixedHeight = 0
+        var expandedCount = 0
+        var spacersHeight = (count) * repeatRoot.usedSpacing;
+        for (var i = 0; i < count; i++) {
+            if (itemAt(i).state === "expanded") {
+                expandedCount++
+            }
+        }
+        if (expandedCount > 0) {
+            return 60
+        } else {
+            return (repeatRoot.containerHeight - (spacersHeight + repeatRoot.containerMargins*2))/count
+        }
     }
 
     clip: true
@@ -43,7 +57,7 @@ Repeater {
         Layout.alignment: Qt.AlignTop
         Layout.preferredHeight: state === "expanded" ?
                                     repeatRoot.calculateExpandedHeight() :
-                                    60
+                                    repeatRoot.calculateCollapsedHeight()
         // title: "WAGU " + index
         title: model.socketname
         socketId: index
@@ -79,6 +93,17 @@ Repeater {
                 console.log("prosim dialog rezhima")
             }
         }
+        Connections {
+            target: delegateSoc
+            function onNewPower(socketid, pwr, iscoag) {
+                theModel.setModePower(socketid, pwr, iscoag)
+                // if (iscoag)
+                //     model.coagmodepower = pwr
+                // else
+                //     model.cutmodepower = pwr
+            }
+        }
+
         onSocketExpandRequest: {
             theModel.expandSocket(index)
         }

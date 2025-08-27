@@ -3,10 +3,7 @@ import QtQuick.Controls 2.15
 
 Rectangle {
     id: socketRoot
-    // property int socState
-    // property color leftColor: "yellow"
-    property color middleColor: "black"
-    // property color rightColor: "blue"
+    // property color middleColor: "black"
 
     property string title
 
@@ -26,10 +23,12 @@ Rectangle {
 
     signal modeEditDialogRequest(int socketId, bool isCoag)
     signal instrumEditDialogRequest(int socketId, bool isCoag)
+    signal newPower(int socketId, int pwr, bool isCoag)
     signal socketExpandRequest()
     signal socketCollapseRequest()
 
     state: "collapsed"
+
 
     HalfSocket {
         id: leftRect
@@ -59,11 +58,10 @@ Rectangle {
         onInstrumEditDialogRequest:
             socketRoot.instrumEditDialogRequest(socketRoot.socketId, true)
     }
-    // Средний прямоугольник
     Rectangle {
         id: middleRect
-        color: socketRoot.middleColor
-        width: fontMetrics.advanceWidth("MONO 2")
+        color: "black"
+        width: fontMetrics.advanceWidth("MONO 22")
         Label {
             id: socketNameLabel
             anchors.fill: parent
@@ -82,16 +80,25 @@ Rectangle {
             anchors.fill: parent
             onClicked: {
                 if (socketRoot.state === "collapsed") {
-                    // socketRoot.state = "expanded"
                     socketRoot.socketExpandRequest()
                 } else {
                     socketRoot.socketCollapseRequest()
-                    // socketRoot.state = "collapsed"
                 }
             }
         }
     }
-    // socState: {socketRoot.state == "collapsed" ? 0 : 1}
+    Connections {
+        target: rightRect
+        function onNewPower(pwr) {
+            socketRoot.newPower(socketRoot.socketId, pwr, true)
+        }
+    }
+    Connections {
+        target: leftRect
+        function onNewPower(pwr) {
+            socketRoot.newPower(socketRoot.socketId, pwr, false)
+        }
+    }
 
 
     states: [
@@ -109,7 +116,8 @@ Rectangle {
             PropertyChanges {
                 target: middleRect
                 // width: root.middleRectWidth
-                width: fontMetrics.advanceWidth("MONO 2")
+                color: "black"
+                width: fontMetrics.advanceWidth("MONO 22")
             }
             AnchorChanges {
                 target: leftRect
@@ -140,20 +148,23 @@ Rectangle {
             PropertyChanges {
                 target: middleRect
                 // height: root.middleRectHeight
+                color: "transparent"
                 height: fontMetrics.height + socketNameLabel.anchors.margins
             }
             AnchorChanges {
                 target: leftRect
                 anchors.left: parent.left
                 anchors.right: parent.horizontalCenter
-                anchors.top: middleRect.bottom
+                // anchors.top: middleRect.bottom
+                anchors.top: parent.top
                 anchors.bottom: parent.bottom
             }
             AnchorChanges {
                 target: rightRect
                 anchors.left: parent.horizontalCenter
                 anchors.right: parent.right
-                anchors.top: middleRect.bottom
+                // anchors.top: middleRect.bottom
+                anchors.top: parent.top
                 anchors.bottom: parent.bottom
             }
         }
@@ -163,12 +174,12 @@ Rectangle {
         Transition {
             from: "collapsed"
             to: "expanded"
-            NumberAnimation {  duration: 100 }
+            NumberAnimation {  duration: 100; easing.type: Easing.InQuad }
         },
         Transition {
             from: "expanded"
             to: "collapsed"
-            NumberAnimation { duration: 100 }
+            NumberAnimation { duration: 100; easing.type: Easing.InQuad }
         }
     ]
 }

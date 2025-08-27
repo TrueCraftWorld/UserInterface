@@ -215,6 +215,28 @@ void SocketModel::collapseSocket(int row)
     emit dataChanged(index(row, 0), index(row, 0), {SocketDisplayMode});
 }
 
+void SocketModel::setModePower(int socketId, int pwr, bool isCoag)
+{
+    if (socketId >= rowCount(QModelIndex()))
+        return;
+    if (m_itemsMap == nullptr)
+        return;
+
+    if (m_itemsMap->find(socketId) == m_itemsMap->end())
+        return;
+    auto socketIter = (*m_itemsMap)[socketId];
+    SOCKET& socketItem = *(socketIter);
+    if (isCoag) {
+        if (socketItem.setCoagModePower(pwr)) {
+            emit dataChanged(index(socketId, 0), index(socketId, 0), {CoagModePower});
+        }
+    } else {
+        if (socketItem.setCutModePower(pwr)) {
+            emit dataChanged(index(socketId, 0), index(socketId, 0), {CutModePower});
+        }
+    }
+}
+
 void SocketModel::expandSocket(int row)
 {
     if (row >= rowCount(QModelIndex()))

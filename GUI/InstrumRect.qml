@@ -5,7 +5,7 @@ Rectangle {
     id: instrumRoot
 
     property bool isCoag
-    property string instrumName: "Биполярный лапороскопический инструмент"
+    property string instrumName/*: "Биполярный лапороскопический инструмент"*/
     property int instrumId
 
     signal instrumEditDialogRequest()

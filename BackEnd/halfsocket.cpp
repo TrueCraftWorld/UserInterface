@@ -42,7 +42,7 @@ QString HalfSocket::modeName() const
     return m_curMode->modeName();
 }
 
-QHash<QString, SurgModePtr> HalfSocket::modes() const
+QMap<int, SurgModePtr> HalfSocket::modes() const
 {
     return m_modes;
 }
@@ -57,7 +57,12 @@ bool HalfSocket::setModeIndex(int newModeIndex)
     if (newModeIndex < 0 || newModeIndex >= m_modeNames.size())
         return false;
     m_modeIndex = newModeIndex;
-    m_curMode = m_modes.value(m_modeNames.at(newModeIndex));
+    QString tmp = m_modeNames.at(newModeIndex);
+    for (const auto& item : m_modes) {
+        if (tmp == item->modeName())
+         m_curMode = item;
+    }
+    // m_curMode = m_modes.value(m_modeNames.at(newModeIndex));
     return true;
 }
 
@@ -86,13 +91,17 @@ int HalfSocket::modePower() const
 
 bool HalfSocket::setModePower(int newPower)
 {
-    SurgModePtr ptr = m_modes[m_curMode->modeName()];
+    SurgModePtr ptr = m_modes[m_curMode->id()];
     return ptr->setCurrentPower(newPower);
 }
 
-void HalfSocket::setModes(const QHash<QString, SurgModePtr> &newModes, const QStringList &order)
+void HalfSocket::setModes(const QMap<int, SurgModePtr> &newModes, const QStringList &order)
 {
-    m_modeNames = sortByExample(newModes.keys(), order);
+    QStringList toSort;
+    for (const auto& item : newModes) {
+        toSort.append(item->modeName());
+    }
+    m_modeNames = sortByExample(toSort, order);
     m_modes = newModes;
     setModeIndex(0);
 }
@@ -110,26 +119,33 @@ QByteArray HalfSocket::toByteArray()
 QStringList HalfSocket::modeNamesIds() const
 {
     QStringList tmp;
-    for (const QString& name: m_modeNames)
-        tmp.append(QString("%1").arg(m_modes.value(name)->id()));
+    for (auto item : m_modes.keys())
+        tmp.append(QString("%1").arg(item));
+
     return tmp;
 }
 
 bool HalfSocket::setInstrumIndex(int index)
 {
-    return m_modes[m_modeNames.at(m_modeIndex)]->setSelectedInstrIndex(index);
+    return m_modes[m_curMode->id()]->setSelectedInstrIndex(index);
 }
 
 bool HalfSocket::setInstrumId(int id)
 {
-    return m_modes[m_modeNames.at(m_modeIndex)]->setSelectedInstrId(id);
+    return m_modes[m_curMode->id()]->setSelectedInstrId(id);
 }
 
 CSurgModePtr HalfSocket::getMode(int index) const
 {
     if (index < 0 || index >= m_modeNames.size())
         return nullptr;
-    return m_modes.value(m_modeNames.at(index));
+
+    QString tmp = m_modeNames.at(index);
+    for (const auto& item : m_modes) {
+        if (tmp == item->modeName())
+            return item;
+    }
+    return nullptr;
 }
 
 int HalfSocket::getModeIndex(const QString &name) const

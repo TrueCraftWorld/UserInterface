@@ -83,7 +83,7 @@ QString makeSocketName(SOCKET::SocType type) {
     return socketName;
 }
 
-void makeModes(QHash<QString, SurgModePtr>& container,
+void makeModes(QMap<int, SurgModePtr>& container,
                const QList<QVariantList>& modes,
                const std::map<int, std::map<int, InstrInfo>>& instMap,
                const QVariantList& progItem,
@@ -93,10 +93,11 @@ void makeModes(QHash<QString, SurgModePtr>& container,
 
     // const std::map<int, InstrPtr>tmp = inst;
 
-    container.insert(ESHF::modesNames[0], SurgModePtr::create(ESHF::modesNames[0],
-                                                                     false,
-                                                                     1,
-                                                                     1));
+    container.insert(1000, SurgModePtr::create(ESHF::modesNames.last(),
+                                                                    false,
+                                                                    1,
+                                                                    1,
+                                                                    1000));
 
 
     for (const auto& item : modes) {
@@ -105,17 +106,15 @@ void makeModes(QHash<QString, SurgModePtr>& container,
             continue;
         std::map<int, InstrInfo> tmp = instrs->second;
         filterMapByKey(tmp, parseCommaSeparatedNumbers(progItem.at(start + 6*socketNum).toString()));
-        // if (tmp.size() == 0)
-        //     continue;
+
         SurgModePtr ptr = SurgModePtr::create(item.at(1).toString(),
                                               isCoag,
                                               item.at(0).toInt(),
                                               1,
-                                              tmp,
-                                              item.at(2).toInt());
-        container.insert(item.at(1).toString(),
+                                              item.at(2).toInt(),
+                                              tmp);
+        container.insert(item.at(2).toInt(),
                         ptr);
-
     }
 }
 
@@ -314,41 +313,60 @@ void ControlCenter::dataBaseSocketInit()
         socketMap[i] = socket;
 
         socket->setSocketName(makeSocketName(type));
-        QHash<QString, SurgModePtr> cutModes;
-        QHash<QString, SurgModePtr> coagModes;
+        QMap<int, SurgModePtr> cutModes;
+        QMap<int, SurgModePtr> coagModes;
 
 
         QList<QVariantList> cutModesList = m_dbReader->slotSendSelectQuery(QStringList{"Modes"},
-                    QStringList{"MaxPower","Name_RU"},
+                    QStringList{"MaxPower","Name_RU","id"},
                     queryCondition.arg(socket->socketType() <= SOCKET::BIPOLAR_2 ? 0 : 1).arg(1));
 
         QList<QVariantList> coagModesList = m_dbReader->slotSendSelectQuery(QStringList{"Modes"},
-                    QStringList{"MaxPower","Name_RU"},
+                    QStringList{"MaxPower","Name_RU","id"},
                     queryCondition.arg(socket->socketType() <= SOCKET::BIPOLAR_2 ? 0 : 1).arg(0));
 
-        cutModes.insert(ESHF::modesNames[0], SurgModePtr::create(ESHF::modesNames[0],
-                                                                         false,
-                                                                         1,
-                                                                         1));
-        for (const auto& item : cutModesList) {
-            cutModes.insert(item.at(1).toString(),
+        // const QString& name,
+        //  bool isCoag,
+        //  int maximum = 1,
+        //  int minimum = 1,
+        //  const std::map<int, InstrInfo>& _instrs = {},
+        //  int id=0
+
+        cutModes.insert(1000,
+                        SurgModePtr::create(ESHF::modesNames.last(),
+                                            false,
+                                            1,
+                                            1,
+                                            1000));
+
+        for (int cutModeIdx = 0; cutModeIdx < cutModesList.size(); ++ cutModeIdx) {
+            const auto& item = cutModesList.at(cutModeIdx);
+
+            cutModes.insert(item.at(2).toInt(),
                             SurgModePtr::create(item.at(1).toString(),
                                                 false,
                                                 item.at(0).toInt(),
                                                 1,
-                                                instrConstraintsByMode.at(modesIdList.at(modeNamesList.indexOf(item.at(1).toString())))));
+                                                item.at(2).toInt(),
+                                                instrConstraintsByMode.at(item.at(2).toInt())));
         }
-        coagModes.insert(ESHF::modesNames[0], SurgModePtr::create(ESHF::modesNames[0],
-                                                                               true,
-                                                                               1,
-                                                                               1));
-        for (const auto& item : coagModesList) {
-            coagModes.insert(item.at(1).toString(),
-                             SurgModePtr::create(item.at(1).toString(),
+        coagModes.insert(1000,
+                         SurgModePtr::create(ESHF::modesNames.last(),
+                                            true,
+                                            1,
+                                            1,
+                                            1000));
+
+        for (int coagModeIdx = 0; coagModeIdx < coagModesList.size(); ++ coagModeIdx) {
+            const auto& item = coagModesList.at(coagModeIdx);
+
+            coagModes.insert(item.at(2).toInt(),
+                            SurgModePtr::create(item.at(1).toString(),
                                                 true,
                                                 item.at(0).toInt(),
                                                 1,
-                                                instrConstraintsByMode.at(modesIdList.at(modeNamesList.indexOf(item.at(1).toString())))));
+                                                item.at(2).toInt(),
+                                                instrConstraintsByMode.at(item.at(2).toInt())));
         }
         socket->setCoagModes(coagModes, /*ESHF::modesNames*/modeNamesList);
         socket->setCutModes(cutModes, /*ESHF::modesNames*/modeNamesList);
@@ -457,7 +475,7 @@ void ControlCenter::programmLoadSocketInit(int progId)
 
             for (int halfSocket = 0; halfSocket < 2; ++halfSocket ) {
                 bool isCoag = (halfSocket == 0);
-                QHash<QString, SurgModePtr> modes;
+                QMap<int, SurgModePtr> modes;
                 QList<QVariantList> modesList = m_dbReader->slotSendSelectQuery(QStringList{"Modes"},
                             QStringList{"MaxPower","Name_RU", "id"},
                             queryConditionModes
@@ -494,15 +512,7 @@ void ControlCenter::programmLoadSocketInit(int progId)
             bool allowSock = cutEna || coagEna;
             socket->setAllowed(allowSock);
             socket->setDisplayMode(SOCKET::S_COLLAPSED);
-            // if (cutEna && coagEna) {
-            //     socket->setDisplayMode(SOCKET::S_FULL);
-            // } else if (coagEna) {
-            //     socket->setDisplayMode(SOCKET::S_COAG_ONLY);
-            // } else if (cutEna) {
-            //     socket->setDisplayMode(SOCKET::S_CUT_ONLY);
-            // } else {
-            //     socket->setDisplayMode(SOCKET::S_NO_SOCKET);
-            // }
+
         }
     }
     m_socketModel->setInstrumMap(getInstrums());

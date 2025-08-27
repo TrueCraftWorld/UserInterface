@@ -52,9 +52,12 @@ public:
     virtual QVariant data(const QModelIndex &index, int role) const override;
     virtual bool setData(const QModelIndex &index, const QVariant &value, int role) override;
     Q_INVOKABLE QVariantMap modeParam(int socketId, int modeIndeex, bool isCoag) const;
-    Q_INVOKABLE void expandSocket(int row);
-    Q_INVOKABLE void collapseSocket(int row);
-    Q_INVOKABLE void setModePower(int socketId, int pwr, bool isCoag);
+    // Q_INVOKABLE void expandSocket(int row);
+    // Q_INVOKABLE void collapseSocket(int row);
+
+    Q_INVOKABLE void qmlSetData(int row, const QVariant &value, const QString& roleName);
+
+    // Q_INVOKABLE void setModePower(int socketId, int pwr, bool isCoag);
 
     QStringList modeNames(int socketID, bool isCoag) const;
     QStringList instrumNames(int socketId, int modeIndex, bool isCoag);
@@ -87,6 +90,12 @@ private:
     int m_curMapIdx = 0;
     std::map<int, QSharedPointer<Instrument>> m_instrumMap;
     QStringList m_socketNames;
+
+    int roleIntByName(const QString& name);
+    void socketCollapser(int expandedSocket);
+
+    QHash<int, QByteArray> m_roles;
+    void populateRoles();
     // SocketModeEditor * editor;
 };
 

@@ -96,7 +96,7 @@ Repeater {
         Connections {
             target: delegateSoc
             function onNewPower(socketid, pwr, iscoag) {
-                theModel.setModePower(socketid, pwr, iscoag)
+                theModel.qmlSetData(index, pwr, (iscoag ? "coagmodepower" : "cutmodepower"))
                 // if (iscoag)
                 //     model.coagmodepower = pwr
                 // else
@@ -105,10 +105,12 @@ Repeater {
         }
 
         onSocketExpandRequest: {
-            theModel.expandSocket(index)
+            theModel.qmlSetData(index, 1, "socketdisplaymode")
+            // theModel.expandSocket(index)
         }
         onSocketCollapseRequest: {
-            theModel.collapseSocket(index)
+            theModel.qmlSetData(index, 0, "socketdisplaymode")
+            // theModel.collapseSocket(index)
         }
     }
 }

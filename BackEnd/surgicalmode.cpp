@@ -5,15 +5,15 @@ SurgicalMode::SurgicalMode(const QString& name,
                            bool isCoag,
                            int maximum,
                            int minimum,
-                           const std::map<int, InstrInfo>& _instrs,
-                           int id) :
+                           int id,
+                           const std::map<int, InstrInfo>& _instrs) :
     m_maximumPower(maximum),
     m_minimumPower(minimum),
     m_currentPower(1),
-    m_modeName( name),
+    m_modeName(name),
     m_isCoag(isCoag),
-    m_InstrConstraints(_instrs),
-    m_id(id)
+    m_id(id),
+    m_InstrConstraints(_instrs)
 {
     // Q_UNUSED(parent);
     if (m_InstrConstraints.size())
@@ -122,7 +122,8 @@ bool SurgicalMode::isCoag() const
 bool SurgicalMode::setCurrentPower(int newCurrentpower)
 {
     if (newCurrentpower <= m_maximumPower
-        && newCurrentpower >= m_minimumPower) {
+        && newCurrentpower >= m_minimumPower
+        && newCurrentpower != m_currentPower) {
         m_currentPower = newCurrentpower;
         return true;
     } else {

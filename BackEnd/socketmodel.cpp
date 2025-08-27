@@ -4,7 +4,16 @@
 SocketModel::SocketModel(QObject *parent)
     : QAbstractListModel{parent}
 {
-
+    populateRoles();
+    connect(this, &SocketModel::dataChanged, this, [this](const QModelIndex &topLeft,
+                                                    const QModelIndex &,
+                                                    const QVector<int> &roles) {
+        if (!roles.contains(SocketDisplayMode))
+            return;
+        if (topLeft.data(SocketDisplayMode).toString() == "expanded") {
+            socketCollapser(topLeft.row());
+        }
+    });
 }
 
 int SocketModel::rowCount(const QModelIndex &parent) const
@@ -33,7 +42,6 @@ QVariant SocketModel::data(const QModelIndex &index, int role) const
         return QVariant();
 
     const SOCKET& socketItem = *(socketIter->second);
-
 
     switch (role) {
     case Qt::DisplayRole:
@@ -172,6 +180,18 @@ bool SocketModel::setData(const QModelIndex &index, const QVariant &value, int r
         socketItem.setSocketStatus(isOk ? SOCKET::S_ENABLED : SOCKET::S_DISABLED);
         return true;
     }
+    case SocketDisplayMode:
+    {
+        bool isOk = false;
+        int mode = value.toInt(&isOk);
+        if (!isOk)
+            return isOk;
+        if (mode < SOCKET::S_COLLAPSED || mode > SOCKET::S_EXPANDED)
+            return false;
+        if (socketItem.displayMode() == mode)
+            return false;
+        socketItem.setDisplayMode(static_cast<SOCKET::SocDisplayMode>(mode));
+    }
     case CoagModeIndex:
         return socketItem.setCoagModeIndex(value.toInt());
     case CutModeIndex:
@@ -198,66 +218,17 @@ QVariantMap SocketModel::modeParam(int socketId, int modeIndeex, bool isCoag) co
     return iter->second->getMode(modeIndeex, isCoag)->params();
 }
 
-void SocketModel::collapseSocket(int row)
+void SocketModel::qmlSetData(int row, const QVariant &value, const QString &roleName)
 {
-    if (row >= rowCount(QModelIndex()))
+    int role = roleIntByName(roleName);
+    if (role == -1)
         return;
-    if (m_itemsMap == nullptr)
-        return;
-
-    if (m_itemsMap->find(row) == m_itemsMap->end())
-        return;
-    auto socketIter = (*m_itemsMap)[row];
-    SOCKET& socketItem = *(socketIter);
-    if (socketItem.displayMode() == SOCKET::S_COLLAPSED)
-        return;
-    socketItem.setDisplayMode(SOCKET::S_COLLAPSED);
-    emit dataChanged(index(row, 0), index(row, 0), {SocketDisplayMode});
-}
-
-void SocketModel::setModePower(int socketId, int pwr, bool isCoag)
-{
-    if (socketId >= rowCount(QModelIndex()))
-        return;
-    if (m_itemsMap == nullptr)
-        return;
-
-    if (m_itemsMap->find(socketId) == m_itemsMap->end())
-        return;
-    auto socketIter = (*m_itemsMap)[socketId];
-    SOCKET& socketItem = *(socketIter);
-    if (isCoag) {
-        if (socketItem.setCoagModePower(pwr)) {
-            emit dataChanged(index(socketId, 0), index(socketId, 0), {CoagModePower});
-        }
-    } else {
-        if (socketItem.setCutModePower(pwr)) {
-            emit dataChanged(index(socketId, 0), index(socketId, 0), {CutModePower});
-        }
+    QModelIndex idx = createIndex(row,0);
+    if (setData(idx,value,role)) {
+        emit dataChanged(idx,idx,{role});
     }
 }
 
-void SocketModel::expandSocket(int row)
-{
-    if (row >= rowCount(QModelIndex()))
-        return;
-    if (m_itemsMap == nullptr)
-        return;
-
-    if (m_itemsMap->find(row) == m_itemsMap->end())
-        return;
-    auto socketIter = (*m_itemsMap)[row];
-    SOCKET& socketItem = *(socketIter);
-    if (socketItem.displayMode() == SOCKET::S_EXPANDED)
-        return;
-    socketItem.setDisplayMode(SOCKET::S_EXPANDED);
-    for (int i = 0; i < m_itemsMap->size(); ++i) {
-        if(i == row)
-            continue;
-        collapseSocket(i);
-    }
-    emit dataChanged(index(row, 0), index(row, 0), {SocketDisplayMode});
-}
 
 QStringList SocketModel::modeNames(int socketID, bool isCoag) const
 {
@@ -378,15 +349,11 @@ bool SocketModel::commitModeChange(int socketId, int modeINdex, const QVariantMa
 
     QModelIndex idx = createIndex(m_socketNames.indexOf(iter->second->socketName()), 0);
 
-    // const QString modeName = param.value("name").toString();
-    // int check = iter->second->checkMode(modeName);
     bool isModeCoag = param.value("iscoag").toBool();
     bool res = false;
     QVector<int> roles;
-    // switch (check) {
-    // case SOCKET::COAG:
-    if (isModeCoag) {
 
+    if (isModeCoag) {
         if (iter->second->setCoagModeIndex(modeINdex)) {
             roles.append(CoagModeIndex);
             roles.append(CoagModeName);
@@ -486,6 +453,40 @@ void SocketModel::setCurrentProgSubIndex(int newIndex)
 
 }
 
+int SocketModel::roleIntByName(const QString &name)
+{
+    const QHash<int, QByteArray>& hash = m_roles;
+    QString nameArr = name.toLower();
+    for (auto iter = hash.begin(); iter != hash.end(); ++iter) {
+        if (iter.value() == nameArr)
+            return iter.key();
+    }
+    return -1;
+}
+
+void SocketModel::socketCollapser(int expandedSocket)
+{
+    for (int i = 0; i < m_itemsMap->size(); ++i) {
+        if(i == expandedSocket)
+            continue;
+        qmlSetData(i, SOCKET::S_COLLAPSED, "socketdisplaymode");
+    }
+}
+
+void SocketModel::populateRoles()
+{
+    QMetaEnum metaEnum = QMetaEnum::fromType<SocketRoles>();
+    // static QHash<int, QByteArray> roles;
+    m_roles.clear();
+    for (int k = 0; k < metaEnum.keyCount(); k++)
+    {
+        int roleKey = metaEnum.value(k);
+        QString roleName = metaEnum.valueToKey(roleKey);
+        roleName = roleName.toLower();
+        m_roles.insert(roleKey, roleName.toUtf8());
+    }
+}
+
 void SocketModel::setItemsMap(const std::map<int, SockPtr > &newItemsMap, bool add)
 {
     beginResetModel();
@@ -535,14 +536,5 @@ void SocketModel::setItemsMapVector(const std::vector<std::map<int, SockPtr> > &
 QHash<int, QByteArray> SocketModel::roleNames() const
 {
     //грёбаная мета-магия, но это приятное
-    QMetaEnum metaEnum = QMetaEnum::fromType<SocketRoles>();
-    static QHash<int, QByteArray> roles;
-    for (int k = 0; k < metaEnum.keyCount(); k++)
-    {
-        int roleKey = metaEnum.value(k);
-        QString roleName = metaEnum.valueToKey(roleKey);
-        roleName = roleName.toLower();
-        roles.insert(roleKey, roleName.toUtf8());
-    }
-    return roles;
+    return m_roles;
 }

@@ -40,7 +40,7 @@ public:
      * @brief Возвращает список доступных режимов реза
      * @return
      */
-    QHash<QString, SurgModePtr> modes() const;
+    QMap<int, SurgModePtr> modes() const;
 
     // /**
     //  * @brief Возвращает список доступных режимов коаг
@@ -100,7 +100,7 @@ public:
      * @param order - порядок в котором список имён режимов будет выводиться пользователю
      * @todo Возможно, с учётом локализаций, необходимо использовать индекс из БД как ключ
      */
-    void setModes(const QHash<QString, SurgModePtr > &newModes,
+    void setModes(const QMap<int, SurgModePtr > &newModes,
                      const QStringList& order = {""});
 
     /**
@@ -135,7 +135,8 @@ private:
 
     QStringList m_modeNames;
 
-    QHash<QString, SurgModePtr> m_modes;
+    QMap<int, SurgModePtr> m_modes;
+    // QMap<int, SurgModePtr> m_modesSorted;
 
     bool m_isCoag;
     int m_state;

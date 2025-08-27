@@ -11,7 +11,7 @@
 #include <optional>
 
 namespace ESHF {
-enum eshfModes	{ NO_CUT_MODE = 0, NO_COAG_MODE = 0, BI_BLEND=1,
+enum eshfModes	{ /*NO_MODE = 0, */BI_BLEND=1,
                  BI_TUR=2, BI_ARTRO=3, BI_GISTERO=4,
                  BI_COAG=5, BI_COAG_DISS=6, TERMOSHOV=7,
                  CUT=8, BLEND=9, BLEND1=10, TUR=11, VAP=12,
@@ -19,10 +19,10 @@ enum eshfModes	{ NO_CUT_MODE = 0, NO_COAG_MODE = 0, BI_BLEND=1,
                  E_LOOP1=16, E_LOOP2=17, E_LOOP3=18,
                  FORCE=19, FULGUR=20, SOFT=21, SPRAY=22,
                  FULGUR_A=23, SPRAY_A=24,
-                 FULGUR_P=25, SPRAY_P=26,
+                 FULGUR_P=25, SPRAY_P=26, NO_MODE=1000
                  };
 const QStringList modesNames = { /*QObject::tr("РЕЖИМ РЕЗ НЕ ВЫБРАН"), QObject::tr("РЕЖИМ КОАГ НЕ ВЫБРАН"),*/
-                                 QObject::tr("РЕЖИМ НЕ ВЫБРАН"),
+
                                  QObject::tr("БИ-СМЕСЬ"),
                                  QObject::tr("БИ-ТУР"), QObject::tr("БИ-АРТРО"),
                                  QObject::tr("БИ-ГИСТЕРО"),
@@ -36,7 +36,8 @@ const QStringList modesNames = { /*QObject::tr("РЕЖИМ РЕЗ НЕ ВЫБР�
                                  QObject::tr("ФОРС"), QObject::tr("ФУЛЬГУР"),
                                  QObject::tr("МЯГКАЯ"), QObject::tr("СПРЕЙ"),
                                  QObject::tr("ФУЛЬГУР АРГОН"), QObject::tr("СПРЕЙ АРГОН"),
-                                 QObject::tr("ФУЛЬГУР ПУЛЬС АРГОН"), QObject::tr("СПРЕЙ ПУЛЬС АРГОН")
+                                 QObject::tr("ФУЛЬГУР ПУЛЬС АРГОН"), QObject::tr("СПРЕЙ ПУЛЬС АРГОН"),
+                                 QObject::tr("РЕЖИМ НЕ ВЫБРАН")
                                 };
 // const QStringList modesNames = { "NO CUT MODE", "NO COAG MODE", "BI BLEND",
 //                                  "BI TUR", "BI ARTRO", "BI GISTERO",
@@ -49,7 +50,7 @@ const QStringList modesNames = { /*QObject::tr("РЕЖИМ РЕЗ НЕ ВЫБР�
 //                                  "FULGUR PULSE ARGON", "SPRAY PULSE ARGON",
 //                                };
 
-const QList<int> modesMaxPowers	{ 1, /*1,*/ 75,
+const QList<int> modesMaxPowers	{ /*1,*/ /*1,*/ 75,
                                 8, 8, 8,
                                 150, 150, 5,
                                 400, 400, 150, 400, 400,
@@ -58,6 +59,7 @@ const QList<int> modesMaxPowers	{ 1, /*1,*/ 75,
                                 150, 150, 300, 70,
                                 150, 70,
                                 70, 70,
+                                1 //всегда должно быть последним - мощность заглшуки NoMode
                                 };
 }
 
@@ -76,10 +78,10 @@ public:
 
     SurgicalMode(const QString& name,
                  bool isCoag,
-                 int maximum = 400,
+                 int maximum = 1,
                  int minimum = 1,
-                 const std::map<int, InstrInfo>& _instrs = {},
-                 int id=0);
+                 int id = 0,
+                 const std::map<int, InstrInfo>& _instrs = {});
 
     explicit SurgicalMode()  :
         SurgicalMode("NoMode", false, 1, 1) {}
@@ -129,8 +131,8 @@ private:
     // QString m_curInstrN?ame;
     QString m_modeName;
     bool m_isCoag;
-    std::map<int, InstrInfo> m_InstrConstraints;
     int m_id;
+    std::map<int, InstrInfo> m_InstrConstraints;
 };
 
 using SurgModePtr=QSharedPointer<SurgicalMode>;

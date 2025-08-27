@@ -65,15 +65,6 @@ bool SOCKET::setModeId(int id, bool isCoag)
     if (half.isNull())
         return false;
     return half->setModeId(id);
-    // const QHash<QString, SurgModePtr>& modes = half->modes();
-    // for (auto& item : modes) {
-    //     if (item->id() == id) {
-    //         half->curMode() = item : m_curCutMode = item;
-    //         return true;
-    //     }
-    // }
-    // return false;
-
 }
 
 SOCKET::SocType SOCKET::socketType() const
@@ -169,8 +160,8 @@ CSurgModePtr SOCKET::getMode(int modeIndex, bool isCoag) const
 
     if (!hasMode)
         return nullptr;
-    QString name = half->modeNames().at(modeIndex);
-    return half->modes().value(name);
+    return half->getMode(modeIndex);
+    // return half->modes().value(name);
 }
 
 int SOCKET::coagModePower() const
@@ -198,23 +189,24 @@ bool SOCKET::setCutModePower(int newCutModePower)
     return setModePower(newCutModePower, false);
 }
 
-CSurgModePtr SOCKET::getMode(const QString &name, bool isCoag) const
-{
-    HalfSockPtr half = isCoag ? m_coagHalf : m_cutHalf;
-    if (half.isNull())
-        return nullptr;
+// CSurgModePtr SOCKET::getMode(const QString &name, bool isCoag) const
+// {
+//     HalfSockPtr half = isCoag ? m_coagHalf : m_cutHalf;
+//     if (half.isNull())
+//         return nullptr;
 
-    const QHash<QString, SurgModePtr> & container =
-        half->modes();
+//     const QMap<int, SurgModePtr> & container =
+//         half->modes();
 
-    const auto modeIter = container.find(name);
-    if (modeIter == container.cend()) {
-        return nullptr;
-    } else {
-        return *modeIter;
-    }
+//     for (con)
+//     const auto modeIter = container.find(name);
+//     if (modeIter == container.cend()) {
+//         return nullptr;
+//     } else {
+//         return *modeIter;
+//     }
 
-}
+// }
 
 CSurgModePtr SOCKET::curCutMode() const
 {
@@ -243,17 +235,14 @@ bool SOCKET::setInstrumIndex(int index, bool isCoag)
     if (half.isNull())
         return false;
 
+    const QMap<int, SurgModePtr>& modes = half->modes();
 
-    QHash<QString, SurgModePtr> modes = half->modes();
-    int curModeIdx = half->modeIndex();
-    QStringList names = half->modeNames();
+    CSurgModePtr cMode = half->curMode();
 
-    if (curModeIdx >= names.size())
-        return false;
+    // if (curModeIdx >= modes.size())
+    //     return false;
 
-    const QString& name = names.at(curModeIdx);
-
-    SurgModePtr mode = modes[name];
+    SurgModePtr mode = modes[cMode->id()];
 
     return mode->setSelectedInstrIndex(index);
 }
@@ -264,16 +253,14 @@ bool SOCKET::setInstrumId(int id, bool isCoag)
     if (half.isNull())
         return false;
 
-    QHash<QString, SurgModePtr> modes = half->modes();
-    int curModeIdx = half->modeIndex();
-    QStringList names = half->modeNames();
+    const QMap<int, SurgModePtr>& modes = half->modes();
 
-    if (curModeIdx >= names.size())
-        return false;
+    CSurgModePtr cMode = half->curMode();
 
-    const QString& name = names.at(curModeIdx);
+    // if (curModeIdx >= modes.size())
+    //     return false;
 
-    SurgModePtr mode = modes[name];
+    SurgModePtr mode = modes[cMode->id()];
 
     return mode->setSelectedInstrId(id);
 }
@@ -302,16 +289,6 @@ bool SOCKET::setModePower(int newPower, bool isCoag)
     if (half.isNull())
         return false;
     return half->setModePower(newPower);
-    // auto iter = isCoag
-    //     ? m_coagModes.find(m_coagModeNames.at(m_coagModeIndex))
-    //     : m_cutModes.find(m_cutModeNames.at(m_cutModeIndex));
-
-    // if ((*iter)->setCurrentPower(newPower)) {
-    //     return true;
-    // } else {
-    //     return false;
-    // }
-    // return false;
 }
 
 bool SOCKET::setModeIndex(int index, bool isCoag)
@@ -320,22 +297,6 @@ bool SOCKET::setModeIndex(int index, bool isCoag)
     if (half.isNull())
         return false;
     return half->setModeIndex(index);
-/*    const QStringList& modeNames = half->modeNames();
-    int& compareIdx = half->modeIndex();
-    CSurgModePtr curMode = half->curMode();
-    if (index == compareIdx) {
-        return true;
-    } else if (((index >= modeNames.size()) ||
-            (index < 0)) && (!curMode.isNull())) {
-        return false;
-    } else {
-        return half->setModeIndex(index);
-        // compareIdx = index;
-        // CSurgModePtr mode = isCoag ? m_coagModes[modeNames.at(compareIdx)] : m_cutModes[modeNames.at(compareIdx)];
-        // (isCoag ? m_curCoagMode : m_curCutMode) = mode;
-        return true;
-    }
-    */
 }
 
 int SOCKET::displayMode() const
@@ -348,44 +309,18 @@ void SOCKET::setDisplayMode(SocDisplayMode newDisplayMode)
     m_displayMode = newDisplayMode;
 }
 
-// QStringList SOCKET::cutModeNames() const
-// {
-//     return m_cutHalf->modeNames();
-// }
-
-// QStringList SOCKET::coagModeNames() const
-// {
-//     return m_coagHalf->modeNames();
-// }
-
-void SOCKET::setCoagModes(const QHash<QString, SurgModePtr > &newCoagModes,
+void SOCKET::setCoagModes(const QMap<int, SurgModePtr > &newCoagModes,
                           const QStringList &order)
 {
     if (m_coagHalf.isNull())
         return;
     m_coagHalf->setModes(newCoagModes, order);
-    // m_coagModes = newCoagModes;
-    // if (!order.isEmpty()) {
-    //     m_coagModeNames = sortByExample(m_coagModes.keys(), order);
-    // } else {
-    //     m_coagModeNames = m_coagModes.keys();
-    // }
-    // if (m_coagModeNames.size())
-    //     setCoagModeIndex(0);
 }
 
-void SOCKET::setCutModes(const QHash<QString, SurgModePtr > &newCutModes,
+void SOCKET::setCutModes(const QMap<int, SurgModePtr > &newCutModes,
                          const QStringList &order)
 {
     if (m_cutHalf.isNull())
         return;
     m_cutHalf->setModes(newCutModes, order);
-    // m_cutModes = newCutModes;
-    // if (!order.isEmpty()) {
-    //     m_cutModeNames = sortByExample(m_cutModes.keys(), order);
-    // } else {
-    //     m_cutModeNames = m_cutModes.keys();
-    // }
-    // if (m_cutModeNames.size())
-    //     setCutModeIndex(0);
 }

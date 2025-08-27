@@ -38,7 +38,7 @@ public:
                         }; 
 
     /*! Перечисление возможных отображений сокета */
-    enum SocDisplayMode {   S_COLLAPSED, /*!< свёрнут  */
+    enum SocDisplayMode : int {   S_COLLAPSED = 0, /*!< свёрнут  */
                             S_EXPANDED, /*!< развёрнут */
                         };
 
@@ -170,7 +170,7 @@ public:
      * @param order - порядок в котором список имён режимов будет выводиться пользователю
      * @todo Возможно, с учётом локализаций, необходимо использовать индекс из БД как ключ
      */
-    void setCutModes(const QHash<QString, SurgModePtr > &newCutModes,
+    void setCutModes(const QMap<int, SurgModePtr > &newCutModes,
                      const QStringList& order = {""});
 
     /**
@@ -179,7 +179,7 @@ public:
      * @param order - порядок в котором список имён режимов будет выводиться пользователю
      * @todo Возможно, с учётом локализаций, необходимо использовать индекс из БД как ключ
      */
-    void setCoagModes(const QHash<QString, SurgModePtr > &newCoagModes,
+    void setCoagModes(const QMap<int, SurgModePtr > &newCoagModes,
                       const QStringList& order = {""});
 
     /**
@@ -235,7 +235,7 @@ private:
     HalfSockPtr m_cutHalf = nullptr;
     HalfSockPtr m_coagHalf = nullptr;
 
-    CSurgModePtr getMode(const QString& name, bool isCoag) const;
+    // CSurgModePtr getMode(const QString& name, bool isCoag) const;
 
     bool setModePower(int newPower, bool isCoag);
     bool setModeIndex(int index, bool isCoag);

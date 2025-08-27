@@ -4,9 +4,9 @@ import QtQuick.Layouts 1.15
 import BackEnd 1.0
 
 Popup {
-    property int socId: -1
-    property int modeIndex: -1
-    property bool isCoag: false
+    property int socId
+    property int modeIndex
+    property bool isCoag
     property var modeEditor: Editor
     // property string imageNameTemplate
 
@@ -51,6 +51,9 @@ Popup {
         itemNameArr = modeEditor.modeNames
         itemIdArr = modeEditor.modeNamesIds()
         updateModel()
+        // modeListView.initialIndex = modeEditor.currentModeIndex
+        modeEditor.currentModeIndex = modeIndex
+
     }
 
     Rectangle {
@@ -156,14 +159,15 @@ Popup {
         width: .3 * parent.width
         ItemList {
             id: modeListView
+            curIndex: modeEditor.currentModeIndex
             anchors {
                 top: parent.top
                 bottom: footer.top
                 left: parent.left
                 right: parent.right
             }
-            innerModel: combinedModel
-            imageSource: "image://instrums/miniMode%1"
+            // innerModel: combinedModel
+            imageSourceTemplate: "image://instrums/miniMode%1"
         }
         Rectangle {
             id: footer
@@ -245,10 +249,9 @@ Popup {
     }
     Connections {
         target: modeListView
-        function onCurIndexChanged() {
-            console.log("arrr", modeListView.curIndex)
-            modeEditor.currentModeIndex = modeListView.curIndex
-
+        function onNewIndexSelected(index) {
+            console.log("arrr", index)
+            modeEditor.currentModeIndex = index
         }
     }
 }

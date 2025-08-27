@@ -189,25 +189,6 @@ bool SOCKET::setCutModePower(int newCutModePower)
     return setModePower(newCutModePower, false);
 }
 
-// CSurgModePtr SOCKET::getMode(const QString &name, bool isCoag) const
-// {
-//     HalfSockPtr half = isCoag ? m_coagHalf : m_cutHalf;
-//     if (half.isNull())
-//         return nullptr;
-
-//     const QMap<int, SurgModePtr> & container =
-//         half->modes();
-
-//     for (con)
-//     const auto modeIter = container.find(name);
-//     if (modeIter == container.cend()) {
-//         return nullptr;
-//     } else {
-//         return *modeIter;
-//     }
-
-// }
-
 CSurgModePtr SOCKET::curCutMode() const
 {
     return m_cutHalf->curMode();

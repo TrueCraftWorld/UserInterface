@@ -96,11 +96,9 @@ Repeater {
         Connections {
             target: delegateSoc
             function onNewPower(socketid, pwr, iscoag) {
-                theModel.qmlSetData(index, pwr, (iscoag ? "coagmodepower" : "cutmodepower"))
-                // if (iscoag)
-                //     model.coagmodepower = pwr
-                // else
-                //     model.cutmodepower = pwr
+                theModel.qmlSetData(index,
+                                    pwr,
+                                    (iscoag ? "coagmodepower" : "cutmodepower"))
             }
         }
 

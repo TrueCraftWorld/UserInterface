@@ -60,9 +60,8 @@ bool HalfSocket::setModeIndex(int newModeIndex)
     QString tmp = m_modeNames.at(newModeIndex);
     for (const auto& item : m_modes) {
         if (tmp == item->modeName())
-         m_curMode = item;
+            m_curMode = item;
     }
-    // m_curMode = m_modes.value(m_modeNames.at(newModeIndex));
     return true;
 }
 

@@ -4,12 +4,12 @@ import QtQuick.Layouts 1.15
 import BackEnd 1.0
 
 Rectangle {
+    id: itemList
     property alias innerModel: theView.model
-    property string imageSource
-    // property alias imageSource: itemImage.source
+    property string imageSourceTemplate
     property alias curIndex: theView.currentIndex
 
-
+    signal newIndexSelected(int newIndex)
 
     color: "darkgray"
     ColumnLayout {
@@ -66,11 +66,11 @@ Rectangle {
                         top:parent.top
                         left: parent.left
                     }
-                    color: /*isCurrent ? "magenta" : */"cyan"
+                    color: /*isCurrent ? "magenta" : */"transparent"
                     Image {
                         id: itemImage
                         asynchronous: true
-                        source: imageSource.arg(model.itemId)
+                        source: imageSourceTemplate.arg(model.itemId)
                         anchors.fill: parent
                         fillMode: Image.PreserveAspectFit
                     }
@@ -107,7 +107,8 @@ Rectangle {
                 MouseArea {
                     anchors.fill: parent
                     onClicked: {
-                        theView.currentIndex = index
+                        itemList.newIndexSelected(index)
+                        // theView.currentIndex = index
                     }
                 }
             }

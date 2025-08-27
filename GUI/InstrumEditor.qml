@@ -51,6 +51,10 @@ Popup {
         itemNameArr = modeEditor.instrList
         itemIdArr = modeEditor.instrListIds()
         updateModel()
+        var bla =  modeEditor.currentInstrIndex
+        modeEditor.currentInstrIndex = bla
+        // modeEditor.currentInstrIndex
+
     }
     
     Rectangle {
@@ -156,14 +160,15 @@ Popup {
         width: .3 * parent.width
         ItemList {
             id: instrumListView
+            curIndex: modeEditor.currentInstrIndex
             anchors {
                 top: parent.top
                 bottom: footer.top
                 left: parent.left
                 right: parent.right
             }
-            innerModel: combinedModel
-            imageSource: "image://instrums/miniInstr%1"
+            // innerModel: combinedModel
+            imageSourceTemplate: "image://instrums/miniInstr%1"
         }
         Rectangle {
             id: footer
@@ -296,9 +301,8 @@ Popup {
     }
     Connections {
         target: instrumListView
-        function onCurIndexChanged() {
-            modeEditor.currentInstrIndex = instrumListView.curIndex
-
+        function onNewIndexSelected(index) {
+            modeEditor.currentInstrIndex = index
         }
     }
 }

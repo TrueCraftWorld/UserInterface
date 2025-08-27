@@ -5,9 +5,7 @@
 SocketModeEditor::SocketModeEditor(SocketModel *model, QObject *parent)
     : QObject{parent},
     m_model{model}
-{
-
-}
+{}
 
 void SocketModeEditor::initialize(int socket, int mode, bool isCoag)
 {
@@ -45,11 +43,7 @@ void SocketModeEditor::loadModeParameters(int modeIndex)
     m_instrListIds = m_model->instrumNamesIds(m_socketID, modeIndex, m_isCoag);
 
     emit parametersLoaded();
-    //это не правильно
-    // setCurrentInstrIndex(m_model->index(m_socketID,0).data(m_isCoag ? SocketModel::CoagModeInstrIndex
-    //                                                           : SocketModel::CutModeInstrIndex).toInt());
 
-    //а это должно быть правильно
     setCurrentInstrIndex(m_model->selectedInstrumIndexByMode(m_socketID, modeIndex, m_isCoag));
 }
 

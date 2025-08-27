@@ -11,7 +11,7 @@ Rectangle {
 
     signal newIndexSelected(int newIndex)
 
-    color: "darkgray"
+    color: "black"
     ColumnLayout {
         id: layout
         anchors.fill: parent
@@ -35,11 +35,11 @@ Rectangle {
                 height: 100
                 width: ListView.view.width
                 radius: 8
-
+                color: "black"
                 Rectangle {
                     id: itemImageRectBorder
                     width: 10
-                    color: "cyan"
+                    color: "black"
 
                     anchors {
                         top:parent.top
@@ -50,7 +50,7 @@ Rectangle {
                 Rectangle {
                     id: itemNameRectBorder
                     width: 10
-                    color: "darkslategray"
+                    color: "black"
                     anchors {
                         top:parent.top
                         bottom: parent.bottom
@@ -66,7 +66,7 @@ Rectangle {
                         top:parent.top
                         left: parent.left
                     }
-                    color: /*isCurrent ? "magenta" : */"transparent"
+                    color: /*isCurrent ? "magenta" : */"black"
                     Image {
                         id: itemImage
                         asynchronous: true
@@ -77,7 +77,7 @@ Rectangle {
                 }
                 Rectangle {
                     id: itemNameRect
-                    color: "darkslategray"
+                    color: "black"
                     radius: 8
                     anchors {
                         top:parent.top
@@ -93,6 +93,7 @@ Rectangle {
                         wrapMode: Text.WordWrap
                         font.bold: true
                         font.pixelSize: 18
+                        color: "white"
                     }
                 }
                 Rectangle {

@@ -63,7 +63,7 @@ Popup {
         anchors.left: parent.left
         anchors.right: parent.right
         height: 100
-        color: "darkgray"
+        color: "black"
         
         Label {
             id: titleLable
@@ -79,6 +79,7 @@ Popup {
             height: parent.height / 2
             // anchors.bottom: parent.bottom
             width: parent.width * 0.8
+            color: "white"
         }
         Rectangle {
             id: titleLowerRect
@@ -115,6 +116,10 @@ Popup {
                 right: parent.right
                 left: titleLable.right
             }
+            background: Rectangle {
+                color: "black"
+                radius: 8
+            }
             Text {
                 id: cancelText
                 text: qsTr("X")
@@ -123,6 +128,7 @@ Popup {
                 anchors.fill: parent
                 horizontalAlignment: Qt.AlignHCenter
                 verticalAlignment: Qt.AlignVCenter
+                color: "white"
             }
             onClicked: {
                 modeEditor.rollBack()
@@ -137,6 +143,10 @@ Popup {
                 left: parent.left
                 right: titleLable.left
             }
+            background: Rectangle {
+                color: "black"
+                radius: 8
+            }
             Text {
                 id: upText
                 text: qsTr("▲")
@@ -145,13 +155,14 @@ Popup {
                 anchors.fill: parent
                 horizontalAlignment: Qt.AlignHCenter
                 verticalAlignment: Qt.AlignVCenter
+                color: "white"
             }
         }
     }
     
     Rectangle {
         id: instrumList
-        color: "darkgray"
+        color: "black"
         anchors {
             left: parent.left
             bottom: parent.bottom
@@ -173,7 +184,7 @@ Popup {
         Rectangle {
             id: footer
             height: 100
-            color: "darkgray"
+            color: "black"
             anchors {
                 bottom: parent.bottom
                 left: parent.left
@@ -187,6 +198,10 @@ Popup {
                     bottom: parent.bottom
                     left: parent.left
                 }
+                background: Rectangle {
+                    color: "black"
+                    radius: 8
+                }
                 Text {
                     id: downText
                     text: qsTr("▼")
@@ -195,6 +210,7 @@ Popup {
                     anchors.fill: parent
                     horizontalAlignment: Qt.AlignHCenter
                     verticalAlignment: Qt.AlignVCenter
+                    color: "white"
                 }
             }
             Button {
@@ -205,6 +221,12 @@ Popup {
                     bottom: parent.bottom
                     left: downButton.right
                     right: parent.right
+                }
+                background: Rectangle {
+                    color: "black"
+                    radius: 8
+                    border.width: 2
+                    border.color: "green"
                 }
                 Text {
                     id: acceptText
@@ -232,7 +254,7 @@ Popup {
             right: parent.right
             left: instrumList.right
         }
-        color: "darkgray"
+        color: "black"
         Image {
             id: previewImage
             fillMode: Image.PreserveAspectFit
@@ -255,7 +277,7 @@ Popup {
                 right: parent.right
                 bottom: parent.bottom
             }
-            color: "darkgray"
+            color: "black"
             RowLayout {
                 id:lay
                 anchors.fill: parent

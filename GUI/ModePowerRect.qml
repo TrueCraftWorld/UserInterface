@@ -140,6 +140,10 @@ Rectangle {
                 target: power;
                 anchors.topMargin: undefined
             }
+            PropertyChanges {
+                target: modeSelectButton;
+                enabled: false
+            }
             AnchorChanges {
                 target: power
                 anchors.left: {modePowerRect.isCoag ? modePowerRect.left : undefined}
@@ -189,6 +193,10 @@ Rectangle {
             PropertyChanges {
                 target: power;
                 anchors.topMargin: 100
+            }
+            PropertyChanges {
+                target: modeSelectButton;
+                enabled: true
             }
             AnchorChanges {
                 target: powerPlusButton

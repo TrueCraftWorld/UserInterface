@@ -42,7 +42,6 @@ Popup {
             })
         }
         modeListView.innerModel = combinedModel
-        // root.update()
     }
 
     onOpened: {
@@ -51,9 +50,7 @@ Popup {
         itemNameArr = modeEditor.modeNames
         itemIdArr = modeEditor.modeNamesIds()
         updateModel()
-        // modeListView.initialIndex = modeEditor.currentModeIndex
         modeEditor.currentModeIndex = modeIndex
-
     }
 
     Rectangle {
@@ -62,7 +59,7 @@ Popup {
         anchors.left: parent.left
         anchors.right: parent.right
         height: 100
-        color: "darkgray"
+        color: "black"
 
         Label {
             id: titleLable
@@ -76,14 +73,13 @@ Popup {
             anchors.horizontalCenter: parent.horizontalCenter
             anchors.top: parent.top
             height: parent.height / 2
-            // anchors.bottom: parent.bottom
             width: parent.width * 0.8
+            color: "white"
         }
         Rectangle {
             id: titleLowerRect
             color: isCoag ? "blue" : "yellow"
             anchors.horizontalCenter: parent.horizontalCenter
-            // anchors.top: parent.top
             anchors.bottom: parent.bottom
             height: parent.height / 2
             width: titleLableLower.contentWidth + 50
@@ -100,7 +96,6 @@ Popup {
             font.bold: true
             color: isCoag ? "white" : "black"
             anchors.horizontalCenter: parent.horizontalCenter
-            // anchors.top: parent.top
             anchors.bottom: parent.bottom
             height: parent.height / 2
             width: parent.width * 0.8
@@ -114,6 +109,11 @@ Popup {
                 right: parent.right
                 left: titleLable.right
             }
+            background: Rectangle {
+                color: "black"
+                radius: 8
+            }
+
             Text {
                 id: cancelText
                 text: qsTr("X")
@@ -122,6 +122,7 @@ Popup {
                 anchors.fill: parent
                 horizontalAlignment: Qt.AlignHCenter
                 verticalAlignment: Qt.AlignVCenter
+                color: "white"
             }
             onClicked: {
                 modeEditor.rollBack()
@@ -136,6 +137,10 @@ Popup {
                 left: parent.left
                 right: titleLable.left
             }
+            background: Rectangle {
+                color: "black"
+                radius: 8
+            }
             Text {
                 id: upText
                 text: qsTr("▲")
@@ -144,13 +149,14 @@ Popup {
                 anchors.fill: parent
                 horizontalAlignment: Qt.AlignHCenter
                 verticalAlignment: Qt.AlignVCenter
+                color: "white"
             }
         }
     }
 
     Rectangle {
         id: modeList
-        color: "darkgray"
+        color: "black"
         anchors {
             left: parent.left
             bottom: parent.bottom
@@ -172,7 +178,7 @@ Popup {
         Rectangle {
             id: footer
             height: 100
-            color: "darkgray"
+            color: "black"
             anchors {
                 bottom: parent.bottom
                 left: parent.left
@@ -186,6 +192,10 @@ Popup {
                     bottom: parent.bottom
                     left: parent.left
                 }
+                background: Rectangle {
+                    color: "black"
+                    radius: 8
+                }
                 Text {
                     id: downText
                     text: qsTr("▼")
@@ -194,6 +204,7 @@ Popup {
                     anchors.fill: parent
                     horizontalAlignment: Qt.AlignHCenter
                     verticalAlignment: Qt.AlignVCenter
+                    color: "white"
                 }
             }
             Button {
@@ -204,6 +215,12 @@ Popup {
                     bottom: parent.bottom
                     left: downButton.right
                     right: parent.right
+                }
+                background: Rectangle {
+                    color: "black"
+                    border.width: 2
+                    border.color: "green"
+                    radius: 8
                 }
                 Text {
                     id: acceptText
@@ -231,7 +248,7 @@ Popup {
             right: parent.right
             left: modeList.right
         }
-        color: "darkgray"
+        color: "black"
         Image {
             id: previewImage
             fillMode: Image.PreserveAspectFit

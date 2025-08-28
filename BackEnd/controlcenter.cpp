@@ -91,8 +91,6 @@ void makeModes(QMap<int, SurgModePtr>& container,
                bool isCoag ) {
     int start = isCoag ? 6 : 3;
 
-    // const std::map<int, InstrPtr>tmp = inst;
-
     container.insert(1000, SurgModePtr::create(ESHF::modesNames.last(),
                                                                     false,
                                                                     1,
@@ -118,7 +116,6 @@ void makeModes(QMap<int, SurgModePtr>& container,
     }
 }
 
-
 bool hasNonZeroDigit(int number, int digitPosition) {
     // Проверяем, что позиция разряда корректна (начиная с 0)
     if (digitPosition < 0) {
@@ -142,6 +139,25 @@ bool hasNonZeroDigit(int number, int digitPosition) {
     // Проверяем, что цифра не равна нулю
     return (digit != 0);
 }
+
+void filterModeMap(QMap<int, SurgModePtr>& container, const std::vector<int>& allow) {
+    auto iter = container.begin();
+    while (iter != container.end()) {
+        bool contains = iter.key() == 1000;
+        for (int a : allow) {
+            if (iter.key() == a) {
+                contains = true;
+                break;
+            }
+        }
+        if (contains) {
+            ++iter;
+        } else {
+            iter = container.erase(iter);
+        }
+    }
+}
+
 }
 
 ControlCenter::ControlCenter(QObject *parent)
@@ -483,20 +499,21 @@ void ControlCenter::programmLoadSocketInit(int progId)
                                         .arg(halfSocket)
                                         .arg(makeCommaSeparatedNumbers(allowedModesId)));
 
+                int start = isCoag ? 6 : 3;
+                std::vector<int> instIdLst = parseCommaSeparatedNumbers(progItem.at(start + 6*i).toString());
+                std::vector<int> modeIdLst = parseCommaSeparatedNumbers(progItem.at(start + 1 + 6*i).toString());
                 makeModes(modes,
                           modesList,
                           instrumConstraints,
                           progItem,
                           i,
                           isCoag);
+                filterModeMap(modes, modeIdLst);
 
                 if (isCoag) socket->setCoagModes(modes, modeNamesList);
                 else socket->setCutModes(modes, modeNamesList);
-                int start = isCoag ? 6 : 3;
-                std::vector<int> instId = parseCommaSeparatedNumbers(progItem.at(start + 6*i).toString());
-                int firstInstrId = instId.size() == 0 ? 0 : instId.at(0);
-                std::vector<int> modeId = parseCommaSeparatedNumbers(progItem.at(start + 1 + 6*i).toString());
-                int firstModeId = modeId.size() == 0 ? 0 : instId.at(0);
+                int firstInstrId = instIdLst.size() == 0 ? 0 : instIdLst.at(0);
+                int firstModeId = modeIdLst.size() == 0 ? 1000 : modeIdLst.at(0);
                 int defaultPower = progItem.at(start + 2 + 6*i).toInt();
                 defaultPower = std::max(1, defaultPower);
                 // if (isCoag) {
@@ -512,6 +529,7 @@ void ControlCenter::programmLoadSocketInit(int progId)
             bool allowSock = cutEna || coagEna;
             socket->setAllowed(allowSock);
             socket->setDisplayMode(SOCKET::S_COLLAPSED);
+            // socket->setModeId()
 
         }
     }

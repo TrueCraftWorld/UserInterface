@@ -32,6 +32,13 @@ int HalfSocket::modeIndex() const
     return m_modeIndex;
 }
 
+int HalfSocket::modeId() const
+{
+    if (m_curMode.isNull())
+        return 1000;
+    return m_curMode->id();
+}
+
 HalfSocket::HS_State HalfSocket::halfSocketState() const
 {
     return static_cast<HS_State>(m_state);
@@ -85,11 +92,15 @@ void HalfSocket::setHalfSocketState(HS_State newSocketStatus)
 
 int HalfSocket::modePower() const
 {
+    if (m_curMode.isNull())
+        return -1;
     return m_curMode->currentPower();
 }
 
 bool HalfSocket::setModePower(int newPower)
 {
+    if (m_curMode.isNull() || m_curMode->id() == 1000)
+        return false;
     SurgModePtr ptr = m_modes[m_curMode->id()];
     return ptr->setCurrentPower(newPower);
 }

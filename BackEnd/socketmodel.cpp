@@ -71,6 +71,8 @@ QVariant SocketModel::data(const QModelIndex &index, int role) const
         return socketItem.socketType();
     case CoagModeIndex:
         return socketItem.coagModeIndex();
+    case CoagModeId:
+        return socketItem.coagModeId();
     case CoagModeName:
         return socketItem.coagModeName();
     case CoagModePower:
@@ -106,6 +108,8 @@ QVariant SocketModel::data(const QModelIndex &index, int role) const
 
     case CutModeIndex:
         return socketItem.cutModeIndex();
+    case CutModeId:
+        return socketItem.cutModeId();
     case CutModeName:
         return socketItem.cutModeName();
     case CutModePower:
@@ -357,6 +361,7 @@ bool SocketModel::commitModeChange(int socketId, int modeINdex, const QVariantMa
         if (iter->second->setCoagModeIndex(modeINdex)) {
             roles.append(CoagModeIndex);
             roles.append(CoagModeName);
+            roles.append(CoagModeId);
             roles.append(CoagModeInstrID);
             roles.append(CoagModeInstrIndex);
             roles.append(CoagModeInstrName);
@@ -384,6 +389,7 @@ bool SocketModel::commitModeChange(int socketId, int modeINdex, const QVariantMa
         if (iter->second->setCutModeIndex(modeINdex)) {
             roles.append(CutModeIndex);
             roles.append(CutModeName);
+            roles.append(CutModeId);
             roles.append(CutModeInstrID);
             roles.append(CutModeInstrIndex);
             roles.append(CutModeInstrName);

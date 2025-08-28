@@ -54,6 +54,16 @@ int SOCKET::cutModeIndex() const
     return m_cutHalf->modeIndex();
 }
 
+int SOCKET::coagModeId() const
+{
+    return m_coagHalf->modeId();
+}
+
+int SOCKET::cutModeId() const
+{
+    return m_cutHalf->modeId();
+}
+
 bool SOCKET::setCutModeIndex(int newCutModeIndex)
 {
     return setModeIndex(newCutModeIndex, false);
@@ -238,8 +248,8 @@ bool SOCKET::setInstrumId(int id, bool isCoag)
 
     CSurgModePtr cMode = half->curMode();
 
-    // if (curModeIdx >= modes.size())
-    //     return false;
+    if (cMode.isNull() || cMode->id() == 1000)
+        return false;
 
     SurgModePtr mode = modes[cMode->id()];
 

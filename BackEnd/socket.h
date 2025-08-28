@@ -61,6 +61,17 @@ public:
      * @return индекс
      */
     int cutModeIndex() const;
+    /**
+     * @brief Возвращает ID текущего коаг режима
+     * @return индекс
+     */
+    int coagModeId() const;
+
+    /**
+     * @brief Возвращает ID текущего рез режима
+     * @return индекс
+     */
+    int cutModeId() const;
 
     /**
      * @brief Возвращает тип сокета - МОНО1\2 Би1\2

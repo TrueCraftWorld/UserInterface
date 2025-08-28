@@ -11,12 +11,14 @@ Rectangle {
 
     property string cutModeName
     property int cutModePower
+    property int cutModeId
     property int cutMaxPower
     property int cutInstrumId
     property string cutInstrumName: qsTr("не выбран")
 
     property string coagModeName
     property int coagModePower
+    property int coagModeId
     property int coagMaxPower
     property int coagInstrumId
     property string coagInstrumName: qsTr("не выбран")
@@ -36,6 +38,7 @@ Rectangle {
         state: socketRoot.state
         modeName: cutModeName
         modePower: cutModePower
+        modeId: cutModeId
         maxPower: cutMaxPower
         instrumId: cutInstrumId
         instrumName: cutInstrumName
@@ -50,6 +53,7 @@ Rectangle {
         state: socketRoot.state
         modeName:   coagModeName
         modePower:  coagModePower
+        modeId:  coagModeId
         maxPower:   coagMaxPower
         instrumId:  coagInstrumId
         instrumName: coagInstrumName

@@ -19,10 +19,15 @@ public:
                         };
 
     /**
-     * @brief Возвращает внутренний индекс текущего коаг режима
+     * @brief Возвращает внутренний индекс текущего  режима
      * @return индекс
      */
     int modeIndex() const;
+    /**
+     * @brief Возвращает ID текущего режима
+     * @return индекс
+     */
+    int modeId() const;
 
     /**
      * @brief Возвращает статус сокета
@@ -31,13 +36,13 @@ public:
     HS_State halfSocketState() const;
 
     /**
-     * @brief возвращает название текущего режима коаг
+     * @brief возвращает название текущего режима
      * @return
      */
     QString modeName() const;
 
     /**
-     * @brief Возвращает список доступных режимов реза
+     * @brief Возвращает список доступных режимов
      * @return
      */
     QMap<int, SurgModePtr> modes() const;

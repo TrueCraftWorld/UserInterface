@@ -7,6 +7,7 @@ Rectangle {
     property bool isCoag
     property string modeName
     property int modePower
+    property int modeId
     property int maxPower
     property int socketId
     property int instrumId
@@ -15,6 +16,8 @@ Rectangle {
     signal modeEditDialogRequest()
     signal instrumEditDialogRequest()
     signal newPower(int power)
+
+    color: "black"
 
     InstrumRect {
         id: instrumRect
@@ -34,6 +37,7 @@ Rectangle {
         isCoag: halfSocketRoot.isCoag
         modeName: halfSocketRoot.modeName
         modePower: halfSocketRoot.modePower
+        modeId: halfSocketRoot.modeId
         maxPower: halfSocketRoot.maxPower
         anchors {
             top: instrumRect.bottom
@@ -65,7 +69,7 @@ Rectangle {
             name: "expanded"
             PropertyChanges {
                 target: instrumRect;
-                visible: true
+                visible: (halfSocketRoot.modeId != 1000)
                 height: halfSocketRoot.height * .4
             }
         }

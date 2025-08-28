@@ -215,6 +215,7 @@ Popup {
                     bottom: parent.bottom
                     left: downButton.right
                     right: parent.right
+                    margins: 10
                 }
                 background: Rectangle {
                     color: "black"
@@ -258,7 +259,7 @@ Popup {
             anchors {
                 left: parent.left
                 right: parent.right
-                bottom: footer.top
+                // bottom: footer.top
                 top: parent.top
                 margins: 10
             }

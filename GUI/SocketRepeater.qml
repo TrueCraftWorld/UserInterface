@@ -65,12 +65,14 @@ Repeater {
         cutInstrumId:      model.cutmodeinstrid
         cutMaxPower:       model.cutmodemaxpower
         cutModePower:      model.cutmodepower
+        cutModeId:      model.cutmodeid
         cutModeName:       model.cutmodename
         cutInstrumName:    model.cutmodeinstrname
 
         coagInstrumId:     model.coagmodeinstrid
         coagMaxPower:      model.coagmodemaxpower
         coagModePower:     model.coagmodepower
+        coagModeId:     model.coagmodeid
         coagModeName:      model.coagmodename
         coagInstrumName:   model.coagmodeinstrname
 

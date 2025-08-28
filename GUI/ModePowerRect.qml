@@ -6,13 +6,34 @@ Rectangle {
 
     property bool isCoag
     property string modeName
+    property int modeId
     property int modePower
     property int maxPower: 400
 
     signal modeEditDialogRequest()
     signal newPower(int pwr)
 
-    color: isCoag ? "blue" : "yellow"
+    function colorFromId() {
+        if (modePowerRect.modeId == 1000)
+            return "darkgray"
+        return isCoag ? "blue" : "yellow"
+    }
+
+    color: {
+        if (modePowerRect.modeId == 1000)
+            return "darkgray"
+        return isCoag ? "blue" : "yellow"
+
+    }
+
+    Connections {
+        target: modePowerRect
+        function onModeIdChanged() {
+            modePowerRect.color = modePowerRect.colorFromId()
+            console.log(isCoag, modePowerRect.color, modePowerRect.modeId)
+        }
+    }
+
     radius: 8
 
     Rectangle {
@@ -26,6 +47,7 @@ Rectangle {
             wrapMode: Text.Wrap
             height: 60
             color: isCoag ? "white" : "black"
+            verticalAlignment: Qt.AlignVCenter
             anchors {
                 margins: 10
                 fill: parent
@@ -44,11 +66,13 @@ Rectangle {
         Label {
             id: powerLabel
             text: modePower
+            visible: (modeId != 1000)
             width: fontMetrics.advanceWidth("999")
             height: 31
             font.pixelSize: 30
             font.bold: true
             color: isCoag ? "white" : "black"
+            verticalAlignment: Qt.AlignVCenter
             anchors {
                 margins: 10
                 fill: parent
@@ -84,6 +108,7 @@ Rectangle {
         }
         MouseArea {
             anchors.fill: parent
+            onClicked: modePowerRect.newPower(powerSlider.value + 1);
         }
     }
     Rectangle {
@@ -111,6 +136,7 @@ Rectangle {
         }
         MouseArea {
             anchors.fill: parent
+            onClicked: modePowerRect.newPower(powerSlider.value - 1);
         }
     }
     Slider {
@@ -177,13 +203,13 @@ Rectangle {
         },
         State {
             name: "expanded"
-            PropertyChanges { target: powerPlusButton;  visible: true }
-            PropertyChanges { target: powerMinusButton; visible: true }
-            PropertyChanges { target: powerSlider;      visible: true }
+            PropertyChanges { target: powerPlusButton;  visible: (modeId != 1000) }
+            PropertyChanges { target: powerMinusButton; visible: (modeId != 1000) }
+            PropertyChanges { target: powerSlider;      visible: (modeId != 1000) }
             PropertyChanges {
                 target: powerLabel;
                 horizontalAlignment: Text.AlignHCenter
-                font.pixelSize: 44
+                font.pixelSize: 50
             }
             PropertyChanges {
                 target: modeLabel;

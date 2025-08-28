@@ -3,12 +3,16 @@ import QtQuick.Layouts 1.15
 
 Rectangle {
     property var innerModel
+    color: "black"
     // anchors.fill: parent
     ColumnLayout {
         id: layout
         anchors.fill: parent
-        anchors.margins: 5
-        spacing: 5
+        anchors.topMargin: 10
+        anchors.bottomMargin: 0
+        anchors.leftMargin: 10
+        anchors.rightMargin: 10
+        spacing: 10
 
         SocketRepeater {
             id: repeat

@@ -31,7 +31,6 @@ Rectangle {
 
     state: "collapsed"
 
-
     HalfSocket {
         id: leftRect
         isCoag: false

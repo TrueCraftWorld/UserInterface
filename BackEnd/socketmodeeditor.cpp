@@ -16,9 +16,9 @@ void SocketModeEditor::initialize(int socket, int mode, bool isCoag)
     m_modeNames = m_model->modeNames(socket, isCoag);
     m_modeNameIds = m_model->modeNamesIds(socket, isCoag);
 
-    m_originalParameters = m_model->modeParam(socket, mode, isCoag);
-    m_instrList = m_model->instrumNames(socket, mode, isCoag);
-    m_instrListIds = m_model->instrumNamesIds(socket, mode, isCoag);
+    m_originalParameters =  m_model->modeParam(socket, mode, isCoag);
+    m_instrList =           m_model->instrumNames(socket, mode, isCoag);
+    m_instrListIds =        m_model->instrumNamesIds(socket, mode, isCoag);
 
     m_socketName = m_model->index(socket,0).data(SocketModel::SocketName).toString();
     m_originalModeIndex = mode;
@@ -38,7 +38,7 @@ void SocketModeEditor::loadModeParameters(int modeIndex)
 {
     if (modeIndex >= m_modeNames.size())
         return;
-    m_currentParameters = m_model->modeParam(m_socketID, /*m_modeNames.at*/(modeIndex), m_isCoag);
+    m_currentParameters = m_model->modeParam(m_socketID, (modeIndex), m_isCoag);
     m_instrList = m_model->instrumNames(m_socketID, modeIndex, m_isCoag);
     m_instrListIds = m_model->instrumNamesIds(m_socketID, modeIndex, m_isCoag);
 
@@ -114,8 +114,7 @@ void SocketModeEditor::setCurrentModeIndex(int index)
 
 bool SocketModeEditor::checkChanges()
 {
-    bool tmp = ( m_currentModeIndex != m_originalModeIndex /*||
-           !isParamsEqual(m_currentParameters, m_originalParameters)*/
+    bool tmp = ( m_currentModeIndex != m_originalModeIndex
             || m_currentParameters.value("currentpower").toInt()
                 != m_originalParameters.value("currentpower").toInt());
 

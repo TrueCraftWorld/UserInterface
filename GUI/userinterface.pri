@@ -15,5 +15,4 @@ DISTFILES += \
     $$PWD/SocketRepeater.qml \
     $$PWD/StatesSocket.qml \
     $$PWD/SocketContainerV2.qml \
-    $$PWD/SocketEditor.qml \
     $$PWD/StatusBar.qml

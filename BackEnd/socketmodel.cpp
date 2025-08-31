@@ -5,14 +5,13 @@ SocketModel::SocketModel(QObject *parent)
     : QAbstractListModel{parent}
 {
     populateRoles();
-    connect(this, &SocketModel::dataChanged, this, [this](const QModelIndex &topLeft,
+    connect(this, &SocketModel::dataChanged, this, [this] (const QModelIndex &topLeft,
                                                     const QModelIndex &,
                                                     const QVector<int> &roles) {
         if (!roles.contains(SocketDisplayMode))
             return;
-        if (topLeft.data(SocketDisplayMode).toString() == "expanded") {
+        if (topLeft.data(SocketDisplayMode).toString() == "expanded")
             socketCollapser(topLeft.row());
-        }
     });
 }
 
@@ -54,7 +53,6 @@ QVariant SocketModel::data(const QModelIndex &index, int role) const
         return static_cast<int>(socketItem.socketStatus());
     case SocketDisplayMode:
     {
-        // return static_cast<int>(socketItem.displayMode());
         switch (socketItem.displayMode()) {
         case SOCKET::S_COLLAPSED:
             return "collapsed";
@@ -100,6 +98,7 @@ QVariant SocketModel::data(const QModelIndex &index, int role) const
         return socketItem.curCoagMode()->selectedInstrId();
 
     case CoagModeInstrImage:
+        return QVariant();
         //тут можно возращеть строку с именем или даже целиком с нужным ImageProvider
     case CoagModeInstrIndex:
         if (socketItem.curCoagMode().isNull())
@@ -122,13 +121,10 @@ QVariant SocketModel::data(const QModelIndex &index, int role) const
         if (socketItem.curCutMode().isNull())
             return -1;
         return socketItem.curCutMode()->maximumPower();
-        // return socketItem.curCutMode()->maximumPower();
     case CoagModesNames:
         return socketItem.coagModeNames();
     case CutModesNames:
         return socketItem.cutModeNames();
-
-        ///todo realize smthg
     case CutModeInstrName:
     {
         if (socketItem.curCutMode().isNull())
@@ -139,9 +135,7 @@ QVariant SocketModel::data(const QModelIndex &index, int role) const
         else
             return QString();
     }
-        // return socketItem.curCutMode()->curInstrName();
     case CutModeInstrID:
-
         if (socketItem.curCutMode().isNull())
             return -1;
         return socketItem.curCutMode()->selectedInstrId();
@@ -195,6 +189,7 @@ bool SocketModel::setData(const QModelIndex &index, const QVariant &value, int r
         if (socketItem.displayMode() == mode)
             return false;
         socketItem.setDisplayMode(static_cast<SOCKET::SocDisplayMode>(mode));
+        return true;
     }
     case CoagModeIndex:
         return socketItem.setCoagModeIndex(value.toInt());
@@ -342,7 +337,7 @@ int SocketModel::selectedInstrumIndexByMode(int socketId, int modeIndex, bool is
     return ptr->selectedInstrIndex();
 }
 
-bool SocketModel::commitModeChange(int socketId, int modeINdex, const QVariantMap &param)
+bool SocketModel::commitModeChange(int socketId, int modeIndex, const QVariantMap &param)
 {
     if (m_itemsMap == nullptr)
         return false;
@@ -358,7 +353,7 @@ bool SocketModel::commitModeChange(int socketId, int modeINdex, const QVariantMa
     QVector<int> roles;
 
     if (isModeCoag) {
-        if (iter->second->setCoagModeIndex(modeINdex)) {
+        if (iter->second->setCoagModeIndex(modeIndex)) {
             roles.append(CoagModeIndex);
             roles.append(CoagModeName);
             roles.append(CoagModeId);
@@ -386,7 +381,7 @@ bool SocketModel::commitModeChange(int socketId, int modeINdex, const QVariantMa
     //     break;
     // case SOCKET::CUT:
     } else {
-        if (iter->second->setCutModeIndex(modeINdex)) {
+        if (iter->second->setCutModeIndex(modeIndex)) {
             roles.append(CutModeIndex);
             roles.append(CutModeName);
             roles.append(CutModeId);

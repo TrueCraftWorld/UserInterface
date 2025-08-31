@@ -8,6 +8,7 @@
 
 #include <QQmlEngine>
 #include <QString>
+#include <QTimer>
 
 namespace {
 
@@ -207,11 +208,10 @@ void ControlCenter::initComms()
 void ControlCenter::initSockets()
 {
     ///todo read old socket (maybe Json or QSetting)
-    // if (readPreviousSocketSettings()) {
     if (true) {
         if (m_dbReader.isNull())
             m_dbReader = new DataBaseReader("/home/kikorik/FOTEK/someShadyDB.db");
-        // dataBaseSocketInit();
+        // programmLoadSocketInit(14);
         programmLoadSocketInit(5);
     } else {
         defaultSocketInit();
@@ -385,7 +385,6 @@ void ControlCenter::dataBaseSocketInit()
 
 }
 
-
 void ControlCenter::programmLoadSocketInit(int progId)
 {
     //начинаем прорабатывать прогрузку несекольких экранов
@@ -423,7 +422,6 @@ void ControlCenter::programmLoadSocketInit(int progId)
     QList<QVariantList> allowedInstr = m_dbReader->slotSendSelectQuery(QStringList{"EnableInstr"},
                                                                        QStringList{"Instr_ID"},
                                                                        QString("Prog_ID = %1").arg(progId));
-    // QList<int> allowedInstrId;
     std::vector<int> allowedInstrId;
 
     for (const auto& item : allowedInstr)
@@ -434,12 +432,10 @@ void ControlCenter::programmLoadSocketInit(int progId)
     instrumConstraints = getConstarints(allowedModesId);
 
     //Шаг5---------------------------------------------------------
-    // for (auto item : instrumConstraints) {
     for (auto iterItem = instrumConstraints.begin(); iterItem != instrumConstraints.end(); ++iterItem) {
         std::map<int, InstrInfo>& item = iterItem->second;
         filterMapByKey<InstrInfo>(item, allowedInstrId);
     }
-
 
     //Шаг 6--------------------------------------------------------
     QList<QVariantList> modeNamesListV = m_dbReader->slotSendSelectQuery(QStringList{"Modes"},
@@ -481,18 +477,20 @@ void ControlCenter::programmLoadSocketInit(int progId)
                           isCoag);
                 filterModeMap(modes, modeIdLst);
 
-                if (isCoag) socket->setCoagModes(modes, modeNamesList);
-                else socket->setCutModes(modes, modeNamesList);
+                isCoag ? socket->setCoagModes(modes, modeNamesList)
+                       : socket->setCutModes(modes, modeNamesList);
+
                 int firstInstrId = instIdLst.size() == 0 ? 0 : instIdLst.at(0);
                 int firstModeId = modeIdLst.size() == 0 ? 1000 : modeIdLst.at(0);
                 int defaultPower = progItem.at(start + 2 + 6*i).toInt();
                 defaultPower = std::max(1, defaultPower);
-                // if (isCoag) {
-                socket->setModeId(firstModeId, isCoag);
-                socket->setInstrumId(firstInstrId, isCoag);
-                isCoag ? socket->setCoagModePower(defaultPower) : socket->setCutModePower(defaultPower);
-                // }
 
+                socket->setModeId(firstModeId, isCoag);
+
+                socket->setInstrumId(firstInstrId, isCoag);
+
+                isCoag ? socket->setCoagModePower(defaultPower)
+                       : socket->setCutModePower(defaultPower);
             }
             //МОНО2 КОАГ = 1, БИ1РЕЗ 8
             bool coagEna = hasNonZeroDigit(progItem.at(29).toInt(), (8 - 2*i) - 1 );
@@ -500,12 +498,14 @@ void ControlCenter::programmLoadSocketInit(int progId)
             bool allowSock = cutEna || coagEna;
             socket->setAllowed(allowSock);
             socket->setDisplayMode(SOCKET::S_COLLAPSED);
-            // socket->setModeId()
-
         }
     }
     m_socketModel->setInstrumMap(getInstrums());
     m_socketModel->setItemsMapVector(socketMapVector);
+
+    QTimer::singleShot(10, Qt::CoarseTimer, this, [this] () {
+        emit m_socketModel->dataChanged(QModelIndex(), QModelIndex());
+    });
 }
 
 QList<Prog> ControlCenter::getListOfPrograms(int scopeID)
@@ -521,7 +521,6 @@ QList<Prog> ControlCenter::getListOfPrograms(int scopeID)
 
     QList<Prog> progList;
     progList.reserve(progListVariant.size());
-    // QStringList progNameList;
     for (const auto& item : progListVariant) {
         Prog tmp;
         tmp.isMainProg = item.at(2).toInt() % 10 == 0 ? true : false;

@@ -65,14 +65,14 @@ Repeater {
         cutInstrumId:      model.cutmodeinstrid
         cutMaxPower:       model.cutmodemaxpower
         cutModePower:      model.cutmodepower
-        cutModeId:      model.cutmodeid
+        cutModeId:         model.cutmodeid
         cutModeName:       model.cutmodename
         cutInstrumName:    model.cutmodeinstrname
 
         coagInstrumId:     model.coagmodeinstrid
         coagMaxPower:      model.coagmodemaxpower
         coagModePower:     model.coagmodepower
-        coagModeId:     model.coagmodeid
+        coagModeId:        model.coagmodeid
         coagModeName:      model.coagmodename
         coagInstrumName:   model.coagmodeinstrname
 
@@ -85,14 +85,18 @@ Repeater {
                 repeatRoot.instrumDialogRequest(socketid,
                                                 iscoag ? model.coagmodeindex : model.cutmodeindex,
                                                 iscoag)
-                console.log("prosim dislog instrumenta ", iscoag)
+                console.log("prosim dislog instrumenta ")
             }
             function onModeEditDialogRequest(socketid, iscoag) {
-
+                console.log("просим dialog rezhima",
+                            iscoag ? model.coagmodeindex : model.cutmodeindex,
+                            iscoag ? model.coagmodename : model.cutmodename, )
                 repeatRoot.modeDialogRequest(socketid,
                                             iscoag ? model.coagmodeindex : model.cutmodeindex,
                                             iscoag)
-                console.log("prosim dialog rezhima")
+                console.log("открылся dialog rezhima",
+                            iscoag ? model.coagmodeindex : model.cutmodeindex,
+                            iscoag ? model.coagmodename : model.cutmodename, )
             }
         }
         Connections {

@@ -30,10 +30,6 @@ SOCKET::SOCKET(SOCKET::SocType type) :
     m_socketStatus(S_ENABLED),
     m_displayMode(S_COLLAPSED)
 {
-    // m_socketStatus = S_ENABLED;
-    // m_cutModeIndex = 0;
-    // m_coagModeIndex = 0;
-    // m_socketType = type;
     m_cutHalf = HalfSockPtr::create(false);
     m_coagHalf = HalfSockPtr::create(true);
 }
@@ -74,6 +70,7 @@ bool SOCKET::setModeId(int id, bool isCoag)
     HalfSockPtr half = isCoag ? m_coagHalf : m_cutHalf;
     if (half.isNull())
         return false;
+    qDebug() << "mode Change on" << m_socketName << Qt::endl;
     return half->setModeId(id);
 }
 
@@ -86,10 +83,6 @@ void SOCKET::setSocketType(SOCKET::SocType newSocketType)
 {
     if (m_socketType == newSocketType)
         return;
-    // m_cutModeNames.clear();
-    // m_coagModeNames.clear();
-    // m_cutModes.clear();
-    // m_coagModes.clear();
     m_socketType = newSocketType;
     m_cutHalf = HalfSockPtr::create(false);
     m_coagHalf = HalfSockPtr::create(true);

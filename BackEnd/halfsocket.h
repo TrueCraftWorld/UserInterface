@@ -61,15 +61,7 @@ public:
      */
     bool setModeIndex(int newModeIndex);
 
-
     bool setModeId(int id);
-
-    /**
-     * @brief Проверка типа режима по его названию
-     * @param modeName - текущее локализованное название режима
-     * @return ModeType заданного режима
-     */
-    int checkMode(const QString& modeName) const;
 
     /**
      * @brief смена текущего состояния сокета
@@ -134,12 +126,11 @@ public:
 private:
     int getModeIndex(const QString& name) const;
     int getModeIndex(int id) const;
-    CSurgModePtr m_curMode;
 
+    CSurgModePtr m_curMode;
     int m_modeIndex = 0;
 
     QStringList m_modeNames;
-
     QMap<int, SurgModePtr> m_modes;
     // QMap<int, SurgModePtr> m_modesSorted;
 

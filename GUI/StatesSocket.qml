@@ -35,23 +35,23 @@ Rectangle {
         id: leftRect
         isCoag: false
         state: socketRoot.state
-        modeName: cutModeName
-        modePower: cutModePower
-        modeId: cutModeId
-        maxPower: cutMaxPower
-        instrumId: cutInstrumId
-        instrumName: cutInstrumName
+        modeName:   socketRoot.cutModeName
+        modePower:  socketRoot.cutModePower
+        modeId:     socketRoot.cutModeId
+        maxPower:   socketRoot.cutMaxPower
+        instrumId:  socketRoot.cutInstrumId
+        instrumName: socketRoot.cutInstrumName
     }
     HalfSocket {
         id: rightRect
         isCoag: true
         state: socketRoot.state
-        modeName:   coagModeName
-        modePower:  coagModePower
-        modeId:  coagModeId
-        maxPower:   coagMaxPower
-        instrumId:  coagInstrumId
-        instrumName: coagInstrumName
+        modeName:   socketRoot.coagModeName
+        modePower:  socketRoot.coagModePower
+        modeId:     socketRoot.coagModeId
+        maxPower:   socketRoot.coagMaxPower
+        instrumId:  socketRoot.coagInstrumId
+        instrumName: socketRoot.coagInstrumName
     }
     Rectangle {
         id: middleRect
@@ -133,7 +133,6 @@ Rectangle {
             }
             PropertyChanges {
                 target: middleRect
-                // width: root.middleRectWidth
                 color: "black"
                 width: fontMetrics.advanceWidth("MONO 22")
             }

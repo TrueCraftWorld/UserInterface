@@ -1,5 +1,7 @@
 #include "halfsocket.h"
 
+#include <QDebug>
+
 namespace {
 QStringList sortByExample(const QStringList& toSort, const QStringList& reference)
 {
@@ -69,6 +71,7 @@ bool HalfSocket::setModeIndex(int newModeIndex)
         if (tmp == item->modeName())
             m_curMode = item;
     }
+    qDebug() << "mode Change to" << m_curMode->id() << m_curMode->modeName() << Qt::endl;
     return true;
 }
 
@@ -77,17 +80,9 @@ bool HalfSocket::setModeId(int id)
     return setModeIndex(getModeIndex(id));
 }
 
-int HalfSocket::checkMode(const QString &modeName) const
-{
-//bad idea
-    Q_UNUSED(modeName)
-    return -1;
-}
-
 void HalfSocket::setHalfSocketState(HS_State newSocketStatus)
 {
     Q_UNUSED(newSocketStatus)
-    ;
 }
 
 int HalfSocket::modePower() const
@@ -168,7 +163,8 @@ int HalfSocket::getModeIndex(int id) const
     for (const auto& item : m_modes) {
         if (item->id() != id)
             continue;
-        return (m_modeNames.indexOf(item->modeName()));
+        int idx = m_modeNames.indexOf(item->modeName());
+        return (idx);
     }
     return -1;
 }

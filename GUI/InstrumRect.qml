@@ -18,7 +18,6 @@ Rectangle {
             font.pixelSize: 14
             font.bold: true
             wrapMode: Text.Wrap
-            // color: isCoag ? "white" : "black"
             color: "white"
             horizontalAlignment: Qt.AlignHCenter
             verticalAlignment: Qt.AlignVCenter
@@ -41,7 +40,6 @@ Rectangle {
             id: theImage
             asynchronous: true
             source: "image://instrums/miniInstr" + (instrumId+1)
-            // source: "qrc:/test.jpg"
             fillMode: Image.PreserveAspectFit
             anchors.fill: parent
         }
@@ -56,5 +54,4 @@ Rectangle {
         anchors.fill: parent
         onClicked: instrumRoot.instrumEditDialogRequest()
     }
-
 }

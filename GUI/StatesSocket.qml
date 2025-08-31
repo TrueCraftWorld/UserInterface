@@ -41,10 +41,6 @@ Rectangle {
         maxPower: cutMaxPower
         instrumId: cutInstrumId
         instrumName: cutInstrumName
-        onModeEditDialogRequest:
-            socketRoot.modeEditDialogRequest(socketRoot.socketId, false)
-        onInstrumEditDialogRequest:
-            socketRoot.instrumEditDialogRequest(socketRoot.socketId, false)
     }
     HalfSocket {
         id: rightRect
@@ -56,10 +52,6 @@ Rectangle {
         maxPower:   coagMaxPower
         instrumId:  coagInstrumId
         instrumName: coagInstrumName
-        onModeEditDialogRequest:
-            socketRoot.modeEditDialogRequest(socketRoot.socketId, true)
-        onInstrumEditDialogRequest:
-            socketRoot.instrumEditDialogRequest(socketRoot.socketId, true)
     }
     Rectangle {
         id: middleRect
@@ -97,12 +89,35 @@ Rectangle {
         }
     }
     Connections {
+        target: rightRect
+        function onModeEditDialogRequest() {
+            socketRoot.modeEditDialogRequest(socketRoot.socketId, true)
+        }
+    }
+    Connections {
+        target: rightRect
+        function onInstrumEditDialogRequest() {
+            socketRoot.instrumEditDialogRequest(socketRoot.socketId, true)
+        }
+    }
+    Connections {
         target: leftRect
         function onNewPower(pwr) {
             socketRoot.newPower(socketRoot.socketId, pwr, false)
         }
     }
-
+    Connections {
+        target: leftRect
+        function onModeEditDialogRequest() {
+            socketRoot.modeEditDialogRequest(socketRoot.socketId, false)
+        }
+    }
+    Connections {
+        target: leftRect
+        function onInstrumEditDialogRequest() {
+            socketRoot.instrumEditDialogRequest(socketRoot.socketId, false)
+        }
+    }
 
     states: [
         // Свернутое состояние
@@ -150,7 +165,6 @@ Rectangle {
             }
             PropertyChanges {
                 target: middleRect
-                // height: root.middleRectHeight
                 color: "transparent"
                 height: fontMetrics.height + socketNameLabel.anchors.margins
             }
@@ -158,7 +172,6 @@ Rectangle {
                 target: leftRect
                 anchors.left: parent.left
                 anchors.right: parent.horizontalCenter
-                // anchors.top: middleRect.bottom
                 anchors.top: parent.top
                 anchors.bottom: parent.bottom
             }
@@ -166,7 +179,6 @@ Rectangle {
                 target: rightRect
                 anchors.left: parent.horizontalCenter
                 anchors.right: parent.right
-                // anchors.top: middleRect.bottom
                 anchors.top: parent.top
                 anchors.bottom: parent.bottom
             }

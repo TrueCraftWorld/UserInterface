@@ -33,6 +33,7 @@ Repeater {
                     / expandedCount
             : 0
     }
+
     function calculateCollapsedHeight() {
         var totalFixedHeight = 0
         var expandedCount = 0
@@ -58,7 +59,6 @@ Repeater {
         Layout.preferredHeight: state === "expanded" ?
                                     repeatRoot.calculateExpandedHeight() :
                                     repeatRoot.calculateCollapsedHeight()
-        // title: "WAGU " + index
         title: model.socketname
         socketId: index
 
@@ -103,14 +103,17 @@ Repeater {
                                     (iscoag ? "coagmodepower" : "cutmodepower"))
             }
         }
-
-        onSocketExpandRequest: {
-            theModel.qmlSetData(index, 1, "socketdisplaymode")
-            // theModel.expandSocket(index)
+        Connections {
+            target: delegateSoc
+            function onSocketCollapseRequest() {
+                theModel.qmlSetData(index, 0, "socketdisplaymode")
+            }
         }
-        onSocketCollapseRequest: {
-            theModel.qmlSetData(index, 0, "socketdisplaymode")
-            // theModel.collapseSocket(index)
+        Connections {
+            target: delegateSoc
+            function onSocketExpandRequest() {
+                theModel.qmlSetData(index, 1, "socketdisplaymode")
+            }
         }
     }
 }

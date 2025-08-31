@@ -66,7 +66,7 @@ Rectangle {
                         top:parent.top
                         left: parent.left
                     }
-                    color: /*isCurrent ? "magenta" : */"black"
+                    color: "black"
                     Image {
                         id: itemImage
                         asynchronous: true
@@ -109,7 +109,6 @@ Rectangle {
                     anchors.fill: parent
                     onClicked: {
                         itemList.newIndexSelected(index)
-                        // theView.currentIndex = index
                     }
                 }
             }

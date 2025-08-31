@@ -29,7 +29,6 @@ Rectangle {
             left: parent.left
             right: parent.right
         }
-        onInstrumEditDialogRequest: halfSocketRoot.instrumEditDialogRequest()
     }
     ModePowerRect {
         id: modePower
@@ -45,10 +44,20 @@ Rectangle {
             right: parent.right
             bottom: parent.bottom
         }
-        onModeEditDialogRequest: halfSocketRoot.modeEditDialogRequest()
-
     }
 
+    Connections {
+        target: instrumRect
+        function onInstrumEditDialogRequest() {
+            halfSocketRoot.instrumEditDialogRequest()
+        }
+    }
+    Connections {
+        target: modePower
+        function onModeEditDialogRequest() {
+            halfSocketRoot.modeEditDialogRequest()
+        }
+    }
     Connections {
         target: modePower
         function onNewPower(pwr) {

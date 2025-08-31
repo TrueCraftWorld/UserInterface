@@ -26,7 +26,8 @@ Popup {
         id: combinedModel
     }
     
-    // Function to update the model when C++ data changes
+    //т.к. при прямом присвоение ломается бандинг,
+    // то нужна функция, перезадающая модель
     function updateModel() {
         combinedModel.clear()
         
@@ -42,7 +43,6 @@ Popup {
             })
         }
         instrumListView.innerModel = combinedModel
-        // root.update()
     }
 
     onOpened: {
@@ -51,9 +51,10 @@ Popup {
         itemNameArr = modeEditor.instrList
         itemIdArr = modeEditor.instrListIds()
         updateModel()
-        var bla =  modeEditor.currentInstrIndex
+        //кринж, но т.к. вызывается переназначение свойств
+        //и триггерятся сигналы
+        var bla = modeEditor.currentInstrIndex
         modeEditor.currentInstrIndex = bla
-        // modeEditor.currentInstrIndex
 
     }
     
@@ -77,7 +78,6 @@ Popup {
             anchors.horizontalCenter: parent.horizontalCenter
             anchors.top: parent.top
             height: parent.height / 2
-            // anchors.bottom: parent.bottom
             width: parent.width * 0.8
             color: "white"
         }
@@ -85,7 +85,6 @@ Popup {
             id: titleLowerRect
             color: isCoag ? "blue" : "yellow"
             anchors.horizontalCenter: parent.horizontalCenter
-            // anchors.top: parent.top
             anchors.bottom: parent.bottom
             height: parent.height / 2
             width: titleLableLower.contentWidth + 50
@@ -102,7 +101,6 @@ Popup {
             font.bold: true
             color: isCoag ? "white" : "black"
             anchors.horizontalCenter: parent.horizontalCenter
-            // anchors.top: parent.top
             anchors.bottom: parent.bottom
             height: parent.height / 2
             width: parent.width * 0.8
@@ -178,7 +176,6 @@ Popup {
                 left: parent.left
                 right: parent.right
             }
-            // innerModel: combinedModel
             imageSourceTemplate: "image://instrums/miniInstr%1"
         }
         Rectangle {
@@ -261,7 +258,6 @@ Popup {
             fillMode: Image.PreserveAspectFit
             asynchronous: true
             source: ("image://instrums/maxiInstr%1").arg(modeEditor.currentInstrIndex)
-            // source: "file"
             anchors {
                 left: parent.left
                 right: parent.right
@@ -294,7 +290,6 @@ Popup {
                     borderColor: "darkcyan"
                     power: modeEditor.lowPowerBound
                     selected: (modeEditor.currentPower === power)
-                    onPowerChosen: modeEditor.updateParameter("currentpower", but1.power)
                 }
                 PowerRect {
                     id: but2
@@ -306,7 +301,6 @@ Popup {
                     power: modeEditor.midPowerBound
                     selected: (modeEditor.currentPower === power)
                     onPowerChosen: modeEditor.updateParameter("currentpower", but2.power)
-                    onPowerChanged: modeEditor.updateParameter("currentpower", but2.power)
                 }
                 PowerRect {
                     id: but3
@@ -317,11 +311,34 @@ Popup {
                     borderColor: "gold"
                     power: modeEditor.highPowerBound
                     selected: (modeEditor.currentPower === power)
-                    onPowerChosen: modeEditor.updateParameter("currentpower", but3.power)
                 }
             }
         }
     }
+    Connections {
+        target: but3
+        function onPowerChosen() {
+            modeEditor.updateParameter("currentpower", but3.power)
+        }
+    }
+    Connections {
+        target: but2
+        function onPowerChosen() {
+            modeEditor.updateParameter("currentpower", but2.power)
+        }
+        //мощность на кнопке меняется при инициализации
+        //и мы по умолчанию устанавливаем в диалоге среднюю мощность
+        function onPowerChanged() {
+            modeEditor.updateParameter("currentpower", but2.power)
+        }
+    }
+    Connections {
+        target: but1
+        function onPowerChosen() {
+            modeEditor.updateParameter("currentpower", but1.power)
+        }
+    }
+
     Connections {
         target: instrumListView
         function onNewIndexSelected(index) {

@@ -82,8 +82,6 @@ Popup {
                 id: lowPower
                 visible: text != '0'
                 text: ("%1").arg(modeEditor.lowPowerBound)
-                // background.c: "blue"
-                // color: "blue"
                 onClicked: {
                     root.setPower(text);
                 }
@@ -93,7 +91,6 @@ Popup {
                 id: midPower
                 text: ("%1").arg(modeEditor.midPowerBound)
                 visible: text != '0'
-                // background: "lightgreen"
                 onClicked: {
                     root.setPower(text);
                 }
@@ -102,7 +99,6 @@ Popup {
                 id: maxPower
                 text: ("%1").arg(modeEditor.highPowerBound)
                 visible: text != '0'
-                // background: "lightred"
                 onClicked: {
                     root.setPower(text);
                 }

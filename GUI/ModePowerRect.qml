@@ -8,7 +8,7 @@ Rectangle {
     property string modeName
     property int modeId
     property int modePower
-    property int maxPower: 400
+    property int maxPower
 
     signal modeEditDialogRequest()
     signal newPower(int pwr)
@@ -23,7 +23,6 @@ Rectangle {
         if (modePowerRect.modeId == 1000)
             return "darkgray"
         return isCoag ? "blue" : "yellow"
-
     }
 
     Connections {

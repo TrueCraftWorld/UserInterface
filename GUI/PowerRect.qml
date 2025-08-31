@@ -7,6 +7,7 @@ Button {
     property bool selected: false
     signal powerChosen(int pwr)
     id: but
+    visible: (power != 0)
     background: Rectangle {
         radius: 8
         border.width: 2
@@ -24,6 +25,5 @@ Button {
         font.bold: true
         font.pixelSize: 34
     }
-
     onClicked: but.powerChosen(power)
 }

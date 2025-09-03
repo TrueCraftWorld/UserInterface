@@ -71,7 +71,7 @@ bool HalfSocket::setModeIndex(int newModeIndex)
         if (tmp == item->modeName())
             m_curMode = item;
     }
-    qDebug() << "mode Change to" << m_curMode->id() << m_curMode->modeName() << Qt::endl;
+    // qDebug() << "mode Change to" << m_curMode->id() << m_curMode->modeName() << Qt::endl;
     return true;
 }
 

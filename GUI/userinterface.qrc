@@ -17,5 +17,8 @@
         <file>ItemList.qml</file>
         <file>PowerRect.qml</file>
         <file>ModeEditor.qml</file>
+        <file>ProgItemList.qml</file>
+        <file>MainMenu.qml</file>
+        <file>MenuLoader.qml</file>
     </qresource>
 </RCC>

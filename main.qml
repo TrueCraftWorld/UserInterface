@@ -78,7 +78,10 @@ Window {
         id: leftDrawer
         width: 0.8 * container.width
         height: container.height
-        SettingsMain {
+
+        // Loader
+        // SettingsMain {
+        MenuLoader {
             anchors.fill: parent
         }
     }

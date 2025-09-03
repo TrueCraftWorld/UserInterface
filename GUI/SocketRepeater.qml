@@ -98,23 +98,14 @@ Repeater {
                             iscoag ? model.coagmodeindex : model.cutmodeindex,
                             iscoag ? model.coagmodename : model.cutmodename, )
             }
-        }
-        Connections {
-            target: delegateSoc
             function onNewPower(socketid, pwr, iscoag) {
                 theModel.qmlSetData(index,
                                     pwr,
                                     (iscoag ? "coagmodepower" : "cutmodepower"))
             }
-        }
-        Connections {
-            target: delegateSoc
             function onSocketCollapseRequest() {
                 theModel.qmlSetData(index, 0, "socketdisplaymode")
             }
-        }
-        Connections {
-            target: delegateSoc
             function onSocketExpandRequest() {
                 theModel.qmlSetData(index, 1, "socketdisplaymode")
             }

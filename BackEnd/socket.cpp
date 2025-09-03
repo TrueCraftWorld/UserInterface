@@ -70,7 +70,7 @@ bool SOCKET::setModeId(int id, bool isCoag)
     HalfSockPtr half = isCoag ? m_coagHalf : m_cutHalf;
     if (half.isNull())
         return false;
-    qDebug() << "mode Change on" << m_socketName << Qt::endl;
+    // qDebug() << "mode Change on" << m_socketName << Qt::endl;
     return half->setModeId(id);
 }
 

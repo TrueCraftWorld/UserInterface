@@ -82,6 +82,7 @@ Window {
         // Loader
         // SettingsMain {
         MenuLoader {
+            id: menuLoad
             anchors.fill: parent
         }
     }
@@ -90,6 +91,12 @@ Window {
         target: statusDummy
         function onDrawerCalled() {
             leftDrawer.open()
+        }
+    }
+    Connections {
+        target: menuLoad
+        function onCloseMe() {
+            leftDrawer.close()
         }
     }
 

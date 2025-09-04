@@ -1,5 +1,6 @@
 #include "controlcenter.h"
 #include "socket.h"
+#include "proghandle.h"
 
 #include <cmath>
 #include <map>
@@ -163,12 +164,15 @@ void filterModeMap(QMap<int, SurgModePtr>& container, const std::vector<int>& al
 
 ControlCenter::ControlCenter(QObject *parent)
     : QObject{parent},
-    m_socketModel(new SocketModel),
-    m_editor(new SocketModeEditor(m_socketModel,this))
+    m_socketModel(new SocketModel(this)),
+    m_editor(new SocketModeEditor(m_socketModel,this)),
+    m_handle(new ProgHandle(this))
 {
     QQmlEngine::setObjectOwnership(m_socketModel, QQmlEngine::CppOwnership);
     QQmlEngine::setObjectOwnership(m_editor, QQmlEngine::CppOwnership);
+    QQmlEngine::setObjectOwnership(m_handle, QQmlEngine::CppOwnership);
     QQmlEngine::setObjectOwnership(this, QQmlEngine::CppOwnership);
+    makeHandleConnections();
 }
 
 ControlCenter::~ControlCenter()
@@ -182,6 +186,7 @@ void ControlCenter::registerControl()
 {
     qmlRegisterUncreatableType<SocketModel>("BackEnd", 1, 0, "SocketModel", "should be one and exist not only for qml");
     qmlRegisterUncreatableType<SocketModeEditor>("BackEnd", 1, 0, "SocketModeEditor", "should be one and exist not only for qml");
+    qmlRegisterUncreatableType<ProgHandle>("BackEnd", 1, 0, "ProgHandle", "should be one and exist not only for qml");
 }
 
 QPointer<SocketModel> ControlCenter::getSocketModel() const
@@ -195,6 +200,26 @@ void ControlCenter::init()
     initComms();
     initSockets();
     prepareConnectios();
+}
+
+void ControlCenter::makeHandleConnections()
+{
+    if (m_handle.isNull())
+        return;
+    connect(m_handle, &ProgHandle::signalRecomProgChosen, 
+            this, &ControlCenter::programmLoadSocketInit);
+    
+    connect(m_handle, &ProgHandle::signalLoadEmpty, 
+            this, &ControlCenter::dataBaseSocketInit);
+    
+    // connect(m_handle, &ProgHandle::signalUserProgChosen, 
+    //         this, &ControlCenter::);
+    
+    // connect(m_handle, &ProgHandle::signalUnlockProg, 
+    //         this, &ControlCenter::);
+    
+    connect(m_handle, &ProgHandle::signalSubProgChosen, 
+            m_socketModel, &SocketModel::setCurrentProgSubIndex);
 }
 
 QPointer<SocketModeEditor> ControlCenter::editor() const
@@ -503,7 +528,7 @@ void ControlCenter::programmLoadSocketInit(int progId)
     m_socketModel->setInstrumMap(getInstrums());
     m_socketModel->setItemsMapVector(socketMapVector);
 
-    QTimer::singleShot(10, Qt::CoarseTimer, this, [this] () {
+    QTimer::singleShot(100, Qt::CoarseTimer, this, [this] () {
         emit m_socketModel->dataChanged(QModelIndex(), QModelIndex());
     });
 }
@@ -554,6 +579,11 @@ std::map<int, std::map<int, InstrInfo> > ControlCenter::getConstarints(const QLi
         }
     }
     return result;
+}
+
+QPointer<ProgHandle> ControlCenter::getHandle() const
+{
+    return m_handle;
 }
 
 std::map<int, InstrPtr > ControlCenter::getInstrums()

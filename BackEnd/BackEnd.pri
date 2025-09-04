@@ -10,6 +10,7 @@ HEADERS += \
     $$PWD/instrimageprovider.h \
     $$PWD/instrument.h \
     $$PWD/pedal.h \
+    $$PWD/proghandle.h \
     $$PWD/socket.h \
     $$PWD/socketmodeeditor.h \
     $$PWD/socketmodel.h \
@@ -23,6 +24,7 @@ SOURCES += \
     $$PWD/instrimageprovider.cpp \
     $$PWD/instrument.cpp \
     $$PWD/pedal.cpp \
+    $$PWD/proghandle.cpp \
     $$PWD/socket.cpp \
     $$PWD/socketmodeeditor.cpp \
     $$PWD/socketmodel.cpp \

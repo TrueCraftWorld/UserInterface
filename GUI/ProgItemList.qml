@@ -6,9 +6,10 @@ import BackEnd 1.0
 
 Rectangle {
     id: recProgs
-
+    // property alias innerModel: repeatRoot.model
     signal clickedButton(int idx)
     signal returnButtonPressed()
+    color: "darkblue"
     Button {
         id: retButton
 
@@ -19,14 +20,15 @@ Rectangle {
 
         onClicked: recProgs.returnButtonPressed()
     }
-
-    Repeater {
-        id: repeatRoot
-
+    GridView {
         anchors.left: parent.left
         anchors.top: parent.top
         anchors.right: parent.right
         anchors.bottom: retButton.top
+
+    // Repeater {
+        id: repeatRoot
+        model: 55
         clip: true
 
         delegate: Button {
@@ -43,6 +45,14 @@ Rectangle {
                 color: "transparent"
                 border.color: "white"
                 border.width: 2
+                Text {
+                    id: name
+                    text: index
+                    color: "white"
+                    anchors.fill: parent
+                    horizontalAlignment: Qt.AlignHCenter
+                    verticalAlignment: Qt.AlignVCenter
+                }
             }
             anchors.margins: 3
 
@@ -53,6 +63,7 @@ Rectangle {
                 }
             }
         }
+    // }
     }
 }
 

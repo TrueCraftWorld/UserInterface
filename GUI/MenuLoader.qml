@@ -2,6 +2,7 @@ import QtQuick 2.15
 
 Item {
     signal returnButtonPressed()
+    signal closeMe()
     Loader {
         id: menuLoader
         anchors.fill: parent
@@ -13,6 +14,7 @@ Item {
         function onRecommendButtonPressed() {
             if (menuLoader.item instanceof MainMenu) { // Проверяем, что загружен именно Text
                 menuLoader.source = "ProgItemList.qml"
+                // menuLoader.item.innerModel = 55
             }
         }
         function onSettingsButtonPressed() {
@@ -25,6 +27,11 @@ Item {
                 ;
             else
                 menuLoader.source = "MainMenu.qml"
+        }
+        function onClickedButton(progId) {
+            ProgHandle.loadRecommendedProg(progId + 1)
+            closeMe()
+            menuLoader.source = "MainMenu.qml"
         }
     }
 

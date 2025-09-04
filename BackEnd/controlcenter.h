@@ -9,6 +9,7 @@
 #include "socketmodel.h"
 #include "databasereader.h"
 #include "instrument.h"
+#include "proghandle.h"
 #include "surgicalmode.h"
 
 struct Prog {
@@ -16,6 +17,8 @@ struct Prog {
     int id;
     bool isMainProg;
 };
+
+
 
 /**
  * @brief Управляющий класс бэкэнда, осуществляющий
@@ -25,6 +28,7 @@ class ControlCenter : public QObject
 {
     Q_OBJECT
     Q_PROPERTY(QPointer<SocketModel> socketModel READ getSocketModel CONSTANT FINAL)
+    Q_PROPERTY(QPointer<ProgHandle> handle READ getHandle CONSTANT FINAL)
 public:
     explicit ControlCenter(QObject *parent = nullptr);
     ~ControlCenter();
@@ -53,9 +57,13 @@ public:
      */
     void init();
 
+    Q_INVOKABLE QPointer<ProgHandle> getHandle() const;
+
 private:
+    void makeHandleConnections();
     QPointer<SocketModel> m_socketModel;
     QPointer<SocketModeEditor> m_editor;
+    QPointer<ProgHandle> m_handle;
     QPointer<DataBaseReader> m_dbReader;
     // some uart handler should be here
     void initComms();

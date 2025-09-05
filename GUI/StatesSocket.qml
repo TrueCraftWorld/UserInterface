@@ -29,7 +29,8 @@ Rectangle {
     signal socketExpandRequest()
     signal socketCollapseRequest()
 
-    state: "collapsed"
+    state: "expanded"
+    // state: "collapsed"
 
     HalfSocket {
         id: leftRect

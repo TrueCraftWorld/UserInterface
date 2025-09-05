@@ -186,8 +186,8 @@ bool SocketModel::setData(const QModelIndex &index, const QVariant &value, int r
             return isOk;
         if (mode < SOCKET::S_COLLAPSED || mode > SOCKET::S_EXPANDED)
             return false;
-        if (socketItem.displayMode() == mode)
-            return false;
+        // if (socketItem.displayMode() == mode)
+        //     return true;
         socketItem.setDisplayMode(static_cast<SOCKET::SocDisplayMode>(mode));
         return true;
     }
@@ -226,6 +226,15 @@ void SocketModel::qmlSetData(int row, const QVariant &value, const QString &role
     if (setData(idx,value,role)) {
         emit dataChanged(idx,idx,{role});
     }
+}
+
+void SocketModel::recalcCollapsed()
+{
+    int role = roleIntByName("socketdisplaymode");
+    // blockSignals(true);
+    // qmlSetData(0, SOCKET::S_EXPANDED, "socketdisplaymode");
+    // // blockSignals(false);
+    // qmlSetData(0, SOCKET::S_COLLAPSED, "socketdisplaymode");
 }
 
 
@@ -517,8 +526,6 @@ void SocketModel::setItemsMap(const std::map<int, SockPtr > &newItemsMap, bool a
             continue;
         m_socketNames.append(iter->second->socketName());
     }
-    // m_curMapIdx = 0;
-    // m_itemsMap = newItemsMap;
     endResetModel();
 }
 
@@ -539,11 +546,7 @@ void SocketModel::setItemsMapVector(const std::vector<std::map<int, SockPtr> > &
         m_socketNames.append(iter->second->socketName());
     }
 
-    // setCurrentProgSubIndex(0);,
-    // m_curMapIdx = 0;
     endResetModel();
-
-    // emit layoutChanged();
 }
 
 

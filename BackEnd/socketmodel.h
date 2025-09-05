@@ -50,7 +50,7 @@ public:
 
     // QAbstractItemModel interface
 public:
-    virtual int rowCount(const QModelIndex &parent) const override;
+    virtual int rowCount(const QModelIndex &parent = QModelIndex()) const override;
     virtual QVariant data(const QModelIndex &index, int role) const override;
     virtual bool setData(const QModelIndex &index, const QVariant &value, int role) override;
     Q_INVOKABLE QVariantMap modeParam(int socketId, int modeIndeex, bool isCoag) const;
@@ -58,6 +58,11 @@ public:
     // Q_INVOKABLE void collapseSocket(int row);
 
     Q_INVOKABLE void qmlSetData(int row, const QVariant &value, const QString& roleName);
+
+    /**
+     * @brief Это какой-то костыль по дерганью состояний сокетов после ресета модели
+     */
+    Q_INVOKABLE void recalcCollapsed();
 
     // Q_INVOKABLE void setModePower(int socketId, int pwr, bool isCoag);
 

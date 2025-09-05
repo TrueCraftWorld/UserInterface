@@ -20,10 +20,12 @@ Repeater {
         var totalFixedHeight = 0
         var expandedCount = 0
         var spacersHeight = (count) * repeatRoot.usedSpacing;
-        // console.log(count, "exp")
         for (var i = 0; i < count; i++) {
-            if (!(itemAt(i) instanceof StatesSocket))
+            if (!(itemAt(i) instanceof StatesSocket)) {
+                console.log("oops")
+                // console.log("Object type:", getObjectType(itemAt(i)));
                 continue
+            }
             if (itemAt(i).state === "expanded") {
                 expandedCount++
             } else {
@@ -43,8 +45,10 @@ Repeater {
         var spacersHeight = (count) * repeatRoot.usedSpacing;
         // console.log(count, "col")
         for (var i = 0; i < count; i++) {
-            if (!(itemAt(i) instanceof StatesSocket))
+            if (!(itemAt(i) instanceof StatesSocket)) {
+                // console.log("Object type:", getObjectType(itemAt(i)));
                 continue
+            }
             if (itemAt(i).state === "expanded") {
                 expandedCount++
             }
@@ -85,6 +89,15 @@ Repeater {
 
         Component.onCompleted: {
             console.log("made sock item", delegateSoc.state)
+            if (delegateSoc.socketId === (count-1)) {
+                //создали последний item - теперь все они доступны для расчёты высоты и
+                //надо триггернуть пересчёт.
+                //почему этой проблемы нет при первичной прогрузке - хз.
+                //почему получилось только через костыль с действительным изменение чего-то,
+                //но не через сигналы - хз
+
+                theModel.recalcCollapsed()
+            }
         }
 
         Connections {

@@ -19,6 +19,10 @@ Rectangle {
             containerMargins: layout.anchors.margins
             containerHeight: layout.height
             usedSpacing: layout.spacing
+            onModelChanged: {
+                repeat.update()
+                // repeat.
+            }
         }
         Item {
             Layout.fillHeight: true

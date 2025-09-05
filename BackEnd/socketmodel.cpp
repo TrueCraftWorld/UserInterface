@@ -440,6 +440,7 @@ SockPtr SocketModel::socketById(int id) const
 
 void SocketModel::setInstrumMap(const std::map<int, QSharedPointer<Instrument>> &newInstrumMap)
 {
+    m_instrumMap.clear();
     m_instrumMap = newInstrumMap;
 }
 
@@ -519,7 +520,6 @@ void SocketModel::setItemsMap(const std::map<int, SockPtr > &newItemsMap, bool a
     // m_curMapIdx = 0;
     // m_itemsMap = newItemsMap;
     endResetModel();
-
 }
 
 void SocketModel::setItemsMapVector(const std::vector<std::map<int, SockPtr> > &newItemsMapVector)
@@ -542,6 +542,8 @@ void SocketModel::setItemsMapVector(const std::vector<std::map<int, SockPtr> > &
     // setCurrentProgSubIndex(0);,
     // m_curMapIdx = 0;
     endResetModel();
+
+    // emit layoutChanged();
 }
 
 

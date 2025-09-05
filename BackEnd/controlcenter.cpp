@@ -521,16 +521,17 @@ void ControlCenter::programmLoadSocketInit(int progId)
             bool coagEna = hasNonZeroDigit(progItem.at(29).toInt(), (8 - 2*i) - 1 );
             bool cutEna = hasNonZeroDigit(progItem.at(29).toInt(), (8 - 2*i) );
             bool allowSock = cutEna || coagEna;
-            socket->setAllowed(allowSock);
+            // socket->setAllowed(allowSock);
+            socket->setAllowed(true);
             socket->setDisplayMode(SOCKET::S_COLLAPSED);
         }
     }
     m_socketModel->setInstrumMap(getInstrums());
     m_socketModel->setItemsMapVector(socketMapVector);
 
-    QTimer::singleShot(100, Qt::CoarseTimer, this, [this] () {
-        emit m_socketModel->dataChanged(QModelIndex(), QModelIndex());
-    });
+    // QTimer::singleShot(100, Qt::CoarseTimer, this, [this] () {
+    //     emit m_socketModel->dataChanged(QModelIndex(), QModelIndex());
+    // });
 }
 
 QList<Prog> ControlCenter::getListOfPrograms(int scopeID)

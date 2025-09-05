@@ -6,6 +6,7 @@ import BackEnd 1.0
 
 
 Repeater {
+// ListView {
     id: repeatRoot
 
     required property int containerMargins
@@ -19,8 +20,10 @@ Repeater {
         var totalFixedHeight = 0
         var expandedCount = 0
         var spacersHeight = (count) * repeatRoot.usedSpacing;
-
+        // console.log(count, "exp")
         for (var i = 0; i < count; i++) {
+            if (!(itemAt(i) instanceof StatesSocket))
+                continue
             if (itemAt(i).state === "expanded") {
                 expandedCount++
             } else {
@@ -38,7 +41,10 @@ Repeater {
         var totalFixedHeight = 0
         var expandedCount = 0
         var spacersHeight = (count) * repeatRoot.usedSpacing;
+        // console.log(count, "col")
         for (var i = 0; i < count; i++) {
+            if (!(itemAt(i) instanceof StatesSocket))
+                continue
             if (itemAt(i).state === "expanded") {
                 expandedCount++
             }
@@ -59,6 +65,7 @@ Repeater {
         Layout.preferredHeight: state === "expanded" ?
                                     repeatRoot.calculateExpandedHeight() :
                                     repeatRoot.calculateCollapsedHeight()
+        state: model.socketdisplaymode
         title: model.socketname
         socketId: index
 
@@ -76,7 +83,9 @@ Repeater {
         coagModeName:      model.coagmodename
         coagInstrumName:   model.coagmodeinstrname
 
-        state:              model.socketdisplaymode
+        Component.onCompleted: {
+            console.log("made sock item", delegateSoc.state)
+        }
 
         Connections {
             target: delegateSoc

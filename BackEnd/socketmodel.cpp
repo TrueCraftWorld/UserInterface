@@ -231,12 +231,9 @@ void SocketModel::qmlSetData(int row, const QVariant &value, const QString &role
 void SocketModel::recalcCollapsed()
 {
     int role = roleIntByName("socketdisplaymode");
-    // blockSignals(true);
-    // qmlSetData(0, SOCKET::S_EXPANDED, "socketdisplaymode");
-    // // blockSignals(false);
-    // qmlSetData(0, SOCKET::S_COLLAPSED, "socketdisplaymode");
+    qmlSetData(0, SOCKET::S_EXPANDED, "socketdisplaymode");
+    qmlSetData(0, SOCKET::S_COLLAPSED, "socketdisplaymode");
 }
-
 
 QStringList SocketModel::modeNames(int socketID, bool isCoag) const
 {

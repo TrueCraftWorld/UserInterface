@@ -29,7 +29,7 @@ Item {
                 menuLoader.source = "MainMenu.qml"
         }
         function onClickedButton(progId) {
-            ProgHandle.loadRecommendedProg(progId + 1)
+            // ProgHandle.loadRecommendedProg(progId + 1)
             closeMe()
             menuLoader.source = "MainMenu.qml"
         }

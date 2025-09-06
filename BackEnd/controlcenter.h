@@ -12,11 +12,7 @@
 #include "proghandle.h"
 #include "surgicalmode.h"
 
-struct Prog {
-    QString name;
-    int id;
-    bool isMainProg;
-};
+
 
 
 
@@ -103,7 +99,9 @@ private:
      * @param scopeID
      * @return
      */
-    QList<Prog> getListOfPrograms(int scopeID);
+    QMap<int, QString> getListOfPrograms(int scopeID);
+
+    QMap<int, QString> getScopes();
 
     std::map<int, std::map<int, InstrInfo>> getConstarints(const QList<int> &idList);
     std::map<int, InstrPtr> getInstrums();

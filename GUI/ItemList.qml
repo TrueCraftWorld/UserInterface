@@ -8,7 +8,7 @@ Rectangle {
     property alias innerModel: theView.model
     property string imageSourceTemplate
     property alias curIndex: theView.currentIndex
-
+    property bool noImage: false
     signal newIndexSelected(int newIndex)
 
     color: "black"
@@ -61,6 +61,7 @@ Rectangle {
                     id: itemImageRect
                     height: parent.height
                     width: parent.height
+                    visible: !noImage
                     radius: 8
                     anchors {
                         top:parent.top
@@ -74,6 +75,28 @@ Rectangle {
                         anchors.fill: parent
                         fillMode: Image.PreserveAspectFit
                     }
+                }
+                Rectangle {
+                    id: itemSymbol
+                    height: parent.height
+                    width: parent.height
+                    visible: noImage
+                    radius: 8
+                    anchors {
+                        top:parent.top
+                        left: parent.left
+                    }
+                    color: "black"
+                    Rectangle {
+                        height: parent.height/3
+                        width: parent.height/3
+                        color: "darkcyan"
+                        border.width: 3
+                        border.color: "darkgray"
+                        radius: width
+                        anchors.centerIn: parent
+                    }
+
                 }
                 Rectangle {
                     id: itemNameRect

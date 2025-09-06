@@ -206,20 +206,17 @@ void ControlCenter::makeHandleConnections()
 {
     if (m_handle.isNull())
         return;
+
     connect(m_handle, &ProgHandle::signalRecomProgChosen, 
             this, &ControlCenter::programmLoadSocketInit);
     
     connect(m_handle, &ProgHandle::signalLoadEmpty, 
             this, &ControlCenter::dataBaseSocketInit);
-    
-    // connect(m_handle, &ProgHandle::signalUserProgChosen, 
-    //         this, &ControlCenter::);
-    
-    // connect(m_handle, &ProgHandle::signalUnlockProg, 
-    //         this, &ControlCenter::);
-    
-    connect(m_handle, &ProgHandle::signalSubProgChosen, 
-            m_socketModel, &SocketModel::setCurrentProgSubIndex);
+
+    connect(m_handle, &ProgHandle::signalScopeRequest,
+            this, [this] (int id) {
+        m_handle->setProgList(getListOfPrograms(id));
+    });
 }
 
 QPointer<SocketModeEditor> ControlCenter::editor() const
@@ -241,6 +238,9 @@ void ControlCenter::initSockets()
     } else {
         defaultSocketInit();
     }
+
+    m_handle->setScopeNameList(getScopes());
+
 }
 
 void ControlCenter::readConfigs()
@@ -534,7 +534,7 @@ void ControlCenter::programmLoadSocketInit(int progId)
     // });
 }
 
-QList<Prog> ControlCenter::getListOfPrograms(int scopeID)
+QMap<int, QString> ControlCenter::getListOfPrograms(int scopeID)
 {
     //захардкодили, но это нужно знать
     bool isMyselfArgon = false;
@@ -545,16 +545,36 @@ QList<Prog> ControlCenter::getListOfPrograms(int scopeID)
                                                                         QStringList{"Name_RU","id", "Prog_NUM", "Subprog_RU"},
                                                                         queryCondition.arg(scopeID).arg(isMyselfArgon ? 2 : 1));
 
-    QList<Prog> progList;
-    progList.reserve(progListVariant.size());
+    QMap<int, QString> progList;
     for (const auto& item : progListVariant) {
-        Prog tmp;
-        tmp.isMainProg = item.at(2).toInt() % 10 == 0 ? true : false;
-        tmp.id = item.at(1).toInt();
-        tmp.name = item.at(tmp.isMainProg ? 0 : 3).toString();
-        progList.append(tmp);
+        // Prog tmp;
+        bool isMainProg = item.at(2).toInt() % 10 == 0 ? true : false;
+        int id = item.at(1).toInt();
+        QString name = item.at(isMainProg ? 0 : 3).toString();
+        progList.insert(id, name);
     }
     return progList;
+}
+
+QMap<int, QString> ControlCenter::getScopes ()
+{
+    // QString queryCondition = "Scope_ID = %1 AND (Argon = 0 OR Argon = %2)";
+
+    QList<QVariantList> scopeListVariant = m_dbReader->slotSendSelectQuery(QStringList{"Scopes"},
+                                                                        QStringList{"id", "Name_RU"},
+                                                                        "");
+
+    QMap<int, QString> scopeList;
+    // progList.reserve(progListVariant.size());
+    for (const auto& item : scopeListVariant) {
+        bool ok;
+        int id = item.at(0).toInt(&ok);
+        QString name = item.at(1).toString();
+        if (!ok)
+            continue;
+        scopeList.insert(id, name);
+    }
+    return scopeList;
 }
 
 std::map<int, std::map<int, InstrInfo> > ControlCenter::getConstarints(const QList<int>& idList)

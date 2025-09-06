@@ -1,5 +1,6 @@
 #include "socketmodel.h"
 #include <QQmlEngine>
+#include <QTimer>
 
 SocketModel::SocketModel(QObject *parent)
     : QAbstractListModel{parent}
@@ -450,28 +451,6 @@ void SocketModel::setInstrumMap(const std::map<int, QSharedPointer<Instrument>> 
     m_instrumMap = newInstrumMap;
 }
 
-void SocketModel::setCurrentProgSubIndex(int newIndex)
-{
-    if (newIndex >= m_itemsMapVect.size() || newIndex < 0)
-        return;
-    // if (newIndex == m_curMapIdx)
-    //     return true;
-
-    beginResetModel();
-    m_curMapIdx = newIndex;
-    m_itemsMap = &(m_itemsMapVect.at(m_curMapIdx));
-    m_socketNames.clear();
-    for (int i = SOCKET::BIPOLAR_1; i <= SOCKET::MONOPOLAR_2; ++i) {
-        const auto iter = m_itemsMap->find(i - 1);
-        if (iter == m_itemsMap->cend())
-            continue;
-        m_socketNames.append(iter->second->socketName());
-    }
-    // m_socketNames.append(m_itemsMap->SOCKET::BIPOLAR_1);
-    endResetModel();
-
-}
-
 int SocketModel::roleIntByName(const QString &name)
 {
     const QHash<int, QByteArray>& hash = m_roles;
@@ -514,8 +493,8 @@ void SocketModel::setItemsMap(const std::map<int, SockPtr > &newItemsMap, bool a
     m_itemsMapVect.push_back(newItemsMap);
     // setCurrentProgSubIndex(m_itemsMapVect.size() - 1);
 
-    m_curMapIdx = m_itemsMapVect.size() - 1;
-    m_itemsMap = &(m_itemsMapVect.at(m_curMapIdx));
+    m_subProgIdx = m_itemsMapVect.size() - 1;
+    m_itemsMap = &(m_itemsMapVect.at(m_subProgIdx));
     m_socketNames.clear();
     for (int i = SOCKET::BIPOLAR_1; i <= SOCKET::MONOPOLAR_2; ++i) {
         const auto iter = m_itemsMap->find(i - 1);
@@ -533,8 +512,8 @@ void SocketModel::setItemsMapVector(const std::vector<std::map<int, SockPtr> > &
     m_itemsMapVect.clear();
     m_itemsMapVect = newItemsMapVector;
 
-    m_curMapIdx = 0;
-    m_itemsMap = &(m_itemsMapVect.at(m_curMapIdx));
+    m_subProgIdx = 0;
+    m_itemsMap = &(m_itemsMapVect.at(m_subProgIdx));
     m_socketNames.clear();
     for (int i = SOCKET::BIPOLAR_1; i <= SOCKET::MONOPOLAR_2; ++i) {
         const auto iter = m_itemsMap->find(i - 1);
@@ -544,6 +523,8 @@ void SocketModel::setItemsMapVector(const std::vector<std::map<int, SockPtr> > &
     }
 
     endResetModel();
+    m_subProgCount = m_itemsMapVect.size();
+    emit subProgCountChanged();
 }
 
 
@@ -551,4 +532,37 @@ QHash<int, QByteArray> SocketModel::roleNames() const
 {
     //грёбаная мета-магия, но это приятное
     return m_roles;
+}
+
+int SocketModel::subProgIdx() const
+{
+    return m_subProgIdx;
+}
+
+void SocketModel::setSubProgIdx(int newIndex)
+{
+    if (newIndex >= m_itemsMapVect.size() || newIndex < 0)
+        return;
+    // if (newIndex == m_curMapIdx)
+    //     return true;
+
+    beginResetModel();
+    m_subProgIdx = newIndex;
+    m_itemsMap = &(m_itemsMapVect.at(m_subProgIdx));
+    m_socketNames.clear();
+    for (int i = SOCKET::BIPOLAR_1; i <= SOCKET::MONOPOLAR_2; ++i) {
+        const auto iter = m_itemsMap->find(i - 1);
+        if (iter == m_itemsMap->cend())
+            continue;
+        m_socketNames.append(iter->second->socketName());
+    }
+    // m_socketNames.append(m_itemsMap->SOCKET::BIPOLAR_1);
+    endResetModel();
+
+    emit subProgIdxChanged();
+}
+
+int SocketModel::subProgCount() const
+{
+    return m_subProgCount;
 }

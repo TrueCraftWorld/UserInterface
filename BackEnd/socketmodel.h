@@ -12,6 +12,8 @@
 class SocketModel : public QAbstractListModel
 {
     Q_OBJECT
+    Q_PROPERTY(int subProgIdx READ subProgIdx WRITE setSubProgIdx NOTIFY subProgIdxChanged FINAL)
+    Q_PROPERTY(int subProgCount READ subProgCount NOTIFY subProgCountChanged FINAL)
 public:
     enum SocketRoles {
         SocketStatus = Qt::UserRole+1,
@@ -41,7 +43,7 @@ public:
         CutModeInstrIndex,
         CutModeInstrID,
         CutModesNames,
-        CoagModesNames
+        CoagModesNames,
     };
     Q_ENUM(SocketRoles)
 
@@ -84,17 +86,25 @@ signals:
     void signalSocketContentChanged(int socketId, const QByteArray& content);
 
     // QAbstractItemModel interface
+    void subProgIdxChanged();
+
+    void subProgCountChanged();
+
 public:
     virtual QHash<int, QByteArray> roleNames() const override final;
     void setItemsMap(const std::map<int, SockPtr > &newItemsMap, bool add = false);
     void setItemsMapVector(const std::vector<std::map<int, SockPtr >> &newItemsMapVector);
     void setInstrumMap(const std::map<int, QSharedPointer<Instrument> > &newInstrumMap);
-    void setCurrentProgSubIndex(int newIndex);
+
+    int subProgIdx() const;
+    void setSubProgIdx(int newIndex);
+
+    int subProgCount() const;
 
 private:
     std::map<int, SockPtr>* m_itemsMap = nullptr;
     std::vector<std::map<int, SockPtr >> m_itemsMapVect;
-    int m_curMapIdx = 0;
+    int m_subProgIdx = 0;
     std::map<int, QSharedPointer<Instrument>> m_instrumMap;
     QStringList m_socketNames;
 
@@ -104,6 +114,7 @@ private:
     QHash<int, QByteArray> m_roles;
     void populateRoles();
     // SocketModeEditor * editor;
+    int m_subProgCount;
 };
 
 #endif // SOCKETMODEL_H

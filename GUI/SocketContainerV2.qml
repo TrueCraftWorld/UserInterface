@@ -12,17 +12,52 @@ Rectangle {
         anchors.leftMargin: 10
         anchors.rightMargin: 10
         spacing: 10
+        Rectangle {
+            id: progPage
+            height: 20
+            Layout.fillWidth: true
+            color: "transparent"
+            RowLayout {
+                anchors.fill: parent
+                Item {
+                    Layout.fillWidth: true
+                }
+                Repeater {
+                    model: theModel.subProgCount
+                    delegate: Rectangle {
+                        height: 18
+                        width: 36
+                        color: index === theModel.subProgIdx ? "white" : "black"
+                        border.color: "white"
+                        border.width: 1
+                        radius: 6
+                        Text {
+                            id: name
+                            text: index + 1
+                            horizontalAlignment: Qt.AlignHCenter
+                            verticalAlignment: Qt.AlignVCenter
+                            anchors.fill: parent
+                            color: index === theModel.subProgIdx ? "black" : "white"
+                        }
+                        MouseArea {
+                            anchors.fill: parent
+                            onClicked: theModel.subProgIdx = index
+                        }
+
+                    }
+                }
+                Item {
+                    Layout.fillWidth: true
+                }
+            }
+        }
 
         SocketRepeater {
             id: repeat
             model: innerModel
             containerMargins: layout.anchors.margins
-            containerHeight: layout.height
+            containerHeight: layout.height - layout.spacing - progPage.height
             usedSpacing: layout.spacing
-            onModelChanged: {
-                repeat.update()
-                // repeat.
-            }
         }
         Item {
             Layout.fillHeight: true

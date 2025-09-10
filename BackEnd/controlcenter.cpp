@@ -234,7 +234,7 @@ void ControlCenter::initSockets()
         if (m_dbReader.isNull())
             m_dbReader = new DataBaseReader("/home/kikorik/FOTEK/someShadyDB.db");
         // programmLoadSocketInit(14);
-        programmLoadSocketInit(5);
+        programmLoadSocketInit(28);
     } else {
         defaultSocketInit();
     }
@@ -457,10 +457,12 @@ void ControlCenter::programmLoadSocketInit(int progId)
     instrumConstraints = getConstarints(allowedModesId);
 
     //Шаг5---------------------------------------------------------
-    for (auto iterItem = instrumConstraints.begin(); iterItem != instrumConstraints.end(); ++iterItem) {
-        std::map<int, InstrInfo>& item = iterItem->second;
-        filterMapByKey<InstrInfo>(item, allowedInstrId);
-    }
+    //тут какой-то затуп с базой на каких-то прогах, разрешено всего несколько инструментов
+    //при этом для выбранных режимов эти инструменты не разрешены
+    // for (auto iterItem = instrumConstraints.begin(); iterItem != instrumConstraints.end(); ++iterItem) {
+    //     std::map<int, InstrInfo>& item = iterItem->second;
+    //     filterMapByKey<InstrInfo>(item, allowedInstrId);
+    // }
 
     //Шаг 6--------------------------------------------------------
     QList<QVariantList> modeNamesListV = m_dbReader->slotSendSelectQuery(QStringList{"Modes"},

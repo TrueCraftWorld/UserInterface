@@ -433,6 +433,8 @@ void ControlCenter::programmLoadSocketInit(int progId)
     QList<QVariantList> progListVariant = m_dbReader->slotSendSelectQuery(QStringList{"Lists"},
                                                                         fields,
                                                                         queryCondition.arg(progId));
+    if (progListVariant.size() == 0)
+        return;
     //--------------------------------------------------------------
 
     //Шаг2---------------------------------------------------------

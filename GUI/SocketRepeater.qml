@@ -90,14 +90,12 @@ Repeater {
         coagInstrumName:   model.coagmodeinstrname
 
         Component.onCompleted: {
-            console.log("made sock item", delegateSoc.state)
             if (delegateSoc.socketId === (count-1)) {
                 //создали последний item - теперь все они доступны для расчёты высоты и
                 //надо триггернуть пересчёт.
                 //почему этой проблемы нет при первичной прогрузке - хз.
                 //почему получилось только через костыль с действительным изменение чего-то,
                 //но не через сигналы - хз
-
                 theModel.recalcCollapsed()
             }
         }

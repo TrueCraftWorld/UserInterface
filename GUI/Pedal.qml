@@ -1,4 +1,5 @@
 import QtQuick 2.15
+import QtQuick.Controls 2.15
 
 Rectangle {
     id: pedalRoot
@@ -6,10 +7,10 @@ Rectangle {
     signal pedalMenuRequest()
 
     radius: 8
-    color: "darkgray"
+    color: "transparent"
     border {
         width: 2
-        color: "lightgray"
+        color: "transparent"
     }
     state: "empty"
     states: [
@@ -44,6 +45,21 @@ Rectangle {
             NumberAnimation { properties: "opacity"; duration: 500; easing.type: Easing.InOutQuad }
         }
     ]
+    Label {
+        id: name
+        anchors {
+            top: parent.top
+            left: parent.left
+            right: parent.right
+            topMargin: 10
+        }
+        horizontalAlignment: Qt.AlignHCenter
+        text: qsTr("ПЕДАЛЬ")
+        color: "white"
+        font.pixelSize: 16
+        font.bold: true
+    }
+
     Rectangle {
         id: singleRect
         anchors {

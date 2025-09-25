@@ -3,10 +3,8 @@ import QtQuick.Controls 2.15
 
 Rectangle {
     id: socketRoot
-    // property color middleColor: "black"
 
     property string title
-
     property int socketId
 
     property string cutModeName
@@ -30,34 +28,35 @@ Rectangle {
     signal socketCollapseRequest()
 
     state: "expanded"
-    // state: "collapsed"
+    color: "transparent"
 
     HalfSocket {
-        id: leftRect
-        isCoag: false
-        state: socketRoot.state
+        id:         leftRect
+        isCoag:     false
+        state:      socketRoot.state
         modeName:   socketRoot.cutModeName
         modePower:  socketRoot.cutModePower
         modeId:     socketRoot.cutModeId
         maxPower:   socketRoot.cutMaxPower
         instrumId:  socketRoot.cutInstrumId
-        instrumName: socketRoot.cutInstrumName
+        instrumName:socketRoot.cutInstrumName
     }
     HalfSocket {
-        id: rightRect
-        isCoag: true
-        state: socketRoot.state
+        id:         rightRect
+        isCoag:     true
+        state:      socketRoot.state
         modeName:   socketRoot.coagModeName
         modePower:  socketRoot.coagModePower
         modeId:     socketRoot.coagModeId
         maxPower:   socketRoot.coagMaxPower
         instrumId:  socketRoot.coagInstrumId
-        instrumName: socketRoot.coagInstrumName
+        instrumName:socketRoot.coagInstrumName
     }
     Rectangle {
         id: middleRect
         color: "black"
         width: fontMetrics.advanceWidth("MONO 22")
+
         Label {
             id: socketNameLabel
             anchors.fill: parent
@@ -68,14 +67,6 @@ Rectangle {
             horizontalAlignment: Qt.AlignHCenter
             verticalAlignment: Qt.AlignTop
         }
-        Pedal {
-            id: pedalRect
-            width: fontMetrics.advanceWidth("MONO 22")
-            height: parent.height > width ? width : parent.height
-            anchors.bottom: parent.bottom
-            anchors.horizontalCenter: parent.horizontalCenter
-        }
-
         FontMetrics {
             id: fontMetrics
             font: socketNameLabel.font
@@ -91,6 +82,14 @@ Rectangle {
             }
         }
     }
+    Pedal {
+        id: pedalRect
+        width: fontMetrics.advanceWidth("PEDAL")
+        anchors.bottom: parent.bottom
+        // anchors.top: parent.top
+        anchors.right: parent.right
+    }
+
     Connections {
         target: rightRect
         function onNewPower(pwr) {
@@ -134,8 +133,7 @@ Rectangle {
             name: "collapsed"
             AnchorChanges {
                 target: middleRect
-                anchors.horizontalCenter: parent.horizontalCenter
-                anchors.left: undefined
+                anchors.left: leftRect.right
                 anchors.right: undefined
                 anchors.top: parent.top
                 anchors.bottom: parent.bottom
@@ -148,16 +146,29 @@ Rectangle {
             AnchorChanges {
                 target: leftRect
                 anchors.left: parent.left
-                anchors.right: middleRect.left
                 anchors.top: parent.top
                 anchors.bottom: parent.bottom
+            }
+            PropertyChanges {
+                target: leftRect
+                color: "black"
+                width: (parent.width - fontMetrics.advanceWidth("MONO 22 MONO")) * .5
             }
             AnchorChanges {
                 target: rightRect
                 anchors.left: middleRect.right
-                anchors.right: parent.right
+                // anchors.right: pedalRect.left
                 anchors.top: parent.top
                 anchors.bottom: parent.bottom
+            }
+            PropertyChanges {
+                target: rightRect
+                color: "black"
+                width: (parent.width - fontMetrics.advanceWidth("MONO 22 MONO")) * .5
+            }
+            AnchorChanges {
+                target: pedalRect
+                anchors.top: parent.top
             }
         },
         // Развернутое состояние
@@ -167,7 +178,7 @@ Rectangle {
                 target: middleRect
                 anchors.horizontalCenter: undefined
                 anchors.left: parent.left
-                anchors.right: parent.right
+                anchors.right: rightRect.right
                 anchors.top: parent.top
                 anchors.bottom: undefined
             }
@@ -176,19 +187,32 @@ Rectangle {
                 color: "transparent"
                 height: fontMetrics.height + socketNameLabel.anchors.margins
             }
+
             AnchorChanges {
                 target: leftRect
                 anchors.left: parent.left
-                anchors.right: parent.horizontalCenter
                 anchors.top: parent.top
                 anchors.bottom: parent.bottom
             }
+            PropertyChanges {
+                target: leftRect
+                width: (parent.width - fontMetrics.advanceWidth("MONO")) * .5
+            }
+
             AnchorChanges {
                 target: rightRect
-                anchors.left: parent.horizontalCenter
-                anchors.right: parent.right
+                anchors.left: leftRect.right
                 anchors.top: parent.top
                 anchors.bottom: parent.bottom
+            }
+            PropertyChanges {
+                target: rightRect
+                width: (parent.width - fontMetrics.advanceWidth("MONO")) * .5
+            }
+
+            AnchorChanges {
+                target: pedalRect
+                anchors.top: parent.top
             }
         }
     ]

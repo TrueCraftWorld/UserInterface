@@ -5,9 +5,9 @@
 class Pedal
 {
 public:
-    enum PedalType : int {  NO_PED,
-                    DOUBLE_PED,
+    enum PedalType : int {  NO_PED = 0,
                     SINGLE_PED,
+                    DOUBLE_PED,
                     INSTR_BUTTON_BI,
                     INSTR_BUTTON_MONO,
                     PED_COUNT

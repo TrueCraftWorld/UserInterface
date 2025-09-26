@@ -75,6 +75,8 @@ Repeater {
         title: model.socketname
         socketId: index
 
+        socketPedal:       model.socketpedal
+
         cutInstrumId:      model.cutmodeinstrid
         cutMaxPower:       model.cutmodemaxpower
         cutModePower:      model.cutmodepower

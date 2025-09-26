@@ -9,10 +9,16 @@ SocketModel::SocketModel(QObject *parent)
     connect(this, &SocketModel::dataChanged, this, [this] (const QModelIndex &topLeft,
                                                     const QModelIndex &,
                                                     const QVector<int> &roles) {
-        if (!roles.contains(SocketDisplayMode))
-            return;
-        if (topLeft.data(SocketDisplayMode).toString() == "expanded")
-            socketCollapser(topLeft.row());
+        if (roles.contains(SocketDisplayMode)) {
+            if (topLeft.data(SocketDisplayMode).toString() == "expanded")
+                socketCollapser(topLeft.row());
+        }
+        if (roles.contains(SocketPedal)) {
+            int pedalToRemove = topLeft.data(SocketPedal).toUInt();
+            if (pedalToRemove != 0) {
+                pedalRemover(topLeft.row(), pedalToRemove);
+            }
+        }
     });
 }
 
@@ -467,9 +473,23 @@ int SocketModel::roleIntByName(const QString &name)
 void SocketModel::socketCollapser(int expandedSocket)
 {
     for (int i = 0; i < m_itemsMap->size(); ++i) {
-        if(i == expandedSocket)
+        if (i == expandedSocket)
             continue;
-        qmlSetData(i, SOCKET::S_COLLAPSED, "socketdisplaymode");
+        qmlSetData(i, 0, "socketpedal");
+    }
+}
+
+void SocketModel::pedalRemover(int socketToSkip, int pedalToRemove)
+{
+    for (int i = 0; i < m_itemsMap->size(); ++i) {
+        if (i == socketToSkip)
+            continue;
+        //тут не надо изменять все сокеты - переназначенная педаль могла быть в одном сокетет только
+        if (m_itemsMap->at(i)->pedal() == pedalToRemove) {
+            qmlSetData(i, SOCKET::S_COLLAPSED, "socketdisplaymode");
+            break;
+        }
+        ///TODO завершению должны бы отдавать в uart новые настройки педали
     }
 }
 

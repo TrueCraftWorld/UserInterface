@@ -201,9 +201,6 @@ bool SOCKET::setInstrumIndex(int index, bool isCoag)
 
     CSurgModePtr cMode = half->curMode();
 
-    // if (curModeIdx >= modes.size())
-    //     return false;
-
     SurgModePtr mode = modes[cMode->id()];
 
     return mode->setSelectedInstrIndex(index);

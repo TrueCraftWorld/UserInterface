@@ -7,6 +7,8 @@ Rectangle {
     property string title
     property int socketId
 
+    property int socketPedal
+
     property string cutModeName
     property int cutModePower
     property int cutModeId
@@ -84,10 +86,17 @@ Rectangle {
     }
     Pedal {
         id: pedalRect
+        pedalStateIdx: socketRoot.socketPedal
         width: fontMetrics.advanceWidth("PEDAL")
         anchors.bottom: parent.bottom
-        // anchors.top: parent.top
         anchors.right: parent.right
+    }
+
+    Connections {
+        target: pedalRect
+        function onPedalMenuRequest() {
+
+        }
     }
 
     Connections {
@@ -152,19 +161,18 @@ Rectangle {
             PropertyChanges {
                 target: leftRect
                 color: "black"
-                width: (parent.width - fontMetrics.advanceWidth("MONO 22 MONO")) * .5
+                width: (parent.width - fontMetrics.advanceWidth("MONO 22MONO")) * .5
             }
             AnchorChanges {
                 target: rightRect
                 anchors.left: middleRect.right
-                // anchors.right: pedalRect.left
                 anchors.top: parent.top
                 anchors.bottom: parent.bottom
             }
             PropertyChanges {
                 target: rightRect
                 color: "black"
-                width: (parent.width - fontMetrics.advanceWidth("MONO 22 MONO")) * .5
+                width: (parent.width - fontMetrics.advanceWidth("MONO 22MONO")) * .5
             }
             AnchorChanges {
                 target: pedalRect

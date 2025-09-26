@@ -46,7 +46,7 @@ Rectangle {
             wrapMode: Text.Wrap
             height: 60
             color: isCoag ? "white" : "black"
-            verticalAlignment: Qt.AlignVCenter
+            // verticalAlignment: Qt.AlignVCenter
             anchors {
                 margins: 10
                 fill: parent
@@ -71,9 +71,12 @@ Rectangle {
             font.pixelSize: 30
             font.bold: true
             color: isCoag ? "white" : "black"
-            verticalAlignment: Qt.AlignVCenter
+            // verticalAlignment: Qt.AlignVCenter
             anchors {
-                margins: 10
+                // margins: 10
+                leftMargin: 10
+                rightMargin: 10
+
                 fill: parent
             }
         }
@@ -154,11 +157,15 @@ Rectangle {
             PropertyChanges {
                 target: powerLabel;
                 horizontalAlignment: isCoag ? Text.AlignLeft : Text.AlignRight
+                verticalAlignment: Text.AlignVCenter
+                anchors.bottomMargin: 10
+                anchors.topMargin: 10
                 font.pixelSize: 34
             }
             PropertyChanges {
                 target: modeLabel;
                 horizontalAlignment: isCoag ? Text.AlignRight : Text.AlignLeft
+                verticalAlignment: Text.AlignVCenter
                 font.pixelSize: 20
             }
             PropertyChanges {
@@ -208,11 +215,15 @@ Rectangle {
             PropertyChanges {
                 target: powerLabel;
                 horizontalAlignment: Text.AlignHCenter
+                verticalAlignment: Text.AlignTop
+                anchors.bottomMargin: 40
+                anchors.topMargin: -20
                 font.pixelSize: 50
             }
             PropertyChanges {
                 target: modeLabel;
                 horizontalAlignment: Text.AlignHCenter
+                verticalAlignment: Text.AlignTop
                 font.pixelSize: 28
             }
             PropertyChanges {

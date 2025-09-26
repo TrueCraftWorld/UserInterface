@@ -200,15 +200,11 @@ void SocketModeEditor::setCurrentInstrIndex(int newCurrentInstrIndex)
 {
     m_currentInstrIndex = newCurrentInstrIndex;
     updateParameter("instrindex", m_currentInstrIndex);
-    // if (m_model->)
     CSurgModePtr mode = m_model->socketById(m_socketID)->getMode(m_currentModeIndex, m_isCoag);
     if (mode.isNull())
         return;
     std::optional<InstrInfo> info = mode->getConstraints(m_currentInstrIndex);
     if (info != std::nullopt) {
-        //должно быть ID
-        // m_instrID = info->id;
-        // но пока картинок мало - для примера берём индекс
         m_instrID = newCurrentInstrIndex+1;
         m_lowPowerBound = info->miniPower;
         m_midPowerBound = info->midiPower;

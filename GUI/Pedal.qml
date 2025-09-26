@@ -5,6 +5,23 @@ Rectangle {
     id: pedalRoot
 
     signal pedalMenuRequest()
+    property int pedalStateIdx
+
+    Connections {
+        target: pedalRoot
+        function onPedalStateIdxChanged() {
+            if (pedalStateIdx == 0) {
+                pedalRoot.state = "empty"
+            } else if (pedalStateIdx == 1) {
+                pedalRoot.state = "double"
+            } else if (pedalStateIdx == 2) {
+                pedalRoot.state = "single"
+            } else if (pedalStateIdx == 3) {
+                pedalRoot.state = "handleBi"
+            }
+        }
+    }
+
 
     radius: 8
     color: "transparent"
@@ -51,7 +68,8 @@ Rectangle {
             top: parent.top
             left: parent.left
             right: parent.right
-            topMargin: 10
+            topMargin: 1
+            rightMargin: 10
         }
         horizontalAlignment: Qt.AlignHCenter
         text: qsTr("ПЕДАЛЬ")

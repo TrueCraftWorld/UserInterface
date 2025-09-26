@@ -85,10 +85,7 @@ public:
 signals:
     void signalSocketStateChanged(int socketId, int state);
     void signalSocketContentChanged(int socketId, const QByteArray& content);
-
-    // QAbstractItemModel interface
     void subProgIdxChanged();
-
     void subProgCountChanged();
 
 public:
@@ -111,6 +108,7 @@ private:
 
     int roleIntByName(const QString& name);
     void socketCollapser(int expandedSocket);
+    void pedalRemover(int socketToSkip, int pedalToRemove);
 
     QHash<int, QByteArray> m_roles;
     void populateRoles();

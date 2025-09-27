@@ -14,7 +14,7 @@ SocketModel::SocketModel(QObject *parent)
                 socketCollapser(topLeft.row());
         }
         if (roles.contains(SocketPedal)) {
-            int pedalToRemove = topLeft.data(SocketPedal).toUInt();
+            int pedalToRemove = topLeft.data(SocketPedal).toInt();
             if (pedalToRemove != 0) {
                 pedalRemover(topLeft.row(), pedalToRemove);
             }
@@ -195,9 +195,18 @@ bool SocketModel::setData(const QModelIndex &index, const QVariant &value, int r
             return isOk;
         if (mode < SOCKET::S_COLLAPSED || mode > SOCKET::S_EXPANDED)
             return false;
-        // if (socketItem.displayMode() == mode)
-        //     return true;
         socketItem.setDisplayMode(static_cast<SOCKET::SocDisplayMode>(mode));
+        return true;
+    }
+    case SocketPedal:
+    {
+        bool isOk = false;
+        int ped = value.toInt(&isOk);
+        if (!isOk)
+            return isOk;
+        if (ped < Pedal::NO_PED || ped > Pedal::INSTR_BUTTON_MONO)
+            return false;
+        socketItem.setPedal(ped);
         return true;
     }
     case CoagModeIndex:
@@ -462,7 +471,7 @@ void SocketModel::setInstrumMap(const std::map<int, QSharedPointer<Instrument>> 
 int SocketModel::roleIntByName(const QString &name)
 {
     const QHash<int, QByteArray>& hash = m_roles;
-    QString nameArr = name.toLower();
+    QByteArray nameArr = name.toLower().toUtf8();
     for (auto iter = hash.begin(); iter != hash.end(); ++iter) {
         if (iter.value() == nameArr)
             return iter.key();
@@ -475,7 +484,7 @@ void SocketModel::socketCollapser(int expandedSocket)
     for (int i = 0; i < m_itemsMap->size(); ++i) {
         if (i == expandedSocket)
             continue;
-        qmlSetData(i, 0, "socketpedal");
+        qmlSetData(i, 0, "socketdisplaymode");
     }
 }
 
@@ -486,8 +495,8 @@ void SocketModel::pedalRemover(int socketToSkip, int pedalToRemove)
             continue;
         //тут не надо изменять все сокеты - переназначенная педаль могла быть в одном сокетет только
         if (m_itemsMap->at(i)->pedal() == pedalToRemove) {
-            qmlSetData(i, SOCKET::S_COLLAPSED, "socketdisplaymode");
-            break;
+            qmlSetData(i, 0, "socketpedal");
+            // break;
         }
         ///TODO завершению должны бы отдавать в uart новые настройки педали
     }

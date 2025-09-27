@@ -26,6 +26,7 @@ Rectangle {
     signal modeEditDialogRequest(int socketId, bool isCoag)
     signal instrumEditDialogRequest(int socketId, bool isCoag)
     signal newPower(int socketId, int pwr, bool isCoag)
+    signal pedSelect(int socketId, int ped)
     signal socketExpandRequest()
     signal socketCollapseRequest()
 
@@ -91,14 +92,28 @@ Rectangle {
         anchors.bottom: parent.bottom
         anchors.right: parent.right
     }
+    PedalEditor {
+        id: pedPop
+    }
 
+    Connections {
+        target: pedPop
+        function onPedSelected(idx) {
+            console.log("pedSelect", idx)
+            if (idx >=0 && idx <=4) {
+                socketRoot.pedSelect(socketId, idx)
+            }
+            pedPop.close()
+        }
+    }
     Connections {
         target: pedalRect
         function onPedalMenuRequest() {
-
+            pedPop.selectedPed = socketRoot.socketPedal
+            pedPop.shownPedalsArray = [1,2,3,4]
+            pedPop.open()
         }
     }
-
     Connections {
         target: rightRect
         function onNewPower(pwr) {

@@ -10,12 +10,13 @@ Rectangle {
     Connections {
         target: pedalRoot
         function onPedalStateIdxChanged() {
+            console.log("got new pedal")
             if (pedalStateIdx == 0) {
                 pedalRoot.state = "empty"
             } else if (pedalStateIdx == 1) {
-                pedalRoot.state = "double"
-            } else if (pedalStateIdx == 2) {
                 pedalRoot.state = "single"
+            } else if (pedalStateIdx == 2) {
+                pedalRoot.state = "double"
             } else if (pedalStateIdx == 3) {
                 pedalRoot.state = "handleBi"
             }

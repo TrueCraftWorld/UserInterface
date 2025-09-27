@@ -104,23 +104,22 @@ Repeater {
 
         Connections {
             target: delegateSoc
+            function onPedSelect(socketId, ped) {
+                console.log("pedalFrom delegate", ped)
+                theModel.qmlSetData(index,
+                                    ped,
+                                    "socketpedal")
+            }
             function onInstrumEditDialogRequest(socketid, iscoag) {
 
                 repeatRoot.instrumDialogRequest(socketid,
                                                 iscoag ? model.coagmodeindex : model.cutmodeindex,
                                                 iscoag)
-                console.log("prosim dislog instrumenta ")
             }
             function onModeEditDialogRequest(socketid, iscoag) {
-                console.log("просим dialog rezhima",
-                            iscoag ? model.coagmodeindex : model.cutmodeindex,
-                            iscoag ? model.coagmodename : model.cutmodename, )
                 repeatRoot.modeDialogRequest(socketid,
                                             iscoag ? model.coagmodeindex : model.cutmodeindex,
                                             iscoag)
-                console.log("открылся dialog rezhima",
-                            iscoag ? model.coagmodeindex : model.cutmodeindex,
-                            iscoag ? model.coagmodename : model.cutmodename, )
             }
             function onNewPower(socketid, pwr, iscoag) {
                 theModel.qmlSetData(index,

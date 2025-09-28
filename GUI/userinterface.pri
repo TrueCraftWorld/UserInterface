@@ -15,6 +15,7 @@ DISTFILES += \
     $$PWD/Pedal.qml \
     $$PWD/PedalEditor.qml \
     $$PWD/PowerRect.qml \
+    $$PWD/ProgAdditionPop.qml \
     $$PWD/ProgItemList.qml \
     $$PWD/SocketRepeater.qml \
     $$PWD/StatesSocket.qml \

@@ -2,6 +2,8 @@ import QtQuick 2.15
 import QtQuick.Layouts 1.15
 
 Rectangle {
+    id: socketContainer
+
     property var innerModel
     color: "black"
     ColumnLayout {
@@ -43,12 +45,42 @@ Rectangle {
                             anchors.fill: parent
                             onClicked: theModel.subProgIdx = index
                         }
+                    }
+                }
+                Rectangle {
+                    height: 18
+                    width: 36
+                    color: "black"
+                    border.color: "white"
+                    border.width: 1
+                    radius: 6
 
+                    visible: theModel.subProgCount < 5 ? true : false
+                    Text {
+                        text: "+"
+                        horizontalAlignment: Qt.AlignHCenter
+                        verticalAlignment: Qt.AlignVCenter
+                        anchors.fill: parent
+                        color: "white"
+                    }
+                    MouseArea {
+                        anchors.fill: parent
+
+                        onClicked: progSelector.open()
                     }
                 }
                 Item {
                     Layout.fillWidth: true
                 }
+            }
+            ProgAdditionPop {
+                id: progSelector
+                width: socketContainer.width
+                height: 200
+                x: repeat.x
+                y: repeat.y
+                // anchors.
+                // anchors.top: progPage
             }
         }
 

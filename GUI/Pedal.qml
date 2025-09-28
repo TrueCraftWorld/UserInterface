@@ -22,14 +22,8 @@ Rectangle {
             }
         }
     }
-
-
-    radius: 8
     color: "transparent"
-    border {
-        width: 2
-        color: "transparent"
-    }
+
     state: "empty"
     states: [
         State {
@@ -63,6 +57,7 @@ Rectangle {
             NumberAnimation { properties: "opacity"; duration: 500; easing.type: Easing.InOutQuad }
         }
     ]
+
     Label {
         id: name
         anchors {
@@ -78,68 +73,85 @@ Rectangle {
         font.pixelSize: 16
         font.bold: true
     }
+    Rectangle {
+        id: shell
+        width: 100
+        height: 80
+        anchors.top: name.bottom
+        anchors.right: parent.right
+        anchors.topMargin: -5
+        anchors.rightMargin: -18
+        anchors.leftMargin: 0
+        anchors.bottomMargin: 0
 
-    Rectangle {
-        id: singleRect
-        anchors {
-            fill: parent
-            margins: 15
-        }
+        color: "transparent"
+
         Rectangle {
-            color: "blue"
-            height: parent.height
-            width: 0.3 * parent.width
-            anchors.centerIn: parent
-            radius: 6
-        }
-    }
-    Rectangle {
-        id: doubleRect
-        anchors {
-            fill: parent
-            margins: 15
-        }
-        Rectangle {
-            color: "blue"
-            height: parent.height
-            width: 0.3 * parent.width
-            radius: 6
+            id: singleRect
             anchors {
-                left: parent.horizontalCenter
-                verticalCenter: parent.verticalCenter
-                leftMargin: 6
+                fill: parent
+                margins: 15
+            }
+            color: "transparent"
+            Rectangle {
+                color: "blue"
+                height: parent.height * .8
+                width: 0.3 * parent.width
+                anchors.centerIn: parent
+                radius: 6
             }
         }
         Rectangle {
-            color: "yellow"
-            height: parent.height
-            width: 0.3 * parent.width
-            radius: 6
+            id: doubleRect
             anchors {
-                right: parent.horizontalCenter
-                verticalCenter: parent.verticalCenter
-                rightMargin: 6
+                fill: parent
+                margins: 15
             }
-        }
-    }
-    Rectangle {
-        id: biHandle
-        anchors {
-            fill: parent
-            margins: 10
+            color: "transparent"
+            Rectangle {
+                color: "blue"
+                height: parent.height * .8
+                width: 0.3 * parent.width
+                radius: 6
+                anchors {
+                    left: parent.horizontalCenter
+                    verticalCenter: parent.verticalCenter
+                    leftMargin: 6
+                }
+            }
+            Rectangle {
+                color: "yellow"
+                height: parent.height *.8
+                width: 0.3 * parent.width
+                radius: 6
+                anchors {
+                    right: parent.horizontalCenter
+                    verticalCenter: parent.verticalCenter
+                    rightMargin: 6
+                }
+            }
         }
         Rectangle {
-            width: parent.height
-            height: width
-            radius: width
-            color: "purple"
-            border {
-                color: "white"
-                width:2
+            id: biHandle
+            anchors {
+                fill: parent
+                margins: 10
             }
-            anchors.centerIn: parent
+            color: "transparent"
+            Rectangle {
+                width: parent.height *.8
+                height: width
+                radius: width/2
+                color: "purple"
+                border {
+                    color: "white"
+                    width:2
+                }
+                anchors.centerIn: parent
+            }
         }
     }
+
     MouseArea {
         id: pressHandle
         anchors.fill: parent

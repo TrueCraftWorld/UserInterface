@@ -1,14 +1,29 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
-import QtQuick.Layouts 1.15
+// import QtQuick.Layouts 1.15
+import StratifyLabs.UI 2.0
 
 Popup {
-    property alias pedTitle : title.text
+    // property alias pedTitle : title.text
     property var shownPedalsArray: []
     property int selectedPed
     signal pedSelected(int index)
 
     id: pedalSelectRoot
+
+    function calcDimensions() {
+        var maxHeight = pedalSelectRoot.height * .7
+        var maxWidth = ((pedalSelectRoot.width * .9)
+                        /  (pedalSelectRoot.shownPedalsArray.length + 1))
+                        // - (1.5 * layoutRow.spacing)
+        return (maxHeight > maxWidth) ? maxWidth : maxHeight
+    }
+    function calcSpacing() {
+        return ((pedalSelectRoot.width
+                - (layoutRow.elementSize * (pedalSelectRoot.shownPedalsArray.length + 1)))
+                / pedalSelectRoot.shownPedalsArray.length ) * .5
+    }
+
 
     anchors.centerIn: parent
     width: parent.width
@@ -35,29 +50,39 @@ Popup {
                 monoHandle.visible = true;
             }
         }
+        layoutRow.elementSize = calcDimensions()
+        layoutRow.spacing = calcSpacing()
     }
 
-    Label {
-        id: title
+    // Label {
+    //     id: title
+    //     anchors {
+    //         top: parent.top
+    //         left: parent.left
+    //         right: parent.right
+    //     }
+    // }
+    Row {
+        id: layoutRow
+        property int elementSize
+        // spacing: (parent.width - (elementSize * pedalSelectRoot.shownPedalsArray.size + 1))
+        //          / (pedalSelectRoot.shownPedalsArray.size + 1)
+
+        spacing: 40
         anchors {
             top: parent.top
             left: parent.left
             right: parent.right
-        }
-    }
-    Row {
-        spacing: 10
-        anchors {
-            top: title.bottom
-            left: parent.left
-            right: parent.right
             bottom: parent.bottom
+            centerIn: parent
         }
         Rectangle {
             id: emptyPed
-            width: 50
-            height: 50
+            width: layoutRow.elementSize
+            height: layoutRow.elementSize
             color: pedalSelectRoot === 0 ? "cyan" : "transparent"
+            radius: 8
+
             border {
                 width: 1
                 color: "white"
@@ -69,9 +94,10 @@ Popup {
         }
         Rectangle {
             id: singlePed
-            width: 50
-            height: 50
+            width: layoutRow.elementSize
+            height: layoutRow.elementSize
             color: pedalSelectRoot === 1 ? "cyan" : "transparent"
+            radius: 8
             border {
                 width: 1
                 color: "white"
@@ -93,9 +119,10 @@ Popup {
         }
         Rectangle {
             id: doublePed
-            width: 50
-            height: 50
+            width: layoutRow.elementSize
+            height: layoutRow.elementSize
             color: pedalSelectRoot === 2 ? "cyan" : "transparent"
+            radius: 8
             border {
                 width: 1
                 color: "white"
@@ -129,9 +156,10 @@ Popup {
         }
         Rectangle {
             id: biHandle
-            width: 50
-            height: 50
+            width: layoutRow.elementSize
+            height: layoutRow.elementSize
             color: pedalSelectRoot === 3 ? "cyan" : "transparent"
+            radius: 8
             border {
                 width: 1
                 color: "white"
@@ -150,9 +178,10 @@ Popup {
         }
         Rectangle {
             id: monoHandle
-            width: 50
-            height: 50
+            width: layoutRow.elementSize
+            height: layoutRow.elementSize
             color: pedalSelectRoot === 4 ? "cyan" : "transparent"
+            radius: 8
             border {
                 width: 1
                 color: "white"

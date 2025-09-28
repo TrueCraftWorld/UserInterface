@@ -54,20 +54,9 @@ Popup {
         layoutRow.spacing = calcSpacing()
     }
 
-    // Label {
-    //     id: title
-    //     anchors {
-    //         top: parent.top
-    //         left: parent.left
-    //         right: parent.right
-    //     }
-    // }
     Row {
         id: layoutRow
         property int elementSize
-        // spacing: (parent.width - (elementSize * pedalSelectRoot.shownPedalsArray.size + 1))
-        //          / (pedalSelectRoot.shownPedalsArray.size + 1)
-
         spacing: 40
         anchors {
             top: parent.top
@@ -80,7 +69,7 @@ Popup {
             id: emptyPed
             width: layoutRow.elementSize
             height: layoutRow.elementSize
-            color: pedalSelectRoot === 0 ? "cyan" : "transparent"
+            color: pedalSelectRoot.selectedPed === 0 ? "cyan" : "transparent"
             radius: 8
 
             border {
@@ -96,17 +85,21 @@ Popup {
             id: singlePed
             width: layoutRow.elementSize
             height: layoutRow.elementSize
-            color: pedalSelectRoot === 1 ? "cyan" : "transparent"
+            color: pedalSelectRoot.selectedPed === 1 ? "cyan" : "transparent"
             radius: 8
             border {
                 width: 1
                 color: "white"
             }
             Rectangle {
-                width: 14
-                height: 30
+                width: parent.width * .3
+                height: parent.height * .75
                 radius: 6
                 color: "blue"
+                border {
+                    width: 1
+                    color: "white"
+                }
                 anchors {
                     verticalCenter: parent.verticalCenter
                     horizontalCenter: parent.horizontalCenter
@@ -121,32 +114,40 @@ Popup {
             id: doublePed
             width: layoutRow.elementSize
             height: layoutRow.elementSize
-            color: pedalSelectRoot === 2 ? "cyan" : "transparent"
+            color: pedalSelectRoot.selectedPed === 2 ? "cyan" : "transparent"
             radius: 8
             border {
                 width: 1
                 color: "white"
             }
             Rectangle {
-                width: 14
-                height: 30
+                width: parent.width * .3
+                height: parent.height * .75
                 radius: 6
                 color: "yellow"
+                border {
+                    width: 1
+                    color: "black"
+                }
                 anchors {
                     left: parent.left
                     verticalCenter: parent.verticalCenter
-                    margins: 8
+                    margins: parent.width * 0.13
                 }
             }
             Rectangle {
-                width: 14
-                height: 30
+                width: parent.width * .3
+                height: parent.height * .75
                 radius: 6
                 color: "blue"
+                border {
+                    width: 1
+                    color: "white"
+                }
                 anchors {
                     right: parent.right
                     verticalCenter: parent.verticalCenter
-                    margins: 8
+                    margins: parent.width * 0.13
                 }
             }
             MouseArea {
@@ -158,19 +159,24 @@ Popup {
             id: biHandle
             width: layoutRow.elementSize
             height: layoutRow.elementSize
-            color: pedalSelectRoot === 3 ? "cyan" : "transparent"
+            color: pedalSelectRoot.selectedPed === 3 ? "cyan" : "transparent"
             radius: 8
             border {
                 width: 1
                 color: "white"
             }
             Rectangle {
-                width: 30
-                height: 30
-                radius: 15
+                width: parent.width * .65
+                height: parent.height * .65
+                radius: width/2
                 color: "purple"
+                border {
+                    width: 2
+                    color: "white"
+                }
                 anchors.centerIn: parent;
             }
+
             MouseArea {
                 anchors.fill: parent
                 onClicked: pedalSelectRoot.pedSelected(3)
@@ -180,32 +186,40 @@ Popup {
             id: monoHandle
             width: layoutRow.elementSize
             height: layoutRow.elementSize
-            color: pedalSelectRoot === 4 ? "cyan" : "transparent"
+            color: pedalSelectRoot.selectedPed === 4 ? "cyan" : "transparent"
             radius: 8
             border {
                 width: 1
                 color: "white"
             }
             Rectangle {
-                width: 18
-                height: 18
-                radius: 9
+                width: parent.width * .42
+                height: parent.height * .42
+                radius: width/2
                 color: "yellow"
+                border {
+                    width: 2
+                    color: "black"
+                }
                 anchors {
                     top: parent.top
                     left: parent.left
-                    margins: 6
+                    margins: parent.width * .085
                 }
             }
             Rectangle {
-                width: 18
-                height: 18
-                radius: 9
+                width: parent.width * .42
+                height: parent.height * .42
+                radius: width/2
                 color: "blue"
+                border {
+                    width: 2
+                    color: "white"
+                }
                 anchors {
                     bottom: parent.bottom
                     right: parent.right
-                    margins: 6
+                    margins: parent.width * .085
                 }
             }
             MouseArea {

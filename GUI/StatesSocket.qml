@@ -7,7 +7,7 @@ Rectangle {
     property string title
     property int socketId
 
-    property int socketPedal
+    property int socketPedal : 0
 
     property string cutModeName
     property int cutModePower

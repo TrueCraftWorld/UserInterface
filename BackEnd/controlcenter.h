@@ -92,7 +92,7 @@ private:
      *         6.3 инициализация сокета полученным списком допустимыз режимов и инструментов
      *         6.4 установка режима, мощностии и инструмента по умолчанию
      */
-    void programmLoadSocketInit(int progId);
+    void programmLoadSocketInit(int progId, bool clear = true);
 
     /**
      * @brief getListOfPrograms получение списка доспуных программ в категории

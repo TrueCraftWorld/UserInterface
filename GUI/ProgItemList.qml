@@ -13,6 +13,7 @@ Rectangle {
 
     property var itemIdArr: []
     property var itemNameArr: []
+    property bool loadClear: true
 
 
     ListModel {

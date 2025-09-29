@@ -78,12 +78,24 @@ Window {
         id: leftDrawer
         width: 0.8 * container.width
         height: container.height
-
-        // Loader
-        // SettingsMain {
         MenuLoader {
             id: menuLoad
             anchors.fill: parent
+        }
+    }
+
+    Connections {
+        target: socketsDummy
+        function onProgAddRequest(progAddType) {
+            switch (progAddType) {
+            case 0:
+            {
+                menuLoad.source = "ProgItemList.qml"
+                menuLoad.item.loadClear = false;
+                menuLoad.shortcut = true;
+                leftDrawer.open()
+            }
+            }
         }
     }
 

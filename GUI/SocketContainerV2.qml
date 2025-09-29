@@ -4,7 +4,9 @@ import QtQuick.Layouts 1.15
 Rectangle {
     id: socketContainer
 
+    signal progAddRequest(int type)
     property var innerModel
+
     color: "black"
     ColumnLayout {
         id: layout
@@ -79,8 +81,6 @@ Rectangle {
                 height: 200
                 x: repeat.x
                 y: repeat.y
-                // anchors.
-                // anchors.top: progPage
             }
         }
 
@@ -103,6 +103,12 @@ Rectangle {
         id: modeDialog
     }
 
+    Connections {
+        target: progSelector
+        function onTypeChosen (addType) {
+            socketContainer.progAddRequest(addType)
+        }
+    }
     Connections {
         target: repeat
         function onInstrumDialogRequest(soc, mod, iscoag) {

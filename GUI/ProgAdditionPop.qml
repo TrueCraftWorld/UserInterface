@@ -13,8 +13,8 @@ Popup {
         property int buttonType: 0
         property alias title : titleLabel.text
 
-        width: 200
-        height: 70
+        width: 250
+        height: 100
         radius: 8
         color: "transparent"
         border {
@@ -25,7 +25,7 @@ Popup {
             id: titleLabel
             horizontalAlignment: Qt.AlignHCenter
             verticalAlignment: Qt.AlignVCenter
-            font.pixelSize: 28
+            font.pixelSize: 20
             font.bold: true
             wrapMode: Text.WordWrap
             color: "white"
@@ -33,8 +33,8 @@ Popup {
                 left: parent.left
                 right: parent.right
                 top: parent.top
+                bottom: parent.bottom
             }
-            // text: qsTr("ДУБЛИРОВАТЬ")
         }
         MouseArea {
             anchors.fill: parent
@@ -43,31 +43,32 @@ Popup {
     }
 
     signal pageAdditionRequest(int additionType)
+
     Rectangle {
 
-        anchors.fill: parent
+        // anchors.fill: parent
         anchors.centerIn: parent
         color: "black"
 
         Row {
             id: buttonRow
-            anchors.fill: parent
+            // anchors.fill: parent
             anchors.centerIn: parent
+
             spacing: 50
 
-
-        }
-        VariantRect{
-            title: qsTr("ДУБЛИРОВАТЬ ТЕКУЩИЙ")
-            buttonType: 0
-        }
-        VariantRect{
-            title: qsTr("ЗАГРУЗИТЬ РЕКОМЕНДОВАННЫЙ")
-            buttonType: 1
-        }
-        VariantRect{
-            title: qsTr("ДОБАВИТЬ ПУСТОЙ")
-            buttonType: 2
+            VariantRect{
+                title: qsTr("ДУБЛИРОВАТЬ ТЕКУЩИЙ")
+                buttonType: 0
+            }
+            VariantRect{
+                title: qsTr("ЗАГРУЗИТЬ РЕКОМЕНДОВАННЫЙ")
+                buttonType: 1
+            }
+            VariantRect{
+                title: qsTr("ДОБАВИТЬ ПУСТОЙ")
+                buttonType: 2
+            }
         }
     }
 

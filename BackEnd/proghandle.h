@@ -31,7 +31,7 @@ public:
     explicit ProgHandle(QObject *parent = nullptr);
 
     Q_INVOKABLE void loadSelected();
-    Q_INVOKABLE void loadRecommendedProg(int recomProgId);
+    Q_INVOKABLE void loadRecommendedProg(int recomProgId, bool clear = true);
     Q_INVOKABLE void loadUserProg(int recomProgId);
     Q_INVOKABLE void loadEmptyProg();
     Q_INVOKABLE void permitAll();
@@ -52,7 +52,7 @@ public:
 signals:
     void signalLoadRecommend(int scopeIdx, int progIdx, int subProgIdx);
 
-    void signalRecomProgChosen(int progId);
+    void signalRecomProgChosen(int progId, bool clear);
     //может быть избыточно и проги сможем просто по id разделять
     void signalUserProgChosen(int progId);
 

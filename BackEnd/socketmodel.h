@@ -91,8 +91,8 @@ signals:
 public:
     virtual QHash<int, QByteArray> roleNames() const override final;
     void setItemsMap(const std::map<int, SockPtr > &newItemsMap, bool add = false);
-    void setItemsMapVector(const std::vector<std::map<int, SockPtr >> &newItemsMapVector);
-    void setInstrumMap(const std::map<int, QSharedPointer<Instrument> > &newInstrumMap);
+    void setItemsMapVector(const std::vector<std::map<int, SockPtr >> &newItemsMapVector, bool add =false);
+    void setInstrumMap(const std::map<int, QSharedPointer<Instrument> > &newInstrumMap, bool clear = true);
 
     int subProgIdx() const;
     void setSubProgIdx(int newIndex);

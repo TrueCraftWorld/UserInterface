@@ -605,3 +605,18 @@ int SocketModel::subProgCount() const
 {
     return m_subProgCount;
 }
+
+void SocketModel::removeSubProg(int index)
+{
+    if (index >= m_itemsMapVect.size() || m_itemsMapVect.size() == 1 || index < 0)
+        return;
+    auto iter = m_itemsMapVect.begin();
+    iter += index;
+    m_itemsMapVect.erase(iter);
+    m_subProgCount--;
+    int tmpIdx = m_subProgIdx;
+    if (tmpIdx >= m_itemsMapVect.size())
+        --tmpIdx;
+
+    setSubProgIdx(tmpIdx);
+}

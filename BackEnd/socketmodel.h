@@ -93,7 +93,7 @@ public:
     void setItemsMap(const std::map<int, SockPtr > &newItemsMap, bool add = false);
     void setItemsMapVector(const std::vector<std::map<int, SockPtr >> &newItemsMapVector, bool add =false);
     void setInstrumMap(const std::map<int, QSharedPointer<Instrument> > &newInstrumMap, bool clear = true);
-
+    void removeSubProg(int index);
     int subProgIdx() const;
     void setSubProgIdx(int newIndex);
 

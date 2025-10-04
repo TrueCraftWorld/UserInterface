@@ -207,6 +207,9 @@ void ControlCenter::makeHandleConnections()
     if (m_handle.isNull())
         return;
 
+    connect(m_handle, &ProgHandle::signalRemoveSub,
+            this, &ControlCenter::removeSubProg);
+
     connect(m_handle, &ProgHandle::signalRecomProgChosen, 
             this, &ControlCenter::programmLoadSocketInit);
     
@@ -408,6 +411,11 @@ void ControlCenter::dataBaseSocketInit()
     m_socketModel->setItemsMap(socketMap);
     m_socketModel->setInstrumMap(getInstrums());
 
+}
+
+void ControlCenter::removeSubProg(int index)
+{
+    m_socketModel->removeSubProg(index);
 }
 
 void ControlCenter::programmLoadSocketInit(int progId, bool clear)

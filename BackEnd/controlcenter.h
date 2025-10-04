@@ -71,6 +71,7 @@ private:
 
     void defaultSocketInit();
     void dataBaseSocketInit();
+    void removeSubProg(int index);
 
     /**
      * @brief ControlCenter::programmLoadSocketInit

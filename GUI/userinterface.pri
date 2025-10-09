@@ -12,6 +12,7 @@ DISTFILES += \
     $$PWD/MenuLoader.qml \
     $$PWD/ModeEditor.qml \
     $$PWD/ModePowerRect.qml \
+    $$PWD/NeutralEl.qml \
     $$PWD/Pedal.qml \
     $$PWD/PedalEditor.qml \
     $$PWD/PowerRect.qml \

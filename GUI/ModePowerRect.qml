@@ -1,7 +1,7 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 
-Rectangle {
+Canvas {
     id: modePowerRect
 
     property bool isCoag
@@ -19,10 +19,101 @@ Rectangle {
         return isCoag ? "blue" : "yellow"
     }
 
-    color: {
-        if (modePowerRect.modeId == 1000)
-            return "darkgray"
-        return isCoag ? "blue" : "yellow"
+    function changePower(direction) {
+        var changedPower = modePower
+        if (direction === "up") {
+            if (modePower < 20) changedPower += 1
+            else if (modePower < 50) changedPower +=2
+            else if (modePower < 100) changedPower +=5
+            else if (modePower < 200) changedPower +=10
+            else if (modePower < 400) changedPower +=25
+        }
+        if (direction === "down") {
+            if (modePower <= 1) changedPower = 1
+            else if (modePower <= 20) changedPower -= 1
+            else if (modePower <= 50) changedPower -=2
+            else if (modePower <= 100) changedPower -=5
+            else if (modePower <= 200) changedPower -=10
+            else if (modePower <= 400) changedPower -=25
+        }
+        return changedPower
+    }
+
+    // Функция для округления значения до ближайшего допустимого шага
+    function roundToStep(value) {
+        if (value <= 0) return 1
+
+        if (value <= 20) {
+            return Math.round(value) // шаг 1
+        } else if (value <= 50) {
+            return Math.round(value / 2) * 2 // шаг 2
+        } else if (value <= 100) {
+            return Math.round(value / 5) * 5 // шаг 5
+        } else if (value <= 200) {
+            return Math.round(value / 10) * 10 // шаг 10
+        } else if (value <= 400) {
+            return Math.round(value / 25) * 25 // шаг 25
+        } else {
+            return 1 // шаг 25
+        }
+    }
+
+    onPaint: {
+        var ctx = getContext("2d");
+        ctx.clearRect(0, 0, width, height);
+
+        var radius = 20;
+        var x = 0;
+        var y = 0;
+        var w = width;
+        var h = height;
+
+        ctx.beginPath();
+
+        if (isCoag) {
+            if (parent.parent.state === "expanded") {
+                // Правый сокет расширен - закруглен только нижний правый угол
+                ctx.moveTo(x, y);
+                ctx.lineTo(w, y);
+                ctx.lineTo(w, h - radius);
+                ctx.arcTo(w, h, w - radius, h, radius);
+                ctx.lineTo(x, h);
+                ctx.lineTo(x, y);
+            }
+            else {
+                // Правый сокет сжат - закруглены правые углы
+                ctx.moveTo(x, y);
+                ctx.lineTo(w - radius, y);
+                ctx.arcTo(w, y, w, radius, radius);
+                ctx.lineTo(w, h - radius);
+                ctx.arcTo(w, h, w - radius, h, radius);
+                ctx.lineTo(x, h);
+                ctx.lineTo(x, y);
+            }
+        } else {
+            if (parent.parent.state === "expanded") {
+                // Левый сокет расширен - закруглен только нижний левый угол
+                ctx.moveTo(x, y);
+                ctx.lineTo(w, y);
+                ctx.lineTo(w, h);
+                ctx.lineTo(x + radius, h);
+                ctx.arcTo(x, h, x, h - radius, radius);
+            }
+            else {
+                // Левый сокет сжат - закруглены левые углы
+                ctx.moveTo(x + radius, y);
+                ctx.lineTo(w, y);
+                ctx.lineTo(w, h);
+                ctx.lineTo(x + radius, h);
+                ctx.arcTo(x, h, x, h - radius, radius);
+                ctx.lineTo(x, radius);
+                ctx.arcTo(x, y, x + radius, y, radius);
+            }
+        }
+
+        ctx.closePath();
+        ctx.fillStyle = colorFromId();
+        ctx.fill();
     }
 
     Connections {
@@ -32,8 +123,6 @@ Rectangle {
             console.log(isCoag, modePowerRect.color, modePowerRect.modeId)
         }
     }
-
-    radius: 8
 
     Rectangle {
         id: mode
@@ -50,6 +139,13 @@ Rectangle {
             anchors {
                 margins: 10
                 fill: parent
+            }
+
+            Behavior on font.pixelSize {
+                NumberAnimation {
+                    duration: 400
+                    easing.type: Easing.OutQuart
+                }
             }
         }
         MouseArea {
@@ -68,7 +164,7 @@ Rectangle {
             visible: (modeId != 1000)
             width: fontMetrics.advanceWidth("999")
             height: 31
-            font.pixelSize: 30
+            font.pixelSize: 40
             font.bold: true
             color: isCoag ? "white" : "black"
             // verticalAlignment: Qt.AlignVCenter
@@ -78,6 +174,13 @@ Rectangle {
                 rightMargin: 10
 
                 fill: parent
+            }
+            // Поведенческая анимация для размера шрифта
+            Behavior on font.pixelSize {
+                NumberAnimation {
+                    duration: 300
+                    easing.type: Easing.OutCubic
+                }
             }
         }
         FontMetrics {
@@ -110,7 +213,7 @@ Rectangle {
         }
         MouseArea {
             anchors.fill: parent
-            onClicked: modePowerRect.newPower(powerSlider.value + 1);
+            onClicked: modePowerRect.newPower(changePower("up"));
         }
     }
     Rectangle {
@@ -144,9 +247,15 @@ Rectangle {
     Slider {
         id: powerSlider
         value: modePower
+        opacity: 1
         from: 1
         to: maxPower
-        onValueChanged: modePowerRect.newPower(value);
+        onValueChanged: {
+            var roundedValue = roundToStep(value)
+            if (roundedValue !== modePower) {
+                modePowerRect.newPower(roundedValue)
+            }
+        }
     }
     states: [
         State {
@@ -160,13 +269,13 @@ Rectangle {
                 verticalAlignment: Text.AlignVCenter
                 anchors.bottomMargin: 10
                 anchors.topMargin: 10
-                font.pixelSize: 34
+                font.pixelSize: 50
             }
             PropertyChanges {
                 target: modeLabel;
                 horizontalAlignment: isCoag ? Text.AlignRight : Text.AlignLeft
                 verticalAlignment: Text.AlignVCenter
-                font.pixelSize: 20
+                font.pixelSize: 25
             }
             PropertyChanges {
                 target: power;
@@ -266,16 +375,16 @@ Rectangle {
             }
         }
     ]
-    transitions: [
-        Transition {
-            from: "collapsed"
-            to: "expanded"
-            NumberAnimation {  duration: 100; easing.type: Easing.InQuad }
-        },
-        Transition {
-            from: "expanded"
-            to: "collapsed"
-            NumberAnimation { duration: 100; easing.type: Easing.InQuad }
-        }
-    ]
+//    transitions: [
+//        Transition {
+//            from: "collapsed"
+//            to: "expanded"
+//            NumberAnimation {  duration: 100; easing.type: Easing.InQuad }
+//        },
+//        Transition {
+//            from: "expanded"
+//            to: "collapsed"
+//            NumberAnimation { duration: 100; easing.type: Easing.InQuad }
+//        }
+//    ]
 }

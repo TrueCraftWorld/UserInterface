@@ -5,7 +5,7 @@ Rectangle {
     id: socketContainer
 
     property var innerModel
-    color: "black"
+    color: "gray"
     ColumnLayout {
         id: layout
         anchors.fill: parent

@@ -15,6 +15,7 @@ DISTFILES += \
     $$PWD/NeutralEl.qml \
     $$PWD/Pedal.qml \
     $$PWD/PedalEditor.qml \
+    $$PWD/PedalPanel.qml \
     $$PWD/PowerRect.qml \
     $$PWD/ProgAdditionPop.qml \
     $$PWD/ProgItemList.qml \

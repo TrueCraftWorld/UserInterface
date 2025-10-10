@@ -159,10 +159,10 @@ Rectangle {
 
     // Обработчики изменений
     onNeutralTypeChanged: {
-        console.log("Neutral type changed to:", neutralType)
+        // Обработка изменения типа нейтрального электрода
     }
 
     onNeutralSizeChanged: {
-        console.log("Neutral size changed to:", neutralSize)
+        // Обработка изменения размера нейтрального электрода
     }
 }

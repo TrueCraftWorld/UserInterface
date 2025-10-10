@@ -10,7 +10,6 @@ Rectangle {
     Connections {
         target: pedalRoot
         function onPedalStateIdxChanged() {
-            console.log("got new pedal")
             if (pedalStateIdx == 0) {
                 pedalRoot.state = "empty"
             } else if (pedalStateIdx == 1) {
@@ -58,39 +57,37 @@ Rectangle {
         }
     ]
 
-    Label {
-        id: name
-        anchors {
-            top: parent.top
-            left: parent.left
-            right: parent.right
-            topMargin: 1
-            rightMargin: 10
-        }
-        horizontalAlignment: Qt.AlignHCenter
-        text: qsTr("ПЕДАЛЬ")
-        color: "white"
-        font.pixelSize: 16
-        font.bold: true
-    }
+//    Label {
+//        id: name
+//        anchors {
+//            top: parent.top
+//            left: parent.left
+//            right: parent.right
+//            topMargin: 1
+//            rightMargin: 10
+//        }
+//        horizontalAlignment: Qt.AlignHCenter
+//        text: qsTr("ПЕДАЛЬ")
+//        color: "white"
+//        font.pixelSize: 16
+//        font.bold: true
+//    }
     Rectangle {
         id: shell
-        width: 100
-        height: 80
-        anchors.top: name.bottom
+        width: 70
+        height: 70
+        anchors.top: parent.top
         anchors.right: parent.right
-        anchors.topMargin: -5
-        anchors.rightMargin: -18
-        anchors.leftMargin: 0
-        anchors.bottomMargin: 0
+        anchors.margins: 5
+        radius: 10
+        border.color: "orange"
 
-        color: "transparent"
+        color: "grey"
 
         Rectangle {
             id: singleRect
             anchors {
                 fill: parent
-                margins: 15
             }
             color: "transparent"
             Rectangle {
@@ -99,13 +96,13 @@ Rectangle {
                 width: 0.3 * parent.width
                 anchors.centerIn: parent
                 radius: 6
+                border.color: "white"
             }
         }
         Rectangle {
             id: doubleRect
             anchors {
                 fill: parent
-                margins: 15
             }
             color: "transparent"
             Rectangle {
@@ -113,6 +110,7 @@ Rectangle {
                 height: parent.height * .8
                 width: 0.3 * parent.width
                 radius: 6
+                border.color: "white"
                 anchors {
                     left: parent.horizontalCenter
                     verticalCenter: parent.verticalCenter
@@ -124,6 +122,7 @@ Rectangle {
                 height: parent.height *.8
                 width: 0.3 * parent.width
                 radius: 6
+                border.color: "white"
                 anchors {
                     right: parent.horizontalCenter
                     verticalCenter: parent.verticalCenter
@@ -134,7 +133,6 @@ Rectangle {
         Rectangle {
             id: biHandle
             anchors {
-                fill: parent
                 margins: 10
             }
             color: "transparent"
@@ -155,10 +153,8 @@ Rectangle {
     MouseArea {
         id: pressHandle
         anchors.fill: parent
-    }
-    Connections {
-        target: pressHandle
-        function onClicked () {
+        z: 1  // Локальный z-order внутри педали
+        onClicked: {
             pedalRoot.pedalMenuRequest()
         }
     }

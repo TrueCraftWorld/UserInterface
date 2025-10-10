@@ -75,8 +75,6 @@ Repeater {
         title: model.socketname
         socketId: index
 
-        socketPedal:       model.socketpedal
-
         cutInstrumId:      model.cutmodeinstrid
         cutMaxPower:       model.cutmodemaxpower
         cutModePower:      model.cutmodepower
@@ -104,12 +102,6 @@ Repeater {
 
         Connections {
             target: delegateSoc
-            function onPedSelect(socketId, ped) {
-                console.log("pedalFrom delegate", ped)
-                theModel.qmlSetData(index,
-                                    ped,
-                                    "socketpedal")
-            }
             function onInstrumEditDialogRequest(socketid, iscoag) {
 
                 repeatRoot.instrumDialogRequest(socketid,

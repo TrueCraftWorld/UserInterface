@@ -369,7 +369,7 @@ void LinkStm::sendCommand()
     if (m_state != STATE_OK) {
         error(m_state);
 //        qDebug() << m_state;
-        qWarning(logWarning()) << m_state;
+//        qWarning(logWarning()) << m_state;
         m_txCommand.com = Allright;
     }
 
@@ -395,7 +395,7 @@ void LinkStm::sendCommand()
         m_uartTimer->setInterval(3000);
     }
 
-    qDebug() << "txCom: " << m_txCommand.com << ": " << QString::number(m_txCommand.com, 16);
+//    qDebug() << "txCom: " << m_txCommand.com << ": " << QString::number(m_txCommand.com, 16);
     // Собираем команду в посылку
     txPacket = packTxCommand();
     // Отправляем посылку
@@ -407,7 +407,7 @@ void LinkStm::sendCommand()
     }
     else {
         txStr = getHexStr(txPacket);
-        qDebug() << "Tx: " << getHexStr(txPacket);
+//        qDebug() << "Tx: " << getHexStr(txPacket);
     }
     emit reportTx(txStr);
     m_waitAnswer = true;

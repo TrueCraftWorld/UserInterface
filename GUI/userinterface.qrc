@@ -23,6 +23,7 @@
         <file>MenuLoader.qml</file>
         <file>Pedal.qml</file>
         <file>PedalEditor.qml</file>
+        <file>PedalPanel.qml</file>
         <file>ProgAdditionPop.qml</file>
     </qresource>
 </RCC>

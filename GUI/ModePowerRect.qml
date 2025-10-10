@@ -201,7 +201,6 @@ Canvas {
         anchors.margins: 95
         anchors.right: parent.right
         anchors.verticalCenter: parent.verticalCenter
-//        anchors.bottom: parent.bottom
         Label {
             anchors {
                 margins: 10
@@ -233,7 +232,6 @@ Canvas {
         anchors.margins: 95
         anchors.left: parent.left
         anchors.verticalCenter: parent.verticalCenter
-//        anchors.bottom: parent.bottom
         Label {
             anchors {
                 margins: 10

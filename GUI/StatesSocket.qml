@@ -8,8 +8,6 @@ Rectangle {
     property string title
     property int socketId
 
-    property int socketPedal : 0
-
     property string cutModeName
     property int cutModePower
     property int cutModeId
@@ -27,7 +25,6 @@ Rectangle {
     signal modeEditDialogRequest(int socketId, bool isCoag)
     signal instrumEditDialogRequest(int socketId, bool isCoag)
     signal newPower(int socketId, int pwr, bool isCoag)
-    signal pedSelect(int socketId, int ped)
     signal socketExpandRequest()
     signal socketCollapseRequest()
     signal absolutePositionChanged(int socketId, real absoluteY)  // Изменение позиции для привязки педалей
@@ -141,6 +138,7 @@ Rectangle {
             anchors.fill: parent
             anchors.margins: 10
             text: title
+            color: "white"
             font.pixelSize: 24
             font.bold: true
             horizontalAlignment: Qt.AlignHCenter
@@ -161,35 +159,7 @@ Rectangle {
             }
         }
     }
-    Pedal {
-        id: pedalRect
-        pedalStateIdx: socketRoot.socketPedal
-        width: fontMetrics.advanceWidth("PEDAL")
-        anchors.bottom: parent.bottom
-        anchors.right: parent.right
-    }
-    PedalEditor {
-        id: pedPop
-    }
-
-    Connections {
-        target: pedPop
-        function onPedSelected(idx) {
-            console.log("pedSelect", idx)
-            if (idx >=0 && idx <=4) {
-                socketRoot.pedSelect(socketId, idx)
-            }
-            pedPop.close()
-        }
-    }
-    Connections {
-        target: pedalRect
-        function onPedalMenuRequest() {
-            pedPop.selectedPed = socketRoot.socketPedal
-            pedPop.shownPedalsArray = [1,2,3,4]
-            pedPop.open()
-        }
-    }
+    
     Connections {
         target: rightRect
         function onNewPower(pwr) {
@@ -268,10 +238,6 @@ Rectangle {
 //                color: "black"
 //                width: (parent.width - fontMetrics.advanceWidth("MONO 22MONO")) * .5
 //            }
-            AnchorChanges {
-                target: pedalRect
-                anchors.top: parent.top
-            }
         },
         // Развернутое состояние
         State {
@@ -313,11 +279,6 @@ Rectangle {
 //                target: rightRect
 //                width: (parent.width - fontMetrics.advanceWidth("MONO")) * .5
 //            }
-
-            AnchorChanges {
-                target: pedalRect
-                anchors.top: parent.top
-            }
         }
     ]
 //    // Переходы между состояниями (опционально)

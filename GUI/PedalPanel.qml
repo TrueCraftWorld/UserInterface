@@ -11,7 +11,7 @@ Rectangle {
     property int expandedWidth: 400
     property int collapsedWidth: 85
     property int animationDuration: 300
-    property var animationEasing: Easing.InOutQuad
+    property int animationEasing: Easing.InOutQuad
     
     width: panelExpanded ? expandedWidth : collapsedWidth
     color: "#2c2c2c"
@@ -213,8 +213,22 @@ Rectangle {
                     }
                     
                     globalPedalEditor.selectedPed = pedalDelegate.pedalStateIdx
-                    globalPedalEditor.shownPedalsArray = [1,2,3,4]
-                    globalPedalEditor.currentSocketIndex = socketIndex
+                    globalPedalEditor.currentSocketIndex = socketIndex  // socketNumber обновится автоматически
+                    
+                    // Формируем список доступных типов педалей в зависимости от номера сокета
+                    var availableTypes = [1, 2]  // Single и Double доступны всегда
+                    
+                    // biHandle (тип 3) - кнопка термошва доступна только для БИ2 (socketIndex === 1)
+                    if (socketIndex === 1) {
+                        availableTypes.push(3)
+                    }
+                    
+                    // monoHandle (тип 4) - держатель с кнопками доступен только для монополярных сокетов
+                    if (socketIndex === 2 || socketIndex === 3) {
+                        availableTypes.push(4)
+                    }
+                    
+                    globalPedalEditor.shownPedalsArray = availableTypes
                     // Устанавливаем позицию редактора на уровне педали
                     globalPedalEditor.targetPedalY = pedalDelegate.y
                     globalPedalEditor.open()
@@ -234,18 +248,16 @@ Rectangle {
         id: globalPedalEditor
         property int currentSocketIndex: -1
         property real targetPedalY: 0
+        socketNumber: currentSocketIndex  // Передаём номер педали в редактор
         
         parent: pedalPanel
-//        visible: panelExpanded ? true : false
         modal: false
         closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
-        z: 35  // Выше всех элементов
         
         // Позиционируем на уровне выбранной педали с проверкой границ
         y: {
             var desiredY = targetPedalY
             var maxY = pedalPanel.height - height
-//            console.log("desiredY %1, maxY %2", desiredY, maxY)
             
             // Проверяем, чтобы не выходил за нижнюю границу
             if (desiredY > maxY) {
@@ -257,11 +269,11 @@ Rectangle {
             }
             return desiredY
         }
-        x: 0
-        // Ширина зависит от состояния панели
-        width: pedalPanel.width * 0.8
-//        width: panelExpanded ? pedalPanel.width * 0.9 : pedalPanel.width
-        // Высота адаптируется к содержимому, но не больше доступной высоты
+        // Позиционируем слева от педали относительно parent (pedalPanel)
+        x: 5
+        // Ширина: вся панель минус место для педали (75px + отступы = 90px)
+        width: pedalPanel.width - 90
+        // Фиксированная высота  
         height: 150
         
         // Анимация появления

@@ -18,6 +18,8 @@ Rectangle {
                 pedalRoot.state = "double"
             } else if (pedalStateIdx == 3) {
                 pedalRoot.state = "handleBi"
+            } else if (pedalStateIdx == 4) {
+                pedalRoot.state = "monoHandle"
             }
         }
     }
@@ -30,24 +32,35 @@ Rectangle {
             PropertyChanges { target: singleRect; opacity: 0 }
             PropertyChanges { target: doubleRect; opacity: 0 }
             PropertyChanges { target: biHandle; opacity: 0 }
+            PropertyChanges { target: monoHandle; opacity: 0 }
         },
         State {
             name: "single"
             PropertyChanges { target: singleRect; opacity: 1 }
             PropertyChanges { target: doubleRect; opacity: 0 }
             PropertyChanges { target: biHandle; opacity: 0 }
+            PropertyChanges { target: monoHandle; opacity: 0 }
         },
         State {
             name: "double"
             PropertyChanges { target: singleRect; opacity: 0 }
             PropertyChanges { target: doubleRect; opacity: 1 }
             PropertyChanges { target: biHandle; opacity: 0 }
+            PropertyChanges { target: monoHandle; opacity: 0 }
         },
         State {
             name: "handleBi"
             PropertyChanges { target: singleRect; opacity: 0 }
             PropertyChanges { target: doubleRect; opacity: 0 }
             PropertyChanges { target: biHandle; opacity: 1 }
+            PropertyChanges { target: monoHandle; opacity: 0 }
+        },
+        State {
+            name: "monoHandle"
+            PropertyChanges { target: singleRect; opacity: 0 }
+            PropertyChanges { target: doubleRect; opacity: 0 }
+            PropertyChanges { target: biHandle; opacity: 0 }
+            PropertyChanges { target: monoHandle; opacity: 1 }
         }
     ]
     transitions: [
@@ -133,6 +146,7 @@ Rectangle {
         Rectangle {
             id: biHandle
             anchors {
+                fill: parent
                 margins: 10
             }
             color: "transparent"
@@ -146,6 +160,45 @@ Rectangle {
                     width:2
                 }
                 anchors.centerIn: parent
+            }
+        }
+
+        Rectangle {
+            id: monoHandle
+            anchors {
+                fill: parent
+                margins: 10
+            }
+            color: "transparent"
+            Rectangle {
+                width: parent.width * .42
+                height: parent.height * .42
+                radius: width/2
+                color: "yellow"
+                border {
+                    width: 2
+                    color: "black"
+                }
+                anchors {
+                    top: parent.top
+                    left: parent.left
+                    margins: parent.width * .085
+                }
+            }
+            Rectangle {
+                width: parent.width * .42
+                height: parent.height * .42
+                radius: width/2
+                color: "blue"
+                border {
+                    width: 2
+                    color: "white"
+                }
+                anchors {
+                    bottom: parent.bottom
+                    right: parent.right
+                    margins: parent.width * .085
+                }
             }
         }
     }

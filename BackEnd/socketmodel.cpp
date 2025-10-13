@@ -494,7 +494,7 @@ void SocketModel::pedalRemover(int socketToSkip, int pedalToRemove)
         if (i == socketToSkip)
             continue;
         //тут не надо изменять все сокеты - переназначенная педаль могла быть в одном сокетет только
-        if (m_itemsMap->at(i)->pedal() == pedalToRemove) {
+        if (m_itemsMap->at(i)->pedal() == pedalToRemove && pedalToRemove != Pedal::INSTR_BUTTON_MONO) {
             qmlSetData(i, 0, "socketpedal");
             // break;
         }

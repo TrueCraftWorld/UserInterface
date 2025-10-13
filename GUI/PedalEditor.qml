@@ -13,7 +13,7 @@ Popup {
     id: pedalSelectRoot
 
     function calcDimensions() {
-        var rowMargins = 20  // anchors.margins: 5 слева и справа = 10px
+        var rowMargins = 30  //
         var itemCount = pedalSelectRoot.shownPedalsArray.length + 1  // +1 для emptyPed
         
         // Доступная высота (элементы квадратные)
@@ -31,7 +31,7 @@ Popup {
     }
     
     function calcSpacing() {
-        var rowMargins = 20
+        var rowMargins = 30
         var itemCount = pedalSelectRoot.shownPedalsArray.length + 1
         var elementSize = calcDimensions()
         
@@ -104,6 +104,17 @@ Popup {
                 width: 1
                 color: "white"
             }
+            
+            Text {
+                anchors.centerIn: parent
+                text: "✕"
+                font.pixelSize: parent.height * 0.6
+                font.bold: true
+                color: "gray"
+                horizontalAlignment: Text.AlignHCenter
+                verticalAlignment: Text.AlignVCenter
+            }
+            
             MouseArea {
                 anchors.fill: parent
                 onClicked: pedalSelectRoot.pedSelected(0)

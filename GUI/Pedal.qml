@@ -87,11 +87,11 @@ Rectangle {
 //    }
     Rectangle {
         id: shell
-        width: 70
-        height: 70
+        width: 72
+        height: 72
         anchors.top: parent.top
         anchors.right: parent.right
-        anchors.margins: 5
+//        anchors.margins: 5
         radius: 10
         border.color: "orange"
 

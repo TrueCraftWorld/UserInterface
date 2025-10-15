@@ -10,6 +10,7 @@
         <file>HalfSocket.qml</file>
         <file>InstrumRect.qml</file>
         <file>ModePowerRect.qml</file>
+        <file>LeftPanel.qml</file>
         <file>NeutralEl.qml</file>
         <file>SocketRepeater.qml</file>
         <file>StatesSocket.qml</file>

@@ -207,8 +207,15 @@ Rectangle {
         id: pressHandle
         anchors.fill: parent
         z: 1  // Локальный z-order внутри педали
+        propagateComposedEvents: true
+        
+        onPressed: {
+            mouse.accepted = false  // Пропускаем событие для обработки свайпов
+        }
+        
         onClicked: {
             pedalRoot.pedalMenuRequest()
+            mouse.accepted = true
         }
     }
 

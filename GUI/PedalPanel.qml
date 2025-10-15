@@ -27,14 +27,13 @@ Rectangle {
     // MouseArea для фона панели (перехватывает клики по пустому месту)
     MouseArea {
         anchors.fill: parent
-        z: 1  // Ниже педалей и кнопок, но перехватывает клики по фону
+        z: 1  // Ниже педалей и редактора
+        propagateComposedEvents: true
         
+        // Принимаем событие по умолчанию, но разрешаем передачу дочерним элементам
         onClicked: {
-            if (panelExpanded) {
-                pedalPanel.panelExpanded = false
-            } else {
-                pedalPanel.panelExpanded = true
-            }
+            // Клик по пустому месту - ничего не делаем, просто перехватываем
+            mouse.accepted = true
         }
     }
     
@@ -201,7 +200,7 @@ Rectangle {
             anchors.rightMargin: 5
             // Начальная позиция по индексу, затем обновляется через updatePosition()
             y: socketIndex * 100
-            z: 30  // Выше фонового MouseArea
+            z: 10  // Выше фонового MouseArea
 
             // Обработка клика по педали для открытия редактора
             Connections {
@@ -275,6 +274,7 @@ Rectangle {
         width: pedalPanel.width - 90
         // Фиксированная высота  
         height: 150
+        z: 20  // Выше педалей и фонового MouseArea
         
         // Анимация появления
         enter: Transition {

@@ -52,99 +52,22 @@ Window {
     }
 
     // Левая панель - перекрывает центральный контейнер
-    Rectangle {
+    LeftPanel {
         id: leftPanel
-        width: leftPanelExpanded ? container.width / 2 : 85
+        panelExpanded: leftPanelExpanded
+        neutralConnected: container.neutralConnected
+        expandedWidth: container.width / 2
+        collapsedWidth: 85
+        animationDuration: container.panelAnimationDuration
+        animationEasing: container.panelAnimationEasing
         height: socketsDummy.height
         anchors.bottom: socketsDummy.bottom
-        color: "#2c2c2c"
-        x: leftPanelExpanded ? 0 : 0  // ✅ Всегда видима
+        x: 0  // Всегда видима
         z: 15
         
-        // Анимация изменения ширины (синхронизирована с rightPanel)
-        Behavior on width {
-            NumberAnimation { 
-                duration: container.panelAnimationDuration
-                easing.type: container.panelAnimationEasing
-            }
-        }
-
-        // В развернутом состоянии - полные блоки
-        Rectangle {
-            id: argonDummy
-            radius: 8
-            color: "lightgray"
-            height: 100
-            anchors {
-                left: parent.left
-                right: parent.right
-                top: parent.top
-                margins: 10
-            }
-            border {
-                color: "black"
-                width: 1
-            }
-            visible: leftPanelExpanded
-
-            Text {
-                anchors.centerIn: parent
-                text: "Argon"
-                font.pixelSize: 16
-                color: "black"
-            }
-        }
-
-        // В свернутом состоянии - маленькие кнопки
-        Rectangle {
-            id: argonButton
-            width: parent.width
-            height: 100
-            radius: 5
-            color: "lightgray"
-            anchors {
-                top: parent.top
-                horizontalCenter: parent.horizontalCenter
-                topMargin: 20
-            }
-            border {
-                color: "black"
-                width: 1
-            }
-            visible: !leftPanelExpanded
-
-            Text {
-                anchors.centerIn: parent
-                text: "A"
-                font.pixelSize: 12
-                color: "black"
-            }
-        }
-
-        // NeutralEl компонент
-        NeutralEl {
-            id: neutralEl
-            height: leftPanelExpanded ? 100 : 85
-            anchors {
-                left: parent.left
-                right: parent.right
-                bottom: parent.bottom
-                margins: leftPanelExpanded ? 10 : 5
-            }
-            z: 30  // Выше swipeArea
-
-            // Передаем параметры
-            neutralConnected: container.neutralConnected
-            showControls: leftPanelExpanded
-
-            // Обработчики сигналов
-            onNeutralTypeChanged: {
-                // Можно добавить обработку изменения типа
-            }
-
-            onNeutralSizeChanged: {
-                // Можно добавить обработку изменения размера
-            }
+        // Синхронизируем состояние панели с контейнером
+        onPanelExpandedChanged: {
+            leftPanelExpanded = panelExpanded
         }
     }
 
@@ -201,13 +124,17 @@ Window {
             var rightPanelLeftEdge = rightPanelExpanded ? (container.width - rightPanel.expandedWidth) : (container.width - 85)
             var leftPanelRightEdge = leftPanelExpanded ? (container.width / 2) : 85
 
+            console.log("SwipeArea pressed at x:", mouse.x, "leftEdge:", leftPanelRightEdge, "rightEdge:", rightPanelLeftEdge)
+
             // Если панели открыты и клик вне их области - обрабатываем
             if (leftPanelExpanded && mouse.x > leftPanelRightEdge) {
+                console.log("Outside left panel - accepting")
                 mouse.accepted = true
                 return
             }
             
             if (rightPanelExpanded && mouse.x < rightPanelLeftEdge) {
+                console.log("Outside right panel - accepting")
                 mouse.accepted = true
                 return
             }
@@ -217,16 +144,19 @@ Window {
                (mouse.x > container.width - 100) ||
                (leftPanelExpanded && mouse.x <= leftPanelRightEdge) ||
                (rightPanelExpanded && mouse.x >= rightPanelLeftEdge)) {
+                console.log("Swipe zone detected - accepting")
                 isSwipeGesture = true
                 mouse.accepted = true
             } else {
                 // Центральная область (панели закрыты) - пропускаем событие к сокетам
+                console.log("Center area - passing to sockets")
                 mouse.accepted = false
             }
         }
 
         onReleased: {
             if (!isSwipeGesture) {
+                console.log("Not a swipe gesture, skipping")
                 return
             }
 
@@ -234,20 +164,26 @@ Window {
             var threshold = 50
             var swipeThreshold = Math.abs(deltaX)
 
+            console.log("Swipe released: deltaX=", deltaX, "threshold=", threshold)
+
             if (swipeThreshold > threshold) {
                 // Закрытие панелей имеет приоритет
                 if (leftPanelExpanded && deltaX < -threshold) {
+                    console.log("Closing left panel")
                     leftPanelExpanded = false
                     mouse.accepted = true
                 } else if (rightPanelExpanded && deltaX > threshold) {
+                    console.log("Closing right panel")
                     rightPanelExpanded = false
                     mouse.accepted = true
                 }
                 // Открытие панелей
                 else if (!leftPanelExpanded && !rightPanelExpanded && startX < 100 && deltaX > threshold) {
+                    console.log("Opening left panel")
                     leftPanelExpanded = true
                     mouse.accepted = true
                 } else if (!leftPanelExpanded && !rightPanelExpanded && startX > container.width - 100 && deltaX < -threshold) {
+                    console.log("Opening right panel")
                     rightPanelExpanded = true
                     mouse.accepted = true
                 }

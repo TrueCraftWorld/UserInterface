@@ -106,7 +106,19 @@ void HalfSocket::setModes(const QMap<int, SurgModePtr> &newModes, const QStringL
     for (const auto& item : newModes) {
         toSort.append(item->modeName());
     }
+    
+    // Отладка: проверяем, что приходит
+    qDebug() << "=== HalfSocket::setModes ===";
+    qDebug() << "IsCoag:" << m_isCoag;
+    qDebug() << "Incoming modes count:" << newModes.size();
+    qDebug() << "Incoming mode names:" << toSort;
+    qDebug() << "Order reference:" << order;
+    
     m_modeNames = sortByExample(toSort, order);
+    
+    qDebug() << "After sorting:" << m_modeNames;
+    qDebug() << "Final modes count:" << m_modeNames.size();
+    
     m_modes = newModes;
     setModeIndex(0);
 }

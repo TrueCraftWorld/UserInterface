@@ -10,6 +10,8 @@
 #include <QQmlEngine>
 #include <QString>
 #include <QTimer>
+#include <QDebug>
+#include <QVector>
 
 namespace {
 
@@ -90,8 +92,13 @@ void makeModes(QMap<int, SurgModePtr>& container,
                const std::map<int, std::map<int, InstrInfo>>& instMap,
                const QVariantList& progItem,
                int socketNum,
-               bool isCoag ) {
+               bool isCoag,
+               const std::vector<int>& instrFilter = std::vector<int>()) {
     int start = isCoag ? 6 : 3;
+
+    qDebug() << "=== makeModes ===";
+    qDebug() << "Socket:" << socketNum << "IsCoag:" << isCoag;
+    qDebug() << "Incoming modes count:" << modes.size();
 
     container.insert(1000, SurgModePtr::create(ESHF::modesNames.last(),
                                                                     false,
@@ -101,21 +108,37 @@ void makeModes(QMap<int, SurgModePtr>& container,
 
 
     for (const auto& item : modes) {
-        auto instrs = instMap.find(item.at(2).toInt());
-        if (instrs == instMap.end())
+        int modeId = item.at(2).toInt();
+        QString modeName = item.at(1).toString();
+        
+        auto instrs = instMap.find(modeId);
+        if (instrs == instMap.end()) {
+            qDebug() << "Skipping mode" << modeName << "(ID:" << modeId << ") - no instruments in instMap";
             continue;
+        }
+        
         std::map<int, InstrInfo> tmp = instrs->second;
-        filterMapByKey(tmp, parseCommaSeparatedNumbers(progItem.at(start + 6*socketNum).toString()));
+        qDebug() << "Mode" << modeName << "has" << tmp.size() << "instruments before filter";
+        
+        // Используем переданный фильтр, если он не пуст, иначе берём из progItem
+        if (!instrFilter.empty()) {
+            filterMapByKey(tmp, instrFilter);
+        } else {
+            filterMapByKey(tmp, parseCommaSeparatedNumbers(progItem.at(start + 6*socketNum).toString()));
+        }
+        
+        qDebug() << "Mode" << modeName << "has" << tmp.size() << "instruments after filter";
 
-        SurgModePtr ptr = SurgModePtr::create(item.at(1).toString(),
+        SurgModePtr ptr = SurgModePtr::create(modeName,
                                               isCoag,
                                               item.at(0).toInt(),
                                               1,
-                                              item.at(2).toInt(),
+                                              modeId,
                                               tmp);
-        container.insert(item.at(2).toInt(),
-                        ptr);
+        container.insert(modeId, ptr);
     }
+    
+    qDebug() << "Final container size:" << container.size();
 }
 
 bool hasNonZeroDigit(int number, int digitPosition) {
@@ -143,6 +166,10 @@ bool hasNonZeroDigit(int number, int digitPosition) {
 }
 
 void filterModeMap(QMap<int, SurgModePtr>& container, const std::vector<int>& allow) {
+    qDebug() << "=== filterModeMap ===";
+    qDebug() << "Before filter - modes count:" << container.size();
+    qDebug() << "Allowed mode IDs:" << QVector<int>(allow.begin(), allow.end());
+    
     auto iter = container.begin();
     while (iter != container.end()) {
         bool contains = iter.key() == 1000;
@@ -155,9 +182,12 @@ void filterModeMap(QMap<int, SurgModePtr>& container, const std::vector<int>& al
         if (contains) {
             ++iter;
         } else {
+            qDebug() << "Filtering out mode:" << iter.value()->modeName() << "ID:" << iter.key();
             iter = container.erase(iter);
         }
     }
+    
+    qDebug() << "After filter - modes count:" << container.size();
 }
 
 }
@@ -235,7 +265,8 @@ void ControlCenter::initSockets()
             m_dbReader = new DataBaseReader("/home/kikorik/FOTEK/eshfDb.db");
 //        m_dbReader = new DataBaseReader("/home/kikorik/FOTEK/someShadyDB.db");
         // programmLoadSocketInit(14);
-        programmLoadSocketInit(28);
+//        programmLoadSocketInit(28);
+        programmLoadSocketInit(0);
     } else {
         defaultSocketInit();
     }
@@ -431,29 +462,73 @@ void ControlCenter::programmLoadSocketInit(int progId)
                           "Mono2Coag_INSTR", "Mono2Coag_MODE", "Mono2Coag_POWER", /* 24 25 26*/
                           "Pedal_1", "Pedal_2", "OutEnabled_MASK"};/* 27 28 29*/
 
-    QList<QVariantList> progListVariant = m_dbReader->slotSendSelectQuery(QStringList{"Lists"},
-                                                                        fields,
-                                                                        queryCondition.arg(progId));
-    if (progListVariant.size() == 0)
-        return;
+    QList<QVariantList> progListVariant;
+    
+    // Если progId = 0, создаём фиктивную запись программы
+    if (progId == 0) {
+        // Создаём пустую запись с дефолтными значениями
+        QVariantList dummyProgItem;
+        dummyProgItem << 0 << 0 << 0;  // id, Num, Prog_ID
+        
+        // Добавляем пустые строки для всех полей инструментов/режимов/мощностей (24 поля)
+        for (int i = 0; i < 24; ++i) {
+            dummyProgItem << "";
+        }
+        
+        // Добавляем дефолтные значения для педалей и маски
+        dummyProgItem << 0 << 0 << 255;  // Pedal_1, Pedal_2, OutEnabled_MASK (все сокеты разрешены)
+        
+        progListVariant.append(dummyProgItem);
+        qDebug() << "progId = 0: Created dummy program item with" << dummyProgItem.size() << "fields";
+    } else {
+        progListVariant = m_dbReader->slotSendSelectQuery(QStringList{"Lists"},
+                                                          fields,
+                                                          queryCondition.arg(progId));
+        if (progListVariant.size() == 0)
+            return;
+    }
     //--------------------------------------------------------------
 
-    //Шаг2---------------------------------------------------------
-    QList<QVariantList> allowedModes = m_dbReader->slotSendSelectQuery(QStringList{"EnableModes"},
-                                                                      QStringList{"Mode_ID"},
-                                                                      QString("Prog_ID = %1").arg(progId));
     QList<int> allowedModesId;
-    for (const auto& item : allowedModes)
-        allowedModesId.append(item.at(0).toInt());
-
-    //Шаг3---------------------------------------------------------
-    QList<QVariantList> allowedInstr = m_dbReader->slotSendSelectQuery(QStringList{"EnableInstr"},
-                                                                       QStringList{"Instr_ID"},
-                                                                       QString("Prog_ID = %1").arg(progId));
     std::vector<int> allowedInstrId;
+    
+    // Если progId = 0, загружаем ВСЕ режимы и инструменты
+    if (progId == 0) {
+        // Получаем все режимы из БД
+        QList<QVariantList> allModes = m_dbReader->slotSendSelectQuery(
+            QStringList{"Modes"},
+            QStringList{"id"},
+            ""
+        );
+        for (const auto& item : allModes)
+            allowedModesId.append(item.at(0).toInt());
+        
+        // Получаем все инструменты из БД
+        QList<QVariantList> allInstr = m_dbReader->slotSendSelectQuery(
+            QStringList{"Instruments"},
+            QStringList{"id"},
+            ""
+        );
+        for (const auto& item : allInstr)
+            allowedInstrId.push_back(item.at(0).toInt());
+            
+        qDebug() << "progId = 0: Loading ALL modes (" << allowedModesId.size() << ") and instruments (" << allowedInstrId.size() << ")";
+    } else {
+        //Шаг2---------------------------------------------------------
+        QList<QVariantList> allowedModes = m_dbReader->slotSendSelectQuery(QStringList{"EnableModes"},
+                                                                          QStringList{"Mode_ID"},
+                                                                          QString("Prog_ID = %1").arg(progId));
+        for (const auto& item : allowedModes)
+            allowedModesId.append(item.at(0).toInt());
 
-    for (const auto& item : allowedInstr)
-        allowedInstrId.push_back(item.at(0).toInt());
+        //Шаг3---------------------------------------------------------
+        QList<QVariantList> allowedInstr = m_dbReader->slotSendSelectQuery(QStringList{"EnableInstr"},
+                                                                           QStringList{"Instr_ID"},
+                                                                           QString("Prog_ID = %1").arg(progId));
+
+        for (const auto& item : allowedInstr)
+            allowedInstrId.push_back(item.at(0).toInt());
+    }
 
     //Шаг4---------------------------------------------------------
     QString queryConditionModes = "BI_MONO = %1 AND CUT_COAG = %2 AND id IN (%3)";
@@ -497,23 +572,54 @@ void ControlCenter::programmLoadSocketInit(int progId)
                                         .arg(makeCommaSeparatedNumbers(allowedModesId)));
 
                 int start = isCoag ? 6 : 3;
-                std::vector<int> instIdLst = parseCommaSeparatedNumbers(progItem.at(start + 6*i).toString());
-                std::vector<int> modeIdLst = parseCommaSeparatedNumbers(progItem.at(start + 1 + 6*i).toString());
+                std::vector<int> instIdLst;
+                std::vector<int> modeIdLst;
+                
+                // Если progId = 0, НЕ фильтруем по progItem
+                if (progId == 0) {
+                    // Используем все инструменты и режимы
+                    instIdLst = allowedInstrId;
+                    for (const auto& mode : modesList) {
+                        modeIdLst.push_back(mode.at(2).toInt());
+                    }
+                } else {
+                    // Обычная логика - берём из progItem
+                    instIdLst = parseCommaSeparatedNumbers(progItem.at(start + 6*i).toString());
+                    modeIdLst = parseCommaSeparatedNumbers(progItem.at(start + 1 + 6*i).toString());
+                }
+                
                 makeModes(modes,
                           modesList,
                           instrumConstraints,
                           progItem,
                           i,
-                          isCoag);
-                filterModeMap(modes, modeIdLst);
+                          isCoag,
+                          instIdLst);  // Передаём фильтр инструментов
+                
+                // Фильтруем только если progId != 0
+                if (progId != 0) {
+                    filterModeMap(modes, modeIdLst);
+                }
 
                 isCoag ? socket->setCoagModes(modes, modeNamesList)
                        : socket->setCutModes(modes, modeNamesList);
 
-                int firstInstrId = instIdLst.size() == 0 ? 0 : instIdLst.at(0);
-                int firstModeId = modeIdLst.size() == 0 ? 1000 : modeIdLst.at(0);
-                int defaultPower = progItem.at(start + 2 + 6*i).toInt();
-                defaultPower = std::max(1, defaultPower);
+                int firstInstrId;
+                int firstModeId;
+                int defaultPower;
+                
+                // Если progId = 0, используем режим "НЕ ВЫБРАН" (1000)
+                if (progId == 0) {
+                    firstInstrId = 0;
+                    firstModeId = 1000;
+                    defaultPower = 1;
+                } else {
+                    // Обычная логика из progItem
+                    firstInstrId = instIdLst.size() == 0 ? 0 : instIdLst.at(0);
+                    firstModeId = modeIdLst.size() == 0 ? 1000 : modeIdLst.at(0);
+                    defaultPower = progItem.at(start + 2 + 6*i).toInt();
+                    defaultPower = std::max(1, defaultPower);
+                }
 
                 socket->setModeId(firstModeId, isCoag);
 

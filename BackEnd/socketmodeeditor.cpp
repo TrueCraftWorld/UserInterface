@@ -1,6 +1,7 @@
 #include "socketmodeeditor.h"
 
 #include <optional>
+#include <QDebug>
 
 SocketModeEditor::SocketModeEditor(SocketModel *model, QObject *parent)
     : QObject{parent},
@@ -15,6 +16,13 @@ void SocketModeEditor::initialize(int socket, int mode, bool isCoag)
     m_socketID = socket;
     m_modeNames = m_model->modeNames(socket, isCoag);
     m_modeNameIds = m_model->modeNamesIds(socket, isCoag);
+
+    // Отладка: проверяем, какие режимы загружены
+    qDebug() << "=== ModeEditor::initialize ===";
+    qDebug() << "Socket:" << socket << "Mode:" << mode << "IsCoag:" << isCoag;
+    qDebug() << "Available mode names:" << m_modeNames;
+    qDebug() << "Available mode IDs:" << m_modeNameIds;
+    qDebug() << "Total modes count:" << m_modeNames.size();
 
     m_originalParameters =  m_model->modeParam(socket, mode, isCoag);
     m_instrList =           m_model->instrumNames(socket, mode, isCoag);

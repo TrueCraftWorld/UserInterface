@@ -119,8 +119,8 @@ Canvas {
     Connections {
         target: modePowerRect
         function onModeIdChanged() {
-            modePowerRect.color = modePowerRect.colorFromId()
-            console.log(isCoag, modePowerRect.color, modePowerRect.modeId)
+            modePowerRect.requestPaint()
+            console.log("ModePowerRect: modeId changed to", modePowerRect.modeId, "color:", modePowerRect.colorFromId())
         }
     }
 

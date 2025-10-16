@@ -25,6 +25,9 @@ public:
         SocketPedal,
         CoagModeIndex,
         CoagModeId,
+        CoagModeNum,
+        CoagModeBrief,
+        CoagModeDescript,
         CoagModeName,
         CoagModePower,
         CoagModeMinPower,
@@ -35,6 +38,9 @@ public:
         CoagModeInstrID,
         CutModeIndex,
         CutModeId,
+        CutModeNum,
+        CutModeBrief,
+        CutModeDescript,
         CutModeName,
         CutModePower,
         CutModeMinPower,
@@ -98,6 +104,8 @@ public:
     void setSubProgIdx(int newIndex);
 
     int subProgCount() const;
+    
+    std::map<int, SockPtr>* itemsMap() const { return m_itemsMap; }
 
 private:
     std::map<int, SockPtr>* m_itemsMap = nullptr;

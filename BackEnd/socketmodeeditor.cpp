@@ -17,13 +17,6 @@ void SocketModeEditor::initialize(int socket, int mode, bool isCoag)
     m_modeNames = m_model->modeNames(socket, isCoag);
     m_modeNameIds = m_model->modeNamesIds(socket, isCoag);
 
-    // Отладка: проверяем, какие режимы загружены
-    qDebug() << "=== ModeEditor::initialize ===";
-    qDebug() << "Socket:" << socket << "Mode:" << mode << "IsCoag:" << isCoag;
-    qDebug() << "Available mode names:" << m_modeNames;
-    qDebug() << "Available mode IDs:" << m_modeNameIds;
-    qDebug() << "Total modes count:" << m_modeNames.size();
-
     m_originalParameters =  m_model->modeParam(socket, mode, isCoag);
     m_instrList =           m_model->instrumNames(socket, mode, isCoag);
     m_instrListIds =        m_model->instrumNamesIds(socket, mode, isCoag);
@@ -141,6 +134,51 @@ QStringList SocketModeEditor::instrList() const
 QStringList SocketModeEditor::modeNamesIds() const
 {
     return m_modeNameIds;
+}
+
+QStringList SocketModeEditor::modeNamesNums() const
+{
+    // Получаем Num для каждого режима по его индексу
+    QStringList nums;
+    for (int i = 0; i < m_modeNames.size(); ++i) {
+        CSurgModePtr mode = m_model->itemsMap()->at(m_socketID)->getMode(i, m_isCoag);
+        if (!mode.isNull()) {
+            nums.append(QString::number(mode->num()));
+        } else {
+            nums.append("0");
+        }
+    }
+    return nums;
+}
+
+QStringList SocketModeEditor::modeNamesBriefs() const
+{
+    // Получаем Brief для каждого режима по его индексу
+    QStringList briefs;
+    for (int i = 0; i < m_modeNames.size(); ++i) {
+        CSurgModePtr mode = m_model->itemsMap()->at(m_socketID)->getMode(i, m_isCoag);
+        if (!mode.isNull()) {
+            briefs.append(mode->brief());
+        } else {
+            briefs.append("");
+        }
+    }
+    return briefs;
+}
+
+QStringList SocketModeEditor::modeNamesDescripts() const
+{
+    // Получаем Descript для каждого режима по его индексу
+    QStringList descripts;
+    for (int i = 0; i < m_modeNames.size(); ++i) {
+        CSurgModePtr mode = m_model->itemsMap()->at(m_socketID)->getMode(i, m_isCoag);
+        if (!mode.isNull()) {
+            descripts.append(mode->descript());
+        } else {
+            descripts.append("");
+        }
+    }
+    return descripts;
 }
 
 QStringList SocketModeEditor::instrListIds() const

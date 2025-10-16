@@ -1,6 +1,11 @@
 #include "halfsocket.h"
 
+#include <algorithm>
+#include <utility>
+#include <vector>
+
 #include <QDebug>
+#include <QVector>
 
 namespace {
 QStringList sortByExample(const QStringList& toSort, const QStringList& reference)
@@ -102,24 +107,26 @@ bool HalfSocket::setModePower(int newPower)
 
 void HalfSocket::setModes(const QMap<int, SurgModePtr> &newModes, const QStringList &order)
 {
-    QStringList toSort;
-    for (const auto& item : newModes) {
-        toSort.append(item->modeName());
+    m_modes = newModes;
+    
+    // Создаём вектор пар (Num, SurgModePtr) для сортировки
+    std::vector<std::pair<int, SurgModePtr>> modesVector;
+    for (auto it = m_modes.begin(); it != m_modes.end(); ++it) {
+        modesVector.push_back(std::make_pair(it.value()->num(), it.value()));
     }
     
-    // Отладка: проверяем, что приходит
-    qDebug() << "=== HalfSocket::setModes ===";
-    qDebug() << "IsCoag:" << m_isCoag;
-    qDebug() << "Incoming modes count:" << newModes.size();
-    qDebug() << "Incoming mode names:" << toSort;
-    qDebug() << "Order reference:" << order;
+    // Сортируем по Num
+    std::sort(modesVector.begin(), modesVector.end(), 
+        [](const std::pair<int, SurgModePtr>& a, const std::pair<int, SurgModePtr>& b) {
+            return a.first < b.first;
+        });
     
-    m_modeNames = sortByExample(toSort, order);
+    // Заполняем m_modeNames в отсортированном порядке
+    m_modeNames.clear();
+    for (const auto& pair : modesVector) {
+        m_modeNames.append(pair.second->modeName());
+    }
     
-    qDebug() << "After sorting:" << m_modeNames;
-    qDebug() << "Final modes count:" << m_modeNames.size();
-    
-    m_modes = newModes;
     setModeIndex(0);
 }
 

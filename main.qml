@@ -124,17 +124,13 @@ Window {
             var rightPanelLeftEdge = rightPanelExpanded ? (container.width - rightPanel.expandedWidth) : (container.width - 85)
             var leftPanelRightEdge = leftPanelExpanded ? (container.width / 2) : 85
 
-            console.log("SwipeArea pressed at x:", mouse.x, "leftEdge:", leftPanelRightEdge, "rightEdge:", rightPanelLeftEdge)
-
             // Если панели открыты и клик вне их области - обрабатываем
             if (leftPanelExpanded && mouse.x > leftPanelRightEdge) {
-                console.log("Outside left panel - accepting")
                 mouse.accepted = true
                 return
             }
             
             if (rightPanelExpanded && mouse.x < rightPanelLeftEdge) {
-                console.log("Outside right panel - accepting")
                 mouse.accepted = true
                 return
             }
@@ -144,19 +140,16 @@ Window {
                (mouse.x > container.width - 100) ||
                (leftPanelExpanded && mouse.x <= leftPanelRightEdge) ||
                (rightPanelExpanded && mouse.x >= rightPanelLeftEdge)) {
-                console.log("Swipe zone detected - accepting")
                 isSwipeGesture = true
                 mouse.accepted = true
             } else {
                 // Центральная область (панели закрыты) - пропускаем событие к сокетам
-                console.log("Center area - passing to sockets")
                 mouse.accepted = false
             }
         }
 
         onReleased: {
             if (!isSwipeGesture) {
-                console.log("Not a swipe gesture, skipping")
                 return
             }
 
@@ -164,26 +157,20 @@ Window {
             var threshold = 50
             var swipeThreshold = Math.abs(deltaX)
 
-            console.log("Swipe released: deltaX=", deltaX, "threshold=", threshold)
-
             if (swipeThreshold > threshold) {
                 // Закрытие панелей имеет приоритет
                 if (leftPanelExpanded && deltaX < -threshold) {
-                    console.log("Closing left panel")
                     leftPanelExpanded = false
                     mouse.accepted = true
                 } else if (rightPanelExpanded && deltaX > threshold) {
-                    console.log("Closing right panel")
                     rightPanelExpanded = false
                     mouse.accepted = true
                 }
                 // Открытие панелей
                 else if (!leftPanelExpanded && !rightPanelExpanded && startX < 100 && deltaX > threshold) {
-                    console.log("Opening left panel")
                     leftPanelExpanded = true
                     mouse.accepted = true
                 } else if (!leftPanelExpanded && !rightPanelExpanded && startX > container.width - 100 && deltaX < -threshold) {
-                    console.log("Opening right panel")
                     rightPanelExpanded = true
                     mouse.accepted = true
                 }

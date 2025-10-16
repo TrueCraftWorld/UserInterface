@@ -120,7 +120,6 @@ Canvas {
         target: modePowerRect
         function onModeIdChanged() {
             modePowerRect.requestPaint()
-            console.log("ModePowerRect: modeId changed to", modePowerRect.modeId, "color:", modePowerRect.colorFromId())
         }
     }
 

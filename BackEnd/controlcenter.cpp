@@ -2,6 +2,7 @@
 #include "socket.h"
 #include "proghandle.h"
 
+#include <algorithm>
 #include <cmath>
 #include <map>
 #include <vector>
@@ -96,29 +97,30 @@ void makeModes(QMap<int, SurgModePtr>& container,
                const std::vector<int>& instrFilter = std::vector<int>()) {
     int start = isCoag ? 6 : 3;
 
-    qDebug() << "=== makeModes ===";
-    qDebug() << "Socket:" << socketNum << "IsCoag:" << isCoag;
-    qDebug() << "Incoming modes count:" << modes.size();
-
     container.insert(1000, SurgModePtr::create(ESHF::modesNames.last(),
                                                                     false,
                                                                     1,
                                                                     1,
-                                                                    1000));
+                                                                    1000,
+                                                                    std::map<int, InstrInfo>(),
+                                                                    1000,
+                                                                    "",
+                                                                    ""));  // Num = 1000, Brief = "", Descript = ""
 
 
     for (const auto& item : modes) {
         int modeId = item.at(2).toInt();
         QString modeName = item.at(1).toString();
+        int modeNum = item.size() > 3 ? item.at(3).toInt() : 0;  // Num для изображения
+        QString modeBrief = item.size() > 4 ? item.at(4).toString() : "";  // Brief_RU для краткого описания
+        QString modeDescript = item.size() > 5 ? item.at(5).toString() : "";  // Descript_RU для полного описания
         
         auto instrs = instMap.find(modeId);
         if (instrs == instMap.end()) {
-            qDebug() << "Skipping mode" << modeName << "(ID:" << modeId << ") - no instruments in instMap";
             continue;
         }
         
         std::map<int, InstrInfo> tmp = instrs->second;
-        qDebug() << "Mode" << modeName << "has" << tmp.size() << "instruments before filter";
         
         // Используем переданный фильтр, если он не пуст, иначе берём из progItem
         if (!instrFilter.empty()) {
@@ -126,19 +128,18 @@ void makeModes(QMap<int, SurgModePtr>& container,
         } else {
             filterMapByKey(tmp, parseCommaSeparatedNumbers(progItem.at(start + 6*socketNum).toString()));
         }
-        
-        qDebug() << "Mode" << modeName << "has" << tmp.size() << "instruments after filter";
 
         SurgModePtr ptr = SurgModePtr::create(modeName,
                                               isCoag,
                                               item.at(0).toInt(),
                                               1,
                                               modeId,
-                                              tmp);
+                                              tmp,
+                                              modeNum,
+                                              modeBrief,
+                                              modeDescript);  // Передаём Brief и Descript
         container.insert(modeId, ptr);
     }
-    
-    qDebug() << "Final container size:" << container.size();
 }
 
 bool hasNonZeroDigit(int number, int digitPosition) {
@@ -166,10 +167,6 @@ bool hasNonZeroDigit(int number, int digitPosition) {
 }
 
 void filterModeMap(QMap<int, SurgModePtr>& container, const std::vector<int>& allow) {
-    qDebug() << "=== filterModeMap ===";
-    qDebug() << "Before filter - modes count:" << container.size();
-    qDebug() << "Allowed mode IDs:" << QVector<int>(allow.begin(), allow.end());
-    
     auto iter = container.begin();
     while (iter != container.end()) {
         bool contains = iter.key() == 1000;
@@ -182,12 +179,9 @@ void filterModeMap(QMap<int, SurgModePtr>& container, const std::vector<int>& al
         if (contains) {
             ++iter;
         } else {
-            qDebug() << "Filtering out mode:" << iter.value()->modeName() << "ID:" << iter.key();
             iter = container.erase(iter);
         }
     }
-    
-    qDebug() << "After filter - modes count:" << container.size();
 }
 
 }
@@ -565,11 +559,17 @@ void ControlCenter::programmLoadSocketInit(int progId)
                 bool isCoag = (halfSocket == 0);
                 QMap<int, SurgModePtr> modes;
                 QList<QVariantList> modesList = m_dbReader->slotSendSelectQuery(QStringList{"Modes"},
-                            QStringList{"MaxPower","Name_RU", "id"},
+                            QStringList{"MaxPower","Name_RU", "id", "Num", "Brief_RU", "Descript_RU"},
                             queryConditionModes
                                         .arg(socket->socketType() <= SOCKET::BIPOLAR_2 ? 0 : 1)
                                         .arg(halfSocket)
                                         .arg(makeCommaSeparatedNumbers(allowedModesId)));
+                
+                // Сортируем по Num (index 3)
+                std::sort(modesList.begin(), modesList.end(), 
+                    [](const QVariantList& a, const QVariantList& b) {
+                        return a.at(3).toInt() < b.at(3).toInt();
+                    });
 
                 int start = isCoag ? 6 : 3;
                 std::vector<int> instIdLst;

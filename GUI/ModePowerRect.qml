@@ -245,7 +245,7 @@ Canvas {
         }
         MouseArea {
             anchors.fill: parent
-            onClicked: modePowerRect.newPower(powerSlider.value - 1);
+            onClicked: modePowerRect.newPower(changePower("down"));
         }
     }
 

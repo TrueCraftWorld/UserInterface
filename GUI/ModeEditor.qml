@@ -83,64 +83,472 @@ Popup {
         itemBriefArr = modeEditor.modeNamesBriefs()
         itemDescriptArr = modeEditor.modeNamesDescripts()
         
-        console.log("Mode briefs loaded:", itemBriefArr.length)
-        console.log("Mode descripts loaded:", itemDescriptArr.length)
-        console.log("Current mode index:", modeIndex)
-        console.log("Current brief:", itemBriefArr[modeIndex])
-        console.log("Current descript:", itemDescriptArr[modeIndex])
+//        console.log("Mode briefs loaded:", itemBriefArr.length)
+//        console.log("Mode descripts loaded:", itemDescriptArr.length)
+//        console.log("Current mode index:", modeIndex)
+//        console.log("Current brief:", itemBriefArr[modeIndex])
+//        console.log("Current descript:", itemDescriptArr[modeIndex])
         
         updateModel()
         modeEditor.currentModeIndex = modeIndex
+        modeListView.selectedIndex = modeEditor.currentModeIndex
     }
 
     Rectangle {
-        id: header
-        anchors.top: parent.top
-        anchors.left: parent.left
-        anchors.right: parent.right
-        height: 100
-        color: "black"
-
-        Label {
-            id: titleLable
-            text: !isCoag ? (qsTr("Выбор режима РЕЗАНИЯ для выхода %1")
-                    .arg(modeEditor.socketName)) :
-                           (qsTr("Выбор режима КОАГУЛЯЦИИ для выхода %1")
-                    .arg(modeEditor.socketName))
-            horizontalAlignment: Qt.AlignHCenter
-            verticalAlignment: Qt.AlignVCenter
-            wrapMode: Text.WordWrap
-            font.pixelSize: 28
-            font.bold: true
-            anchors.horizontalCenter: parent.horizontalCenter
-            anchors.top: parent.top
-            height: parent.height / 2
-            width: parent.width * 0.8
-            color: isCoag ? "white" : "black"
-            background:
-                Rectangle {
-                    id: titleRect
-                    color: isCoag ? "blue" : "yellow"
-                    anchors.fill: parent
+        id: back
+        anchors.fill: parent
+        color: "#0a0a0a"
+        
+        // Слой 1: Базовый градиент (зависит от режима)
+        Rectangle {
+            id: baseLayer
+            anchors.fill: parent
+            
+            gradient: Gradient {
+                orientation: Gradient.Vertical
+                GradientStop { 
+                    position: 0.0
+                    color: isCoag ? "#000066" : "#443300"
                 }
+                GradientStop { 
+                    position: 1.0
+                    color: isCoag ? "#0000aa" : "#665500"
+                }
+            }
+        }
+        
+        // Слой 2: Пульсирующий цветовой слой
+        Rectangle {
+            id: pulseLayer
+            anchors.fill: parent
+            opacity: 0.5
+            
+            property real pulsePhase: 0.0
+            
+            // Вычисляем цвета на основе pulsePhase и isCoag
+            property color topColor: {
+                var intensity = 0.4 + pulsePhase * 0.3  // 0.4 - 0.7
+                if (isCoag) {
+                    return Qt.rgba(0, intensity * 0.3, intensity, 1)  // Синий
+                } else {
+                    return Qt.rgba(intensity * 0.6, intensity * 0.5, 0, 1)  // Приглушённый жёлто-коричневый
+                }
+            }
+            
+            property color bottomColor: {
+                var intensity = 0.5 + pulsePhase * 0.4  // 0.5 - 0.9
+                if (isCoag) {
+                    return Qt.rgba(0, intensity * 0.4, intensity, 1)  // Светло-синий
+                } else {
+                    return Qt.rgba(intensity * 0.7, intensity * 0.6, 0, 1)  // Приглушённый жёлтый
+                }
+            }
+            
+            gradient: Gradient {
+                orientation: Gradient.Vertical
+                GradientStop { position: 0.0; color: pulseLayer.topColor }
+                GradientStop { position: 0.5; color: "#000000" }
+                GradientStop { position: 1.0; color: pulseLayer.bottomColor }
+            }
+            
+            // Анимация фазы пульсации
+            SequentialAnimation on pulsePhase {
+                running: true
+                loops: Animation.Infinite
+                
+                NumberAnimation {
+                    to: 1.0
+                    duration: 4000
+                    easing.type: Easing.InOutQuad
+                }
+                NumberAnimation {
+                    to: 0.0
+                    duration: 4000
+                    easing.type: Easing.InOutQuad
+                }
+            }
+        }
+        
+        // Слой 3: Диагональный луч света
+        Canvas {
+            id: diagonalBeam
+            anchors.fill: parent
+            opacity: 0.2
+            
+            property real beamPosition: -0.5
+            property bool useCoagColors: isCoag
+            
+            onPaint: {
+                var ctx = getContext("2d")
+                ctx.clearRect(0, 0, width, height)
+                
+                // Создаём диагональный градиент
+                var x1 = width * beamPosition - 150
+                var y1 = -150
+                var x2 = width * beamPosition + height
+                var y2 = height
+                
+                var gradient = ctx.createLinearGradient(x1, y1, x2, y2)
+                
+                // Прозрачный → яркий → прозрачный
+                gradient.addColorStop(0, "rgba(0, 0, 0, 0)")
+                gradient.addColorStop(0.4, "rgba(0, 0, 0, 0)")
+                
+                // Явно задаём цвет луча для каждого режима
+                if (useCoagColors) {
+                    gradient.addColorStop(0.5, "rgba(80, 120, 255, 0.6)")  // Синий луч
+                } else {
+                    gradient.addColorStop(0.5, "rgba(180, 150, 60, 0.5)")  // Приглушённый жёлтый луч
+                }
+                
+                gradient.addColorStop(0.6, "rgba(0, 0, 0, 0)")
+                gradient.addColorStop(1, "rgba(0, 0, 0, 0)")
+                
+                ctx.fillStyle = gradient
+                ctx.fillRect(0, 0, width, height)
+            }
+            
+            SequentialAnimation on beamPosition {
+                running: true
+                loops: Animation.Infinite
+                
+                NumberAnimation {
+                    to: 1.5
+                    duration: 8000
+                    easing.type: Easing.InOutCubic
+                }
+                NumberAnimation {
+                    to: -1.0
+                    duration: 0
+                }
+            }
+            
+            onBeamPositionChanged: {
+                requestPaint()
+            }
+            
+            onUseCoagColorsChanged: {
+                requestPaint()
+            }
+        }
+        
+        // Слой 4: Мягкое пульсирующее сияние в центре
+        Rectangle {
+            id: centerGlow
+            anchors.fill: parent
+            opacity: 0.25
+            
+            property real glowIntensity: 0.0
+            
+            gradient: Gradient {
+                orientation: Gradient.Vertical
+                GradientStop { position: 0.0; color: "transparent" }
+                GradientStop { 
+                    position: 0.5
+                    color: Qt.rgba(
+                        isCoag ? 0.1 : 0.7,
+                        isCoag ? 0.4 : 0.6,
+                        isCoag ? 1.0 : 0.1,
+                        centerGlow.glowIntensity
+                    )
+                }
+                GradientStop { position: 1.0; color: "transparent" }
+            }
+            
+            SequentialAnimation on glowIntensity {
+                running: true
+                loops: Animation.Infinite
+                
+                NumberAnimation {
+                    to: 0.5
+                    duration: 3500
+                    easing.type: Easing.InOutQuad
+                }
+                NumberAnimation {
+                    to: 0.1
+                    duration: 3500
+                    easing.type: Easing.InOutQuad
+                }
+            }
+        }
+
+        Rectangle {
+            id: header
+            anchors.top: parent.top
+            anchors.left: parent.left
+            anchors.right: parent.right
+            height: 100
+            color: "transparent"
+
+            Label {
+                id: titleLable
+                text: !isCoag ? (qsTr("Выбор режима РЕЗАНИЯ для выхода %1")
+                        .arg(modeEditor.socketName)) :
+                               (qsTr("Выбор режима КОАГУЛЯЦИИ для выхода %1")
+                        .arg(modeEditor.socketName))
+                horizontalAlignment: Qt.AlignHCenter
+                verticalAlignment: Qt.AlignVCenter
+                wrapMode: Text.WordWrap
+                font.pixelSize: 28
+                font.bold: true
+                anchors.horizontalCenter: parent.horizontalCenter
+                anchors.top: parent.top
+                height: parent.height / 2
+                width: parent.width * 0.8
+                color: isCoag ? "white" : "black"
+                background:
+                    Rectangle {
+                        id: titleRect
+                        color: isCoag ? "blue" : "yellow"
+                        anchors.fill: parent
+                    }
+            }
+
+            Button {
+                id: cancelButton
+                anchors {
+                    top: parent.top
+                    bottom: parent.bottom
+                    right: parent.right
+                    left: titleLable.right
+                }
+                background: Rectangle {
+                    color: "transparent"
+                    radius: 8
+                }
+
+                Text {
+                    id: cancelText
+                    text: qsTr("X")
+                    font.pixelSize: 34
+                    font.bold: true
+                    anchors.fill: parent
+                    horizontalAlignment: Qt.AlignHCenter
+                    verticalAlignment: Qt.AlignVCenter
+                    color: "white"
+                }
+                onClicked: {
+                    modeEditor.rollBack()
+                    changed = false
+                    root.close()
+                }
+            }
+        }
+
+        Rectangle {
+            id: modeList
+            color: "transparent"
+            anchors {
+                left: parent.left
+                bottom: parent.bottom
+                top: header.bottom
+            }
+            width: .3 * parent.width
+            ItemList {
+                id: modeListView
+                curIndex: modeEditor.currentModeIndex
+                color: "transparent"
+                anchors {
+                    top: parent.top
+                    bottom: footer.top
+                    left: parent.left
+                    right: parent.right
+                }
+                // innerModel: combinedModel
+                imageSourceTemplate: "image://instrums/" + imagePrefix + "%1"
+            }
+            Rectangle {
+                id: footer
+                height: 100
+                color: "transparent"
+                anchors {
+                    bottom: parent.bottom
+                    left: parent.left
+                    right: parent.right
+                }
+                Button {
+                    id: downButton
+                    width: modeList.width * .4
+                    anchors {
+                        top: parent.top
+                        bottom: parent.bottom
+                        left: parent.left
+                    }
+                    background: Rectangle {
+                        color: "transparent"
+                        radius: 8
+                    }
+                    Text {
+                        id: downText
+                        text: qsTr("▼")
+                        font.pixelSize: 34
+                        font.bold: true
+                        anchors.fill: parent
+                        horizontalAlignment: Qt.AlignHCenter
+                        verticalAlignment: Qt.AlignVCenter
+                        color: "white"
+                    }
+                    onClicked: {
+                        modeListView.scrollDown()
+                    }
+                }
+                Button {
+                    id: upButton
+                    width: downButton.width
+                    anchors {
+                        top: parent.top
+                        bottom: parent.bottom
+                        left: downButton.right
+                        leftMargin: 20
+                    }
+                    background: Rectangle {
+                        color: "transparent"
+                        radius: 8
+                    }
+                    Text {
+                        id: upText
+                        text: qsTr("▲")
+                        font.pixelSize: 34
+                        font.bold: true
+                        anchors.fill: parent
+                        horizontalAlignment: Qt.AlignHCenter
+                        verticalAlignment: Qt.AlignVCenter
+                        color: "white"
+                    }
+                    onClicked: {
+                        modeListView.scrollUp()
+                    }
+                }
+            }
+        }
+
+        Rectangle {
+            id: instrumPreview
+            anchors {
+                top: header.bottom
+                bottom: declineButton.top
+                right: parent.right
+                left: modeList.right
+            }
+            color: "transparent"
+
+            // Краткое описание
+            Rectangle {
+                id: briefRect
+                height: previewImage.height
+                anchors {
+                    top: parent.top
+                    left: parent.left
+                    right: previewImage.left
+                    margins: 10
+                }
+
+                color: "transparent"
+                border.color: "cyan"
+                border.width: 1
+                radius: 5
+
+                ScrollView {
+                    anchors.fill: parent
+                    anchors.margins: 10
+                    clip: true
+
+                    Label {
+                        id: briefText
+                        text: currentModeBrief
+                        color: "cyan"
+                        font.pixelSize: 21
+                        font.bold: true
+                        wrapMode: Text.WordWrap
+                        width: briefRect.width - 10
+
+                        Component.onCompleted: {
+//                            console.log("briefText initialized, text:", text)
+                        }
+
+                        onTextChanged: {
+//                            console.log("briefText changed to:", text)
+                        }
+                    }
+                }
+            }
+
+            Image {
+                id: previewImage
+                width: 150
+                height: width
+                fillMode: Image.PreserveAspectFit
+                asynchronous: true
+                source: ("image://instrums/" + imagePrefix + "%1").arg(currentModeNum)
+                // source: "file"
+                anchors {
+                    right: parent.right
+                    top: parent.top
+                    margins: 10
+                }
+            }
+            // Полное описание
+            Rectangle {
+                id: descriptRect
+                width: parent.width
+                anchors {
+                    left: parent.left
+                    top: previewImage.bottom
+                    bottom: parent.bottom
+                    margins: 10
+                }
+
+                color: "transparent"
+//                border.color: "white"
+//                border.width: 1
+//                radius: 5
+
+                ScrollView {
+                    anchors.fill: parent
+                    anchors.margins: 10
+                    clip: true
+
+                    Label {
+                        id: descriptText
+                        text: currentModeDescript
+                        color: "white"
+                        font.pixelSize: 24
+                        wrapMode: Text.WordWrap
+                        width: descriptRect.width - 10
+
+                        Component.onCompleted: {
+//                            console.log("descriptText initialized, text:", text)
+                        }
+
+                        onTextChanged: {
+//                            console.log("descriptText changed to:", text)
+                        }
+                    }
+                }
+            }
         }
 
         Button {
-            id: cancelButton
+            id: declineButton
+    //        visible: modeEditor.hasChanges
+            width: parent.width * .2
+            height: parent.height * .15
             anchors {
-                top: parent.top
                 bottom: parent.bottom
-                right: parent.right
-                left: titleLable.right
+                bottomMargin: 10
+                left: modeList.right
+                leftMargin: 20
             }
             background: Rectangle {
-                color: "black"
+                color: "transparent"
+                border.width: 3
+                border.color: "white"
                 radius: 8
             }
 
             Text {
-                id: cancelText
-                text: qsTr("X")
+                id: declineText
+                text: qsTr("ОТМЕНА")
                 font.pixelSize: 34
                 font.bold: true
                 anchors.fill: parent
@@ -154,271 +562,40 @@ Popup {
                 root.close()
             }
         }
+
         Button {
-            id: upButton
+            id: acceptButton
+            width: parent.width * .2
+            height: parent.height * .15
+    //        enabled: modeEditor.hasChanges
+            visible: changed
             anchors {
-                top: parent.top
                 bottom: parent.bottom
-                left: parent.left
-                right: titleLable.left
+                bottomMargin: 10
+                left: declineButton.right
+                leftMargin: 80
             }
             background: Rectangle {
-                color: "black"
+                color: "transparent"
+                border.width: 3
+                border.color: "lightgreen"
                 radius: 8
             }
             Text {
-                id: upText
-                text: qsTr("▲")
+                id: acceptText
+                text: qsTr("ПРИНЯТЬ")
                 font.pixelSize: 34
                 font.bold: true
+                color: "lightgreen"
                 anchors.fill: parent
                 horizontalAlignment: Qt.AlignHCenter
                 verticalAlignment: Qt.AlignVCenter
-                color: "white"
             }
-        }
-    }
-
-    Rectangle {
-        id: modeList
-        color: "black"
-        anchors {
-            left: parent.left
-            bottom: parent.bottom
-            top: header.bottom
-        }
-        width: .3 * parent.width
-        ItemList {
-            id: modeListView
-            curIndex: modeEditor.currentModeIndex
-            anchors {
-                top: parent.top
-                bottom: footer.top
-                left: parent.left
-                right: parent.right
+            onClicked: {
+                modeEditor.commitChanges()
+                changed = false
+                root.close();
             }
-            // innerModel: combinedModel
-            imageSourceTemplate: "image://instrums/" + imagePrefix + "%1"
-        }
-        Rectangle {
-            id: footer
-            height: 100
-            color: "black"
-            anchors {
-                bottom: parent.bottom
-                left: parent.left
-                right: parent.right
-            }
-            Button {
-                id: downButton
-                width: upButton.width
-                anchors {
-                    top: parent.top
-                    bottom: parent.bottom
-                    left: parent.left
-                }
-                background: Rectangle {
-                    color: "black"
-                    radius: 8
-                }
-                Text {
-                    id: downText
-                    text: qsTr("▼")
-                    font.pixelSize: 34
-                    font.bold: true
-                    anchors.fill: parent
-                    horizontalAlignment: Qt.AlignHCenter
-                    verticalAlignment: Qt.AlignVCenter
-                    color: "white"
-                }
-            }
-        }
-    }
-
-    Rectangle {
-        id: instrumPreview
-        anchors {
-            top: header.bottom
-            bottom: parent.bottom
-            right: parent.right
-            left: modeList.right
-        }
-        color: "black"
-        
-        // Описание режима
-        Rectangle {
-            id: descriptContainer
-            anchors {
-                left: parent.left
-                right: previewImage.left
-                top: parent.top
-                bottom: previewImage.bottom
-                margins: 10
-            }
-            color: "transparent"
-            border.color: "white"
-            border.width: 2
-            radius: 8
-            
-            Column {
-                anchors.fill: parent
-                anchors.margins: 10
-                spacing: 10
-                
-                // Краткое описание
-                Rectangle {
-                    id: briefRect
-                    width: parent.width
-                    height: parent.height * 0.3
-                    color: "transparent"
-                    border.color: "cyan"
-                    border.width: 1
-                    radius: 5
-                    
-                    ScrollView {
-                        anchors.fill: parent
-                        anchors.margins: 5
-                        clip: true
-                        
-                        Label {
-                            id: briefText
-                            text: currentModeBrief
-                            color: "cyan"
-                            font.pixelSize: 16
-                            font.bold: true
-                            wrapMode: Text.WordWrap
-                            width: briefRect.width - 10
-                            
-                            Component.onCompleted: {
-                                console.log("briefText initialized, text:", text)
-                            }
-                            
-                            onTextChanged: {
-                                console.log("briefText changed to:", text)
-                            }
-                        }
-                    }
-                }
-                
-                // Полное описание
-                Rectangle {
-                    id: descriptRect
-                    width: parent.width
-                    height: parent.height * 0.65
-                    color: "transparent"
-                    border.color: "white"
-                    border.width: 1
-                    radius: 5
-                    
-                    ScrollView {
-                        anchors.fill: parent
-                        anchors.margins: 5
-                        clip: true
-                        
-                        Label {
-                            id: descriptText
-                            text: currentModeDescript
-                            color: "white"
-                            font.pixelSize: 14
-                            wrapMode: Text.WordWrap
-                            width: descriptRect.width - 10
-                            
-                            Component.onCompleted: {
-                                console.log("descriptText initialized, text:", text)
-                            }
-                            
-                            onTextChanged: {
-                                console.log("descriptText changed to:", text)
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        
-        Image {
-            id: previewImage
-            width: 150
-            height: width
-            fillMode: Image.PreserveAspectFit
-            asynchronous: true
-            source: ("image://instrums/" + imagePrefix + "%1").arg(currentModeNum)
-            // source: "file"
-            anchors {
-                right: parent.right
-                top: parent.top
-                margins: 10
-            }
-        }
-    }
-
-    Button {
-        id: declineButton
-//        visible: modeEditor.hasChanges
-        width: parent.width * .2
-        height: parent.height * .15
-        anchors {
-            bottom: parent.bottom
-            bottomMargin: 10
-            left: modeList.right
-            leftMargin: 20
-        }
-        background: Rectangle {
-            color: "black"
-            border.width: 2
-            border.color: "darkred"
-            radius: 8
-        }
-
-        Text {
-            id: declineText
-            text: qsTr("ОТМЕНА")
-            font.pixelSize: 34
-            font.bold: true
-            anchors.fill: parent
-            horizontalAlignment: Qt.AlignHCenter
-            verticalAlignment: Qt.AlignVCenter
-            color: "white"
-        }
-        onClicked: {
-            modeEditor.rollBack()
-            changed = false
-            root.close()
-        }
-    }
-
-    Button {
-        id: acceptButton
-        width: parent.width * .2
-        height: parent.height * .15
-//        enabled: modeEditor.hasChanges
-        visible: changed
-        anchors {
-            bottom: parent.bottom
-            bottomMargin: 10
-            left: declineButton.right
-            leftMargin: 80
-        }
-        background: Rectangle {
-            color: "black"
-            border.width: 2
-            border.color: "green"
-            radius: 8
-        }
-        Text {
-            id: acceptText
-            text: qsTr("ПРИНЯТЬ")
-            font.pixelSize: 34
-            font.bold: true
-            color: "green"
-            anchors.fill: parent
-            horizontalAlignment: Qt.AlignHCenter
-            verticalAlignment: Qt.AlignVCenter
-        }
-        onClicked: {
-            modeEditor.commitChanges()
-            changed = false
-            root.close();
         }
     }
 

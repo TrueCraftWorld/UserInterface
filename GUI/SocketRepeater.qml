@@ -114,9 +114,12 @@ Repeater {
                                             iscoag)
             }
             function onNewPower(socketid, pwr, iscoag) {
-                theModel.qmlSetData(index,
-                                    pwr,
-                                    (iscoag ? "coagmodepower" : "cutmodepower"))
+                var currentPower = iscoag ? model.coagmodepower : model.cutmodepower
+                if (currentPower !== pwr) {
+                    theModel.qmlSetData(index,
+                                        pwr,
+                                        (iscoag ? "coagmodepower" : "cutmodepower"))
+                }
             }
             function onSocketCollapseRequest() {
                 theModel.qmlSetData(index, 0, "socketdisplaymode")

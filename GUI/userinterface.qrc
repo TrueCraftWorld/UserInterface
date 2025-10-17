@@ -10,6 +10,7 @@
         <file>HalfSocket.qml</file>
         <file>InstrumRect.qml</file>
         <file>ModePowerRect.qml</file>
+        <file>LeftPanel.qml</file>
         <file>NeutralEl.qml</file>
         <file>SocketRepeater.qml</file>
         <file>StatesSocket.qml</file>
@@ -23,6 +24,7 @@
         <file>MenuLoader.qml</file>
         <file>Pedal.qml</file>
         <file>PedalEditor.qml</file>
+        <file>PedalPanel.qml</file>
         <file>ProgAdditionPop.qml</file>
     </qresource>
 </RCC>

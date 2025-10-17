@@ -3,6 +3,7 @@ import QtQuick.Controls 2.15
 
 Rectangle {
     id: instrumRoot
+    color: "transparent"
 
     property bool isCoag
     property string instrumName/*: "Биполярный лапороскопический инструмент"*/

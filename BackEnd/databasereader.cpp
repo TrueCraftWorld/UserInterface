@@ -105,3 +105,23 @@ QList<QVariantList> DataBaseReader::slotSendSelectQuery(const QStringList &table
 
     return result;
 }
+
+bool DataBaseReader::executeUpdateQuery(const QString &queryStr)
+{
+    QSqlDatabase db = QSqlDatabase::database("etoBasa");
+    if (!db.open()) {
+        qWarning() << "Failed to open database for update query";
+        return false;
+    }
+
+    QSqlQuery query(db);
+    query.prepare(queryStr);
+
+    if (!query.exec()) {
+        qWarning() << "Update query failed:" << query.lastError().text();
+        qWarning() << "Query was:" << queryStr;
+        return false;
+    }
+
+    return true;
+}

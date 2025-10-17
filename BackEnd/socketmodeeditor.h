@@ -108,6 +108,9 @@ public:
     Q_INVOKABLE QStringList modeNames() const;
     Q_INVOKABLE QStringList instrList() const;
     Q_INVOKABLE QStringList modeNamesIds() const;
+    Q_INVOKABLE QStringList modeNamesNums() const;
+    Q_INVOKABLE QStringList modeNamesBriefs() const;
+    Q_INVOKABLE QStringList modeNamesDescripts() const;
     Q_INVOKABLE QStringList instrListIds() const;
     Q_INVOKABLE QVariantMap currentMode() const;
     Q_INVOKABLE QString socketName() const;

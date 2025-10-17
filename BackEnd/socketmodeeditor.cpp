@@ -1,6 +1,7 @@
 #include "socketmodeeditor.h"
 
 #include <optional>
+#include <QDebug>
 
 SocketModeEditor::SocketModeEditor(SocketModel *model, QObject *parent)
     : QObject{parent},
@@ -133,6 +134,51 @@ QStringList SocketModeEditor::instrList() const
 QStringList SocketModeEditor::modeNamesIds() const
 {
     return m_modeNameIds;
+}
+
+QStringList SocketModeEditor::modeNamesNums() const
+{
+    // Получаем Num для каждого режима по его индексу
+    QStringList nums;
+    for (int i = 0; i < m_modeNames.size(); ++i) {
+        CSurgModePtr mode = m_model->itemsMap()->at(m_socketID)->getMode(i, m_isCoag);
+        if (!mode.isNull()) {
+            nums.append(QString::number(mode->num()));
+        } else {
+            nums.append("0");
+        }
+    }
+    return nums;
+}
+
+QStringList SocketModeEditor::modeNamesBriefs() const
+{
+    // Получаем Brief для каждого режима по его индексу
+    QStringList briefs;
+    for (int i = 0; i < m_modeNames.size(); ++i) {
+        CSurgModePtr mode = m_model->itemsMap()->at(m_socketID)->getMode(i, m_isCoag);
+        if (!mode.isNull()) {
+            briefs.append(mode->brief());
+        } else {
+            briefs.append("");
+        }
+    }
+    return briefs;
+}
+
+QStringList SocketModeEditor::modeNamesDescripts() const
+{
+    // Получаем Descript для каждого режима по его индексу
+    QStringList descripts;
+    for (int i = 0; i < m_modeNames.size(); ++i) {
+        CSurgModePtr mode = m_model->itemsMap()->at(m_socketID)->getMode(i, m_isCoag);
+        if (!mode.isNull()) {
+            descripts.append(mode->descript());
+        } else {
+            descripts.append("");
+        }
+    }
+    return descripts;
 }
 
 QStringList SocketModeEditor::instrListIds() const

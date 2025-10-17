@@ -80,6 +80,18 @@ QVariant SocketModel::data(const QModelIndex &index, int role) const
         return socketItem.coagModeIndex();
     case CoagModeId:
         return socketItem.coagModeId();
+    case CoagModeNum:
+        if (socketItem.curCoagMode().isNull())
+            return 0;
+        return socketItem.curCoagMode()->num();
+    case CoagModeBrief:
+        if (socketItem.curCoagMode().isNull())
+            return QString();
+        return socketItem.curCoagMode()->brief();
+    case CoagModeDescript:
+        if (socketItem.curCoagMode().isNull())
+            return QString();
+        return socketItem.curCoagMode()->descript();
     case CoagModeName:
         return socketItem.coagModeName();
     case CoagModePower:
@@ -118,6 +130,18 @@ QVariant SocketModel::data(const QModelIndex &index, int role) const
         return socketItem.cutModeIndex();
     case CutModeId:
         return socketItem.cutModeId();
+    case CutModeNum:
+        if (socketItem.curCutMode().isNull())
+            return 0;
+        return socketItem.curCutMode()->num();
+    case CutModeBrief:
+        if (socketItem.curCutMode().isNull())
+            return QString();
+        return socketItem.curCutMode()->brief();
+    case CutModeDescript:
+        if (socketItem.curCutMode().isNull())
+            return QString();
+        return socketItem.curCutMode()->descript();
     case CutModeName:
         return socketItem.cutModeName();
     case CutModePower:
@@ -494,7 +518,7 @@ void SocketModel::pedalRemover(int socketToSkip, int pedalToRemove)
         if (i == socketToSkip)
             continue;
         //тут не надо изменять все сокеты - переназначенная педаль могла быть в одном сокетет только
-        if (m_itemsMap->at(i)->pedal() == pedalToRemove) {
+        if (m_itemsMap->at(i)->pedal() == pedalToRemove && pedalToRemove != Pedal::INSTR_BUTTON_MONO) {
             qmlSetData(i, 0, "socketpedal");
             // break;
         }

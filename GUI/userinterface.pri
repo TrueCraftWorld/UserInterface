@@ -8,6 +8,7 @@ DISTFILES += \
     $$PWD/InstrumEditor.qml \
     $$PWD/InstrumRect.qml \
     $$PWD/ItemList.qml \
+    $$PWD/LeftPanel.qml \
     $$PWD/MainMenu.qml \
     $$PWD/MenuLoader.qml \
     $$PWD/ModeEditor.qml \
@@ -15,6 +16,7 @@ DISTFILES += \
     $$PWD/NeutralEl.qml \
     $$PWD/Pedal.qml \
     $$PWD/PedalEditor.qml \
+    $$PWD/PedalPanel.qml \
     $$PWD/PowerRect.qml \
     $$PWD/ProgAdditionPop.qml \
     $$PWD/ProgItemList.qml \

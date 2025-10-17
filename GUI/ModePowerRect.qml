@@ -119,8 +119,7 @@ Canvas {
     Connections {
         target: modePowerRect
         function onModeIdChanged() {
-            modePowerRect.color = modePowerRect.colorFromId()
-            console.log(isCoag, modePowerRect.color, modePowerRect.modeId)
+            modePowerRect.requestPaint()
         }
     }
 
@@ -198,7 +197,9 @@ Canvas {
             color: modePowerRect.isCoag ? "white" : "color"
             width: 2
         }
-        anchors.margins: 15
+        anchors.margins: 95
+        anchors.right: parent.right
+        anchors.verticalCenter: parent.verticalCenter
         Label {
             anchors {
                 margins: 10
@@ -216,6 +217,7 @@ Canvas {
             onClicked: modePowerRect.newPower(changePower("up"));
         }
     }
+
     Rectangle {
         id: powerMinusButton
         width: 60
@@ -226,7 +228,9 @@ Canvas {
             color: modePowerRect.isCoag ? "white" : "color"
             width: 2
         }
-        anchors.margins: 15
+        anchors.margins: 95
+        anchors.left: parent.left
+        anchors.verticalCenter: parent.verticalCenter
         Label {
             anchors {
                 margins: 10
@@ -241,13 +245,20 @@ Canvas {
         }
         MouseArea {
             anchors.fill: parent
-            onClicked: modePowerRect.newPower(powerSlider.value - 1);
+            onClicked: modePowerRect.newPower(changePower("down"));
         }
     }
+
     Slider {
         id: powerSlider
         value: modePower
         opacity: 1
+        anchors.bottomMargin: 15
+        anchors.leftMargin: 25
+        anchors.rightMargin:  25
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.bottom: parent.bottom
         from: 1
         to: maxPower
         onValueChanged: {
@@ -343,22 +354,20 @@ Canvas {
                 target: modeSelectButton;
                 enabled: true
             }
-            AnchorChanges {
-                target: powerPlusButton
-                anchors.right: modePowerRect.right
-                anchors.bottom: modePowerRect.bottom
-            }
-            AnchorChanges {
-                target: powerMinusButton
-                anchors.left: modePowerRect.left
-                anchors.bottom: modePowerRect.bottom
-            }
-            AnchorChanges {
-                target: powerSlider
-                anchors.left: powerMinusButton.right
-                anchors.right: powerPlusButton.left
-                anchors.verticalCenter: powerPlusButton.verticalCenter
-            }
+//            AnchorChanges {
+//                target: powerPlusButton
+//                anchors.right: modePowerRect.right
+//                anchors.bottom: power.bottom
+//            }
+//            AnchorChanges {
+//                target: powerMinusButton
+//                anchors.left: modePowerRect.left
+//                anchors.bottom: power.bottom
+//            }
+//            AnchorChanges {
+//                target: powerSlider
+//                anchors.bottom: parent.bottom
+//            }
             AnchorChanges {
                 target: mode
                 anchors.left: modePowerRect.left

@@ -3,166 +3,371 @@ import QtQuick.Controls 2.15
 
 Rectangle {
     id: neutralEl
-    radius: 8
-    color: "green"
-    border {
-        color: "black"
-        width: 1
-    }
+    color: "transparent"
 
     // Свойства компонента
     property int neutralSize: 0      // 0 = Small, 1 = Medium, 2 = Large
-    property int neutralType: 0      // 0 = Type A, 1 = Type B
+    property bool neutralDivided: true      // НЭ разделённый или нет
     property bool neutralConnected: false  // Передается снаружи
     property bool showControls: false      // Показывать ли кнопки управления
 
-    // Контейнер для изображения
+    // Блок НЭ
     Rectangle {
         id: neutralImage
-        anchors.centerIn: parent
-        width: getImageWidth()
-        height: getImageHeight()
-        color: "transparent"
+        property string neColor: neutralConnected ? "green" : "red"
 
-        // Type A - один прямоугольник в центре
-        Rectangle {
-            id: typeAIndicator
-            anchors.centerIn: parent
-            color: neutralConnected ? "green" : "red"
-            width: getTypeASize()
-            height: getTypeASize()
-            visible: neutralType === 0
+        anchors.left: parent.left
+        anchors.bottom: parent.bottom
+        height: parent.height * .9
+        width: panelExpanded ? 160 : parent.width
+        color: neutralConnected ? "gray" : "white"
+        radius: panelExpanded ? 14 : 7
+        border.color: "orange"
+
+        Text {
+            id: neutralLabel
+            color: "black"
+            font.pixelSize: panelExpanded ? 20 : 15
+            font.bold: false
+            anchors.top: parent.top
+            anchors.topMargin: panelExpanded ? 5 : 3
+            anchors.horizontalCenter: parent.horizontalCenter
+            text: {
+                if (neutralSize === 0)
+                    qsTr("< 5кг\nМакс.50")
+                else if (neutralSize === 1)
+                    qsTr("5-15кг\nМакс.75")
+                else if (neutralSize === 2)
+                    qsTr("> 15кг\nМакс.400")
+            }
+            horizontalAlignment: Text.AlignHCenter
         }
 
-        // Type B - два прямоугольника по бокам
+        // Неразделённый
         Rectangle {
-            id: typeBLeft
-            anchors {
-                left: parent.left
-                leftMargin: 5
-                verticalCenter: parent.verticalCenter
-            }
-            color: neutralConnected ? "green" : "red"
-            width: 20
-            height: getTypeBSize()
-            visible: neutralType === 1
+            id: notDividedNeutral
+            anchors.horizontalCenter: parent.horizontalCenter
+            anchors.bottom: parent.bottom
+            anchors.bottomMargin: panelExpanded ? 15 :7
+            color: neutralImage.neColor
+            width: parent.width * .7
+            height: parent.height * .56
+            radius: panelExpanded ? 14 : 7
+            visible: !neutralDivided
+        }
+        Rectangle {
+            id: notDividedNeutral2
+            anchors.horizontalCenter: parent.horizontalCenter
+            anchors.bottom: notDividedNeutral.top
+            anchors.bottomMargin: -1
+            color: neutralImage.neColor
+            width: notDividedNeutral.width * .3
+            height: notDividedNeutral.height * .2
+            visible: !neutralDivided
         }
 
+        // Разделённый
         Rectangle {
-            id: typeBRight
-            anchors {
-                right: parent.right
-                rightMargin: 5
-                verticalCenter: parent.verticalCenter
+            id: dividedNeutral
+            anchors.fill: parent
+            visible: neutralDivided
+            color: "transparent"
+            Rectangle {
+                id: leftDivided
+                anchors {
+                    left: parent.left
+                    leftMargin: panelExpanded ? 15 :7
+                    bottom: parent.bottom
+                    bottomMargin: panelExpanded ? 15 :7
+                }
+                color: neutralImage.neColor
+                width: parent.width * .35
+                height: parent.height * .55
+                radius: panelExpanded ? 14 : 7
             }
-            color: neutralConnected ? "green" : "red"
-            width: 20
-            height: getTypeBSize()
-            visible: neutralType === 1
+            Rectangle {
+                id: leftDivided2
+                anchors {
+                    right: leftDivided.right
+                    bottom: leftDivided.top
+                    bottomMargin: -10
+                }
+                color: neutralImage.neColor
+                width: parent.width * .15
+                height: parent.height * .15
+            }
+
+            Rectangle {
+                id: rightDivided
+                anchors {
+                    right: parent.right
+                    rightMargin: panelExpanded ? 15 :7
+                    bottom: parent.bottom
+                    bottomMargin: panelExpanded ? 15 :7
+                }
+                color: neutralImage.neColor
+                width: parent.width * .35
+                height: parent.height * .55
+                radius: panelExpanded ? 14 : 7
+            }
+            Rectangle {
+                id: rightDivided2
+                anchors {
+                    left: rightDivided.left
+                    bottom: rightDivided.top
+                    bottomMargin: -10
+                }
+                color: neutralImage.neColor
+                width: parent.width * .15
+                height: parent.height * .15
+            }
         }
     }
 
-    // Fallback текст
-    Text {
-        anchors.centerIn: parent
-        text: getNeutralText()
-        font.pixelSize: getTextSize()
-        color: "white"
-        visible: false  // Скрываем, так как используем графические индикаторы
-    }
-
-    // Кнопки управления (только когда showControls = true)
-    Column {
+    // Контейнер для кнопок управления (только когда showControls = true)
+    Rectangle {
+        id: neutralControlContainer
         anchors {
-            top: parent.top
+            left: neutralImage.right
+            bottom: neutralImage.bottom
             right: parent.right
-            topMargin: 5
+            leftMargin: 5
             rightMargin: 5
         }
-        spacing: 5
+        height: parent.height * .9
+        color: "transparent"
+        radius: 10
+        border.color: "white"
         visible: showControls
+        z: 20  // Выше любых MouseArea
 
-        // Кнопка выбора типа
-        Button {
-            text: "Type " + (neutralType === 0 ? "A" : "B")
-            width: 60
-            height: 25
-            font.pixelSize: 10
-            onClicked: neutralType = (neutralType + 1) % 2
+        // Кнопки выбора типа
+        Rectangle {
+            id: buttonDivided
+            color: neutralDivided ? "cyan" : "lightgray"
+            height: parent.height * .43
+            width: parent.width * .33
+            radius: 10
+            border.color: neutralDivided ? "white" : "transparent"
+            border.width: neutralDivided ? 3 : 0
+            anchors {
+                top: parent.top
+                left: parent.left
+                leftMargin: 10
+                topMargin: 10
+            }
+            Rectangle {
+                id: lftDivided
+                anchors {
+                    left: parent.left
+                    leftMargin: 7
+                    bottom: parent.bottom
+                    bottomMargin: 7
+                }
+                color: "green"
+                width: parent.width * .4
+                height: parent.height * .7
+                radius: 14
+            }
+            Rectangle {
+                id: lftDivided2
+                anchors {
+                    right: lftDivided.right
+                    bottom: lftDivided.top
+                    bottomMargin: -10
+                }
+                color: "green"
+                width: parent.width * .15
+                height: parent.height * .2
+            }
+
+            Rectangle {
+                id: rghtDivided
+                anchors {
+                    right: parent.right
+                    rightMargin: 7
+                    bottom: parent.bottom
+                    bottomMargin: 7
+                }
+                color: "green"
+                width: parent.width * .4
+                height: parent.height * .7
+                radius: 14
+            }
+            Rectangle {
+                id: rghtDivided2
+                anchors {
+                    left: rghtDivided.left
+                    bottom: rghtDivided.top
+                    bottomMargin: -10
+                }
+                color: "green"
+                width: parent.width * .15
+                height: parent.height * .2
+            }
+            MouseArea {
+                anchors.fill: parent
+                onClicked: {
+                    neutralDivided = true
+                    mouse.accepted = true
+                }
+            }
         }
 
-        // Кнопка выбора размера
-        Button {
-            text: "Size " + (neutralSize === 0 ? "S" : (neutralSize === 1 ? "M" : "L"))
-            width: 60
-            height: 25
-            font.pixelSize: 10
-            onClicked: neutralSize = (neutralSize + 1) % 3
+        Rectangle {
+            id: buttonNotDivided
+            height: parent.height * .43
+            width: parent.width * .33
+            color: neutralDivided ? "lightgray" : "cyan"
+            radius: 10
+            border.color: !neutralDivided ? "white" : "transparent"
+            border.width: !neutralDivided ? 3 : 0
+            anchors {
+                bottom: parent.bottom
+                left: parent.left
+                leftMargin: 10
+                bottomMargin: 10
+            }
+            // Неразделённый
+            Rectangle {
+                id: ntDividedNeutral
+                anchors.horizontalCenter: parent.horizontalCenter
+                anchors.bottom: parent.bottom
+                anchors.bottomMargin: 7
+                color: "green"
+                width: parent.width * .7
+                height: parent.height * .7
+                radius: 14
+            }
+            Rectangle {
+                id: ntDividedNeutral2
+                anchors.horizontalCenter: parent.horizontalCenter
+                anchors.bottom: ntDividedNeutral.top
+                anchors.bottomMargin: -1
+                color: "green"
+                width: ntDividedNeutral.width * .2
+                height: ntDividedNeutral.height * .2
+            }
+            MouseArea {
+                anchors.fill: parent
+                onClicked: {
+                    neutralDivided = false
+                    mouse.accepted = true
+                }
+            }
+        }
+
+        // Кнопка выбора размера Small (< 5кг)
+        Rectangle {
+            id: smallNeutralSize
+            height: parent.height * .26
+            width: parent.width * .6
+            color: neutralSize === 0 ? "cyan" : "lightgray"
+            radius: 10
+            border.color: neutralSize === 0 ? "white" : "transparent"
+            border.width: neutralSize === 0 ? 3 : 0
+            anchors {
+                top: parent.top
+                right: parent.right
+                rightMargin: 10
+                topMargin: 10
+            }
+            
+            Label {
+                anchors.centerIn: parent
+                text: qsTr("Младенец: < 5 кг\n Максимальная мощность 50")
+                color: "black"
+                font.pixelSize: 16
+                horizontalAlignment: Text.AlignHCenter
+            }
+            
+            MouseArea {
+                anchors.fill: parent
+                onClicked: {
+                    neutralSize = 0
+                    mouse.accepted = true
+                }
+            }
+        }
+
+        // Кнопка выбора размера Medium (5-15кг)
+        Rectangle {
+            id: mediumNeutralSize
+            height: parent.height * .26
+            width: parent.width * .6
+            color: neutralSize === 1 ? "cyan" : "lightgray"
+            radius: 10
+            border.color: neutralSize === 1 ? "white" : "transparent"
+            border.width: neutralSize === 1 ? 3 : 0
+            anchors {
+                verticalCenter: parent.verticalCenter
+                right: parent.right
+                rightMargin: 10
+            }
+            
+            Label {
+                anchors.centerIn: parent
+                text: qsTr("Ребёнок: 5-15 кг\nМаксимальная мощность 75")
+                color: "black"
+                font.pixelSize: 16
+                horizontalAlignment: Text.AlignHCenter
+            }
+            
+            MouseArea {
+                anchors.fill: parent
+                onClicked: {
+                    neutralSize = 1
+                    mouse.accepted = true
+                }
+            }
+        }
+
+        // Кнопка выбора размера Large (> 15кг)
+        Rectangle {
+            id: largeNeutralSize
+            height: parent.height * .26
+            width: parent.width * .6
+            color: neutralSize === 2 ? "cyan" : "lightgray"
+            radius: 10
+            border.color: neutralSize === 2 ? "white" : "transparent"
+            border.width: neutralSize === 2 ? 3 : 0
+            anchors {
+                bottom: parent.bottom
+                right: parent.right
+                rightMargin: 10
+                bottomMargin: 10
+            }
+            
+            Label {
+                anchors.centerIn: parent
+                text: qsTr("Взрослый: > 15 кг\nМаксимальная мощность 400")
+                color: "black"
+                font.pixelSize: 16
+                horizontalAlignment: Text.AlignHCenter
+            }
+            
+            MouseArea {
+                anchors.fill: parent
+                onClicked: {
+                    neutralSize = 2
+                    mouse.accepted = true
+                }
+            }
         }
     }
 
-    // Индикатор подключения
-    Rectangle {
-        width: 12
-        height: 12
-        radius: 6
-        color: neutralConnected ? "green" : "red"
+    Label {
+        id: neutralChoice
+        visible: panelExpanded
         anchors {
             top: parent.top
-            left: parent.left
+            horizontalCenter: neutralControlContainer.horizontalCenter
             topMargin: 5
-            leftMargin: 5
         }
-        border {
-            color: "white"
-            width: 1
-        }
-    }
-
-    // Функции
-    function getImageWidth() {
-        return showControls ? 80 : 25
-    }
-
-    function getImageHeight() {
-        return showControls ? 80 : 25
-    }
-
-    function getTextSize() {
-        return showControls ? 16 : 12
-    }
-
-    function getTypeASize() {
-        switch(neutralSize) {
-            case 0: return 40  // Small
-            case 1: return 30  // Medium
-            case 2: return 20  // Large
-            default: return 30
-        }
-    }
-
-    function getTypeBSize() {
-        switch(neutralSize) {
-            case 0: return 40  // Small
-            case 1: return 30  // Medium
-            case 2: return 20  // Large
-            default: return 30
-        }
-    }
-
-    function getNeutralText() {
-        var typeText = neutralType === 0 ? "A" : "B"
-        var sizeText = neutralSize === 0 ? "S" : (neutralSize === 1 ? "M" : "L")
-        var connText = neutralConnected ? "C" : "D"
-        return typeText + sizeText + connText
-    }
-
-    // Обработчики изменений
-    onNeutralTypeChanged: {
-        console.log("Neutral type changed to:", neutralType)
-    }
-
-    onNeutralSizeChanged: {
-        console.log("Neutral size changed to:", neutralSize)
+        horizontalAlignment: Qt.AlignHCenter
+        text: qsTr("ВЫБОР НЕЙТРАЛЬНОГО ЭЛЕКТРОДА")
+        color: "white"
+        font.pixelSize: 16
+        font.bold: true
     }
 }

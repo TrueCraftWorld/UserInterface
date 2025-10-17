@@ -75,8 +75,6 @@ Repeater {
         title: model.socketname
         socketId: index
 
-        socketPedal:       model.socketpedal
-
         cutInstrumId:      model.cutmodeinstrid
         cutMaxPower:       model.cutmodemaxpower
         cutModePower:      model.cutmodepower
@@ -104,12 +102,6 @@ Repeater {
 
         Connections {
             target: delegateSoc
-            function onPedSelect(socketId, ped) {
-                console.log("pedalFrom delegate", ped)
-                theModel.qmlSetData(index,
-                                    ped,
-                                    "socketpedal")
-            }
             function onInstrumEditDialogRequest(socketid, iscoag) {
 
                 repeatRoot.instrumDialogRequest(socketid,
@@ -122,9 +114,15 @@ Repeater {
                                             iscoag)
             }
             function onNewPower(socketid, pwr, iscoag) {
-                theModel.qmlSetData(index,
-                                    pwr,
-                                    (iscoag ? "coagmodepower" : "cutmodepower"))
+                var currentPower = iscoag ? model.coagmodepower : model.cutmodepower
+                if (currentPower !== pwr) {
+                    theModel.qmlSetData(index,
+                                        pwr,
+                                        (iscoag ? "coagmodepower" : "cutmodepower"))
+                    
+                    // Запускаем отложенное сохранение (через 2 секунды)
+                    control.scheduleSave()
+                }
             }
             function onSocketCollapseRequest() {
                 theModel.qmlSetData(index, 0, "socketdisplaymode")

@@ -3,6 +3,7 @@
 
 #include <QObject>
 #include <QPointer>
+#include <QTimer>
 #include <map>
 
 #include "BackEnd/socketmodeeditor.h"
@@ -54,6 +55,22 @@ public:
     void init();
 
     Q_INVOKABLE QPointer<ProgHandle> getHandle() const;
+    
+    /**
+     * @brief Сохраняет текущее состояние всех сокетов в БД (таблица Lists, id=1000)
+     */
+    Q_INVOKABLE void saveCurrentState();
+    
+    /**
+     * @brief Загружает последнее сохранённое состояние из БД
+     */
+    void loadCurrentState();
+    
+    /**
+     * @brief Запускает отложенное сохранение (с задержкой 2 секунды)
+     * Используется для частых изменений (мощность) чтобы не перегружать БД
+     */
+    Q_INVOKABLE void scheduleSave();
 
 private:
     void makeHandleConnections();
@@ -105,6 +122,8 @@ private:
 
     std::map<int, std::map<int, InstrInfo>> getConstarints(const QList<int> &idList);
     std::map<int, InstrPtr> getInstrums();
+    
+    QTimer* m_saveTimer = nullptr;  // Таймер для отложенного сохранения
 
 signals:
 };

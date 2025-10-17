@@ -10,7 +10,6 @@ Rectangle {
     Connections {
         target: pedalRoot
         function onPedalStateIdxChanged() {
-            console.log("got new pedal")
             if (pedalStateIdx == 0) {
                 pedalRoot.state = "empty"
             } else if (pedalStateIdx == 1) {
@@ -19,7 +18,24 @@ Rectangle {
                 pedalRoot.state = "double"
             } else if (pedalStateIdx == 3) {
                 pedalRoot.state = "handleBi"
+            } else if (pedalStateIdx == 4) {
+                pedalRoot.state = "monoHandle"
             }
+        }
+    }
+    
+    Component.onCompleted: {
+        // Инициализируем состояние на основе pedalStateIdx
+        if (pedalStateIdx == 0) {
+            pedalRoot.state = "empty"
+        } else if (pedalStateIdx == 1) {
+            pedalRoot.state = "single"
+        } else if (pedalStateIdx == 2) {
+            pedalRoot.state = "double"
+        } else if (pedalStateIdx == 3) {
+            pedalRoot.state = "handleBi"
+        } else if (pedalStateIdx == 4) {
+            pedalRoot.state = "monoHandle"
         }
     }
     color: "transparent"
@@ -31,24 +47,35 @@ Rectangle {
             PropertyChanges { target: singleRect; opacity: 0 }
             PropertyChanges { target: doubleRect; opacity: 0 }
             PropertyChanges { target: biHandle; opacity: 0 }
+            PropertyChanges { target: monoHandle; opacity: 0 }
         },
         State {
             name: "single"
             PropertyChanges { target: singleRect; opacity: 1 }
             PropertyChanges { target: doubleRect; opacity: 0 }
             PropertyChanges { target: biHandle; opacity: 0 }
+            PropertyChanges { target: monoHandle; opacity: 0 }
         },
         State {
             name: "double"
             PropertyChanges { target: singleRect; opacity: 0 }
             PropertyChanges { target: doubleRect; opacity: 1 }
             PropertyChanges { target: biHandle; opacity: 0 }
+            PropertyChanges { target: monoHandle; opacity: 0 }
         },
         State {
             name: "handleBi"
             PropertyChanges { target: singleRect; opacity: 0 }
             PropertyChanges { target: doubleRect; opacity: 0 }
             PropertyChanges { target: biHandle; opacity: 1 }
+            PropertyChanges { target: monoHandle; opacity: 0 }
+        },
+        State {
+            name: "monoHandle"
+            PropertyChanges { target: singleRect; opacity: 0 }
+            PropertyChanges { target: doubleRect; opacity: 0 }
+            PropertyChanges { target: biHandle; opacity: 0 }
+            PropertyChanges { target: monoHandle; opacity: 1 }
         }
     ]
     transitions: [
@@ -58,39 +85,37 @@ Rectangle {
         }
     ]
 
-    Label {
-        id: name
-        anchors {
-            top: parent.top
-            left: parent.left
-            right: parent.right
-            topMargin: 1
-            rightMargin: 10
-        }
-        horizontalAlignment: Qt.AlignHCenter
-        text: qsTr("ПЕДАЛЬ")
-        color: "white"
-        font.pixelSize: 16
-        font.bold: true
-    }
+//    Label {
+//        id: name
+//        anchors {
+//            top: parent.top
+//            left: parent.left
+//            right: parent.right
+//            topMargin: 1
+//            rightMargin: 10
+//        }
+//        horizontalAlignment: Qt.AlignHCenter
+//        text: qsTr("ПЕДАЛЬ")
+//        color: "white"
+//        font.pixelSize: 16
+//        font.bold: true
+//    }
     Rectangle {
         id: shell
-        width: 100
-        height: 80
-        anchors.top: name.bottom
+        width: 72
+        height: 72
+        anchors.top: parent.top
         anchors.right: parent.right
-        anchors.topMargin: -5
-        anchors.rightMargin: -18
-        anchors.leftMargin: 0
-        anchors.bottomMargin: 0
+//        anchors.margins: 5
+        radius: 10
+        border.color: "orange"
 
-        color: "transparent"
+        color: "grey"
 
         Rectangle {
             id: singleRect
             anchors {
                 fill: parent
-                margins: 15
             }
             color: "transparent"
             Rectangle {
@@ -99,13 +124,13 @@ Rectangle {
                 width: 0.3 * parent.width
                 anchors.centerIn: parent
                 radius: 6
+                border.color: "white"
             }
         }
         Rectangle {
             id: doubleRect
             anchors {
                 fill: parent
-                margins: 15
             }
             color: "transparent"
             Rectangle {
@@ -113,6 +138,7 @@ Rectangle {
                 height: parent.height * .8
                 width: 0.3 * parent.width
                 radius: 6
+                border.color: "white"
                 anchors {
                     left: parent.horizontalCenter
                     verticalCenter: parent.verticalCenter
@@ -124,6 +150,7 @@ Rectangle {
                 height: parent.height *.8
                 width: 0.3 * parent.width
                 radius: 6
+                border.color: "white"
                 anchors {
                     right: parent.horizontalCenter
                     verticalCenter: parent.verticalCenter
@@ -150,16 +177,60 @@ Rectangle {
                 anchors.centerIn: parent
             }
         }
+
+        Rectangle {
+            id: monoHandle
+            anchors {
+                fill: parent
+                margins: 10
+            }
+            color: "transparent"
+            Rectangle {
+                width: parent.width * .42
+                height: parent.height * .42
+                radius: width/2
+                color: "yellow"
+                border {
+                    width: 2
+                    color: "black"
+                }
+                anchors {
+                    top: parent.top
+                    left: parent.left
+                    margins: parent.width * .085
+                }
+            }
+            Rectangle {
+                width: parent.width * .42
+                height: parent.height * .42
+                radius: width/2
+                color: "blue"
+                border {
+                    width: 2
+                    color: "white"
+                }
+                anchors {
+                    bottom: parent.bottom
+                    right: parent.right
+                    margins: parent.width * .085
+                }
+            }
+        }
     }
 
     MouseArea {
         id: pressHandle
         anchors.fill: parent
-    }
-    Connections {
-        target: pressHandle
-        function onClicked () {
+        z: 1  // Локальный z-order внутри педали
+        propagateComposedEvents: true
+        
+        onPressed: {
+            mouse.accepted = false  // Пропускаем событие для обработки свайпов
+        }
+        
+        onClicked: {
             pedalRoot.pedalMenuRequest()
+            mouse.accepted = true
         }
     }
 

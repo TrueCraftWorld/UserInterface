@@ -81,10 +81,13 @@ public:
                  int maximum = 1,
                  int minimum = 1,
                  int id = 0,
-                 const std::map<int, InstrInfo>& _instrs = {});
+                 const std::map<int, InstrInfo>& _instrs = {},
+                 int num = 0,
+                 const QString& brief = "",
+                 const QString& descript = "");
 
     explicit SurgicalMode()  :
-        SurgicalMode("NoMode", false, 1, 1) {}
+        SurgicalMode("NoMode", false, 1, 1, 0, {}, 0, "", "") {}
 
     int maximumPower() const;
     int currentPower() const;
@@ -117,6 +120,9 @@ public:
     // void setId(int newId);
 
     int id() const;
+    int num() const;
+    QString brief() const;
+    QString descript() const;
 
 private:
     void setModeName(const QString &newModeName);
@@ -132,6 +138,9 @@ private:
     QString m_modeName;
     bool m_isCoag;
     int m_id;
+    int m_num;  // Num для формирования имени изображения
+    QString m_brief;  // Краткое описание режима
+    QString m_descript;  // Полное описание режима
     std::map<int, InstrInfo> m_InstrConstraints;
 };
 

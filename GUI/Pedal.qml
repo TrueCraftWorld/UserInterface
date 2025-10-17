@@ -23,6 +23,21 @@ Rectangle {
             }
         }
     }
+    
+    Component.onCompleted: {
+        // Инициализируем состояние на основе pedalStateIdx
+        if (pedalStateIdx == 0) {
+            pedalRoot.state = "empty"
+        } else if (pedalStateIdx == 1) {
+            pedalRoot.state = "single"
+        } else if (pedalStateIdx == 2) {
+            pedalRoot.state = "double"
+        } else if (pedalStateIdx == 3) {
+            pedalRoot.state = "handleBi"
+        } else if (pedalStateIdx == 4) {
+            pedalRoot.state = "monoHandle"
+        }
+    }
     color: "transparent"
 
     state: "empty"

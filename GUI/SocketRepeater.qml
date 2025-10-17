@@ -119,6 +119,9 @@ Repeater {
                     theModel.qmlSetData(index,
                                         pwr,
                                         (iscoag ? "coagmodepower" : "cutmodepower"))
+                    
+                    // Запускаем отложенное сохранение (через 2 секунды)
+                    control.scheduleSave()
                 }
             }
             function onSocketCollapseRequest() {

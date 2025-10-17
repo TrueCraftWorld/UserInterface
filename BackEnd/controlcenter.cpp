@@ -190,12 +190,19 @@ ControlCenter::ControlCenter(QObject *parent)
     : QObject{parent},
     m_socketModel(new SocketModel(this)),
     m_editor(new SocketModeEditor(m_socketModel,this)),
-    m_handle(new ProgHandle(this))
+    m_handle(new ProgHandle(this)),
+    m_saveTimer(new QTimer(this))
 {
     QQmlEngine::setObjectOwnership(m_socketModel, QQmlEngine::CppOwnership);
     QQmlEngine::setObjectOwnership(m_editor, QQmlEngine::CppOwnership);
     QQmlEngine::setObjectOwnership(m_handle, QQmlEngine::CppOwnership);
     QQmlEngine::setObjectOwnership(this, QQmlEngine::CppOwnership);
+    
+    // Настройка таймера для отложенного сохранения
+    m_saveTimer->setSingleShot(true);
+    m_saveTimer->setInterval(2000);  // 2 секунды
+    connect(m_saveTimer, &QTimer::timeout, this, &ControlCenter::saveCurrentState);
+    
     makeHandleConnections();
 }
 
@@ -211,6 +218,7 @@ void ControlCenter::registerControl()
     qmlRegisterUncreatableType<SocketModel>("BackEnd", 1, 0, "SocketModel", "should be one and exist not only for qml");
     qmlRegisterUncreatableType<SocketModeEditor>("BackEnd", 1, 0, "SocketModeEditor", "should be one and exist not only for qml");
     qmlRegisterUncreatableType<ProgHandle>("BackEnd", 1, 0, "ProgHandle", "should be one and exist not only for qml");
+    qmlRegisterUncreatableType<ControlCenter>("BackEnd", 1, 0, "ControlCenter", "should be one and exist not only for qml");
 }
 
 QPointer<SocketModel> ControlCenter::getSocketModel() const
@@ -236,6 +244,14 @@ void ControlCenter::makeHandleConnections()
     
     connect(m_handle, &ProgHandle::signalLoadEmpty, 
             this, &ControlCenter::dataBaseSocketInit);
+    
+    // Автосохранение при успешном изменении режима
+    connect(m_editor, &SocketModeEditor::editingFinished, 
+            this, [this](bool success) {
+        if (success) {
+            saveCurrentState();
+        }
+    });
 
     connect(m_handle, &ProgHandle::signalScopeRequest,
             this, [this] (int id) {
@@ -261,6 +277,9 @@ void ControlCenter::initSockets()
         // programmLoadSocketInit(14);
 //        programmLoadSocketInit(28);
         programmLoadSocketInit(0);
+        
+        // Загружаем последнее сохранённое состояние
+        loadCurrentState();
     } else {
         defaultSocketInit();
     }
@@ -600,6 +619,11 @@ void ControlCenter::programmLoadSocketInit(int progId)
                 if (progId != 0) {
                     filterModeMap(modes, modeIdLst);
                 }
+                
+                // Исключаем режим "Термошов" (ID=7) для сокета БИ2 (i=0)
+                if (i == 0 && modes.contains(7)) {
+                    modes.remove(7);
+                }
 
                 isCoag ? socket->setCoagModes(modes, modeNamesList)
                        : socket->setCutModes(modes, modeNamesList);
@@ -734,4 +758,246 @@ std::map<int, InstrPtr > ControlCenter::getInstrums()
         result[item.at(0).toInt()] = ptr;
     }
     return result;
+}
+
+void ControlCenter::saveCurrentState()
+{
+    if (m_socketModel == nullptr || m_socketModel->itemsMap() == nullptr) {
+        qWarning() << "Cannot save state: socket model not initialized";
+        return;
+    }
+    
+    // Собираем данные из всех сокетов (инициализируем значениями по умолчанию)
+    QString bi1CutInstr = "0", bi1CutMode = "1000", bi1CutPower = "1";
+    QString bi1CoagInstr = "0", bi1CoagMode = "1000", bi1CoagPower = "1";
+    QString bi2CutInstr = "0", bi2CutMode = "1000", bi2CutPower = "1";
+    QString bi2CoagInstr = "0", bi2CoagMode = "1000", bi2CoagPower = "1";
+    QString mono1CutInstr = "0", mono1CutMode = "1000", mono1CutPower = "1";
+    QString mono1CoagInstr = "0", mono1CoagMode = "1000", mono1CoagPower = "1";
+    QString mono2CutInstr = "0", mono2CutMode = "1000", mono2CutPower = "1";
+    QString mono2CoagInstr = "0", mono2CoagMode = "1000", mono2CoagPower = "1";
+    
+    for (int i = 0; i < 4; i++) {
+        auto socket = m_socketModel->itemsMap()->at(i);
+        
+        // Проверяем, что режимы не null
+        if (socket.isNull() || socket->curCutMode().isNull() || socket->curCoagMode().isNull()) {
+            qWarning() << "Socket" << i << "has null mode, skipping";
+            continue;
+        }
+        
+        int cutInstrId = socket->curCutMode()->selectedInstrId();
+        int cutModeId = socket->cutModeId();
+        int cutPower = socket->cutModePower();
+        
+        int coagInstrId = socket->curCoagMode()->selectedInstrId();
+        int coagModeId = socket->coagModeId();
+        int coagPower = socket->coagModePower();
+        
+        QString cutInstrStr = QString::number(cutInstrId);
+        QString cutModeStr = QString::number(cutModeId);
+        QString cutPowerStr = QString::number(cutPower);
+        QString coagInstrStr = QString::number(coagInstrId);
+        QString coagModeStr = QString::number(coagModeId);
+        QString coagPowerStr = QString::number(coagPower);
+        
+        switch(i) {
+            case 0: // БИ1
+                bi1CutInstr = cutInstrStr; bi1CutMode = cutModeStr; bi1CutPower = cutPowerStr;
+                bi1CoagInstr = coagInstrStr; bi1CoagMode = coagModeStr; bi1CoagPower = coagPowerStr;
+                break;
+            case 1: // БИ2
+                bi2CutInstr = cutInstrStr; bi2CutMode = cutModeStr; bi2CutPower = cutPowerStr;
+                bi2CoagInstr = coagInstrStr; bi2CoagMode = coagModeStr; bi2CoagPower = coagPowerStr;
+                break;
+            case 2: // МОНО1
+                mono1CutInstr = cutInstrStr; mono1CutMode = cutModeStr; mono1CutPower = cutPowerStr;
+                mono1CoagInstr = coagInstrStr; mono1CoagMode = coagModeStr; mono1CoagPower = coagPowerStr;
+                break;
+            case 3: // МОНО2
+                mono2CutInstr = cutInstrStr; mono2CutMode = cutModeStr; mono2CutPower = cutPowerStr;
+                mono2CoagInstr = coagInstrStr; mono2CoagMode = coagModeStr; mono2CoagPower = coagPowerStr;
+                break;
+            default:
+                qWarning() << "Invalid socket index:" << i;
+                continue;
+        }
+    }
+    
+    // Получаем текущие педали
+    int pedal1 = -1;  // Сокет с single педалью
+    int pedal2 = -1;  // Сокет с double педалью
+    
+    // Ищем сокеты с привязанными педалями
+    for (int i = 0; i < 4; i++) {
+        auto socket = m_socketModel->itemsMap()->at(i);
+        if (socket.isNull())
+            continue;
+            
+        int pedalType = socket->pedal();
+        
+        if (pedalType == Pedal::SINGLE_PED) {
+            pedal1 = i;  // Номер сокета (0-3)
+        } else if (pedalType == Pedal::DOUBLE_PED) {
+            pedal2 = i;  // Номер сокета (0-3)
+        }
+        // INSTR_BUTTON_BI и INSTR_BUTTON_MONO игнорируем
+    }
+    
+    // OutEnabled_MASK - битовая маска доступности полусокетов
+    // TODO: если нужно сохранять доступность, добавить логику
+    int outEnabledMask = 255;  // По умолчанию все включены (11111111)
+    
+    // Формируем SQL запрос для REPLACE (INSERT OR UPDATE)
+    QString query = QString(
+        "REPLACE INTO Lists ("
+        "id, Num, Prog_ID, "
+        "Bi1Cut_INSTR, Bi1Cut_MODE, Bi1Cut_POWER, "
+        "Bi1Coag_INSTR, Bi1Coag_MODE, Bi1Coag_POWER, "
+        "Bi2Cut_INSTR, Bi2Cut_MODE, Bi2Cut_POWER, "
+        "Bi2Coag_INSTR, Bi2Coag_MODE, Bi2Coag_POWER, "
+        "Mono1Cut_INSTR, Mono1Cut_MODE, Mono1Cut_POWER, "
+        "Mono1Coag_INSTR, Mono1Coag_MODE, Mono1Coag_POWER, "
+        "Mono2Cut_INSTR, Mono2Cut_MODE, Mono2Cut_POWER, "
+        "Mono2Coag_INSTR, Mono2Coag_MODE, Mono2Coag_POWER, "
+        "Pedal_1, Pedal_2, OutEnabled_MASK"
+        ") VALUES ("
+        "1000, 1, 1000, "
+        "'%1', '%2', %3, "
+        "'%4', '%5', %6, "
+        "'%7', '%8', %9, "
+        "'%10', '%11', %12, "
+        "'%13', '%14', %15, "
+        "'%16', '%17', %18, "
+        "'%19', '%20', %21, "
+        "'%22', '%23', %24, "
+        "%25, %26, %27"
+        ")")
+        .arg(bi1CutInstr).arg(bi1CutMode).arg(bi1CutPower)
+        .arg(bi1CoagInstr).arg(bi1CoagMode).arg(bi1CoagPower)
+        .arg(bi2CutInstr).arg(bi2CutMode).arg(bi2CutPower)
+        .arg(bi2CoagInstr).arg(bi2CoagMode).arg(bi2CoagPower)
+        .arg(mono1CutInstr).arg(mono1CutMode).arg(mono1CutPower)
+        .arg(mono1CoagInstr).arg(mono1CoagMode).arg(mono1CoagPower)
+        .arg(mono2CutInstr).arg(mono2CutMode).arg(mono2CutPower)
+        .arg(mono2CoagInstr).arg(mono2CoagMode).arg(mono2CoagPower)
+        .arg(pedal1).arg(pedal2).arg(outEnabledMask);
+    
+    if (!m_dbReader->executeUpdateQuery(query)) {
+        qWarning() << "Failed to save current state";
+    }
+}
+
+void ControlCenter::loadCurrentState()
+{
+    // Проверяем, есть ли запись с id=1000
+    QList<QVariantList> stateList = m_dbReader->slotSendSelectQuery(
+        QStringList{"Lists"},
+        QStringList{"Bi1Cut_INSTR", "Bi1Cut_MODE", "Bi1Cut_POWER",
+                    "Bi1Coag_INSTR", "Bi1Coag_MODE", "Bi1Coag_POWER",
+                    "Bi2Cut_INSTR", "Bi2Cut_MODE", "Bi2Cut_POWER",
+                    "Bi2Coag_INSTR", "Bi2Coag_MODE", "Bi2Coag_POWER",
+                    "Mono1Cut_INSTR", "Mono1Cut_MODE", "Mono1Cut_POWER",
+                    "Mono1Coag_INSTR", "Mono1Coag_MODE", "Mono1Coag_POWER",
+                    "Mono2Cut_INSTR", "Mono2Cut_MODE", "Mono2Cut_POWER",
+                    "Mono2Coag_INSTR", "Mono2Coag_MODE", "Mono2Coag_POWER",
+                    "Pedal_1", "Pedal_2", "OutEnabled_MASK"},
+        "id = 1000"
+    );
+    
+    if (stateList.isEmpty()) {
+        qDebug() << "No saved state found (id=1000), using defaults";
+        return;
+    }
+    
+    const QVariantList& state = stateList.at(0);
+    
+    // Проверяем, что в state достаточно полей (минимум 24 для сокетов)
+    if (state.size() < 24) {
+        qWarning() << "Invalid state data: expected at least 24 fields, got" << state.size();
+        return;
+    }
+    
+    // Восстанавливаем состояние для каждого сокета
+    for (int i = 0; i < 4; i++) {
+        int baseIdx = i * 6;  // Каждый сокет занимает 6 полей
+        
+        // Резка - парсим строку (может быть пустой или содержать ID)
+        QString cutInstrStr = state.at(baseIdx + 0).toString();
+        QString cutModeStr = state.at(baseIdx + 1).toString();
+        int cutPower = state.at(baseIdx + 2).toInt();
+        
+        // Коагуляция
+        QString coagInstrStr = state.at(baseIdx + 3).toString();
+        QString coagModeStr = state.at(baseIdx + 4).toString();
+        int coagPower = state.at(baseIdx + 5).toInt();
+        
+        // Парсим ID (берём первое значение, если список через запятую)
+        int cutInstrId = cutInstrStr.isEmpty() ? 0 : cutInstrStr.split(',').first().toInt();
+        int cutModeId = cutModeStr.isEmpty() ? 1000 : cutModeStr.split(',').first().toInt();
+        int coagInstrId = coagInstrStr.isEmpty() ? 0 : coagInstrStr.split(',').first().toInt();
+        int coagModeId = coagModeStr.isEmpty() ? 1000 : coagModeStr.split(',').first().toInt();
+        
+        // Проверяем мощность
+        cutPower = std::max(1, cutPower);
+        coagPower = std::max(1, coagPower);
+        
+        auto socket = m_socketModel->itemsMap()->at(i);
+        
+        if (socket.isNull()) {
+            qWarning() << "Socket" << i << "is null, skipping restore";
+            continue;
+        }
+        
+        // Устанавливаем режимы
+        socket->setModeId(cutModeId, false);
+        socket->setModeId(coagModeId, true);
+        
+        // Устанавливаем мощность
+        socket->setCutModePower(cutPower);
+        socket->setCoagModePower(coagPower);
+        
+        // Устанавливаем инструменты
+        socket->setInstrumId(cutInstrId, false);
+        socket->setInstrumId(coagInstrId, true);
+    }
+    
+    // Восстанавливаем педали
+    if (state.size() >= 27) {
+        int pedal1Socket = state.at(24).toInt();  // Номер сокета для single педали
+        int pedal2Socket = state.at(25).toInt();  // Номер сокета для double педали
+        
+        // Устанавливаем педали напрямую в сокеты (без вызова dataChanged)
+        for (int i = 0; i < 4; i++) {
+            auto socket = m_socketModel->itemsMap()->at(i);
+            if (socket.isNull())
+                continue;
+            
+            // Определяем тип педали для этого сокета
+            int pedalType = Pedal::NO_PED;
+            
+            if (i == pedal1Socket) {
+                pedalType = Pedal::SINGLE_PED;
+            } else if (i == pedal2Socket) {
+                pedalType = Pedal::DOUBLE_PED;
+            }
+            
+            socket->setPedal(pedalType);
+        }
+        
+        // Уведомляем модель об изменении педалей
+        for (int i = 0; i < 4; i++) {
+            QModelIndex idx = m_socketModel->index(i, 0);
+            emit m_socketModel->dataChanged(idx, idx, {SocketModel::SocketPedal});
+        }
+        
+        // TODO: Восстановить OutEnabled_MASK
+        // int mask = state.at(26).toInt();
+    }
+}
+
+void ControlCenter::scheduleSave()
+{
+    // Перезапускаем таймер (если он уже запущен, он сбросится)
+    m_saveTimer->start();
 }

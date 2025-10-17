@@ -13,8 +13,19 @@ Rectangle {
     property int animationDuration: 300
     property int animationEasing: Easing.InOutQuad
     
+    // Отслеживание изменений педалей
+    property bool pedalsChanged: false
+    
     width: panelExpanded ? expandedWidth : collapsedWidth
     color: "#2c2c2c"
+    
+    // Отслеживаем сворачивание панели для сохранения
+    onPanelExpandedChanged: {
+        if (!panelExpanded && pedalsChanged) {
+            control.saveCurrentState()
+            pedalsChanged = false
+        }
+    }
     
     // Анимация изменения ширины (синхронизирована с leftPanel)
     Behavior on width {
@@ -301,6 +312,9 @@ Rectangle {
         function onPedSelected(idx) {
             if (idx >= 0 && idx <= 4 && globalPedalEditor.currentSocketIndex >= 0) {
                 socketModel.qmlSetData(globalPedalEditor.currentSocketIndex, idx, "socketpedal")
+                
+                // Отмечаем, что педали изменились
+                pedalPanel.pedalsChanged = true
             }
             globalPedalEditor.close()
         }

@@ -75,6 +75,9 @@ Popup {
     }
 
     onOpened: {
+        // Запрещаем активацию при открытии popup
+        control.enableActivation = false
+        
         modeEditor.initialize(socId, modeIndex, isCoag)
 
         itemNameArr = modeEditor.modeNames
@@ -83,15 +86,14 @@ Popup {
         itemBriefArr = modeEditor.modeNamesBriefs()
         itemDescriptArr = modeEditor.modeNamesDescripts()
         
-//        console.log("Mode briefs loaded:", itemBriefArr.length)
-//        console.log("Mode descripts loaded:", itemDescriptArr.length)
-//        console.log("Current mode index:", modeIndex)
-//        console.log("Current brief:", itemBriefArr[modeIndex])
-//        console.log("Current descript:", itemDescriptArr[modeIndex])
-        
         updateModel()
         modeEditor.currentModeIndex = modeIndex
         modeListView.selectedIndex = modeEditor.currentModeIndex
+    }
+    
+    onClosed: {
+        // Разрешаем активацию при закрытии popup
+        control.enableActivation = true
     }
 
     Rectangle {

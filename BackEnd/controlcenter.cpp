@@ -188,9 +188,28 @@ void filterModeMap(QMap<int, SurgModePtr>& container, const std::vector<int>& al
 
 ControlCenter::ControlCenter(QObject *parent)
     : QObject{parent},
+    m_argonCylinder1Connected(false),
+    m_argonCylinder2Connected(false),
+    m_autoStStopTissue(false),
+    m_neutralElConnected(false),
+    m_neutralElDivided(true),
+    m_autoSSmode(0),
+    m_argonFlowRate(0),
+    m_argonRealRate(0),
+    m_wirelessPedalCharge(0),
+    m_instrumentBI2(INSTR_NOT_CONNECTED),
+    m_instrumentMONO2(INSTR_NOT_CONNECTED),
+    m_enableActivation(true),  // По умолчанию активация разрешена
+    m_activation(false),       // По умолчанию активация не выполняется
+    m_activeSocketName(""),
+    m_activeModeName(""),
+    m_activePower(0),
+    m_activeIsCoag(false),
     m_socketModel(new SocketModel(this)),
     m_editor(new SocketModeEditor(m_socketModel,this)),
     m_handle(new ProgHandle(this)),
+    m_dbReader(nullptr),
+    m_linkStm(nullptr),
     m_saveTimer(new QTimer(this))
 {
     QQmlEngine::setObjectOwnership(m_socketModel, QQmlEngine::CppOwnership);
@@ -742,6 +761,160 @@ QPointer<ProgHandle> ControlCenter::getHandle() const
     return m_handle;
 }
 
+bool ControlCenter::neutralElConnected() const
+{
+    return m_neutralElConnected;
+}
+
+void ControlCenter::setNeutralElConnected(bool connected)
+{
+    if (m_neutralElConnected == connected)
+        return;
+    
+    m_neutralElConnected = connected;
+    emit neutralElConnectedChanged(connected);
+}
+
+bool ControlCenter::neutralElDivided() const
+{
+    return m_neutralElDivided;
+}
+
+void ControlCenter::setNeutralElDivided(bool divided)
+{
+    if (m_neutralElDivided == divided)
+        return;
+    
+    m_neutralElDivided = divided;
+    emit neutralElDividedChanged(divided);
+}
+
+quint8 ControlCenter::autoSSmode() const
+{
+    return m_autoSSmode;
+}
+
+void ControlCenter::setAutoSSmode(quint8 mode)
+{
+    if (m_autoSSmode == mode)
+        return;
+    
+    m_autoSSmode = mode;
+    emit autoSSmodeChanged(mode);
+}
+
+quint8 ControlCenter::argonFlowRate() const
+{
+    return m_argonFlowRate;
+}
+
+void ControlCenter::setArgonFlowRate(quint8 rate)
+{
+    if (m_argonFlowRate == rate)
+        return;
+    
+    m_argonFlowRate = rate;
+    emit argonFlowRateChanged(rate);
+}
+
+quint8 ControlCenter::argonRealRate() const
+{
+    return m_argonRealRate;
+}
+
+void ControlCenter::setArgonRealRate(quint8 rate)
+{
+    if (m_argonRealRate == rate)
+        return;
+    
+    m_argonRealRate = rate;
+    emit argonRealRateChanged(rate);
+}
+
+bool ControlCenter::enableActivation() const
+{
+    return m_enableActivation;
+}
+
+void ControlCenter::setEnableActivation(bool enable)
+{
+    if (m_enableActivation == enable)
+        return;
+    
+    m_enableActivation = enable;
+    emit enableActivationChanged(enable);
+}
+
+bool ControlCenter::activation() const
+{
+    return m_activation;
+}
+
+void ControlCenter::setActivation(bool active)
+{
+    if (m_activation == active)
+        return;
+    
+    m_activation = active;
+    emit activationChanged(active);
+}
+
+QString ControlCenter::activeSocketName() const
+{
+    return m_activeSocketName;
+}
+
+void ControlCenter::setActiveSocketName(const QString& name)
+{
+    if (m_activeSocketName == name)
+        return;
+    
+    m_activeSocketName = name;
+    emit activeSocketNameChanged(name);
+}
+
+QString ControlCenter::activeModeName() const
+{
+    return m_activeModeName;
+}
+
+void ControlCenter::setActiveModeName(const QString& name)
+{
+    if (m_activeModeName == name)
+        return;
+    
+    m_activeModeName = name;
+    emit activeModeNameChanged(name);
+}
+
+int ControlCenter::activePower() const
+{
+    return m_activePower;
+}
+
+void ControlCenter::setActivePower(int power)
+{
+    if (m_activePower == power)
+        return;
+    
+    m_activePower = power;
+    emit activePowerChanged(power);
+}
+
+bool ControlCenter::activeIsCoag() const
+{
+    return m_activeIsCoag;
+}
+
+void ControlCenter::setActiveIsCoag(bool isCoag)
+{
+    if (m_activeIsCoag == isCoag)
+        return;
+    
+    m_activeIsCoag = isCoag;
+    emit activeIsCoagChanged(isCoag);
+}
+
 std::map<int, InstrPtr > ControlCenter::getInstrums()
 {
     std::map<int, InstrPtr> result;
@@ -1000,4 +1173,303 @@ void ControlCenter::scheduleSave()
 {
     // Перезапускаем таймер (если он уже запущен, он сбросится)
     m_saveTimer->start();
+}
+
+void ControlCenter::setLinkStm(LinkStm* linkStm)
+{
+    if (m_linkStm == linkStm)
+        return;
+        
+    // Отключаем старые соединения, если они были
+    if (!m_linkStm.isNull()) {
+        disconnect(m_linkStm, &LinkStm::recieveData, this, &ControlCenter::uartChat);
+    }
+    
+    m_linkStm = linkStm;
+    
+    // Подключаем обработчик входящих данных
+    if (!m_linkStm.isNull()) {
+        connect(m_linkStm, &LinkStm::recieveData, this, &ControlCenter::uartChat);
+        qDebug() << "LinkStm connected to ControlCenter";
+    }
+}
+
+void ControlCenter::uartChat(LinkStm::UartRx* rxData)
+{
+    static PedalKnobPressed prePedalKnob = PRESS_NONE;
+    static int currentSocketIndex = 2;  // МОНО1 по умолчанию
+    QString activSocketName = "";
+    QString modeName = "";
+    static bool isCut = true;           // Резание по умолчанию
+    PedalKnobPressed pedalKnobPressed = PRESS_NONE;  // Локальная переменная
+    quint8 activOutput = 0;
+    quint8 stopReason = 0;
+    bool is3rdKnob = false;
+    LinkStm::UartTx txCommand;
+    quint16 mode = 1000;
+    quint16 power = 0;
+    enum CommandType : quint8 {
+        ComDefault = 0,
+        ComActivation = 1,
+        ComStop = 2,
+        ComSpecial = 3,
+        ComSignal = 4,
+        ComUpdate = 7
+    };
+    CommandType txCommandType = ComDefault;
+
+    if (rxData == nullptr) {
+        qWarning() << "uartChat: received null rxData";
+        return;
+    }
+    
+    // TODO: Здесь будет обработка принятых данных
+    // Пример логирования:
+    qDebug() << "UART RX: command =" << rxData->com 
+             << "mc =" << rxData->mc 
+             << "data size =" << rxData->data.size();
+    
+    // Подготовка ответа:
+    if (!m_linkStm.isNull()) {
+        switch (rxData->com >> 5) {     // Три старших бита определяют тип посылки
+        // Стандартная посылка
+        case 0:
+            m_argonCylinder1Connected = rxData->com & 0x08 ? true : false;
+            m_argonCylinder2Connected = rxData->com & 0x04 ? true : false;
+            m_autoStStopTissue = rxData->com & 0x02 ? true : false;
+            setNeutralElConnected(rxData->com & 0x01 ? true : false);
+
+            // Преобразуем байт в enum PedalKnobPressed
+            if (!rxData->data.isEmpty()) {
+                quint8 pressValue = static_cast<quint8>(rxData->data.at(0));
+
+                // Проверяем, соответствует ли значение одному из допустимых enum
+                switch (pressValue) {
+                case PRESS_MONO1_Y:
+                case PRESS_MONO1_B:
+                case PRESS_MONO2_Y:
+                case PRESS_MONO2_B:
+                case PRESS_TERMO:
+                case PRESS_PED1:
+                case PRESS_PED2_Y:
+                case PRESS_PED2_B:
+                    pedalKnobPressed = static_cast<PedalKnobPressed>(pressValue);
+                    txCommandType = ComActivation;
+                    break;
+                case PRESS_MONO1_YB:
+                case PRESS_MONO2_YB:
+                case PRESS_PED2_YB:
+                case PRESS_NONE:
+                    pedalKnobPressed = static_cast<PedalKnobPressed>(pressValue);
+                    break;
+                default:
+                    pedalKnobPressed = PRESS_WRONG;
+                    qWarning() << "Invalid pedal/knob press value:" << Qt::hex << pressValue;
+                    break;
+                }
+            } else {
+                pedalKnobPressed = PRESS_NONE;
+            }
+            break;
+        // Во время активации
+        case 1:
+            m_argonRealRate = rxData->com & 0x07;
+            activOutput = (rxData->com >> 3) & 0x03;
+            txCommandType = ComActivation;
+            break;
+        // Остановка
+        case 2:
+            stopReason = rxData->com & 0x03;
+            break;
+        // Ответ на спец.запросы
+        case 3:
+
+            break;
+        // Присылаемые ошибки
+        case 4:
+
+            break;
+        // Ответы на команды обновления ПО
+        case 7:
+
+            break;
+        default:
+            // Что-то странное пришло
+            qWarning() << "Unknown rx command: " << rxData->com;
+            break;
+        }
+
+        if (pedalKnobPressed != PRESS_WRONG && pedalKnobPressed != PRESS_NONE) {            // Изменилось состояние
+            if (!m_enableActivation) {          // активация запрещена - не активируемся
+                txCommandType = ComDefault;
+            }
+            if (!m_socketModel || !m_socketModel->itemsMap()) {     // Надо будет перенести
+                qWarning() << "!!!Ошибка инициализации сокетов!!!";
+                txCommandType = ComSignal;
+            }
+            //______________Что-то нажато, определяем, какой сокет_________
+            else {
+                int ped = -1;
+                switch (pedalKnobPressed) {
+                case PRESS_MONO1_Y:
+                    currentSocketIndex = 2;  // МОНО1
+                    isCut = true;
+                    break;
+                case PRESS_MONO1_B:
+                    currentSocketIndex = 2;  // МОНО1
+                    isCut = false;
+                    break;
+                case PRESS_MONO1_YB:
+                    currentSocketIndex = 2;  // МОНО1
+                    is3rdKnob = true;
+                    break;
+                case PRESS_MONO2_Y:
+                    currentSocketIndex = 3;  // МОНО2
+                    isCut = true;
+                    break;
+                case PRESS_MONO2_B:
+                    currentSocketIndex = 3;  // МОНО2
+                    isCut = false;
+                    break;
+                case PRESS_MONO2_YB:
+                    currentSocketIndex = 3;  // МОНО2
+                    is3rdKnob = true;
+                    break;
+                case PRESS_TERMO:
+                    currentSocketIndex = 1;  // БИ2
+                    isCut = false;
+                    break;
+                case PRESS_PED1:
+                    // Ищем сокет, в котором выбрана SINGLE_PED
+                    for (int i = 0; i < 4; i++) {
+                        auto socket = m_socketModel->itemsMap()->at(i);
+                        if (!socket.isNull() && socket->pedal() == Pedal::SINGLE_PED) {
+                            ped = i;
+                            break;
+                        }
+                    }
+                    if (ped >= 0 && ped < 4) {
+                        currentSocketIndex = ped;
+                        isCut = true;  // Single педаль - резание
+                    } else {
+                        currentSocketIndex = -1;  // Педаль не найдена
+                    }
+                    break;
+                case PRESS_PED2_Y:
+                case PRESS_PED2_B:
+                case PRESS_PED2_YB:
+                    // Ищем сокет, в котором выбрана DOUBLE_PED
+                    for (int i = 0; i < 4; i++) {
+                        auto socket = m_socketModel->itemsMap()->at(i);
+                        if (!socket.isNull() && socket->pedal() == Pedal::DOUBLE_PED) {
+                            ped = i;
+                            break;
+                        }
+                    }
+                    if (ped >= 0 && ped < 4) {
+                        currentSocketIndex = ped;
+                    } else {
+                        currentSocketIndex = -1;  // Педаль не найдена
+                    }
+                    // Определяем режим по нажатой кнопке
+                    if (pedalKnobPressed == PRESS_PED2_B) {
+                        isCut = false;  // Коагуляция
+                    } else if (pedalKnobPressed == PRESS_PED2_YB) {
+                        is3rdKnob = true;
+                    } else {
+                        isCut = true;  // PRESS_PED2_Y - резание
+                    }
+                    break;
+                default:
+                    break;
+                }
+                //______________Если собираемся активироваться, нужны режим и мощность_________
+                if (currentSocketIndex >= 0 && currentSocketIndex < 4
+                        && m_socketModel && m_socketModel->itemsMap()
+                        && txCommandType == ComActivation) {
+                    auto currentSocket = m_socketModel->itemsMap()->at(currentSocketIndex);
+
+                    if (!currentSocket.isNull()) {
+                        activSocketName = currentSocket->socketName();
+                        // Получаем текущий режим (объект SurgicalMode)
+                        auto currentMode = isCut ? currentSocket->curCutMode() : currentSocket->curCoagMode();
+
+                        // Получаем Num режима (не ID!) и мощность
+                        if (!currentMode.isNull()) {
+                            mode = currentMode->num();  // ✅ Используем Num, не ID
+                            modeName = currentMode->modeName();
+                            if (mode >= 32) {
+                                qWarning() << "Ошибка определения режима в controlCenter";
+                                mode = 1000;            // 1000 - режим не выбран
+                                txCommandType = ComDefault;
+                            }
+                        }
+                        power = isCut ? currentSocket->cutModePower() : currentSocket->coagModePower();
+                        if (power >= 512) {
+                            qWarning() << "Ошибка определения мощности в controlCenter";
+                            power = 0;
+                            txCommandType = ComDefault;
+                        }
+                    }
+                }
+                else {
+                    qWarning() << "Какая-то проблема с индексами сокетов";
+                }
+            }
+        } // обработка нажатий
+
+        // Подготавливаем команду
+        txCommand.com = LinkStm::Allright;  // По умолчанию
+        txCommand.mc = LinkStm::MC_0;       //
+        txCommand.data = QByteArray();      // Пустые данные
+        switch (txCommandType) {
+        case ComDefault:
+            if (!m_enableActivation)
+                txCommand.com |= 1;
+            if (m_neutralElDivided)
+                txCommand.com |= 1 << 1;
+            if (m_autoSSmode == 2)
+                txCommand.com |= 1 << 2;
+//            if (m_autoSsBi1)              // TODO допилить режим АСС
+//                txCommand.com |= 1 << 3;
+            break;
+        case ComActivation:
+            // Заполняем данные для индикатора активации
+            setActiveSocketName(activSocketName);
+            setActiveModeName(modeName);
+            setActivePower(power);
+            setActiveIsCoag(!isCut);
+
+            txCommand.com = LinkStm::Activation;
+            if (currentSocketIndex > 1)
+                txCommand.com |= 1 << 4;
+            if (currentSocketIndex == 1 || currentSocketIndex == 3)
+                txCommand.com |= 1 << 3;
+            if (m_autoSSmode > 0)
+                txCommand.com |= 1 << 2;
+            if (m_neutralElDivided)
+                txCommand.com |= 1 << 1;
+            if (power % 2)              // Младший бит мощности
+                txCommand.com |= 1;
+            txCommand.data.append(power >> 1);  // Мощность кроме младшего бита
+            txCommand.data.append(((m_argonFlowRate & 0x07) << 5) & mode);  // расход и режим
+
+            setActivation(true);        // Флаг для индикации активации
+            break;
+        case ComStop:
+            txCommand.com = LinkStm::StopActivation;
+                                        // TODO допилить остановку по касанию, таймеру и ошибкам
+            break;
+        case ComSignal:
+            txCommand.com = LinkStm::Signal;
+
+            break;
+        case ComSpecial:
+        case ComUpdate:
+        default:
+            break;
+        }
+        m_linkStm->setTxCommand(txCommand);
+        qDebug() << "UART TX: command =" << txCommand.com << "queued";
+    }
 }

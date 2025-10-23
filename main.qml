@@ -55,7 +55,6 @@ Window {
     LeftPanel {
         id: leftPanel
         panelExpanded: leftPanelExpanded
-        neutralConnected: container.neutralConnected
         expandedWidth: container.width / 2
         collapsedWidth: 85
         animationDuration: container.panelAnimationDuration
@@ -222,6 +221,11 @@ Window {
             mouse.accepted = false
         }
 
+    }
+    
+    // Индикатор активации
+    Activation {
+        id: activationIndicator
     }
 
 //    Connections {

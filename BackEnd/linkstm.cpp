@@ -36,7 +36,7 @@ QByteArray LinkStm::packTxCommand()
     // Заполняем буфер: адрес модуля + длина, команда, данные, crc
 //    buffer.resize(MAX_PACKET_LEN);
 //    buffer.clear();
-    buffer[0] = (quint8) m_txCommand.mc | (m_txCommand.data.length() + 4);
+    buffer[0] = (quint8) m_txCommand.mc | (m_txCommand.data.length() / 2); // Т.к. у нас переменна только длина данных, а они кратны 2, то можно передавать меньше
     buffer[1] = m_txCommand.com;
 
     for (i = 0; i < m_txCommand.data.length(); i++) {

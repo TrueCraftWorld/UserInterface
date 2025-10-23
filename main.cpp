@@ -86,10 +86,13 @@ int main(int argc, char *argv[])
 
     // Класс для связи с stm по uart
     m_linkStm = new LinkStm();
-//    qDebug(logInfo()) << "new LinkStm";
     // Откуда грузиться stm
     m_linkStm->setBoot(static_cast<LinkStm::BootChoice>(boot.toInt()));
-    // Привязываем сигналы
+    
+    // Связываем LinkStm с ControlCenter для обработки UART-данных
+    ctrl->setLinkStm(m_linkStm);
+    
+    // Привязываем сигналы (закомментированы, т.к. теперь обработка в ControlCenter)
 //    QObject::connect(m_linkStm, &LinkStm::recieveData, this, &MainWindow::testDisplay);
 //    QObject::connect(m_linkStm, &LinkStm::error, this, &MainWindow::displayUartError);
 

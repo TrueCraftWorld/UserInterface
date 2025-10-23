@@ -46,6 +46,9 @@ Popup {
     }
 
     onOpened: {
+        // Запрещаем активацию при открытии popup
+        control.enableActivation = false
+        
         modeEditor.initialize(socId, modeIndex, isCoag)
 
         itemNameArr = modeEditor.instrList
@@ -55,7 +58,11 @@ Popup {
         //и триггерятся сигналы
         var bla = modeEditor.currentInstrIndex
         modeEditor.currentInstrIndex = bla
-
+    }
+    
+    onClosed: {
+        // Разрешаем активацию при закрытии popup
+        control.enableActivation = true
     }
     
     Rectangle {

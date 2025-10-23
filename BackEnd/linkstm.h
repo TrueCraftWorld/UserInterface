@@ -15,8 +15,12 @@ class LinkStm : public QObject
 public:
     explicit LinkStm(QObject *parent = nullptr);
     enum TxCommand : quint8 {           // Передаваемые команды
-        Allright = 0xC0,                // Базовый запрос
+        Allright = 0x00,                // Базовый запрос
+        Activation = 0x20,              // Активация
+        StopActivation = 0x40,          // Остановка активации
+        Signal = 0x80,                  // Выдача звукового сигнала (аварии)
 
+        ErrorMU = 0xE0,                 // Ошибка модуля управления
         CurrentVersion = 0xF0,          // Запрос версий ПО
         Erase_1 = 0xF1,                 // Стереть банк 1
         Erase_2 = 0xF2,                 // Стереть банк 2
@@ -33,7 +37,7 @@ public:
     Q_ENUM(TxCommand);
 
     enum RxCommand : quint8 {           // Принимаемые команды
-        Whatsup = 0xC0,                 // Стандартный запрос
+        Whatsup = 0x00,                 // Стандартный запрос
         MyVersion = 0xF0,               // Версии ПО
         Erased_1 = 0xF1,                // Банк 1 стёрт
         Erased_2 = 0xF2,                // Банк 2 стёрт
@@ -91,7 +95,7 @@ public:
     Q_ENUM(McUnit);
 
     struct UartTx {
-        TxCommand com;
+        quint8 com;
         QByteArray data;
         McUnit mc;
     };

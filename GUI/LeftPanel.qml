@@ -119,7 +119,7 @@ Rectangle {
         z: 10  // Выше фонового MouseArea
 
         // Передаем параметры
-        neutralConnected: leftPanel.neutralConnected
+        neutralConnected: control.neutralElConnected
         showControls: panelExpanded
 
         // Обработчики сигналов

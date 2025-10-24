@@ -5,10 +5,10 @@ Popup {
     id: activationPopup
     
     // Привязка к данным из ControlCenter
-    property string socketName: control.activeSocketName
-    property string modeName: control.activeModeName
-    property int power: control.activePower
-    property bool isCoag: control.activeIsCoag
+    property string socketName: control.activeSocketName || "Неизвестный сокет"
+    property string modeName: control.activeModeName || "Режим не выбран"
+    property int power: control.activePower || 0
+    property bool isCoag: control.activeIsCoag || false
     
     // Настройки popup
     modal: true

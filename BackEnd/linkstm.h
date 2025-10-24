@@ -20,14 +20,14 @@ public:
         StopActivation = 0x40,          // Остановка активации
         Signal = 0x80,                  // Выдача звукового сигнала (аварии)
 
-        ErrorMU = 0xE0,                 // Ошибка модуля управления
+        ErrorMU = 0x80,                 // Ошибка модуля управления
         CurrentVersion = 0xF0,          // Запрос версий ПО
         Erase_1 = 0xF1,                 // Стереть банк 1
         Erase_2 = 0xF2,                 // Стереть банк 2
         StartUpdate_1 = 0xF3,           // Начало передачи ПО для банка 1
         StartUpdate_2 = 0xF4,           // Начало передачи ПО для банка 2
-        SoftData = 0xF5,                // Данные прошивки
-        UpdateFinish = 0xF6,            // ПО передано - версия ПО
+        UpdateFinish = 0xF5,            // ПО передано - версия ПО
+        SoftData = 0xF6,                // Данные прошивки
         GoBoot = 0xF7,                  // Переключение на загрузчик
         GoBank_1 = 0xF8,                // Переключение на банк 1
         GoBank_2 = 0xF9,                // Переключение на банк 2
@@ -38,20 +38,23 @@ public:
 
     enum RxCommand : quint8 {           // Принимаемые команды
         Whatsup = 0x00,                 // Стандартный запрос
+        ErrRecieve = 0x80,              // Модуль связи не принимает сигналы
+        ErrCrc = 0x81,                  // Ошибка CRC
+        ErrGenRx = 0x82,                // Генератор не отвечает
+        ErrArgRx = 0x83,                // Газовый модуль не отвечает
+        ErrNeRx = 0x84,                 // Нейтральник не отвечает
+        ErrSwingRx = 0x84,              // Раскачка не отвечает
         MyVersion = 0xF0,               // Версии ПО
         Erased_1 = 0xF1,                // Банк 1 стёрт
         Erased_2 = 0xF2,                // Банк 2 стёрт
         ReadyToUpdate_1 = 0xF3,         // Готов принять новую прошивку в банк 1
         ReadyToUpdate_2 = 0xF4,         // Готов принять новую прошивку в банк 2
-        SoftDataAck = 0xF5,             // Принял данные прошивки
-        UpdateResult = 0xF6,            // Результаты обновления
+        UpdateResult = 0xF5,            // Результаты обновления
+        SoftDataAck = 0xF6,             // Принял данные прошивки
         BootAck = 0xF7,                 // Стандартный ответ загрузчика
         Start = 0xFA,                   // Запуск МК
-        NoRxCommand = 0xFB,
+//        NoRxCommand = 0xFB,
         RxErrData = 0xFC,               // Ошибка: не те данные для прошивки
-        RxErrSub = 0xFD,                // Не отвечает подчинённый МК
-        RxErrCrc = 0xFE,                // Ошибки приёма (CRC)
-        RxErr = 0xFF,                   // Ошибки приёма
     };
     Q_ENUM(RxCommand);
 
@@ -111,12 +114,84 @@ public:
         QByteArray data;
     };
 
+    struct ActiveSocket {
+        quint8 id;
+        bool isCut;
+        bool isEnable;
+        bool is3rdKnob;
+        bool autoMode;
+    };
+
+    // Нажатие кнопок держателей и педалей
+    enum PedalKnobPressed : quint8 {
+        PRESS_MONO1_Y = 0x80,
+        PRESS_MONO1_B = 0x40,
+        PRESS_MONO1_YB = 0xC0,
+
+        PRESS_MONO2_Y = 0x20,
+        PRESS_MONO2_B = 0x10,
+        PRESS_MONO2_YB = 0x30,
+
+        PRESS_TERMO = 0x08,
+        PRESS_PED1 = 0x04,
+
+        PRESS_PED2_Y = 0x02,
+        PRESS_PED2_B = 0x01,
+        PRESS_PED2_YB = 0x03,
+
+        PRESS_NONE = 0,
+        PRESS_WRONG = 0xFF
+    };
+    Q_ENUM(PedalKnobPressed)
+
+    enum InstrumentConnected : quint8 {
+        INSTR_NOT_CONNECTED = 0,
+        INSTR_DETECTED = 1,
+        INSTR_READ = 2,
+        INSTR_IDENTIFIED = 3
+    };
+    Q_ENUM(InstrumentConnected)
+
+    // Состояние аппарата
+    struct UnitState {
+        bool argonCylinder1;             // Подключение баллонов
+        bool argonCylinder2;
+        quint8 argonRealRate;            // Реальный расход аргона во время активации
+        bool neutraElConnected;          // Подключение нейтрального электрода НЭ
+        bool tissueGrab;                 // Обнаружен захват ткани
+        PedalKnobPressed pedalKnob;      // Состояние кнопок и педалей
+        quint8  pedalCharge;             // Заряд беспроводной педали
+        InstrumentConnected instrBi2;    // Подключение инструментов (держателей) с определителем
+        InstrumentConnected instrMono2;
+        quint8 activOutput;              // Активированный выход
+    };
+
+    struct SocketState {
+        quint16 cutModeNum;
+        quint16 cutModePower;
+        quint16 coagModeNum;
+        quint16 coagModePower;
+        quint8 pedal;
+        quint8 autoMode;
+    };
+
+    enum CommunicationState : quint8 {      // Состояние обмена
+        IDLE = 0,                           // По умолчанию - просто передача состояния
+        START_ACTIVATION = 1,               // Запуск активации
+        ACTIVATION = 2,                     // В режиме активации
+        UPDATING = 3,                       // В режиме обновления ПО МК
+        SPECIAL = 4                         // Спец посылки
+    };
+    Q_ENUM(CommunicationState);
+
+
     // Получить строку с шестнадцатиричными данными
     static QString getHexStr(QByteArray byteArray);
     // Последняя отправленная команда
     UartTx getLastCommand() const;
     // Состояние uart соединения
     const UartState &state() const;
+
 
     void setTxCommand(const UartTx &newTxCommand);
 
@@ -132,14 +207,27 @@ public:
 
     void setMc(const McUnit &newMc);
 
+    // Методы для установки состояния из ControlCenter
+    void setEnableActivation(bool enable);
+    void setNeutralElDivided(bool divided);
+    void setAutoSSmode(quint8 mode);
+    
+    // Методы для обновления данных сокетов
+    void updateSocketData(int socketIndex, quint16 cutModeNum, quint16 coagModeNum, 
+                         quint16 cutModePower, quint16 coagModePower, quint8 pedal);
+    void initializeAllSockets();
+
 signals:
 //    void txError();
 //    void rxError();
     void recieveData(UartRx* rxData);
-    void error(UartState errorState);
+    void error(quint8 error);
     void updateProgress(int progress);
     void reportTx(QString txStr);
     void reportRx(QString rxStr, int ms);
+    void pressed3rdKnob(quint8 socket);
+    void startActivation(quint8 socket, bool isCut);
+    void stopActivation(quint8 stopReason);
 
 private slots:
     void sendCommand();
@@ -155,6 +243,12 @@ private:
     bool checkRxCommand();
     // Команды для процесса обновления
     void setNextCommand();
+
+    void readRxCommand();
+
+    ActiveSocket determineSocket(const PedalKnobPressed &pedalKnob);
+
+    void prepareDefaultCommand();
     // Проверка, есть ли команда уже в списке, чтобы не плодить дубликаты
     bool checkCommandList(const UartTx &newTxCommand);
 
@@ -185,6 +279,17 @@ private:
     bool m_waitAnswer;
     BootChoice m_boot;
     McUnit m_mc;
+    
+    // Переменные состояния из ControlCenter
+    bool m_enableActivation;
+    bool m_neutralElDivided;
+    quint8 m_argonFlowRate;
+
+    UnitState m_unitState;
+    SocketState m_socketList[4];
+    QByteArray m_mcVersions;
+    CommunicationState m_comState;
+
 };
 
 #endif // LINKSTM_H

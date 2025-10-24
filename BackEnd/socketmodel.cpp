@@ -231,20 +231,73 @@ bool SocketModel::setData(const QModelIndex &index, const QVariant &value, int r
         if (ped < Pedal::NO_PED || ped > Pedal::INSTR_BUTTON_MONO)
             return false;
         socketItem.setPedal(ped);
+        emitSocketDataChanged(index.row());
         return true;
     }
     case CoagModeIndex:
-        return socketItem.setCoagModeIndex(value.toInt());
+        if (socketItem.setCoagModeIndex(value.toInt())) {
+            emitSocketDataChanged(index.row());
+            return true;
+        }
+        return false;
     case CutModeIndex:
-        return socketItem.setCutModeIndex(value.toInt());
+        if (socketItem.setCutModeIndex(value.toInt())) {
+            emitSocketDataChanged(index.row());
+            return true;
+        }
+        return false;
     case CutModePower:
-        return socketItem.setCutModePower(value.toInt());
+        if (socketItem.setCutModePower(value.toInt())) {
+            emitSocketDataChanged(index.row());
+            return true;
+        }
+        return false;
     case CoagModePower:
-        return socketItem.setCoagModePower(value.toInt());
+        if (socketItem.setCoagModePower(value.toInt())) {
+            emitSocketDataChanged(index.row());
+            return true;
+        }
+        return false;
     default:
         break;
     }
     return false;
+}
+
+void SocketModel::emitSocketDataChanged(int socketId)
+{
+    if (m_itemsMap == nullptr)
+        return;
+        
+    auto iter = m_itemsMap->find(socketId);
+    if (iter == m_itemsMap->end() || iter->second.isNull())
+        return;
+        
+    auto socket = iter->second;
+    
+    // Получаем текущие данные сокета
+    quint16 cutModeNum = 1000;  // По умолчанию
+    quint16 coagModeNum = 1000; // По умолчанию
+    quint16 cutModePower = 0;
+    quint16 coagModePower = 0;
+    quint8 pedal = socket->pedal();
+    
+    // Получаем Num режимов (не ID!)
+    auto cutMode = socket->curCutMode();
+    if (!cutMode.isNull()) {
+        cutModeNum = cutMode->num();
+    }
+    
+    auto coagMode = socket->curCoagMode();
+    if (!coagMode.isNull()) {
+        coagModeNum = coagMode->num();
+    }
+    
+    cutModePower = socket->cutModePower();
+    coagModePower = socket->coagModePower();
+    
+    emit signalSocketDataChanged(socketId, cutModeNum, coagModeNum, 
+                               cutModePower, coagModePower, pedal);
 }
 
 QVariantMap SocketModel::modeParam(int socketId, int modeIndeex, bool isCoag) const

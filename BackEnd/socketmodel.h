@@ -91,6 +91,8 @@ public:
 signals:
     void signalSocketStateChanged(int socketId, int state);
     void signalSocketContentChanged(int socketId, const QByteArray& content);
+    void signalSocketDataChanged(int socketId, quint16 cutModeNum, quint16 coagModeNum, 
+                                quint16 cutModePower, quint16 coagModePower, quint8 pedal);
     void subProgIdxChanged();
     void subProgCountChanged();
 
@@ -117,6 +119,7 @@ private:
     int roleIntByName(const QString& name);
     void socketCollapser(int expandedSocket);
     void pedalRemover(int socketToSkip, int pedalToRemove);
+    void emitSocketDataChanged(int socketId);
 
     QHash<int, QByteArray> m_roles;
     void populateRoles();

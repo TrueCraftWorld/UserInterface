@@ -15,6 +15,31 @@ LinkStm::LinkStm(QObject *parent)
     m_lastCommand.mc = MC_0;
     m_state = STATE_OK;
     m_waitAnswer = false;
+    m_comState = IDLE;
+    
+    // Инициализация переменных состояния
+    m_enableActivation = true;
+    m_neutralElDivided = true;
+    m_argonFlowRate = 0;
+
+    // Инициализация состояния аппарата
+    m_unitState.argonCylinder1 = false;
+    m_unitState.argonCylinder2 = false;
+    m_unitState.neutraElConnected = false;
+    m_unitState.tissueGrab = false;
+    m_unitState.pedalKnob = PRESS_NONE;
+    m_unitState.pedalCharge = 0;
+    m_unitState.instrBi2 = INSTR_NOT_CONNECTED;
+    m_unitState.instrMono2 = INSTR_NOT_CONNECTED;
+
+    for (int i = 0; i < 4; i++) {
+        m_socketList[i].cutModeNum = 1000;  // Режим не выбран
+        m_socketList[i].coagModeNum = 1000; // Режим не выбран
+        m_socketList[i].cutModePower = 0;   // Мощность нулевая
+        m_socketList[i].coagModePower = 0;  // Мощность нулевая
+        m_socketList[i].pedal = 0;          // Педаль не выбрана
+        m_socketList[i].autoMode = 0;       // Нет авто режимов
+    }
 
     // Таймер обмена по uart
     m_uartTimer = new QTimer(this);
@@ -25,6 +50,288 @@ LinkStm::LinkStm(QObject *parent)
     connect(m_uart, &UartToQmlBridge::uartRecieve, this, &LinkStm::unpackRxCommand);
 
 }
+
+void LinkStm::unpackRxCommand(const QByteArray &rxPacket)
+{
+    quint8 xorValue = 0;
+    quint8 rxByte = 0;
+    QByteArray destuffedBuffer;         // Для отработки байт-стаффинга
+
+    m_rxCommand.data.clear();
+
+//    qDebug() << "Rx: " << getHexStr(rxPacket) << "ms: " << m_uart->transmitDelay();
+    emit reportRx(getHexStr(rxPacket), m_uart->transmitDelay());
+
+    // Проверка длины посылки
+    if (rxPacket.size() < 4) {
+        qDebug() << "Посылка короткая";
+        qDebug() << "Rx: " << getHexStr(rxPacket) << "ms: " << m_uart->transmitDelay();
+        m_state = STATE_RX_LEN_ERR;
+        return;
+    }
+
+    // Посылка должна начинаться с FRAME_START
+    if (rxPacket.at(0) != FRAME_START) {
+        qDebug() << "FrameStart не найден";
+        m_state = STATE_RX_ERR;
+        return;
+    }
+
+    // Делаем обратный байт-стаффинг
+    for (int i = 1; i < rxPacket.size(); i++) {
+        if (rxPacket.at(i) == FRAME_ESCAPE_CHAR)
+            xorValue = FRAME_XOR_CHAR;
+        else {
+            rxByte = rxPacket.at(i) ^ xorValue;
+            destuffedBuffer.append(rxByte);
+            xorValue = 0;
+        }
+    }
+    // Длина буфера
+    int packetLen = (destuffedBuffer.at(0) & UART_LEN)*2 + 4;
+    if (packetLen != destuffedBuffer.size()) {
+        QString errStr("length: destuf ");
+        errStr.append(QString::number(destuffedBuffer.at(0)));
+        errStr.append(" rxCom ");
+        errStr.append(QString::number(m_rxCommand.data.size()));
+        qDebug() << errStr;
+        m_state = STATE_RX_LEN_ERR;
+        return;
+    }
+    //Проверка CRC
+    if (calculateCrc16(destuffedBuffer, destuffedBuffer.size()) != 0) {
+        m_state = STATE_RX_CRC_ERR;
+        qDebug() << "CRC не совпадает";
+    }
+    // Модуль, от которого пришло сообщение
+    m_rxCommand.mc = (McUnit) (destuffedBuffer.at(0) & UART_ADDR);
+    // Выбираем команду
+    m_rxCommand.com = static_cast<RxCommand>(destuffedBuffer.at(1));
+    qDebug() << "rxCom: " << m_rxCommand.com << ": " << QString::number(destuffedBuffer.at(1), 16);
+    m_rxCommand.data.clear();
+    for (int i = 2; i < destuffedBuffer.size() - 2; i++)
+        m_rxCommand.data.append(destuffedBuffer.at(i));
+    // Проверяем соответствие
+
+    if (checkRxCommand()) {
+        m_state = STATE_OK;
+    }
+    // Повторяем команду, если ответ не подходящий
+    else {
+        m_state = STATE_RX_ERR;
+    }
+    m_waitAnswer = false;
+//    qDebug() << QString("!!! ").append(getHexStr(destuffedBuffer));
+}
+
+// Первичная проверка, то пришло, или нет
+bool LinkStm::checkRxCommand()
+{
+    // Адреса во флэш-памяти, куда записывались данные
+    uint32_t addrT = 0;
+    uint32_t addrR = 0;
+
+    // команды обновления
+    if (m_txCommand.com >= CurrentVersion && m_txCommand.com <= UpdateFinish)
+        return m_txCommand.com == m_rxCommand.com ? true : false;
+
+    if (m_txCommand.com == SoftData) {
+        if (m_rxCommand.com != SoftDataAck || m_rxCommand.data.size() < 4)
+            return false;
+        // Сравниваем адреса во флэш, переданный и принятый
+        for (int i = 0; i < 4; i++) {
+            addrT |= m_txCommand.data.at(i) << (24 - i*8);
+            addrR |= m_rxCommand.data.at(i) << (24 - i*8);
+        }
+        if (addrT != addrR)
+            return false;
+        return true;
+    }
+    return true;
+}
+
+void LinkStm::sendCommand()
+{
+    QByteArray txPacket;
+    static ActiveSocket activeSocket = {99, false, false, false, false};   // Активированный сокет
+    static int mode = 1000;             // Активированный режим
+    static int power = 0;               // Активированная мощность
+    static int updateCounter = 0;       // Счётчик обновления ПО
+    static int updateProgr = 0;
+
+    m_comState = IDLE;
+
+    // Не дождались адекватного ответа (unpackRxCommand)
+    if (m_waitAnswer)
+       m_state = STATE_NO_RX;
+    //_____________ Проверяем ответ rx__________
+    if (m_state != STATE_OK) {
+        emit error(m_state + 32);           // Ошибки ответа (первые 32 - то, что присылается по uart)
+    }
+    else {
+        readRxCommand();                    // Читаем ответ
+
+        if (!m_txCommandList.isEmpty()) {   // Какую-то спец команду надо передать
+            m_txCommand = m_txCommandList.takeFirst();
+            m_comState == SPECIAL;
+        }
+
+        //______________Подготовка активации________________
+        if (m_comState == START_ACTIVATION) {
+            activeSocket = determineSocket(m_unitState.pedalKnob);
+            if (activeSocket.id >= 4) {     // Например, педаль не привязана к выходам
+                m_comState = IDLE;
+            }
+            else {
+                if (activeSocket.isCut) {
+                    mode = m_socketList[activeSocket.id].cutModeNum;
+                    power = m_socketList[activeSocket.id].cutModePower;
+                }
+                else {
+                    mode = m_socketList[activeSocket.id].coagModeNum;
+                    power = m_socketList[activeSocket.id].coagModePower;
+
+                }
+                if ((mode < 32) && (power > 0) && (power < 400)) {
+                    activeSocket.autoMode = m_socketList[activeSocket.id].autoMode > 0 ? true : false;
+                    emit startActivation(activeSocket.id, activeSocket.isCut);
+                    m_comState = ACTIVATION;
+                }
+                else
+                    m_comState = IDLE;
+
+            }
+        }
+        //__________________Команда активации_________________
+        if (m_comState == ACTIVATION) {
+            if (activeSocket.id >= 4) m_comState = IDLE;
+            else {
+                m_txCommand.com = Activation;
+                m_txCommand.com |= activeSocket.id << 3;
+                m_txCommand.com |= activeSocket.autoMode ? (1 << 2) : 0;
+                m_txCommand.com |= m_neutralElDivided ? (1 << 1) : 0;
+                m_txCommand.com += power%2;                 // Младший бит мощности
+                m_txCommand.data.clear();
+                m_txCommand.data.append(power >> 1);
+                m_txCommand.data.append(((m_argonFlowRate & 0x07) << 5) & (mode & 0x1F));
+            }
+        }
+
+        //__________________Команда по умолчанию_________________
+        if (m_comState == IDLE) {
+            if (m_unitState.pedalKnob != PRESS_NONE) {
+                activeSocket = determineSocket(m_unitState.pedalKnob);
+                if (activeSocket.is3rdKnob && activeSocket.id < 4) {
+                   emit pressed3rdKnob(activeSocket.id);    // Отправляем нажатие 3-й кнопки
+                }
+            }
+            m_txCommand.com = Allright;
+            if (m_socketList[0].autoMode == 2) {            // Режим АСС на выходе БИ1
+                m_txCommand.com |= 1 << 2;
+            }
+            if (m_socketList[1].autoMode == 2) {            // Режим АСС на выходе БИ2
+                m_txCommand.com |= 3 << 2;
+            }
+            m_txCommand.com |= m_neutralElDivided ? (1 << 1) : 0;
+            m_txCommand.com |= m_enableActivation ? 0 : 1;  // Запрет активации
+            m_txCommand.data.clear();
+        }
+
+        //______________Обновление________________
+        if (m_comState == UPDATING) {
+            if (m_rxCommand.com == Start) {        // После перезагрузки МК
+                setTxCommandBoot();
+            }
+            else if ((m_lastCommand.com == StartUpdate_1) ||
+                 (m_lastCommand.com == StartUpdate_2) ||
+                 (m_lastCommand.com == SoftData)) {
+                if (m_hexList.size() > updateCounter) {
+                    m_txCommand.com = SoftData;
+                    m_txCommand.data.clear();
+                    // Формируем команду с данными прошивки по одной из строк hex-файла
+                    for (int i = 0; i < 4; i++) {
+                        m_txCommand.data.append((uint8_t)(m_hexList.at(updateCounter).addr >> 8*(3-i)));
+                    }
+                    m_txCommand.data.append(m_hexList.at(updateCounter++).data);
+                    // Уведомляем о прогрессе обновления
+                    m_transferredSize++;
+                    int progress = static_cast<int>(100 * m_transferredSize / m_softSize);
+         //           qDebug() << "SoftSize: " << m_softSize << " trans: " << m_transferredSize << " progr: " << progress;
+                    if (progress > updateProgr) {
+                        updateProgr = progress;
+                        emit updateProgress(progress);
+                    }
+                }
+                else {
+                    m_txCommand.com = UpdateFinish;
+                    m_txCommand.data.clear();
+                    updateCounter = 0;
+                    updateProgr = 0;
+                    int version, subversion;
+                    bool isOk;
+                    // Строка содержит версию V.V или V (проверяется в MainWindow::on_listView_clicked)
+                    if (m_versionStr.contains(".")) {
+                       QStringList verList = m_versionStr.split('.');
+                       version = verList.at(0).toInt(&isOk, 10);
+                       subversion = verList.at(1).toInt(&isOk, 10);
+                    }
+                    else {
+                       version = m_versionStr.toInt(&isOk, 10);
+                       subversion = 0;
+                    }
+                    m_txCommand.data.append((uchar) version);
+                    m_txCommand.data.append((uchar) subversion);
+                    qDebug() << "new ver: " << getHexStr(m_txCommand.data);
+                    m_comState = IDLE;
+                }
+            } // softData
+        } // updating
+        //______________Спец команда________________
+        if (m_comState == SPECIAL) {
+             m_comState = IDLE;
+        }
+    } // rx good
+
+    //  Если были ошибки m_state отправится та же команда повторно
+
+    // Разная задержка ожидания ответа для разных команд
+    switch (m_txCommand.com) {
+    case StartUpdate_1:
+    case StartUpdate_2:
+    case GoBank_1:
+    case GoBank_2:
+    case Reboot:
+    case Erase_1:
+    case Erase_2:
+    case GoBoot:
+        m_uartTimer->setInterval(8000);  // Стирание банка около 6 сек, перезагрузка 3-4 сек
+        break;
+    case SoftData:
+        m_uartTimer->setInterval(200);
+        break;
+    default:
+        m_uartTimer->setInterval(3000);
+    }
+
+//    qDebug() << "txCom: " << m_txCommand.com << ": " << QString::number(m_txCommand.com, 16);
+    // Собираем команду в посылку
+    m_lastCommand = m_txCommand;        // Сохраняем отправленную команду
+    txPacket = packTxCommand();
+    // Отправляем посылку
+    QString txStr;
+    if (!m_uart->writeData(txPacket)) {
+        m_state = STATE_TX_ERR;
+        txStr = "!Tx ERROR";
+        qDebug() << "Tx ERR!";
+    }
+    else {
+        txStr = getHexStr(txPacket);
+//        qDebug() << "Tx: " << getHexStr(txPacket);
+    }
+    emit reportTx(txStr);
+    m_waitAnswer = true;
+}
+
 
 QByteArray LinkStm::packTxCommand()
 {
@@ -72,207 +379,179 @@ QString LinkStm::getHexStr(QByteArray byteArray)
     return outStr;
 }
 
-void LinkStm::unpackRxCommand(const QByteArray &rxPacket)
+
+
+void LinkStm::readRxCommand()
 {
-    quint8 xorValue = 0;
-    quint8 rxByte = 0;
-    QByteArray destuffedBuffer;         // Для отработки байт-стаффинга
+    enum RxType : quint8 {
+        RxDefault = 0,
+        RxActivation = 1,
+        RxStop = 2,
+        RxSpecial = 3,
+        RxErrors = 4,
+        RxUpdating = 7
+    } rxType;
 
-    m_rxCommand.data.clear();
+    rxType = static_cast<RxType> (m_rxCommand.com >> 5);
 
-//    qDebug() << "Rx: " << getHexStr(rxPacket) << "ms: " << m_uart->transmitDelay();
-    emit reportRx(getHexStr(rxPacket), m_uart->transmitDelay());
-
-    // Проверка длины посылки
-    if (rxPacket.size() < 4) {
-        qDebug() << "Посылка короткая";
-        qDebug() << "Rx: " << getHexStr(rxPacket) << "ms: " << m_uart->transmitDelay();
-        m_state = STATE_RX_LEN_ERR;
-        return;
-    }
-
-    // Посылка должна начинаться с FRAME_START
-    if (rxPacket.at(0) != FRAME_START) {
-        qDebug() << "FrameStart не найден";
-        m_state = STATE_RX_ERR;
-        return;
-    }
-
-    // Делаем обратный байт-стаффинг
-    for (int i = 1; i < rxPacket.size(); i++) {
-        if (rxPacket.at(i) == FRAME_ESCAPE_CHAR)
-            xorValue = FRAME_XOR_CHAR;
-        else {
-            rxByte = rxPacket.at(i) ^ xorValue;
-            destuffedBuffer.append(rxByte);
-            xorValue = 0;
+    // Если шлёт что-то не то во время активации, надо послать команду на стоп на всякий случай
+    if (m_comState == ACTIVATION) {
+        if (rxType != RxActivation && rxType != RxStop) {
+            UartTx command;
+            command.com = StopActivation;
+            command.data.clear();
+            command.mc = MC_0;
+            m_txCommandList.append(command);
         }
     }
-    // Длина буфера
-    if ((destuffedBuffer.at(0) & UART_LEN) != destuffedBuffer.size()) {
-        QString errStr("length: destuf ");
-        errStr.append(QString::number(destuffedBuffer.at(0)));
-        errStr.append(" rxCom ");
-        errStr.append(QString::number(m_rxCommand.data.size()));
-        qDebug() << errStr;
-        m_state = STATE_RX_LEN_ERR;
-        return;
-    }
-    //Проверка CRC
-    if (calculateCrc16(destuffedBuffer, destuffedBuffer.size()) != 0) {
-        m_state = STATE_RX_CRC_ERR;
-        qDebug() << "CRC не совпадает";
-    }
-    // Модуль, от которого пришло сообщение
-    m_rxCommand.mc = (McUnit) (destuffedBuffer.at(0) & UART_ADDR);
-    // Выбираем команду
-    m_rxCommand.com = static_cast<RxCommand>(destuffedBuffer.at(1));
-    qDebug() << "rxCom: " << m_rxCommand.com << ": " << QString::number(destuffedBuffer.at(1), 16);
-    m_rxCommand.data.clear();
-    for (int i = 2; i < destuffedBuffer.size() - 2; i++)
-        m_rxCommand.data.append(destuffedBuffer.at(i));
-    // Проверяем соответствие
-    if (checkRxCommand()) {
-        // Отправленная команда
-        m_lastCommand.com = m_txCommand.com;
-        m_lastCommand.mc = m_txCommand.mc;
-        // Выбираем следующую команду (особенно для обновления)
-        setNextCommand();
-        m_state = STATE_OK;
-//            qDebug() << "------------";
-    }
-    // Повторяем команду, если ответ не подходящий
-    else {
-        m_state = STATE_RX_ERR;
-    }
-    m_waitAnswer = false;
-//    qDebug() << QString("!!! ").append(getHexStr(destuffedBuffer));
-}
 
-bool LinkStm::checkRxCommand()
-{
-    // Адреса во флэш-памяти, куда записывались данные
-    uint32_t addrT = 0;
-    uint32_t addrR = 0;
+    switch (rxType) {     // Три старших бита определяют тип посылки
+    // Стандартная посылка
+    case RxDefault:
+        m_unitState.argonCylinder1 = m_rxCommand.com & 0x08 ? true : false;
+        m_unitState.argonCylinder2 = m_rxCommand.com & 0x04 ? true : false;
+        m_unitState.tissueGrab = m_rxCommand.com & 0x02 ? true : false;
+        m_unitState.neutraElConnected = m_rxCommand.com & 0x01 ? true : false;
 
-    // После перезагрузки STM предлагаем ей перейти на нужный банк
-    if (m_rxCommand.com == Start) {
-        setTxCommandBoot();
-        return true;
-    }
+        // Преобразуем байт в enum PedalKnobPressed
+        if (!m_rxCommand.data.isEmpty()) {
+            quint8 pressValue = static_cast<quint8>(m_rxCommand.data.at(0));
 
-    switch (m_txCommand.com) {
-    case CurrentVersion:
-        if (m_rxCommand.com != MyVersion)
-            return false;
-        emit recieveData(&m_rxCommand);
-        break;
-    case StartUpdate_1:
-        if (m_rxCommand.com != ReadyToUpdate_1)
-            return false;
-        break;
-    case StartUpdate_2:
-        if (m_rxCommand.com != ReadyToUpdate_2)
-            return false;
-        break;
-    case SoftData:
-        if (m_rxCommand.com != SoftDataAck)
-            return false;
-        if (m_rxCommand.data.size() < 4)
-            return false;
-        // Сравниваем адреса во флэш, переданный и принятый
-        for (int i = 0; i < 4; i++) {
-            addrT |= m_txCommand.data.at(i) << (24 - i*8);
-            addrR |= m_rxCommand.data.at(i) << (24 - i*8);
+            // Проверяем, соответствует ли значение одному из допустимых enum
+            switch (pressValue) {
+            case PRESS_MONO1_Y:
+            case PRESS_MONO1_B:
+            case PRESS_MONO2_Y:
+            case PRESS_MONO2_B:
+            case PRESS_TERMO:
+            case PRESS_PED1:
+            case PRESS_PED2_Y:
+            case PRESS_PED2_B:
+                m_unitState.pedalKnob = static_cast<PedalKnobPressed>(pressValue);
+                m_comState = START_ACTIVATION;
+                qDebug() << "Pressed pedal: " << m_unitState.pedalKnob;
+                break;
+            case PRESS_MONO1_YB:
+            case PRESS_MONO2_YB:
+            case PRESS_PED2_YB:
+            case PRESS_NONE:
+                m_unitState.pedalKnob = static_cast<PedalKnobPressed>(pressValue);
+                break;
+            default:
+                m_unitState.pedalKnob = PRESS_WRONG;
+                qWarning() << "Invalid pedal/knob press value:" << Qt::hex << pressValue;
+                break;
+            }
+        } else {
+            qDebug() << "Посылка от stm отстой - нет нажатий кнопок";
+            m_unitState.pedalKnob = PRESS_NONE;
         }
-        if (addrT != addrR)
-            return false;
         break;
-    case UpdateFinish:
-        if (m_rxCommand.com != UpdateResult)
-            return false;
+    // Во время активации
+    case RxActivation:
+        m_unitState.argonRealRate = m_rxCommand.com & 0x07;
+        m_unitState.activOutput = (m_rxCommand.com >> 3) & 0x03;
+        m_comState = ACTIVATION;
         break;
-    case GoBoot:
-//        if (m_rxCommand.com != BootAck)
-//            return false;
+    // Остановка
+    case RxStop:
+        emit stopActivation(m_rxCommand.com & 0x03);
         break;
-    case Erase_1:
-        if (m_rxCommand.com != Erased_1)
-            return false;
-        break;
-    case Erase_2:
-        if (m_rxCommand.com != Erased_2)
-            return false;
-        break;
+    // Ответ на спец.запросы
+    case RxSpecial:
 
+        break;
+    // Присылаемые ошибки
+    case RxErrors:
+        emit error(m_rxCommand.com);
+        break;
+    // Ответы на команды обновления ПО
+    case RxUpdating:
+        if (m_rxCommand.com == MyVersion) {
+            m_mcVersions = m_rxCommand.data;
+            m_comState = IDLE;
+        }
+        else if (m_rxCommand.com == BootAck) {
+            m_comState = IDLE;
+        }
+        m_comState = UPDATING;
+        break;
     default:
-        emit recieveData(&m_rxCommand);
+        // Что-то странное пришло
+        qWarning() << "Unknown rx command: " << m_rxCommand.com;
         break;
     }
-    return true;
 }
 
-//---- Выбор следующей команды -----------
-void LinkStm::setNextCommand()
+LinkStm::ActiveSocket LinkStm::determineSocket(const PedalKnobPressed &pedalKnob)
 {
-   static int updateCounter = 0;
-   static int updateProgr = 0;
-   // Обновление STM
-   if (m_update && ((m_lastCommand.com == StartUpdate_1) ||
-                    (m_lastCommand.com == StartUpdate_2) ||
-                    (m_lastCommand.com == SoftData))) {
-       if (m_hexList.size() > updateCounter) {
-           m_txCommand.com = SoftData;
-           m_txCommand.data.clear();
-           // Формируем команду с данными прошивки по одной из строк hex-файла
-           for (int i = 0; i < 4; i++) {
-               m_txCommand.data.append((uint8_t)(m_hexList.at(updateCounter).addr >> 8*(3-i)));
-           }
-           m_txCommand.data.append(m_hexList.at(updateCounter++).data);
-           // Уведомляем о прогрессе обновления
-           m_transferredSize++;
-           int progress = static_cast<int>(100 * m_transferredSize / m_softSize);
-//           qDebug() << "SoftSize: " << m_softSize << " trans: " << m_transferredSize << " progr: " << progress;
-           if (progress > updateProgr) {
-               updateProgr = progress;
-               emit updateProgress(progress);
-           }
-       }
-       else {
-           m_txCommand.com = UpdateFinish;
-           m_txCommand.data.clear();
-           int version, subversion;
-           bool isOk;
-           // Строка содержит версию V.V или V (проверяется в MainWindow::on_listView_clicked)
-           if (m_versionStr.contains(".")) {
-              QStringList verList = m_versionStr.split('.');
-              version = verList.at(0).toInt(&isOk, 10);
-              subversion = verList.at(1).toInt(&isOk, 10);
-           }
-           else {
-              version = m_versionStr.toInt(&isOk, 10);
-              subversion = 0;
-           }
-           m_txCommand.data.append((uchar) version);
-           m_txCommand.data.append((uchar) subversion);
-           qDebug() << "new ver: " << getHexStr(m_txCommand.data);
-           m_update = false;
-       }
-       return;
-   }
+    ActiveSocket socket;
+    
+    socket.id = 99;
+    socket.isCut = true;
+    socket.isEnable = false;
+    socket.is3rdKnob = false;
 
-   // Если не поступило новой команды
-   if (m_txCommandList.isEmpty() || m_lastCommand.com == CurrentVersion) {
-//       if (m_txCommandQueue.isEmpty() || m_lastCommand.com == CurrentVersion) {
-        // Команда по умолчанию - 0
-        m_txCommand.com = Allright;
-        m_txCommand.mc = MC_0;          // По умолчанию общение только с модулем связи
-        m_txCommand.data.clear();
-   }
-   else {
-       m_txCommand = m_txCommandList.takeFirst();
-//       m_txCommand = m_txCommandQueue.dequeue();
-   }
+    switch (pedalKnob) {
+    case PRESS_MONO1_Y:
+        socket.id = 2;  // МОНО1
+        break;
+    case PRESS_MONO1_B:
+        socket.id = 2;  // МОНО1
+        socket.isCut = false;
+        break;
+    case PRESS_MONO1_YB:
+        socket.id = 2;  // МОНО1
+        socket.is3rdKnob = true;
+        break;
+    case PRESS_MONO2_Y:
+        socket.id = 3;  // МОНО2
+        break;
+    case PRESS_MONO2_B:
+        socket.id = 3;  // МОНО2
+        socket.isCut = false;
+        break;
+    case PRESS_MONO2_YB:
+        socket.id = 3;  // МОНО2
+        socket.is3rdKnob = true;
+        break;
+    case PRESS_TERMO:
+        socket.id = 1;  // БИ2
+        socket.isCut = false;
+        break;
+    case PRESS_PED1:
+        // Ищем сокет, в котором выбрана SINGLE_PED
+        for (int i = 0; i < 4; i++) {
+            if (m_socketList[i].pedal == 1) {
+                socket.id = i;
+                socket.isCut = true;  // Single педаль - резание
+                break;
+            }
+        }
+        break;
+    case PRESS_PED2_Y:
+    case PRESS_PED2_B:
+    case PRESS_PED2_YB:
+        // Ищем сокет, в котором выбрана DOUBLE_PED
+        for (int i = 0; i < 4; i++) {
+            if (m_socketList[i].pedal == 2) {
+                socket.id = i;
+                if (pedalKnob == PRESS_PED2_B) {
+                    socket.isCut = false;  // Коагуляция
+                } else if (pedalKnob == PRESS_PED2_YB) {
+                    socket.is3rdKnob = true;
+                } else {
+                    socket.isCut = true;  // PRESS_PED2_Y - резание
+                }
+                break;
+            }
+        }
+        break;
+    default:
+        break;
+    }
+    
+    return socket;
 }
 
 // Проверка, есть ли команда уже в списке, чтобы не плодить дубликаты
@@ -358,60 +637,6 @@ void LinkStm::setTxCommandBoot()
 //    m_txCommandQueue.enqueue(bootCommand);
 }
 
-void LinkStm::sendCommand()
-{
-    QByteArray txPacket;
-
-    // Не дождались адекватного ответа
-    if (m_waitAnswer) {
-       m_state = STATE_NO_RX;
-    }
-    if (m_state != STATE_OK) {
-        error(m_state);
-//        qDebug() << m_state;
-//        qWarning(logWarning()) << m_state;
-        m_txCommand.com = Allright;
-    }
-
-    // По умолчанию шлём Allright (0)
-    if (m_txCommand.com == NoTxCommand)
-        m_txCommand.com = Allright;
-    // Разная задержка ожидания ответа для разных команд
-    switch (m_txCommand.com) {
-    case StartUpdate_1:
-    case StartUpdate_2:
-    case GoBank_1:
-    case GoBank_2:
-    case Reboot:
-    case Erase_1:
-    case Erase_2:
-    case GoBoot:
-        m_uartTimer->setInterval(8000);  // Стирание банка около 6 сек, перезагрузка 3-4 сек
-        break;
-    case SoftData:
-        m_uartTimer->setInterval(200);
-        break;
-    default:
-        m_uartTimer->setInterval(3000);
-    }
-
-//    qDebug() << "txCom: " << m_txCommand.com << ": " << QString::number(m_txCommand.com, 16);
-    // Собираем команду в посылку
-    txPacket = packTxCommand();
-    // Отправляем посылку
-    QString txStr;
-    if (!m_uart->writeData(txPacket)) {
-        m_state = STATE_TX_ERR;
-        txStr = "!Tx ERROR";
-        qDebug() << "Tx ERR!";
-    }
-    else {
-        txStr = getHexStr(txPacket);
-//        qDebug() << "Tx: " << getHexStr(txPacket);
-    }
-    emit reportTx(txStr);
-    m_waitAnswer = true;
-}
 
 quint16 LinkStm::calculateCrc16(QByteArray &buffer, quint8 len)
 {
@@ -465,5 +690,39 @@ const LinkStm::UartState &LinkStm::state() const
 LinkStm::UartTx LinkStm::getLastCommand() const
 {
     return m_lastCommand;
+}
+
+void LinkStm::setEnableActivation(bool enable)
+{
+    m_enableActivation = enable;
+}
+
+void LinkStm::setNeutralElDivided(bool divided)
+{
+    m_neutralElDivided = divided;
+}
+
+void LinkStm::updateSocketData(int socketIndex, quint16 cutModeNum, quint16 coagModeNum, 
+                              quint16 cutModePower, quint16 coagModePower, quint8 pedal)
+{
+    if (socketIndex >= 0 && socketIndex < 4) {
+        m_socketList[socketIndex].cutModeNum = cutModeNum;
+        m_socketList[socketIndex].coagModeNum = coagModeNum;
+        m_socketList[socketIndex].cutModePower = cutModePower;
+        m_socketList[socketIndex].coagModePower = coagModePower;
+        m_socketList[socketIndex].pedal = pedal;
+        
+        qDebug() << "LinkStm: Updated socket" << socketIndex 
+                 << "cutMode:" << cutModeNum << "coagMode:" << coagModeNum
+                 << "cutPower:" << cutModePower << "coagPower:" << coagModePower
+                 << "pedal:" << pedal;
+    }
+}
+
+void LinkStm::initializeAllSockets()
+{
+    // Этот метод будет вызываться из ControlCenter для инициализации всех сокетов
+    // Пока что просто логируем, что инициализация запрошена
+    qDebug() << "LinkStm: initializeAllSockets called - will be implemented by ControlCenter";
 }
 

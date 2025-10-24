@@ -29,7 +29,6 @@ class ControlCenter : public QObject
     Q_PROPERTY(QPointer<ProgHandle> handle READ getHandle CONSTANT FINAL)
     Q_PROPERTY(bool neutralElConnected READ neutralElConnected NOTIFY neutralElConnectedChanged)
     Q_PROPERTY(bool neutralElDivided READ neutralElDivided WRITE setNeutralElDivided NOTIFY neutralElDividedChanged)
-    Q_PROPERTY(quint8 autoSSmode READ autoSSmode WRITE setAutoSSmode NOTIFY autoSSmodeChanged)
     Q_PROPERTY(quint8 argonFlowRate READ argonFlowRate WRITE setArgonFlowRate NOTIFY argonFlowRateChanged)
     Q_PROPERTY(quint8 argonRealRate READ argonRealRate NOTIFY argonRealRateChanged)
     Q_PROPERTY(bool enableActivation READ enableActivation WRITE setEnableActivation NOTIFY enableActivationChanged)
@@ -78,18 +77,6 @@ public:
      * @param divided true если разделённый, false если единый
      */
     void setNeutralElDivided(bool divided);
-    
-    /**
-     * @brief Возвращает режим AutoStop
-     * @return значение режима AutoStop
-     */
-    quint8 autoSSmode() const;
-    
-    /**
-     * @brief Устанавливает режим AutoStop
-     * @param mode значение режима AutoStop
-     */
-    void setAutoSSmode(quint8 mode);
     
     /**
      * @brief Возвращает скорость потока аргона
@@ -176,36 +163,6 @@ public:
      */
     void setLinkStm(LinkStm* linkStm);
 
-    // Нажатие кнопок держателей и педалей
-    enum PedalKnobPressed : quint8 {
-        PRESS_MONO1_Y = 0x80,
-        PRESS_MONO1_B = 0x40,
-        PRESS_MONO1_YB = 0xC0,
-
-        PRESS_MONO2_Y = 0x20,
-        PRESS_MONO2_B = 0x10,
-        PRESS_MONO2_YB = 0x30,
-
-        PRESS_TERMO = 0x08,
-        PRESS_PED1 = 0x04,
-
-        PRESS_PED2_Y = 0x02,
-        PRESS_PED2_B = 0x01,
-        PRESS_PED2_YB = 0x03,
-
-        PRESS_NONE = 0,
-        PRESS_WRONG = 0xFF
-    };
-    Q_ENUM(PedalKnobPressed)
-
-    enum InstrumentConnected : quint8 {
-        INSTR_NOT_CONNECTED = 0,
-        INSTR_DETECTED = 1,
-        INSTR_READ = 2,
-        INSTR_IDENTIFIED = 3
-    };
-    Q_ENUM(InstrumentConnected)
-
 private:
     bool m_argonCylinder1Connected;         // Подключение баллона 1
     bool m_argonCylinder2Connected;         // Баллона 2
@@ -216,9 +173,6 @@ private:
     quint8 m_argonFlowRate;                 // Скорость потока аргона (установленная)
     quint8 m_argonRealRate;                 // Реальная скорость потока аргона
     quint8 m_wirelessPedalCharge;           // Заряд беспроводной педали
-    PedalKnobPressed m_pedalKnobPressed;    // Педаль/кнопка нажата
-    InstrumentConnected m_instrumentBI2;    // Подключение держателя инструмента БИ2
-    InstrumentConnected m_instrumentMONO2;  // МОНО2
     bool m_enableActivation;                // Запрет активации (открыты popup)
     bool m_activation;                      // Активация выполняется
     QString m_activeSocketName;             // Имя активного сокета
@@ -239,6 +193,10 @@ private:
      * @param rxData Указатель на принятую команду
      */
     void uartChat(LinkStm::UartRx* rxData);
+    void uartError(quint8 errorState);
+    void initializeAllSocketsInLinkStm();
+    void onStartActivation(quint8 socketId, bool isCut);
+    void onStopActivation(quint8 stopReason);
     
     void initComms();
     void initSockets();
@@ -297,7 +255,6 @@ private:
 signals:
     void neutralElConnectedChanged(bool connected);
     void neutralElDividedChanged(bool divided);
-    void autoSSmodeChanged(quint8 mode);
     void argonFlowRateChanged(quint8 rate);
     void argonRealRateChanged(quint8 rate);
     void enableActivationChanged(bool enable);

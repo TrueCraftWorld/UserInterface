@@ -262,6 +262,9 @@ void ControlCenter::makeHandleConnections()
     if (m_handle.isNull())
         return;
 
+    connect(m_handle, &ProgHandle::signalRemoveSub,
+            this, &ControlCenter::removeSubProg);
+
     connect(m_handle, &ProgHandle::signalRecomProgChosen, 
             this, &ControlCenter::programmLoadSocketInit);
     
@@ -478,7 +481,12 @@ void ControlCenter::dataBaseSocketInit()
 
 }
 
-void ControlCenter::programmLoadSocketInit(int progId)
+void ControlCenter::removeSubProg(int index)
+{
+    m_socketModel->removeSubProg(index);
+}
+
+void ControlCenter::programmLoadSocketInit(int progId, bool clear)
 {
     //начинаем прорабатывать прогрузку несекольких экранов
     std::vector<std::map<int, SockPtr>> socketMapVector;
@@ -685,7 +693,7 @@ void ControlCenter::programmLoadSocketInit(int progId)
         }
     }
     m_socketModel->setInstrumMap(getInstrums());
-    m_socketModel->setItemsMapVector(socketMapVector);
+    m_socketModel->setItemsMapVector(socketMapVector, !clear);
 
     // QTimer::singleShot(50, Qt::CoarseTimer, this, [this] () {
     //     emit m_socketModel->dataChanged(QModelIndex(), QModelIndex());

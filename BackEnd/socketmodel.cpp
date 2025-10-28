@@ -539,10 +539,14 @@ SockPtr SocketModel::socketById(int id) const
     return iter->second;
 }
 
-void SocketModel::setInstrumMap(const std::map<int, QSharedPointer<Instrument>> &newInstrumMap)
+void SocketModel::setInstrumMap(const std::map<int, QSharedPointer<Instrument>> &newInstrumMap, bool clear)
 {
-    m_instrumMap.clear();
-    m_instrumMap = newInstrumMap;
+    if (clear) {
+        m_instrumMap.clear();
+        m_instrumMap = newInstrumMap;
+    } else {
+        m_instrumMap.insert(newInstrumMap.begin(), newInstrumMap.end()) /*newInstrumMap*/;
+    }
 }
 
 int SocketModel::roleIntByName(const QString &name)
@@ -627,14 +631,18 @@ void SocketModel::setItemsMap(const std::map<int, SockPtr > &newItemsMap, bool a
     endResetModel();
 }
 
-void SocketModel::setItemsMapVector(const std::vector<std::map<int, SockPtr> > &newItemsMapVector)
+void SocketModel::setItemsMapVector(const std::vector<std::map<int, SockPtr> > &newItemsMapVector, bool add)
 {
     beginResetModel();
-    m_itemsMap = nullptr;
-    m_itemsMapVect.clear();
-    m_itemsMapVect = newItemsMapVector;
+    if (!add) {
+        m_itemsMap = nullptr;
+        m_itemsMapVect.clear();
+        m_itemsMapVect = newItemsMapVector;
+    } else {
+        m_itemsMapVect.insert(m_itemsMapVect.end(), newItemsMapVector.begin(), newItemsMapVector.end());
+    }
 
-    m_subProgIdx = 0;
+    m_subProgIdx = add ? 0 : m_itemsMapVect.size() - newItemsMapVector.size();
     m_itemsMap = &(m_itemsMapVect.at(m_subProgIdx));
     m_socketNames.clear();
     for (int i = SOCKET::BIPOLAR_1; i <= SOCKET::MONOPOLAR_2; ++i) {
@@ -687,4 +695,19 @@ void SocketModel::setSubProgIdx(int newIndex)
 int SocketModel::subProgCount() const
 {
     return m_subProgCount;
+}
+
+void SocketModel::removeSubProg(int index)
+{
+    if (index >= m_itemsMapVect.size() || m_itemsMapVect.size() == 1 || index < 0)
+        return;
+    auto iter = m_itemsMapVect.begin();
+    iter += index;
+    m_itemsMapVect.erase(iter);
+    m_subProgCount--;
+    int tmpIdx = m_subProgIdx;
+    if (tmpIdx >= m_itemsMapVect.size())
+        --tmpIdx;
+
+    setSubProgIdx(tmpIdx);
 }

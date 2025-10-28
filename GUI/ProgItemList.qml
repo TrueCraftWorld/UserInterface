@@ -13,6 +13,7 @@ Rectangle {
 
     property var itemIdArr: []
     property var itemNameArr: []
+    property bool loadClear: true
 
 
     ListModel {
@@ -161,7 +162,7 @@ Rectangle {
     Connections {
         target: progList
         function onNewIndexSelected(index) {
-            recomHandle.loadRecommendedProg(index)
+            recomHandle.loadRecommendedProg(index, loadClear)
             recProgs.clickedButton(-1);
         }
     }

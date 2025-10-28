@@ -5,17 +5,6 @@
 #include <QVariant>
 #include <QVariantMap>
 
-// struct Scope {
-//     QString name;
-//     int id;
-//     // QList<Prog> progs;
-// };
-
-// struct Prog {
-//     QString name;
-//     int id;
-//     // bool isMainProg;
-// };
 
 class ProgHandle : public QObject
 {
@@ -31,7 +20,8 @@ public:
     explicit ProgHandle(QObject *parent = nullptr);
 
     Q_INVOKABLE void loadSelected();
-    Q_INVOKABLE void loadRecommendedProg(int recomProgId);
+    Q_INVOKABLE void loadRecommendedProg(int recomProgId, bool clear = true);
+    Q_INVOKABLE void removeSubProg(int idx);
     Q_INVOKABLE void loadUserProg(int recomProgId);
     Q_INVOKABLE void loadEmptyProg();
     Q_INVOKABLE void permitAll();
@@ -52,7 +42,9 @@ public:
 signals:
     void signalLoadRecommend(int scopeIdx, int progIdx, int subProgIdx);
 
-    void signalRecomProgChosen(int progId);
+    void signalRecomProgChosen(int progId, bool clear);
+
+    void signalRemoveSub(int toRemove);
     //может быть избыточно и проги сможем просто по id разделять
     void signalUserProgChosen(int progId);
 
@@ -61,7 +53,6 @@ signals:
     void signalUnlockProg();
 
     void signalScopeRequest(int scopeId);
-    // void signalProgRequest(int progIdx);
 
     void currentModeIndexChanged();
     void scopeNameListChanged();

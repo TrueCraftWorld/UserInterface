@@ -1,6 +1,12 @@
 import QtQuick 2.15
 
 Item {
+    id: menuLoadRoot
+
+    property alias source : menuLoader.source
+    property bool shortcut : false
+    property alias item : menuLoader.item
+
     signal returnButtonPressed()
     signal closeMe()
     Loader {
@@ -25,8 +31,15 @@ Item {
         function onReturnButtonPressed() {
             if (menuLoader.item instanceof MainMenu)
                 ;
-            else
-                menuLoader.source = "MainMenu.qml"
+            else {
+                if (shortcut) {
+                    shortcut = false
+                    closeMe()
+                    menuLoader.source = "MainMenu.qml"
+                } else {
+                    menuLoader.source = "MainMenu.qml"
+                }
+            }
         }
         function onClickedButton(progId) {
             // ProgHandle.loadRecommendedProg(progId + 1)

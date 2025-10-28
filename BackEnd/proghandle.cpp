@@ -12,13 +12,19 @@ void ProgHandle::loadSelected()
 
 }
 
-void ProgHandle::loadRecommendedProg(int recomProgIdx)
+void ProgHandle::loadRecommendedProg(int recomProgIdx, bool clear)
 {
     if (recomProgIdx >= m_progs.size())
         return;
     auto iter = m_progs.begin();
     iter += recomProgIdx;
-    emit signalRecomProgChosen(iter.key());
+    emit signalRecomProgChosen(iter.key(), clear);
+}
+
+void ProgHandle::removeSubProg(int idx)
+{
+
+    emit signalRemoveSub(idx);
 }
 
 void ProgHandle::loadUserProg(int recomProgId)

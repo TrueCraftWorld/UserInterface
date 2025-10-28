@@ -37,6 +37,11 @@ class ControlCenter : public QObject
     Q_PROPERTY(QString activeModeName READ activeModeName NOTIFY activeModeNameChanged)
     Q_PROPERTY(int activePower READ activePower NOTIFY activePowerChanged)
     Q_PROPERTY(bool activeIsCoag READ activeIsCoag NOTIFY activeIsCoagChanged)
+    Q_PROPERTY(int activeSocketX READ activeSocketX WRITE setActiveSocketX NOTIFY activeSocketXChanged)
+    Q_PROPERTY(int activeSocketY READ activeSocketY WRITE setActiveSocketY NOTIFY activeSocketYChanged)
+    Q_PROPERTY(int activeSocketWidth READ activeSocketWidth WRITE setActiveSocketWidth NOTIFY activeSocketWidthChanged)
+    Q_PROPERTY(int activeSocketHeight READ activeSocketHeight WRITE setActiveSocketHeight NOTIFY activeSocketHeightChanged)
+    Q_PROPERTY(int activeSocketId READ activeSocketId NOTIFY activeSocketIdChanged FINAL)
 public:
     explicit ControlCenter(QObject *parent = nullptr);
     ~ControlCenter();
@@ -133,6 +138,36 @@ public:
      * @brief Возвращает тип активного режима (коагуляция/резка)
      */
     bool activeIsCoag() const;
+    
+    /**
+     * @brief Возвращает X-координату активного сокета
+     */
+    int activeSocketX() const;
+    
+    /**
+     * @brief Возвращает Y-координату активного сокета
+     */
+    int activeSocketY() const;
+    
+    /**
+     * @brief Возвращает ширину активного сокета
+     */
+    int activeSocketWidth() const;
+    
+    /**
+     * @brief Возвращает высоту активного сокета
+     */
+    int activeSocketHeight() const;
+    
+    /**
+     * @brief Возвращает ID активного сокета
+     */
+    int activeSocketId() const;
+
+    void setActiveSocketX(int x);
+    void setActiveSocketY(int y);
+    void setActiveSocketWidth(int width);
+    void setActiveSocketHeight(int height);
 
     /**
      * @brief инициализация - чтение предыдущих настроек, загрузка режимов из БД и т.д.
@@ -179,6 +214,11 @@ private:
     QString m_activeModeName;               // Имя активного режима
     int m_activePower;                      // Мощность активного режима
     bool m_activeIsCoag;                    // Тип активного режима
+    int m_activeSocketX;                    // X-координата активного сокета
+    int m_activeSocketY;                    // Y-координата активного сокета
+    int m_activeSocketWidth;                 // Ширина активного сокета
+    int m_activeSocketHeight;                // Высота активного сокета
+    int m_activeSocketId;                    // ID активного сокета
 
 
     void makeHandleConnections();
@@ -251,6 +291,7 @@ private:
     void setActiveModeName(const QString& name);
     void setActivePower(int power);
     void setActiveIsCoag(bool isCoag);
+    void setActiveSocketId(int socketId);
 
 signals:
     void neutralElConnectedChanged(bool connected);
@@ -263,6 +304,11 @@ signals:
     void activeModeNameChanged(const QString& name);
     void activePowerChanged(int power);
     void activeIsCoagChanged(bool isCoag);
+    void activeSocketXChanged(int x);
+    void activeSocketYChanged(int y);
+    void activeSocketWidthChanged(int width);
+    void activeSocketHeightChanged(int height);
+    void activeSocketIdChanged(int socketId);
 };
 
 #endif // CONTROLCENTER_H

@@ -157,7 +157,7 @@ void LinkStm::sendCommand()
     static int mode = 1000;             // Активированный режим
     static int power = 0;               // Активированная мощность
     static int updateCounter = 0;       // Счётчик обновления ПО
-    static int updateProgr = 0;
+   static int updateProgr = 0;
 
     m_comState = IDLE;
 
@@ -243,45 +243,45 @@ void LinkStm::sendCommand()
                 setTxCommandBoot();
             }
             else if ((m_lastCommand.com == StartUpdate_1) ||
-                 (m_lastCommand.com == StartUpdate_2) ||
+                    (m_lastCommand.com == StartUpdate_2) ||
                  (m_lastCommand.com == SoftData)) {
-                if (m_hexList.size() > updateCounter) {
-                    m_txCommand.com = SoftData;
-                    m_txCommand.data.clear();
-                    // Формируем команду с данными прошивки по одной из строк hex-файла
-                    for (int i = 0; i < 4; i++) {
-                        m_txCommand.data.append((uint8_t)(m_hexList.at(updateCounter).addr >> 8*(3-i)));
-                    }
-                    m_txCommand.data.append(m_hexList.at(updateCounter++).data);
-                    // Уведомляем о прогрессе обновления
-                    m_transferredSize++;
-                    int progress = static_cast<int>(100 * m_transferredSize / m_softSize);
-         //           qDebug() << "SoftSize: " << m_softSize << " trans: " << m_transferredSize << " progr: " << progress;
-                    if (progress > updateProgr) {
-                        updateProgr = progress;
-                        emit updateProgress(progress);
-                    }
-                }
-                else {
-                    m_txCommand.com = UpdateFinish;
-                    m_txCommand.data.clear();
+       if (m_hexList.size() > updateCounter) {
+           m_txCommand.com = SoftData;
+           m_txCommand.data.clear();
+           // Формируем команду с данными прошивки по одной из строк hex-файла
+           for (int i = 0; i < 4; i++) {
+               m_txCommand.data.append((uint8_t)(m_hexList.at(updateCounter).addr >> 8*(3-i)));
+           }
+           m_txCommand.data.append(m_hexList.at(updateCounter++).data);
+           // Уведомляем о прогрессе обновления
+           m_transferredSize++;
+           int progress = static_cast<int>(100 * m_transferredSize / m_softSize);
+//           qDebug() << "SoftSize: " << m_softSize << " trans: " << m_transferredSize << " progr: " << progress;
+           if (progress > updateProgr) {
+               updateProgr = progress;
+               emit updateProgress(progress);
+           }
+       }
+       else {
+           m_txCommand.com = UpdateFinish;
+           m_txCommand.data.clear();
                     updateCounter = 0;
                     updateProgr = 0;
-                    int version, subversion;
-                    bool isOk;
-                    // Строка содержит версию V.V или V (проверяется в MainWindow::on_listView_clicked)
-                    if (m_versionStr.contains(".")) {
-                       QStringList verList = m_versionStr.split('.');
-                       version = verList.at(0).toInt(&isOk, 10);
-                       subversion = verList.at(1).toInt(&isOk, 10);
-                    }
-                    else {
-                       version = m_versionStr.toInt(&isOk, 10);
-                       subversion = 0;
-                    }
-                    m_txCommand.data.append((uchar) version);
-                    m_txCommand.data.append((uchar) subversion);
-                    qDebug() << "new ver: " << getHexStr(m_txCommand.data);
+           int version, subversion;
+           bool isOk;
+           // Строка содержит версию V.V или V (проверяется в MainWindow::on_listView_clicked)
+           if (m_versionStr.contains(".")) {
+              QStringList verList = m_versionStr.split('.');
+              version = verList.at(0).toInt(&isOk, 10);
+              subversion = verList.at(1).toInt(&isOk, 10);
+           }
+           else {
+              version = m_versionStr.toInt(&isOk, 10);
+              subversion = 0;
+           }
+           m_txCommand.data.append((uchar) version);
+           m_txCommand.data.append((uchar) subversion);
+           qDebug() << "new ver: " << getHexStr(m_txCommand.data);
                     m_comState = IDLE;
                 }
             } // softData
@@ -323,8 +323,8 @@ void LinkStm::sendCommand()
         m_state = STATE_TX_ERR;
         txStr = "!Tx ERROR";
         qDebug() << "Tx ERR!";
-    }
-    else {
+   }
+   else {
         txStr = getHexStr(txPacket);
 //        qDebug() << "Tx: " << getHexStr(txPacket);
     }

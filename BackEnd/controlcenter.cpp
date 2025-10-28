@@ -13,6 +13,7 @@
 #include <QTimer>
 #include <QDebug>
 #include <QVector>
+#include <QVariant>
 
 namespace {
 
@@ -203,6 +204,11 @@ ControlCenter::ControlCenter(QObject *parent)
     m_activeModeName(""),
     m_activePower(0),
     m_activeIsCoag(false),
+    m_activeSocketX(0),
+    m_activeSocketY(0),
+    m_activeSocketWidth(0),
+    m_activeSocketHeight(0),
+    m_activeSocketId(-1),
     m_socketModel(new SocketModel(this)),
     m_editor(new SocketModeEditor(m_socketModel,this)),
     m_handle(new ProgHandle(this)),
@@ -909,6 +915,72 @@ void ControlCenter::setActiveIsCoag(bool isCoag)
     emit activeIsCoagChanged(isCoag);
 }
 
+int ControlCenter::activeSocketX() const
+{
+    return m_activeSocketX;
+}
+
+int ControlCenter::activeSocketY() const
+{
+    return m_activeSocketY;
+}
+
+int ControlCenter::activeSocketWidth() const
+{
+    return m_activeSocketWidth;
+}
+
+int ControlCenter::activeSocketHeight() const
+{
+    return m_activeSocketHeight;
+}
+
+int ControlCenter::activeSocketId() const
+{
+    return m_activeSocketId;
+}
+
+void ControlCenter::setActiveSocketX(int x)
+{
+    if (m_activeSocketX != x) {
+        m_activeSocketX = x;
+        emit activeSocketXChanged(x);
+    }
+}
+
+void ControlCenter::setActiveSocketY(int y)
+{
+    if (m_activeSocketY != y) {
+        m_activeSocketY = y;
+        emit activeSocketYChanged(y);
+    }
+}
+
+void ControlCenter::setActiveSocketWidth(int width)
+{
+    if (m_activeSocketWidth != width) {
+        m_activeSocketWidth = width;
+        emit activeSocketWidthChanged(width);
+    }
+}
+
+void ControlCenter::setActiveSocketHeight(int height)
+{
+    if (m_activeSocketHeight != height) {
+        m_activeSocketHeight = height;
+        emit activeSocketHeightChanged(height);
+    }
+}
+
+void ControlCenter::setActiveSocketId(int socketId)
+{
+    if (m_activeSocketId == socketId)
+        return;
+    
+    m_activeSocketId = socketId;
+    emit activeSocketIdChanged(socketId);
+}
+
 std::map<int, InstrPtr > ControlCenter::getInstrums()
 {
     std::map<int, InstrPtr> result;
@@ -1288,8 +1360,19 @@ void ControlCenter::onStartActivation(quint8 socketId, bool isCut)
     setActivePower(power);
     setActiveIsCoag(isCoag);
     
-    // Запускаем активацию
-    setActivation(true);
+    // Устанавливаем ID активного сокета
+    setActiveSocketId(socketId);
+    
+    // Разворачиваем сокет (сворачиваем остальные)
+    if (m_socketModel) {
+        m_socketModel->expandSocket(socketId);
+    }
+    
+    // Запускаем активацию с небольшой задержкой, чтобы сокет успел развернуться
+    // Координаты будут установлены через сигнал socketPositionChanged от QML
+    QTimer::singleShot(500, this, [this]() {
+        setActivation(true);
+    });
     
     qDebug() << "Activation started: socket" << socketId << "mode:" << modeName << "power:" << power;
 }

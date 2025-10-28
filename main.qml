@@ -49,6 +49,23 @@ Window {
             bottom: parent.bottom
             top: statusDummy.bottom
         }
+        
+        // Обработка изменений позиции сокетов для Activation popup
+        Connections {
+            target: socketsDummy
+            function onSocketPositionChanged(socketId, x, y, width, height) {
+                console.log("onSocketPositionChanged received: socketId=" + socketId + " activeSocketId=" + control.activeSocketId + " x=" + x + " y=" + y + " w=" + width + " h=" + height)
+                // Обновляем координаты если это активный сокет (даже если activation еще false)
+                if (socketId === control.activeSocketId) {
+                    console.log("Updating active socket geometry")
+                    // Устанавливаем свойства напрямую - это должно работать
+                    control.activeSocketX = x
+                    control.activeSocketY = y
+                    control.activeSocketWidth = width
+                    control.activeSocketHeight = height
+                }
+            }
+        }
     }
 
     // Левая панель - перекрывает центральный контейнер

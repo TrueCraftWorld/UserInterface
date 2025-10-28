@@ -10,7 +10,7 @@ Rectangle {
     property bool neutralDivided: control.neutralElDivided  // НЭ разделённый или нет - привязка к ControlCenter
     property bool neutralConnected: false  // Передается снаружи
     property bool showControls: false      // Показывать ли кнопки управления
-    
+
     // Обновляем ControlCenter при изменении neutralDivided
     onNeutralDividedChanged: {
         if (control.neutralElDivided !== neutralDivided) {
@@ -81,8 +81,8 @@ Rectangle {
             color: "transparent"
             Rectangle {
                 id: leftDivided
-                anchors {
-                    left: parent.left
+            anchors {
+                left: parent.left
                     leftMargin: panelExpanded ? 15 :7
                     bottom: parent.bottom
                     bottomMargin: panelExpanded ? 15 :7
@@ -102,12 +102,12 @@ Rectangle {
                 color: neutralImage.neColor
                 width: parent.width * .15
                 height: parent.height * .15
-            }
+        }
 
-            Rectangle {
+        Rectangle {
                 id: rightDivided
-                anchors {
-                    right: parent.right
+            anchors {
+                right: parent.right
                     rightMargin: panelExpanded ? 15 :7
                     bottom: parent.bottom
                     bottomMargin: panelExpanded ? 15 :7
@@ -149,7 +149,7 @@ Rectangle {
         z: 20  // Выше любых MouseArea
 
         // Кнопки выбора типа
-        Rectangle {
+    Rectangle {
             id: buttonDivided
             color: neutralDivided ? "cyan" : "lightgray"
             height: parent.height * .43
@@ -157,9 +157,9 @@ Rectangle {
             radius: 10
             border.color: neutralDivided ? "white" : "transparent"
             border.width: neutralDivided ? 3 : 0
-            anchors {
-                top: parent.top
-                left: parent.left
+        anchors {
+            top: parent.top
+            left: parent.left
                 leftMargin: 10
                 topMargin: 10
             }

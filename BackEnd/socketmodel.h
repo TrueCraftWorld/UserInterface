@@ -86,7 +86,11 @@ public:
     bool commitModeChange(int socketId, int modeINdex, const QVariantMap& param);
     SockPtr socketByName(const QString& socket) const;
     SockPtr socketById(int id) const;
-
+    void expandSocket(int socketId);
+    std::map<int, SockPtr>* itemsMap() const { return m_itemsMap; }
+    void setItemsMap(const std::map<int, SockPtr > &newItemsMap, bool add = false);
+    void setItemsMapVector(const std::vector<std::map<int, SockPtr >> &newItemsMapVector);
+    void setInstrumMap(const std::map<int, QSharedPointer<Instrument> > &newInstrumMap);
 
 signals:
     void signalSocketStateChanged(int socketId, int state);
@@ -96,20 +100,14 @@ signals:
     void subProgIdxChanged();
     void subProgCountChanged();
 
-public:
+private:
     virtual QHash<int, QByteArray> roleNames() const override final;
-    void setItemsMap(const std::map<int, SockPtr > &newItemsMap, bool add = false);
-    void setItemsMapVector(const std::vector<std::map<int, SockPtr >> &newItemsMapVector);
-    void setInstrumMap(const std::map<int, QSharedPointer<Instrument> > &newInstrumMap);
 
     int subProgIdx() const;
     void setSubProgIdx(int newIndex);
 
     int subProgCount() const;
     
-    std::map<int, SockPtr>* itemsMap() const { return m_itemsMap; }
-
-private:
     std::map<int, SockPtr>* m_itemsMap = nullptr;
     std::vector<std::map<int, SockPtr >> m_itemsMapVect;
     int m_subProgIdx = 0;

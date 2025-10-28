@@ -11,13 +11,15 @@ Popup {
     property bool isCoag: control.activeIsCoag || false
     
     // Настройки popup
-    modal: true
+    modal: true  // Модальный - блокируем касания
     closePolicy: Popup.NoAutoClose  // Закрывается только программно
     parent: Overlay.overlay
-    anchors.centerIn: parent
     
-    width: 400
-    height: 300
+    // Привязка к координатам и размерам активного сокета
+    x: control.activeSocketX || 0
+    y: control.activeSocketY || 0
+    width: control.activeSocketWidth || 350
+    height: control.activeSocketHeight || 400
     
     // Перехватываем все события мыши
     MouseArea {
@@ -35,7 +37,7 @@ Popup {
     // Фон в зависимости от режима
     background: Rectangle {
         id: backgroundRect
-        color: isCoag ? "#0066CC" : "#FFB300"  // Синий для коагуляции, жёлтый для резки
+        color: isCoag ? "#0f58fa" : "#ffd900"  // Синий для коагуляции, жёлтый для резания
         radius: 20
         border.color: "white"
         border.width: 3
@@ -69,66 +71,75 @@ Popup {
             // Заголовок "АКТИВАЦИЯ"
             Text {
                 anchors.horizontalCenter: parent.horizontalCenter
-                text: "АКТИВАЦИЯ"
-                font.pixelSize: 36
+                text: qsTr("АКТИВАЦИЯ ") + socketName
+                font.pixelSize: 32
                 font.bold: true
-                color: "white"
+                color: isCoag ? "white" : "black"
                 style: Text.Outline
-                styleColor: "black"
+                styleColor: isCoag ? "black" : "white"
             }
             
             // Разделитель
             Rectangle {
                 width: 350
                 height: 2
-                color: "white"
+                color: isCoag ? "white" : "black"
                 anchors.horizontalCenter: parent.horizontalCenter
             }
             
-            // Название сокета
-            Text {
-                anchors.horizontalCenter: parent.horizontalCenter
-                text: socketName
-                font.pixelSize: 28
-                font.bold: true
-                color: "white"
-                style: Text.Outline
-                styleColor: "black"
-            }
+//            // Название сокета
+//            Text {
+//                anchors.horizontalCenter: parent.horizontalCenter
+//                text: socketName
+//                font.pixelSize: 32
+//                font.bold: true
+//                color: isCoag ? "white" : "black"
+//                style: Text.Outline
+//                styleColor: isCoag ? "black" : "white"
+//            }
             
             // Название режима
             Text {
                 anchors.horizontalCenter: parent.horizontalCenter
                 text: modeName
-                font.pixelSize: 24
-                color: "white"
+                font.pixelSize: 48
+                color: isCoag ? "white" : "black"
                 style: Text.Outline
-                styleColor: "black"
+                styleColor: isCoag ? "black" : "white"
+            }
+
+            // Мощность
+            Text {
+                anchors.horizontalCenter: parent.horizontalCenter
+                text: power
+                font.pixelSize: 80
+                color: isCoag ? "yellow" : "brown"
+                style: Text.Outline
+                styleColor: isCoag ? "black" : "white"
             }
             
-            // Мощность
-            Row {
-                anchors.horizontalCenter: parent.horizontalCenter
-                spacing: 10
+//            Row {
+//                anchors.horizontalCenter: parent.horizontalCenter
+//                spacing: 10
                 
-                Text {
-                    text: "Мощность:"
-                    font.pixelSize: 28
-                    font.bold: true
-                    color: "white"
-                    style: Text.Outline
-                    styleColor: "black"
-                }
+//                Text {
+//                    text: qsTr("Мощность:")
+//                    font.pixelSize: 36
+//                    font.bold: true
+//                    color: isCoag ? "white" : "black"
+//                    style: Text.Outline
+//                    styleColor: isCoag ? "black" : "white"
+//                }
                 
-                Text {
-                    text: power + " Вт"
-                    font.pixelSize: 32
-                    font.bold: true
-                    color: "yellow"
-                    style: Text.Outline
-                    styleColor: "black"
-                }
-            }
+//                Text {
+//                    text: power
+//                    font.pixelSize: 36
+//                    font.bold: true
+//                    color: isCoag ? "yellow" : "brown"
+//                    style: Text.Outline
+//                    styleColor: isCoag ? "black" : "white"
+//                }
+//            }
         }
         
         // Анимированная рамка по краям

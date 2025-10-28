@@ -579,6 +579,20 @@ void SocketModel::pedalRemover(int socketToSkip, int pedalToRemove)
     }
 }
 
+void SocketModel::expandSocket(int socketId)
+{
+    if (!m_itemsMap || socketId < 0 || socketId >= static_cast<int>(m_itemsMap->size())) {
+        qWarning() << "Cannot expand socket" << socketId << ": invalid index";
+        return;
+    }
+    
+    // Сворачиваем все остальные сокеты
+    socketCollapser(socketId);
+    
+    // Разворачиваем нужный сокет
+    qmlSetData(socketId, SOCKET::S_EXPANDED, "socketdisplaymode");
+}
+
 void SocketModel::populateRoles()
 {
     QMetaEnum metaEnum = QMetaEnum::fromType<SocketRoles>();

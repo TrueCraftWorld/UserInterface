@@ -8,16 +8,20 @@ DISTFILES += \
     $$PWD/InstrumEditor.qml \
     $$PWD/InstrumRect.qml \
     $$PWD/ItemList.qml \
+    $$PWD/LeftPanel.qml \
     $$PWD/MainMenu.qml \
     $$PWD/MenuLoader.qml \
     $$PWD/ModeEditor.qml \
     $$PWD/ModePowerRect.qml \
+    $$PWD/NeutralEl.qml \
     $$PWD/Pedal.qml \
     $$PWD/PedalEditor.qml \
+    $$PWD/PedalPanel.qml \
     $$PWD/PowerRect.qml \
     $$PWD/ProgAdditionPop.qml \
     $$PWD/ProgItemList.qml \
     $$PWD/SocketRepeater.qml \
     $$PWD/StatesSocket.qml \
     $$PWD/SocketContainerV2.qml \
-    $$PWD/StatusBar.qml
+    $$PWD/StatusBar.qml \
+    $$PWD/Activation.qml

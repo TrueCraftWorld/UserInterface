@@ -18,6 +18,13 @@ public:
     QList<QVariantList> slotSendSelectQuery(const QStringList &tables,
                              const QStringList& columns,
                              const QString& conditions);
+    
+    /**
+     * @brief Выполняет UPDATE/INSERT/DELETE запрос
+     * @param queryStr SQL запрос
+     * @return true если успешно, false если ошибка
+     */
+    bool executeUpdateQuery(const QString& queryStr);
 
 signals:
     // void signalResultReady(const QString& query, const QVariantList res);

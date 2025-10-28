@@ -3,11 +3,10 @@ import QtQuick.Controls 2.15
 
 Rectangle {
     id: socketRoot
+    color: "transparent"
 
     property string title
     property int socketId
-
-    property int socketPedal : 0
 
     property string cutModeName
     property int cutModePower
@@ -26,12 +25,57 @@ Rectangle {
     signal modeEditDialogRequest(int socketId, bool isCoag)
     signal instrumEditDialogRequest(int socketId, bool isCoag)
     signal newPower(int socketId, int pwr, bool isCoag)
-    signal pedSelect(int socketId, int ped)
     signal socketExpandRequest()
     signal socketCollapseRequest()
+    signal absolutePositionChanged(int socketId, real absoluteY)  // Изменение позиции для привязки педалей
 
-    state: "expanded"
-    color: "transparent"
+//    state: "expanded"
+    state: model.socketdisplaymode
+
+    // Принудительно обновляем state при изменении модели
+    property string currentModelState: model.socketdisplaymode
+    onCurrentModelStateChanged: {
+        if (state !== currentModelState) {
+            state = currentModelState
+        }
+    }
+
+    // Логирование абсолютного положения по высоте при изменении позиции
+    onYChanged: {
+        var absY = mapToItem(null, 0, 0).y
+        absolutePositionChanged(socketId, absY)
+    }
+
+    onHeightChanged: {
+        var absY = mapToItem(null, 0, 0).y
+        absolutePositionChanged(socketId, absY)
+    }
+
+    onStateChanged: {
+        var absY = mapToItem(null, 0, 0).y
+        absolutePositionChanged(socketId, absY)
+    }
+
+    Component.onCompleted: {
+        var absY = mapToItem(null, 0, 0).y
+        absolutePositionChanged(socketId, absY)
+    }
+
+    // MouseArea для всего сокета - переход в expanded
+   MouseArea {
+       id: socketMouseArea
+       anchors.fill: parent
+       onClicked: {
+           if (socketRoot.state === "collapsed") {
+               socketRoot.state = "expanded"
+               socketRoot.socketExpandRequest()
+           }
+       }
+       // Не перехватываем события от дочерних элементов
+       propagateComposedEvents: true
+       // Не перехватываем события, если сокет уже развернут
+       enabled: socketRoot.state === "collapsed"
+   }
 
     HalfSocket {
         id:         leftRect
@@ -43,6 +87,20 @@ Rectangle {
         maxPower:   socketRoot.cutMaxPower
         instrumId:  socketRoot.cutInstrumId
         instrumName:socketRoot.cutInstrumName
+
+        // Перехватываем события от HalfSocket только для разворачивания
+        MouseArea {
+            anchors.fill: parent
+            onClicked: {
+                if (socketRoot.state === "collapsed") {
+                    socketRoot.state = "expanded"
+                    socketRoot.socketExpandRequest()
+                }
+                mouse.accepted = true // Останавливаем распространение события
+            }
+            // Не перехватываем события, если сокет уже развернут
+            enabled: socketRoot.state === "collapsed"
+        }
     }
     HalfSocket {
         id:         rightRect
@@ -54,7 +112,22 @@ Rectangle {
         maxPower:   socketRoot.coagMaxPower
         instrumId:  socketRoot.coagInstrumId
         instrumName:socketRoot.coagInstrumName
+
+        // Перехватываем события от HalfSocket только для разворачивания
+        MouseArea {
+            anchors.fill: parent
+            onClicked: {
+                if (socketRoot.state === "collapsed") {
+                    socketRoot.state = "expanded"
+                    socketRoot.socketExpandRequest()
+                }
+                mouse.accepted = true // Останавливаем распространение события
+            }
+            // Не перехватываем события, если сокет уже развернут
+            enabled: socketRoot.state === "collapsed"
+        }
     }
+
     Rectangle {
         id: middleRect
         color: "black"
@@ -65,6 +138,7 @@ Rectangle {
             anchors.fill: parent
             anchors.margins: 10
             text: title
+            color: "white"
             font.pixelSize: 24
             font.bold: true
             horizontalAlignment: Qt.AlignHCenter
@@ -85,35 +159,7 @@ Rectangle {
             }
         }
     }
-    Pedal {
-        id: pedalRect
-        pedalStateIdx: socketRoot.socketPedal
-        width: fontMetrics.advanceWidth("PEDAL")
-        anchors.bottom: parent.bottom
-        anchors.right: parent.right
-    }
-    PedalEditor {
-        id: pedPop
-    }
-
-    Connections {
-        target: pedPop
-        function onPedSelected(idx) {
-            console.log("pedSelect", idx)
-            if (idx >=0 && idx <=4) {
-                socketRoot.pedSelect(socketId, idx)
-            }
-            pedPop.close()
-        }
-    }
-    Connections {
-        target: pedalRect
-        function onPedalMenuRequest() {
-            pedPop.selectedPed = socketRoot.socketPedal
-            pedPop.shownPedalsArray = [1,2,3,4]
-            pedPop.open()
-        }
-    }
+    
     Connections {
         target: rightRect
         function onNewPower(pwr) {
@@ -157,7 +203,8 @@ Rectangle {
             name: "collapsed"
             AnchorChanges {
                 target: middleRect
-                anchors.left: leftRect.right
+                anchors.horizontalCenter: parent.horizontalCenter
+                anchors.left: undefined
                 anchors.right: undefined
                 anchors.top: parent.top
                 anchors.bottom: parent.bottom
@@ -170,29 +217,27 @@ Rectangle {
             AnchorChanges {
                 target: leftRect
                 anchors.left: parent.left
+                anchors.right: middleRect.left
                 anchors.top: parent.top
                 anchors.bottom: parent.bottom
             }
-            PropertyChanges {
-                target: leftRect
-                color: "black"
-                width: (parent.width - fontMetrics.advanceWidth("MONO 22MONO")) * .5
-            }
+//            PropertyChanges {
+//                target: leftRect
+//                color: "black"
+//                width: (parent.width - fontMetrics.advanceWidth("MONO 22MONO")) * .5
+//            }
             AnchorChanges {
                 target: rightRect
                 anchors.left: middleRect.right
+                anchors.right: parent.right
                 anchors.top: parent.top
                 anchors.bottom: parent.bottom
             }
-            PropertyChanges {
-                target: rightRect
-                color: "black"
-                width: (parent.width - fontMetrics.advanceWidth("MONO 22MONO")) * .5
-            }
-            AnchorChanges {
-                target: pedalRect
-                anchors.top: parent.top
-            }
+//            PropertyChanges {
+//                target: rightRect
+//                color: "black"
+//                width: (parent.width - fontMetrics.advanceWidth("MONO 22MONO")) * .5
+//            }
         },
         // Развернутое состояние
         State {
@@ -201,7 +246,7 @@ Rectangle {
                 target: middleRect
                 anchors.horizontalCenter: undefined
                 anchors.left: parent.left
-                anchors.right: rightRect.right
+                anchors.right: parent.right
                 anchors.top: parent.top
                 anchors.bottom: undefined
             }
@@ -214,42 +259,39 @@ Rectangle {
             AnchorChanges {
                 target: leftRect
                 anchors.left: parent.left
+                anchors.right: parent.horizontalCenter
                 anchors.top: parent.top
                 anchors.bottom: parent.bottom
             }
-            PropertyChanges {
-                target: leftRect
-                width: (parent.width - fontMetrics.advanceWidth("MONO")) * .5
-            }
+//            PropertyChanges {
+//                target: leftRect
+//                width: (parent.width - fontMetrics.advanceWidth("MONO")) * .5
+//            }
 
             AnchorChanges {
                 target: rightRect
-                anchors.left: leftRect.right
+                anchors.left: parent.horizontalCenter
+                anchors.right: parent.right
                 anchors.top: parent.top
                 anchors.bottom: parent.bottom
             }
-            PropertyChanges {
-                target: rightRect
-                width: (parent.width - fontMetrics.advanceWidth("MONO")) * .5
-            }
-
-            AnchorChanges {
-                target: pedalRect
-                anchors.top: parent.top
-            }
+//            PropertyChanges {
+//                target: rightRect
+//                width: (parent.width - fontMetrics.advanceWidth("MONO")) * .5
+//            }
         }
     ]
-    // Переходы между состояниями (опционально)
-    transitions: [
-        Transition {
-            from: "collapsed"
-            to: "expanded"
-            NumberAnimation {  duration: 100; easing.type: Easing.InQuad }
-        },
-        Transition {
-            from: "expanded"
-            to: "collapsed"
-            NumberAnimation { duration: 100; easing.type: Easing.InQuad }
-        }
-    ]
+//    // Переходы между состояниями (опционально)
+//    transitions: [
+//        Transition {
+//            from: "collapsed"
+//            to: "expanded"
+//            NumberAnimation {  duration: 100; easing.type: Easing.InQuad }
+//        },
+//        Transition {
+//            from: "expanded"
+//            to: "collapsed"
+//            NumberAnimation { duration: 100; easing.type: Easing.InQuad }
+//        }
+//    ]
 }

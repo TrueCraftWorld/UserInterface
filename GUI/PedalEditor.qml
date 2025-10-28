@@ -7,46 +7,79 @@ Popup {
     // property alias pedTitle : title.text
     property var shownPedalsArray: []
     property int selectedPed
+    property int socketNumber: -1  // Номер сокета (0-3)
     signal pedSelected(int index)
 
     id: pedalSelectRoot
 
     function calcDimensions() {
-        var maxHeight = pedalSelectRoot.height * .7
-        var maxWidth = ((pedalSelectRoot.width * .9)
-                        /  (pedalSelectRoot.shownPedalsArray.length + 1))
-                        // - (1.5 * layoutRow.spacing)
-        return (maxHeight > maxWidth) ? maxWidth : maxHeight
+        var rowMargins = 30  //
+        var itemCount = pedalSelectRoot.shownPedalsArray.length + 1  // +1 для emptyPed
+        
+        // Доступная высота (элементы квадратные)
+        var availableHeight = pedalSelectRoot.height - rowMargins
+        
+        // Доступная ширина с минимальным spacing = 5px
+        var minSpacing = 5
+        var totalMinSpacing = minSpacing * (itemCount + 1)
+        var availableWidthForItems = pedalSelectRoot.width - rowMargins - totalMinSpacing
+        var widthPerItem = availableWidthForItems / itemCount
+        
+        // Размер элемента = минимум из доступной ширины и высоты
+        var size = Math.min(widthPerItem, availableHeight)
+        return Math.floor(size)
     }
+    
     function calcSpacing() {
-        return ((pedalSelectRoot.width
-                - (layoutRow.elementSize * (pedalSelectRoot.shownPedalsArray.length + 1)))
-                / pedalSelectRoot.shownPedalsArray.length ) * .5
+        var rowMargins = 30
+        var itemCount = pedalSelectRoot.shownPedalsArray.length + 1
+        var elementSize = calcDimensions()
+        
+        // Вычисляем фактический spacing на основе размера элементов
+        var totalItemsWidth = elementSize * itemCount
+        var availableWidth = pedalSelectRoot.width - rowMargins
+        var remainingSpace = availableWidth - totalItemsWidth
+        
+        // Распределяем оставшееся пространство между элементами
+        if (itemCount > 1) {
+            var spacing = remainingSpace / (itemCount + 1)
+            // Гарантируем минимум 5px
+            return Math.floor(Math.max(5, spacing))
+        }
+        return 5
     }
 
 
-    anchors.centerIn: parent
-    width: parent.width
-    height: parent.height
-    modal: true
+    // Позиционирование и размеры задаются в PedalPanel.qml
+    modal: false
     focus: true
+    
+    background: Rectangle {
+        color: "#3c3c3c"
+        radius: 8
+        border.color: "white"
+        border.width: 2
+    }
 
     onOpened: {
         singlePed.visible = false;
         doublePed.visible = false;
         biHandle.visible = false;
         monoHandle.visible = false;
+        
         for (var idx = 0; idx < shownPedalsArray.length; ++idx) {
-            if (shownPedalsArray[idx] == 1) {
+            if (shownPedalsArray[idx] === 1) {
                 singlePed.visible = true;
             }
-            if (shownPedalsArray[idx] == 2) {
+            if (shownPedalsArray[idx] === 2) {
                 doublePed.visible = true;
             }
-            if (shownPedalsArray[idx] == 3) {
+            // кнопка термошва доступна только для сокета с номером 1 (БИ2)
+            if (shownPedalsArray[idx] === 3 && socketNumber === 1) {
                 biHandle.visible = true;
             }
-            if (shownPedalsArray[idx] == 4) {
+            // держатель с кнопками доступен только для монополярных сокетов
+            if (shownPedalsArray[idx] === 4 && (socketNumber === 2 || socketNumber === 3)) {
                 monoHandle.visible = true;
             }
         }
@@ -57,14 +90,9 @@ Popup {
     Row {
         id: layoutRow
         property int elementSize
-        spacing: 40
-        anchors {
-            top: parent.top
-            left: parent.left
-            right: parent.right
-            bottom: parent.bottom
-            centerIn: parent
-        }
+        spacing: layoutRow.spacing
+        anchors.fill: parent
+        anchors.margins: 5
         Rectangle {
             id: emptyPed
             width: layoutRow.elementSize
@@ -76,6 +104,17 @@ Popup {
                 width: 1
                 color: "white"
             }
+            
+            Text {
+                anchors.centerIn: parent
+                text: "✕"
+                font.pixelSize: parent.height * 0.6
+                font.bold: true
+                color: "gray"
+                horizontalAlignment: Text.AlignHCenter
+                verticalAlignment: Text.AlignVCenter
+            }
+            
             MouseArea {
                 anchors.fill: parent
                 onClicked: pedalSelectRoot.pedSelected(0)

@@ -2,6 +2,7 @@
 #include "socket.h"
 #include "proghandle.h"
 
+#include <algorithm>
 #include <cmath>
 #include <map>
 #include <vector>
@@ -10,6 +11,9 @@
 #include <QQmlEngine>
 #include <QString>
 #include <QTimer>
+#include <QDebug>
+#include <QVector>
+#include <QVariant>
 
 namespace {
 
@@ -90,31 +94,52 @@ void makeModes(QMap<int, SurgModePtr>& container,
                const std::map<int, std::map<int, InstrInfo>>& instMap,
                const QVariantList& progItem,
                int socketNum,
-               bool isCoag ) {
+               bool isCoag,
+               const std::vector<int>& instrFilter = std::vector<int>()) {
     int start = isCoag ? 6 : 3;
 
     container.insert(1000, SurgModePtr::create(ESHF::modesNames.last(),
                                                                     false,
                                                                     1,
                                                                     1,
-                                                                    1000));
+                                                                    1000,
+                                                                    std::map<int, InstrInfo>(),
+                                                                    1000,
+                                                                    "",
+                                                                    ""));  // Num = 1000, Brief = "", Descript = ""
 
 
     for (const auto& item : modes) {
-        auto instrs = instMap.find(item.at(2).toInt());
-        if (instrs == instMap.end())
+        int modeId = item.at(2).toInt();
+        QString modeName = item.at(1).toString();
+        int modeNum = item.size() > 3 ? item.at(3).toInt() : 0;  // Num для изображения
+        QString modeBrief = item.size() > 4 ? item.at(4).toString() : "";  // Brief_RU для краткого описания
+        QString modeDescript = item.size() > 5 ? item.at(5).toString() : "";  // Descript_RU для полного описания
+        
+        auto instrs = instMap.find(modeId);
+        if (instrs == instMap.end()) {
             continue;
+        }
+        
         std::map<int, InstrInfo> tmp = instrs->second;
-        filterMapByKey(tmp, parseCommaSeparatedNumbers(progItem.at(start + 6*socketNum).toString()));
+        
+        // Используем переданный фильтр, если он не пуст, иначе берём из progItem
+        if (!instrFilter.empty()) {
+            filterMapByKey(tmp, instrFilter);
+        } else {
+            filterMapByKey(tmp, parseCommaSeparatedNumbers(progItem.at(start + 6*socketNum).toString()));
+        }
 
-        SurgModePtr ptr = SurgModePtr::create(item.at(1).toString(),
+        SurgModePtr ptr = SurgModePtr::create(modeName,
                                               isCoag,
                                               item.at(0).toInt(),
                                               1,
-                                              item.at(2).toInt(),
-                                              tmp);
-        container.insert(item.at(2).toInt(),
-                        ptr);
+                                              modeId,
+                                              tmp,
+                                              modeNum,
+                                              modeBrief,
+                                              modeDescript);  // Передаём Brief и Descript
+        container.insert(modeId, ptr);
     }
 }
 
@@ -164,14 +189,43 @@ void filterModeMap(QMap<int, SurgModePtr>& container, const std::vector<int>& al
 
 ControlCenter::ControlCenter(QObject *parent)
     : QObject{parent},
+    m_argonCylinder1Connected(false),
+    m_argonCylinder2Connected(false),
+    m_autoStStopTissue(false),
+    m_neutralElConnected(false),
+    m_neutralElDivided(true),
+    m_autoSSmode(0),
+    m_argonFlowRate(0),
+    m_argonRealRate(0),
+    m_wirelessPedalCharge(0),
+    m_enableActivation(true),  // По умолчанию активация разрешена
+    m_activation(false),       // По умолчанию активация не выполняется
+    m_activeSocketName(""),
+    m_activeModeName(""),
+    m_activePower(0),
+    m_activeIsCoag(false),
+    m_activeSocketX(0),
+    m_activeSocketY(0),
+    m_activeSocketWidth(0),
+    m_activeSocketHeight(0),
+    m_activeSocketId(-1),
     m_socketModel(new SocketModel(this)),
     m_editor(new SocketModeEditor(m_socketModel,this)),
-    m_handle(new ProgHandle(this))
+    m_handle(new ProgHandle(this)),
+    m_dbReader(nullptr),
+    m_linkStm(nullptr),
+    m_saveTimer(new QTimer(this))
 {
     QQmlEngine::setObjectOwnership(m_socketModel, QQmlEngine::CppOwnership);
     QQmlEngine::setObjectOwnership(m_editor, QQmlEngine::CppOwnership);
     QQmlEngine::setObjectOwnership(m_handle, QQmlEngine::CppOwnership);
     QQmlEngine::setObjectOwnership(this, QQmlEngine::CppOwnership);
+    
+    // Настройка таймера для отложенного сохранения
+    m_saveTimer->setSingleShot(true);
+    m_saveTimer->setInterval(2000);  // 2 секунды
+    connect(m_saveTimer, &QTimer::timeout, this, &ControlCenter::saveCurrentState);
+    
     makeHandleConnections();
 }
 
@@ -187,6 +241,7 @@ void ControlCenter::registerControl()
     qmlRegisterUncreatableType<SocketModel>("BackEnd", 1, 0, "SocketModel", "should be one and exist not only for qml");
     qmlRegisterUncreatableType<SocketModeEditor>("BackEnd", 1, 0, "SocketModeEditor", "should be one and exist not only for qml");
     qmlRegisterUncreatableType<ProgHandle>("BackEnd", 1, 0, "ProgHandle", "should be one and exist not only for qml");
+    qmlRegisterUncreatableType<ControlCenter>("BackEnd", 1, 0, "ControlCenter", "should be one and exist not only for qml");
 }
 
 QPointer<SocketModel> ControlCenter::getSocketModel() const
@@ -212,6 +267,14 @@ void ControlCenter::makeHandleConnections()
     
     connect(m_handle, &ProgHandle::signalLoadEmpty, 
             this, &ControlCenter::dataBaseSocketInit);
+    
+    // Автосохранение при успешном изменении режима
+    connect(m_editor, &SocketModeEditor::editingFinished, 
+            this, [this](bool success) {
+        if (success) {
+            saveCurrentState();
+        }
+    });
 
     connect(m_handle, &ProgHandle::signalScopeRequest,
             this, [this] (int id) {
@@ -232,9 +295,14 @@ void ControlCenter::initSockets()
     ///todo read old socket (maybe Json or QSetting)
     if (true) {
         if (m_dbReader.isNull())
-            m_dbReader = new DataBaseReader("/home/kikorik/FOTEK/someShadyDB.db");
+            m_dbReader = new DataBaseReader("/home/kikorik/FOTEK/eshfDb.db");
+//        m_dbReader = new DataBaseReader("/home/kikorik/FOTEK/someShadyDB.db");
         // programmLoadSocketInit(14);
-        programmLoadSocketInit(28);
+//        programmLoadSocketInit(28);
+        programmLoadSocketInit(0);
+        
+        // Загружаем последнее сохранённое состояние
+        loadCurrentState();
     } else {
         defaultSocketInit();
     }
@@ -430,29 +498,73 @@ void ControlCenter::programmLoadSocketInit(int progId)
                           "Mono2Coag_INSTR", "Mono2Coag_MODE", "Mono2Coag_POWER", /* 24 25 26*/
                           "Pedal_1", "Pedal_2", "OutEnabled_MASK"};/* 27 28 29*/
 
-    QList<QVariantList> progListVariant = m_dbReader->slotSendSelectQuery(QStringList{"Lists"},
-                                                                        fields,
-                                                                        queryCondition.arg(progId));
-    if (progListVariant.size() == 0)
-        return;
+    QList<QVariantList> progListVariant;
+    
+    // Если progId = 0, создаём фиктивную запись программы
+    if (progId == 0) {
+        // Создаём пустую запись с дефолтными значениями
+        QVariantList dummyProgItem;
+        dummyProgItem << 0 << 0 << 0;  // id, Num, Prog_ID
+        
+        // Добавляем пустые строки для всех полей инструментов/режимов/мощностей (24 поля)
+        for (int i = 0; i < 24; ++i) {
+            dummyProgItem << "";
+        }
+        
+        // Добавляем дефолтные значения для педалей и маски
+        dummyProgItem << 0 << 0 << 255;  // Pedal_1, Pedal_2, OutEnabled_MASK (все сокеты разрешены)
+        
+        progListVariant.append(dummyProgItem);
+        qDebug() << "progId = 0: Created dummy program item with" << dummyProgItem.size() << "fields";
+    } else {
+        progListVariant = m_dbReader->slotSendSelectQuery(QStringList{"Lists"},
+                                                          fields,
+                                                          queryCondition.arg(progId));
+        if (progListVariant.size() == 0)
+            return;
+    }
     //--------------------------------------------------------------
 
-    //Шаг2---------------------------------------------------------
-    QList<QVariantList> allowedModes = m_dbReader->slotSendSelectQuery(QStringList{"EnableModes"},
-                                                                      QStringList{"Mode_ID"},
-                                                                      QString("Prog_ID = %1").arg(progId));
     QList<int> allowedModesId;
-    for (const auto& item : allowedModes)
-        allowedModesId.append(item.at(0).toInt());
-
-    //Шаг3---------------------------------------------------------
-    QList<QVariantList> allowedInstr = m_dbReader->slotSendSelectQuery(QStringList{"EnableInstr"},
-                                                                       QStringList{"Instr_ID"},
-                                                                       QString("Prog_ID = %1").arg(progId));
     std::vector<int> allowedInstrId;
+    
+    // Если progId = 0, загружаем ВСЕ режимы и инструменты
+    if (progId == 0) {
+        // Получаем все режимы из БД
+        QList<QVariantList> allModes = m_dbReader->slotSendSelectQuery(
+            QStringList{"Modes"},
+            QStringList{"id"},
+            ""
+        );
+        for (const auto& item : allModes)
+            allowedModesId.append(item.at(0).toInt());
+        
+        // Получаем все инструменты из БД
+        QList<QVariantList> allInstr = m_dbReader->slotSendSelectQuery(
+            QStringList{"Instruments"},
+            QStringList{"id"},
+            ""
+        );
+        for (const auto& item : allInstr)
+            allowedInstrId.push_back(item.at(0).toInt());
+            
+        qDebug() << "progId = 0: Loading ALL modes (" << allowedModesId.size() << ") and instruments (" << allowedInstrId.size() << ")";
+    } else {
+        //Шаг2---------------------------------------------------------
+        QList<QVariantList> allowedModes = m_dbReader->slotSendSelectQuery(QStringList{"EnableModes"},
+                                                                          QStringList{"Mode_ID"},
+                                                                          QString("Prog_ID = %1").arg(progId));
+        for (const auto& item : allowedModes)
+            allowedModesId.append(item.at(0).toInt());
 
-    for (const auto& item : allowedInstr)
-        allowedInstrId.push_back(item.at(0).toInt());
+        //Шаг3---------------------------------------------------------
+        QList<QVariantList> allowedInstr = m_dbReader->slotSendSelectQuery(QStringList{"EnableInstr"},
+                                                                           QStringList{"Instr_ID"},
+                                                                           QString("Prog_ID = %1").arg(progId));
+
+        for (const auto& item : allowedInstr)
+            allowedInstrId.push_back(item.at(0).toInt());
+    }
 
     //Шаг4---------------------------------------------------------
     QString queryConditionModes = "BI_MONO = %1 AND CUT_COAG = %2 AND id IN (%3)";
@@ -489,30 +601,72 @@ void ControlCenter::programmLoadSocketInit(int progId)
                 bool isCoag = (halfSocket == 0);
                 QMap<int, SurgModePtr> modes;
                 QList<QVariantList> modesList = m_dbReader->slotSendSelectQuery(QStringList{"Modes"},
-                            QStringList{"MaxPower","Name_RU", "id"},
+                            QStringList{"MaxPower","Name_RU", "id", "Num", "Brief_RU", "Descript_RU"},
                             queryConditionModes
                                         .arg(socket->socketType() <= SOCKET::BIPOLAR_2 ? 0 : 1)
                                         .arg(halfSocket)
                                         .arg(makeCommaSeparatedNumbers(allowedModesId)));
+                
+                // Сортируем по Num (index 3)
+                std::sort(modesList.begin(), modesList.end(), 
+                    [](const QVariantList& a, const QVariantList& b) {
+                        return a.at(3).toInt() < b.at(3).toInt();
+                    });
 
                 int start = isCoag ? 6 : 3;
-                std::vector<int> instIdLst = parseCommaSeparatedNumbers(progItem.at(start + 6*i).toString());
-                std::vector<int> modeIdLst = parseCommaSeparatedNumbers(progItem.at(start + 1 + 6*i).toString());
+                std::vector<int> instIdLst;
+                std::vector<int> modeIdLst;
+                
+                // Если progId = 0, НЕ фильтруем по progItem
+                if (progId == 0) {
+                    // Используем все инструменты и режимы
+                    instIdLst = allowedInstrId;
+                    for (const auto& mode : modesList) {
+                        modeIdLst.push_back(mode.at(2).toInt());
+                    }
+                } else {
+                    // Обычная логика - берём из progItem
+                    instIdLst = parseCommaSeparatedNumbers(progItem.at(start + 6*i).toString());
+                    modeIdLst = parseCommaSeparatedNumbers(progItem.at(start + 1 + 6*i).toString());
+                }
+                
                 makeModes(modes,
                           modesList,
                           instrumConstraints,
                           progItem,
                           i,
-                          isCoag);
-                filterModeMap(modes, modeIdLst);
+                          isCoag,
+                          instIdLst);  // Передаём фильтр инструментов
+                
+                // Фильтруем только если progId != 0
+                if (progId != 0) {
+                    filterModeMap(modes, modeIdLst);
+                }
+                
+                // Исключаем режим "Термошов" (ID=7) для сокета БИ2 (i=0)
+                if (i == 0 && modes.contains(7)) {
+                    modes.remove(7);
+                }
 
                 isCoag ? socket->setCoagModes(modes, modeNamesList)
                        : socket->setCutModes(modes, modeNamesList);
 
-                int firstInstrId = instIdLst.size() == 0 ? 0 : instIdLst.at(0);
-                int firstModeId = modeIdLst.size() == 0 ? 1000 : modeIdLst.at(0);
-                int defaultPower = progItem.at(start + 2 + 6*i).toInt();
-                defaultPower = std::max(1, defaultPower);
+                int firstInstrId;
+                int firstModeId;
+                int defaultPower;
+                
+                // Если progId = 0, используем режим "НЕ ВЫБРАН" (1000)
+                if (progId == 0) {
+                    firstInstrId = 0;
+                    firstModeId = 1000;
+                    defaultPower = 1;
+                } else {
+                    // Обычная логика из progItem
+                    firstInstrId = instIdLst.size() == 0 ? 0 : instIdLst.at(0);
+                    firstModeId = modeIdLst.size() == 0 ? 1000 : modeIdLst.at(0);
+                    defaultPower = progItem.at(start + 2 + 6*i).toInt();
+                    defaultPower = std::max(1, defaultPower);
+                }
 
                 socket->setModeId(firstModeId, isCoag);
 
@@ -611,6 +765,222 @@ QPointer<ProgHandle> ControlCenter::getHandle() const
     return m_handle;
 }
 
+bool ControlCenter::neutralElConnected() const
+{
+    return m_neutralElConnected;
+}
+
+void ControlCenter::setNeutralElConnected(bool connected)
+{
+    if (m_neutralElConnected == connected)
+        return;
+    
+    m_neutralElConnected = connected;
+    emit neutralElConnectedChanged(connected);
+}
+
+bool ControlCenter::neutralElDivided() const
+{
+    return m_neutralElDivided;
+}
+
+void ControlCenter::setNeutralElDivided(bool divided)
+{
+    if (m_neutralElDivided == divided)
+        return;
+    
+    m_neutralElDivided = divided;
+    emit neutralElDividedChanged(divided);
+    
+    // Обновляем состояние в LinkStm
+    if (!m_linkStm.isNull()) {
+        m_linkStm->setNeutralElDivided(divided);
+    }
+}
+
+quint8 ControlCenter::argonFlowRate() const
+{
+    return m_argonFlowRate;
+}
+
+void ControlCenter::setArgonFlowRate(quint8 rate)
+{
+    if (m_argonFlowRate == rate)
+        return;
+    
+    m_argonFlowRate = rate;
+    emit argonFlowRateChanged(rate);
+}
+
+quint8 ControlCenter::argonRealRate() const
+{
+    return m_argonRealRate;
+}
+
+void ControlCenter::setArgonRealRate(quint8 rate)
+{
+    if (m_argonRealRate == rate)
+        return;
+    
+    m_argonRealRate = rate;
+    emit argonRealRateChanged(rate);
+}
+
+bool ControlCenter::enableActivation() const
+{
+    return m_enableActivation;
+}
+
+void ControlCenter::setEnableActivation(bool enable)
+{
+    if (m_enableActivation == enable)
+        return;
+    
+    m_enableActivation = enable;
+    emit enableActivationChanged(enable);
+    
+    // Обновляем состояние в LinkStm
+    if (!m_linkStm.isNull()) {
+        m_linkStm->setEnableActivation(enable);
+    }
+}
+
+bool ControlCenter::activation() const
+{
+    return m_activation;
+}
+
+void ControlCenter::setActivation(bool active)
+{
+    if (m_activation == active)
+        return;
+    
+    m_activation = active;
+    emit activationChanged(active);
+}
+
+QString ControlCenter::activeSocketName() const
+{
+    return m_activeSocketName;
+}
+
+void ControlCenter::setActiveSocketName(const QString& name)
+{
+    if (m_activeSocketName == name)
+        return;
+    
+    m_activeSocketName = name;
+    emit activeSocketNameChanged(name);
+}
+
+QString ControlCenter::activeModeName() const
+{
+    return m_activeModeName;
+}
+
+void ControlCenter::setActiveModeName(const QString& name)
+{
+    if (m_activeModeName == name)
+        return;
+    
+    m_activeModeName = name;
+    emit activeModeNameChanged(name);
+}
+
+int ControlCenter::activePower() const
+{
+    return m_activePower;
+}
+
+void ControlCenter::setActivePower(int power)
+{
+    if (m_activePower == power)
+        return;
+    
+    m_activePower = power;
+    emit activePowerChanged(power);
+}
+
+bool ControlCenter::activeIsCoag() const
+{
+    return m_activeIsCoag;
+}
+
+void ControlCenter::setActiveIsCoag(bool isCoag)
+{
+    if (m_activeIsCoag == isCoag)
+        return;
+    
+    m_activeIsCoag = isCoag;
+    emit activeIsCoagChanged(isCoag);
+}
+
+int ControlCenter::activeSocketX() const
+{
+    return m_activeSocketX;
+}
+
+int ControlCenter::activeSocketY() const
+{
+    return m_activeSocketY;
+}
+
+int ControlCenter::activeSocketWidth() const
+{
+    return m_activeSocketWidth;
+}
+
+int ControlCenter::activeSocketHeight() const
+{
+    return m_activeSocketHeight;
+}
+
+int ControlCenter::activeSocketId() const
+{
+    return m_activeSocketId;
+}
+
+void ControlCenter::setActiveSocketX(int x)
+{
+    if (m_activeSocketX != x) {
+        m_activeSocketX = x;
+        emit activeSocketXChanged(x);
+    }
+}
+
+void ControlCenter::setActiveSocketY(int y)
+{
+    if (m_activeSocketY != y) {
+        m_activeSocketY = y;
+        emit activeSocketYChanged(y);
+    }
+}
+
+void ControlCenter::setActiveSocketWidth(int width)
+{
+    if (m_activeSocketWidth != width) {
+        m_activeSocketWidth = width;
+        emit activeSocketWidthChanged(width);
+    }
+}
+
+void ControlCenter::setActiveSocketHeight(int height)
+{
+    if (m_activeSocketHeight != height) {
+        m_activeSocketHeight = height;
+        emit activeSocketHeightChanged(height);
+    }
+}
+
+void ControlCenter::setActiveSocketId(int socketId)
+{
+    if (m_activeSocketId == socketId)
+        return;
+    
+    m_activeSocketId = socketId;
+    emit activeSocketIdChanged(socketId);
+}
+
 std::map<int, InstrPtr > ControlCenter::getInstrums()
 {
     std::map<int, InstrPtr> result;
@@ -627,4 +997,421 @@ std::map<int, InstrPtr > ControlCenter::getInstrums()
         result[item.at(0).toInt()] = ptr;
     }
     return result;
+}
+
+void ControlCenter::saveCurrentState()
+{
+    if (m_socketModel == nullptr || m_socketModel->itemsMap() == nullptr) {
+        qWarning() << "Cannot save state: socket model not initialized";
+        return;
+    }
+    
+    // Собираем данные из всех сокетов (инициализируем значениями по умолчанию)
+    QString bi1CutInstr = "0", bi1CutMode = "1000", bi1CutPower = "1";
+    QString bi1CoagInstr = "0", bi1CoagMode = "1000", bi1CoagPower = "1";
+    QString bi2CutInstr = "0", bi2CutMode = "1000", bi2CutPower = "1";
+    QString bi2CoagInstr = "0", bi2CoagMode = "1000", bi2CoagPower = "1";
+    QString mono1CutInstr = "0", mono1CutMode = "1000", mono1CutPower = "1";
+    QString mono1CoagInstr = "0", mono1CoagMode = "1000", mono1CoagPower = "1";
+    QString mono2CutInstr = "0", mono2CutMode = "1000", mono2CutPower = "1";
+    QString mono2CoagInstr = "0", mono2CoagMode = "1000", mono2CoagPower = "1";
+    
+    for (int i = 0; i < 4; i++) {
+        auto socket = m_socketModel->itemsMap()->at(i);
+        
+        // Проверяем, что режимы не null
+        if (socket.isNull() || socket->curCutMode().isNull() || socket->curCoagMode().isNull()) {
+            qWarning() << "Socket" << i << "has null mode, skipping";
+            continue;
+        }
+        
+        int cutInstrId = socket->curCutMode()->selectedInstrId();
+        int cutModeId = socket->cutModeId();
+        int cutPower = socket->cutModePower();
+        
+        int coagInstrId = socket->curCoagMode()->selectedInstrId();
+        int coagModeId = socket->coagModeId();
+        int coagPower = socket->coagModePower();
+        
+        QString cutInstrStr = QString::number(cutInstrId);
+        QString cutModeStr = QString::number(cutModeId);
+        QString cutPowerStr = QString::number(cutPower);
+        QString coagInstrStr = QString::number(coagInstrId);
+        QString coagModeStr = QString::number(coagModeId);
+        QString coagPowerStr = QString::number(coagPower);
+        
+        switch(i) {
+            case 0: // БИ1
+                bi1CutInstr = cutInstrStr; bi1CutMode = cutModeStr; bi1CutPower = cutPowerStr;
+                bi1CoagInstr = coagInstrStr; bi1CoagMode = coagModeStr; bi1CoagPower = coagPowerStr;
+                break;
+            case 1: // БИ2
+                bi2CutInstr = cutInstrStr; bi2CutMode = cutModeStr; bi2CutPower = cutPowerStr;
+                bi2CoagInstr = coagInstrStr; bi2CoagMode = coagModeStr; bi2CoagPower = coagPowerStr;
+                break;
+            case 2: // МОНО1
+                mono1CutInstr = cutInstrStr; mono1CutMode = cutModeStr; mono1CutPower = cutPowerStr;
+                mono1CoagInstr = coagInstrStr; mono1CoagMode = coagModeStr; mono1CoagPower = coagPowerStr;
+                break;
+            case 3: // МОНО2
+                mono2CutInstr = cutInstrStr; mono2CutMode = cutModeStr; mono2CutPower = cutPowerStr;
+                mono2CoagInstr = coagInstrStr; mono2CoagMode = coagModeStr; mono2CoagPower = coagPowerStr;
+                break;
+            default:
+                qWarning() << "Invalid socket index:" << i;
+                continue;
+        }
+    }
+    
+    // Получаем текущие педали
+    int pedal1 = -1;  // Сокет с single педалью
+    int pedal2 = -1;  // Сокет с double педалью
+    
+    // Ищем сокеты с привязанными педалями
+    for (int i = 0; i < 4; i++) {
+        auto socket = m_socketModel->itemsMap()->at(i);
+        if (socket.isNull())
+            continue;
+            
+        int pedalType = socket->pedal();
+        
+        if (pedalType == Pedal::SINGLE_PED) {
+            pedal1 = i;  // Номер сокета (0-3)
+        } else if (pedalType == Pedal::DOUBLE_PED) {
+            pedal2 = i;  // Номер сокета (0-3)
+        }
+        // INSTR_BUTTON_BI и INSTR_BUTTON_MONO игнорируем
+    }
+    
+    // OutEnabled_MASK - битовая маска доступности полусокетов
+    // TODO: если нужно сохранять доступность, добавить логику
+    int outEnabledMask = 255;  // По умолчанию все включены (11111111)
+    
+    // Формируем SQL запрос для REPLACE (INSERT OR UPDATE)
+    QString query = QString(
+        "REPLACE INTO Lists ("
+        "id, Num, Prog_ID, "
+        "Bi1Cut_INSTR, Bi1Cut_MODE, Bi1Cut_POWER, "
+        "Bi1Coag_INSTR, Bi1Coag_MODE, Bi1Coag_POWER, "
+        "Bi2Cut_INSTR, Bi2Cut_MODE, Bi2Cut_POWER, "
+        "Bi2Coag_INSTR, Bi2Coag_MODE, Bi2Coag_POWER, "
+        "Mono1Cut_INSTR, Mono1Cut_MODE, Mono1Cut_POWER, "
+        "Mono1Coag_INSTR, Mono1Coag_MODE, Mono1Coag_POWER, "
+        "Mono2Cut_INSTR, Mono2Cut_MODE, Mono2Cut_POWER, "
+        "Mono2Coag_INSTR, Mono2Coag_MODE, Mono2Coag_POWER, "
+        "Pedal_1, Pedal_2, OutEnabled_MASK"
+        ") VALUES ("
+        "1000, 1, 1000, "
+        "'%1', '%2', %3, "
+        "'%4', '%5', %6, "
+        "'%7', '%8', %9, "
+        "'%10', '%11', %12, "
+        "'%13', '%14', %15, "
+        "'%16', '%17', %18, "
+        "'%19', '%20', %21, "
+        "'%22', '%23', %24, "
+        "%25, %26, %27"
+        ")")
+        .arg(bi1CutInstr).arg(bi1CutMode).arg(bi1CutPower)
+        .arg(bi1CoagInstr).arg(bi1CoagMode).arg(bi1CoagPower)
+        .arg(bi2CutInstr).arg(bi2CutMode).arg(bi2CutPower)
+        .arg(bi2CoagInstr).arg(bi2CoagMode).arg(bi2CoagPower)
+        .arg(mono1CutInstr).arg(mono1CutMode).arg(mono1CutPower)
+        .arg(mono1CoagInstr).arg(mono1CoagMode).arg(mono1CoagPower)
+        .arg(mono2CutInstr).arg(mono2CutMode).arg(mono2CutPower)
+        .arg(mono2CoagInstr).arg(mono2CoagMode).arg(mono2CoagPower)
+        .arg(pedal1).arg(pedal2).arg(outEnabledMask);
+    
+    if (!m_dbReader->executeUpdateQuery(query)) {
+        qWarning() << "Failed to save current state";
+    }
+}
+
+void ControlCenter::loadCurrentState()
+{
+    // Проверяем, есть ли запись с id=1000
+    QList<QVariantList> stateList = m_dbReader->slotSendSelectQuery(
+        QStringList{"Lists"},
+        QStringList{"Bi1Cut_INSTR", "Bi1Cut_MODE", "Bi1Cut_POWER",
+                    "Bi1Coag_INSTR", "Bi1Coag_MODE", "Bi1Coag_POWER",
+                    "Bi2Cut_INSTR", "Bi2Cut_MODE", "Bi2Cut_POWER",
+                    "Bi2Coag_INSTR", "Bi2Coag_MODE", "Bi2Coag_POWER",
+                    "Mono1Cut_INSTR", "Mono1Cut_MODE", "Mono1Cut_POWER",
+                    "Mono1Coag_INSTR", "Mono1Coag_MODE", "Mono1Coag_POWER",
+                    "Mono2Cut_INSTR", "Mono2Cut_MODE", "Mono2Cut_POWER",
+                    "Mono2Coag_INSTR", "Mono2Coag_MODE", "Mono2Coag_POWER",
+                    "Pedal_1", "Pedal_2", "OutEnabled_MASK"},
+        "id = 1000"
+    );
+    
+    if (stateList.isEmpty()) {
+        qDebug() << "No saved state found (id=1000), using defaults";
+        return;
+    }
+    
+    const QVariantList& state = stateList.at(0);
+    
+    // Проверяем, что в state достаточно полей (минимум 24 для сокетов)
+    if (state.size() < 24) {
+        qWarning() << "Invalid state data: expected at least 24 fields, got" << state.size();
+        return;
+    }
+    
+    // Восстанавливаем состояние для каждого сокета
+    for (int i = 0; i < 4; i++) {
+        int baseIdx = i * 6;  // Каждый сокет занимает 6 полей
+        
+        // Резка - парсим строку (может быть пустой или содержать ID)
+        QString cutInstrStr = state.at(baseIdx + 0).toString();
+        QString cutModeStr = state.at(baseIdx + 1).toString();
+        int cutPower = state.at(baseIdx + 2).toInt();
+        
+        // Коагуляция
+        QString coagInstrStr = state.at(baseIdx + 3).toString();
+        QString coagModeStr = state.at(baseIdx + 4).toString();
+        int coagPower = state.at(baseIdx + 5).toInt();
+        
+        // Парсим ID (берём первое значение, если список через запятую)
+        int cutInstrId = cutInstrStr.isEmpty() ? 0 : cutInstrStr.split(',').first().toInt();
+        int cutModeId = cutModeStr.isEmpty() ? 1000 : cutModeStr.split(',').first().toInt();
+        int coagInstrId = coagInstrStr.isEmpty() ? 0 : coagInstrStr.split(',').first().toInt();
+        int coagModeId = coagModeStr.isEmpty() ? 1000 : coagModeStr.split(',').first().toInt();
+        
+        // Проверяем мощность
+        cutPower = std::max(1, cutPower);
+        coagPower = std::max(1, coagPower);
+        
+        auto socket = m_socketModel->itemsMap()->at(i);
+        
+        if (socket.isNull()) {
+            qWarning() << "Socket" << i << "is null, skipping restore";
+            continue;
+        }
+        
+        // Устанавливаем режимы
+        socket->setModeId(cutModeId, false);
+        socket->setModeId(coagModeId, true);
+        
+        // Устанавливаем мощность
+        socket->setCutModePower(cutPower);
+        socket->setCoagModePower(coagPower);
+        
+        // Устанавливаем инструменты
+        socket->setInstrumId(cutInstrId, false);
+        socket->setInstrumId(coagInstrId, true);
+    }
+    
+    // Восстанавливаем педали
+    if (state.size() >= 27) {
+        int pedal1Socket = state.at(24).toInt();  // Номер сокета для single педали
+        int pedal2Socket = state.at(25).toInt();  // Номер сокета для double педали
+        
+        // Устанавливаем педали напрямую в сокеты (без вызова dataChanged)
+        for (int i = 0; i < 4; i++) {
+            auto socket = m_socketModel->itemsMap()->at(i);
+            if (socket.isNull())
+                continue;
+            
+            // Определяем тип педали для этого сокета
+            int pedalType = Pedal::NO_PED;
+            
+            if (i == pedal1Socket) {
+                pedalType = Pedal::SINGLE_PED;
+            } else if (i == pedal2Socket) {
+                pedalType = Pedal::DOUBLE_PED;
+            }
+            
+            socket->setPedal(pedalType);
+        }
+        
+        // Уведомляем модель об изменении педалей
+        for (int i = 0; i < 4; i++) {
+            QModelIndex idx = m_socketModel->index(i, 0);
+            emit m_socketModel->dataChanged(idx, idx, {SocketModel::SocketPedal});
+        }
+        
+        // TODO: Восстановить OutEnabled_MASK
+        // int mask = state.at(26).toInt();
+    }
+}
+
+void ControlCenter::scheduleSave()
+{
+    // Перезапускаем таймер (если он уже запущен, он сбросится)
+    m_saveTimer->start();
+}
+
+void ControlCenter::setLinkStm(LinkStm* linkStm)
+{
+    if (m_linkStm == linkStm)
+        return;
+        
+    // Отключаем старые соединения, если они были
+    if (!m_linkStm.isNull()) {
+        disconnect(m_linkStm, &LinkStm::recieveData, this, &ControlCenter::uartChat);
+        disconnect(m_linkStm, &LinkStm::error, this, &ControlCenter::uartError);
+    }
+    
+    m_linkStm = linkStm;
+    
+    // Подключаем обработчик входящих данных
+    if (!m_linkStm.isNull()) {
+        connect(m_linkStm, &LinkStm::recieveData, this, &ControlCenter::uartChat);
+        connect(m_linkStm, &LinkStm::error, this, &ControlCenter::uartError);
+        
+        // Инициализируем текущие значения состояния в LinkStm
+        m_linkStm->setEnableActivation(m_enableActivation);
+        m_linkStm->setNeutralElDivided(m_neutralElDivided);
+        
+        // Подключаем сигнал обновления данных сокетов
+        connect(m_socketModel, &SocketModel::signalSocketDataChanged, 
+                m_linkStm, &LinkStm::updateSocketData);
+        
+        // Подключаем сигналы активации
+        connect(m_linkStm, &LinkStm::startActivation, this, &ControlCenter::onStartActivation);
+        connect(m_linkStm, &LinkStm::stopActivation, this, &ControlCenter::onStopActivation);
+        
+        // Инициализируем все сокеты текущими данными
+        initializeAllSocketsInLinkStm();
+        
+        qDebug() << "LinkStm connected to ControlCenter";
+    }
+}
+
+void ControlCenter::initializeAllSocketsInLinkStm()
+{
+    if (m_linkStm.isNull() || !m_socketModel || !m_socketModel->itemsMap()) {
+        qWarning() << "Cannot initialize sockets in LinkStm: missing dependencies";
+        return;
+    }
+    
+    // Инициализируем все сокеты текущими данными
+    for (int i = 0; i < 4; i++) {
+        auto iter = m_socketModel->itemsMap()->find(i);
+        if (iter != m_socketModel->itemsMap()->end() && !iter->second.isNull()) {
+            auto socket = iter->second;
+            
+            // Получаем текущие данные сокета
+            quint16 cutModeNum = 1000;  // По умолчанию
+            quint16 coagModeNum = 1000; // По умолчанию
+            quint16 cutModePower = socket->cutModePower();
+            quint16 coagModePower = socket->coagModePower();
+            quint8 pedal = socket->pedal();
+            
+            // Получаем Num режимов (не ID!)
+            auto cutMode = socket->curCutMode();
+            if (!cutMode.isNull()) {
+                cutModeNum = cutMode->num();
+            }
+            
+            auto coagMode = socket->curCoagMode();
+            if (!coagMode.isNull()) {
+                coagModeNum = coagMode->num();
+            }
+            
+            // Обновляем данные в LinkStm
+            m_linkStm->updateSocketData(i, cutModeNum, coagModeNum, 
+                                      cutModePower, coagModePower, pedal);
+        }
+    }
+    
+    qDebug() << "All sockets initialized in LinkStm";
+}
+
+void ControlCenter::onStartActivation(quint8 socketId, bool isCut)
+{
+    if (!m_socketModel || !m_socketModel->itemsMap()) {
+        qWarning() << "Cannot start activation: socket model not available";
+        return;
+    }
+    
+    auto iter = m_socketModel->itemsMap()->find(socketId);
+    if (iter == m_socketModel->itemsMap()->end() || iter->second.isNull()) {
+        qWarning() << "Cannot start activation: socket" << socketId << "not found";
+        return;
+    }
+    
+    auto socket = iter->second;
+    
+    // Получаем данные для активации
+    QString socketName = socket->socketName();
+    QString modeName = "Режим не выбран";
+    quint16 power = 0;
+    bool isCoag = !isCut;
+    
+    // Получаем режим и мощность
+    if (isCut) {
+        auto cutMode = socket->curCutMode();
+        if (!cutMode.isNull()) {
+            modeName = cutMode->modeName();
+            power = socket->cutModePower();
+        }
+    } else {
+        auto coagMode = socket->curCoagMode();
+        if (!coagMode.isNull()) {
+            modeName = coagMode->modeName();
+            power = socket->coagModePower();
+        }
+    }
+    
+    // Устанавливаем данные для индикатора активации
+    setActiveSocketName(socketName);
+    setActiveModeName(modeName);
+    setActivePower(power);
+    setActiveIsCoag(isCoag);
+    
+    // Устанавливаем ID активного сокета
+    setActiveSocketId(socketId);
+    
+    // Разворачиваем сокет (сворачиваем остальные)
+    if (m_socketModel) {
+        m_socketModel->expandSocket(socketId);
+    }
+    
+    // Запускаем активацию с небольшой задержкой, чтобы сокет успел развернуться
+    // Координаты будут установлены через сигнал socketPositionChanged от QML
+    QTimer::singleShot(500, this, [this]() {
+        setActivation(true);
+    });
+    
+    qDebug() << "Activation started: socket" << socketId << "mode:" << modeName << "power:" << power;
+}
+
+void ControlCenter::onStopActivation(quint8 stopReason)
+{
+    // Останавливаем активацию
+    setActivation(false);
+    
+    qDebug() << "Activation stopped, reason:" << stopReason;
+}
+
+void ControlCenter::uartChat(LinkStm::UartRx* rxData)
+{
+    rxData = nullptr;
+}
+
+void ControlCenter::uartError(quint8 errorState)
+{
+    switch (errorState) {
+    case (LinkStm::STATE_OK + 32):
+        // Все в порядке
+        break;
+    case (LinkStm::STATE_TX_ERR + 32):
+        qWarning() << "UART TX Error";
+        break;
+    case (LinkStm::STATE_NO_RX + 32):
+        qWarning() << "UART No RX";
+        break;
+    case (LinkStm::STATE_RX_ERR + 32):
+        qWarning() << "UART RX Error";
+        break;
+    case (LinkStm::STATE_RX_LEN_ERR + 32):
+        qWarning() << "UART RX Length Error";
+        break;
+    case (LinkStm::STATE_RX_CRC_ERR + 32):
+        qWarning() << "UART RX CRC Error";
+        break;
+    default:
+        qWarning() << "Some error: " << errorState;
+    }
 }

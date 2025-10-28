@@ -17,6 +17,7 @@ Repeater {
 
     signal modeDialogRequest(int socketId, int modeIndex, bool isCoag)
     signal instrumDialogRequest(int socketId, int modeIndex, bool isCoag)
+    signal socketPositionChanged(int socketId, int x, int y, int width, int height)
 
     function calculateExpandedHeight() {
         var totalFixedHeight = 0
@@ -75,8 +76,6 @@ Repeater {
         title: model.socketname
         socketId: index
 
-        socketPedal:       model.socketpedal
-
         cutInstrumId:      model.cutmodeinstrid
         cutMaxPower:       model.cutmodemaxpower
         cutModePower:      model.cutmodepower
@@ -104,11 +103,18 @@ Repeater {
 
         Connections {
             target: delegateSoc
-            function onPedSelect(socketId, ped) {
-                console.log("pedalFrom delegate", ped)
-                theModel.qmlSetData(index,
-                                    ped,
-                                    "socketpedal")
+            function onAbsolutePositionChanged(socketid, absoluteY) {
+                // Эмитируем сигнал с полной информацией о позиции сокета
+                if (delegateSoc && delegateSoc.visible) {
+                    try {
+                        var absPos = delegateSoc.mapToItem(null, 0, 0)
+                        console.log("Socket position changed: id=" + socketid + " x=" + absPos.x + " y=" + absPos.y + " w=" + delegateSoc.width + " h=" + delegateSoc.height)
+                        repeatRoot.socketPositionChanged(socketid, absPos.x, absPos.y, delegateSoc.width, delegateSoc.height)
+                    } catch (e) {
+                        // Игнорируем ошибки при инициализации
+                        console.log("Error getting socket position:", socketid, e)
+                    }
+                }
             }
             function onInstrumEditDialogRequest(socketid, iscoag) {
 
@@ -122,9 +128,15 @@ Repeater {
                                             iscoag)
             }
             function onNewPower(socketid, pwr, iscoag) {
-                theModel.qmlSetData(index,
-                                    pwr,
-                                    (iscoag ? "coagmodepower" : "cutmodepower"))
+                var currentPower = iscoag ? model.coagmodepower : model.cutmodepower
+                if (currentPower !== pwr) {
+                    theModel.qmlSetData(index,
+                                        pwr,
+                                        (iscoag ? "coagmodepower" : "cutmodepower"))
+                    
+                    // Запускаем отложенное сохранение (через 2 секунды)
+                    control.scheduleSave()
+                }
             }
             function onSocketCollapseRequest() {
                 theModel.qmlSetData(index, 0, "socketdisplaymode")

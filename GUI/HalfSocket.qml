@@ -3,6 +3,7 @@ import QtQuick.Controls 2.15
 
 Rectangle {
     id: halfSocketRoot
+    color: "transparent"
 
     property bool isCoag
     property string modeName
@@ -17,7 +18,6 @@ Rectangle {
     signal instrumEditDialogRequest()
     signal newPower(int power)
 
-    color: "black"
 
     InstrumRect {
         id: instrumRect
@@ -78,21 +78,21 @@ Rectangle {
             name: "expanded"
             PropertyChanges {
                 target: instrumRect;
-                visible: (halfSocketRoot.modeId != 1000)
+                visible: true
                 height: halfSocketRoot.height * .4
             }
         }
     ]
-    transitions: [
-        Transition {
-            from: "collapsed"
-            to: "expanded"
-            NumberAnimation { duration: 100; easing.type: Easing.InQuad }
-        },
-        Transition {
-            from: "expanded"
-            to: "collapsed"
-            NumberAnimation { duration: 100; easing.type: Easing.InQuad }
-        }
-    ]
+//    transitions: [
+//        Transition {
+//            from: "collapsed"
+//            to: "expanded"
+//            NumberAnimation { duration: 100; easing.type: Easing.InQuad }
+//        },
+//        Transition {
+//            from: "expanded"
+//            to: "collapsed"
+//            NumberAnimation { duration: 100; easing.type: Easing.InQuad }
+//        }
+//    ]
 }

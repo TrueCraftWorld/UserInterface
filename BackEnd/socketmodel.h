@@ -25,6 +25,9 @@ public:
         SocketPedal,
         CoagModeIndex,
         CoagModeId,
+        CoagModeNum,
+        CoagModeBrief,
+        CoagModeDescript,
         CoagModeName,
         CoagModePower,
         CoagModeMinPower,
@@ -35,6 +38,9 @@ public:
         CoagModeInstrID,
         CutModeIndex,
         CutModeId,
+        CutModeNum,
+        CutModeBrief,
+        CutModeDescript,
         CutModeName,
         CutModePower,
         CutModeMinPower,
@@ -80,26 +86,28 @@ public:
     bool commitModeChange(int socketId, int modeINdex, const QVariantMap& param);
     SockPtr socketByName(const QString& socket) const;
     SockPtr socketById(int id) const;
-
+    void expandSocket(int socketId);
+    std::map<int, SockPtr>* itemsMap() const { return m_itemsMap; }
+    void setItemsMap(const std::map<int, SockPtr > &newItemsMap, bool add = false);
+    void setItemsMapVector(const std::vector<std::map<int, SockPtr >> &newItemsMapVector);
+    void setInstrumMap(const std::map<int, QSharedPointer<Instrument> > &newInstrumMap);
 
 signals:
     void signalSocketStateChanged(int socketId, int state);
     void signalSocketContentChanged(int socketId, const QByteArray& content);
+    void signalSocketDataChanged(int socketId, quint16 cutModeNum, quint16 coagModeNum, 
+                                quint16 cutModePower, quint16 coagModePower, quint8 pedal);
     void subProgIdxChanged();
     void subProgCountChanged();
 
-public:
+private:
     virtual QHash<int, QByteArray> roleNames() const override final;
-    void setItemsMap(const std::map<int, SockPtr > &newItemsMap, bool add = false);
-    void setItemsMapVector(const std::vector<std::map<int, SockPtr >> &newItemsMapVector);
-    void setInstrumMap(const std::map<int, QSharedPointer<Instrument> > &newInstrumMap);
 
     int subProgIdx() const;
     void setSubProgIdx(int newIndex);
 
     int subProgCount() const;
-
-private:
+    
     std::map<int, SockPtr>* m_itemsMap = nullptr;
     std::vector<std::map<int, SockPtr >> m_itemsMapVect;
     int m_subProgIdx = 0;
@@ -109,6 +117,7 @@ private:
     int roleIntByName(const QString& name);
     void socketCollapser(int expandedSocket);
     void pedalRemover(int socketToSkip, int pedalToRemove);
+    void emitSocketDataChanged(int socketId);
 
     QHash<int, QByteArray> m_roles;
     void populateRoles();

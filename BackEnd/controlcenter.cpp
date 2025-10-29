@@ -99,14 +99,15 @@ void makeModes(QMap<int, SurgModePtr>& container,
     int start = isCoag ? 6 : 3;
 
     container.insert(1000, SurgModePtr::create(ESHF::modesNames.last(),
-                                                                    false,
-                                                                    1,
-                                                                    1,
-                                                                    1000,
-                                                                    std::map<int, InstrInfo>(),
-                                                                    1000,
-                                                                    "",
-                                                                    ""));  // Num = 1000, Brief = "", Descript = ""
+                                                                   false,
+                                                                   1,
+                                                                   1,
+                                                                   1000,
+                                                                   std::map<int, InstrInfo>(),
+                                                                   1000,
+                                                                   "",
+                                                                   "",
+                                                                   false));  // Num = 1000, Brief = "", Descript = "", isEndo = false
 
 
     for (const auto& item : modes) {
@@ -130,6 +131,8 @@ void makeModes(QMap<int, SurgModePtr>& container,
             filterMapByKey(tmp, parseCommaSeparatedNumbers(progItem.at(start + 6*socketNum).toString()));
         }
 
+        bool isEndo = item.size() > 6 ? item.at(6).toBool() : false;  // ENDO_REG
+        
         SurgModePtr ptr = SurgModePtr::create(modeName,
                                               isCoag,
                                               item.at(0).toInt(),
@@ -138,7 +141,8 @@ void makeModes(QMap<int, SurgModePtr>& container,
                                               tmp,
                                               modeNum,
                                               modeBrief,
-                                              modeDescript);  // Передаём Brief и Descript
+                                              modeDescript,
+                                              isEndo);  // Передаём Brief, Descript и isEndo
         container.insert(modeId, ptr);
     }
 }
@@ -438,7 +442,12 @@ void ControlCenter::dataBaseSocketInit()
                                             false,
                                             1,
                                             1,
-                                            1000));
+                                            1000,
+                                            std::map<int, InstrInfo>(),
+                                            1000,
+                                            "",
+                                            "",
+                                            false));
 
         for (int cutModeIdx = 0; cutModeIdx < cutModesList.size(); ++ cutModeIdx) {
             const auto& item = cutModesList.at(cutModeIdx);
@@ -449,14 +458,23 @@ void ControlCenter::dataBaseSocketInit()
                                                 item.at(0).toInt(),
                                                 1,
                                                 item.at(2).toInt(),
-                                                instrConstraintsByMode.at(item.at(2).toInt())));
+                                                instrConstraintsByMode.at(item.at(2).toInt()),
+                                                0,
+                                                "",
+                                                "",
+                                                false));
         }
         coagModes.insert(1000,
                          SurgModePtr::create(ESHF::modesNames.last(),
                                             true,
                                             1,
                                             1,
-                                            1000));
+                                            1000,
+                                            std::map<int, InstrInfo>(),
+                                            1000,
+                                            "",
+                                            "",
+                                            false));
 
         for (int coagModeIdx = 0; coagModeIdx < coagModesList.size(); ++ coagModeIdx) {
             const auto& item = coagModesList.at(coagModeIdx);
@@ -467,7 +485,11 @@ void ControlCenter::dataBaseSocketInit()
                                                 item.at(0).toInt(),
                                                 1,
                                                 item.at(2).toInt(),
-                                                instrConstraintsByMode.at(item.at(2).toInt())));
+                                                instrConstraintsByMode.at(item.at(2).toInt()),
+                                                0,
+                                                "",
+                                                "",
+                                                false));
         }
         socket->setCoagModes(coagModes, modeNamesList);
         socket->setCutModes(cutModes, modeNamesList);
@@ -601,7 +623,7 @@ void ControlCenter::programmLoadSocketInit(int progId)
                 bool isCoag = (halfSocket == 0);
                 QMap<int, SurgModePtr> modes;
                 QList<QVariantList> modesList = m_dbReader->slotSendSelectQuery(QStringList{"Modes"},
-                            QStringList{"MaxPower","Name_RU", "id", "Num", "Brief_RU", "Descript_RU"},
+                            QStringList{"MaxPower","Name_RU", "id", "Num", "Brief_RU", "Descript_RU", "ENDO_REG"},
                             queryConditionModes
                                         .arg(socket->socketType() <= SOCKET::BIPOLAR_2 ? 0 : 1)
                                         .arg(halfSocket)

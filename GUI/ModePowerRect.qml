@@ -9,6 +9,7 @@ Canvas {
     property int modeId
     property int modePower
     property int maxPower
+    property bool isEndo: false
 
     signal modeEditDialogRequest()
     signal newPower(int pwr)
@@ -16,7 +17,7 @@ Canvas {
     function colorFromId() {
         if (modePowerRect.modeId == 1000)
             return "darkgray"
-        return isCoag ? "blue" : "yellow"
+        return isCoag ? "blue" : (isEndo ? "orange" : "yellow")
     }
 
     function changePower(direction) {
@@ -119,6 +120,14 @@ Canvas {
     Connections {
         target: modePowerRect
         function onModeIdChanged() {
+            modePowerRect.requestPaint()
+        }
+    }
+
+    Connections {
+        target: modePowerRect
+        function onIsEndoChanged() {
+            console.log("Endo has changed to %1", isEndo)
             modePowerRect.requestPaint()
         }
     }

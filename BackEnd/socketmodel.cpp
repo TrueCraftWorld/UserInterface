@@ -178,6 +178,14 @@ QVariant SocketModel::data(const QModelIndex &index, int role) const
         if (socketItem.curCutMode().isNull())
             return -1;
         return socketItem.curCutMode()->selectedInstrIndex();
+    case CoagModeIsEndo:
+        if (socketItem.curCoagMode().isNull())
+            return false;
+        return socketItem.curCoagMode()->isEndo();
+    case CutModeIsEndo:
+        if (socketItem.curCutMode().isNull())
+            return false;
+        return socketItem.curCutMode()->isEndo();
     default:
         return QVariant();
     }
@@ -237,12 +245,38 @@ bool SocketModel::setData(const QModelIndex &index, const QVariant &value, int r
     case CoagModeIndex:
         if (socketItem.setCoagModeIndex(value.toInt())) {
             emitSocketDataChanged(index.row());
+            // уведомляем QML о связанных ролях, включая isEndo
+            emit dataChanged(index, index, { CoagModeIndex,
+                                             CoagModeId,
+                                             CoagModeNum,
+                                             CoagModeBrief,
+                                             CoagModeDescript,
+                                             CoagModeName,
+                                             CoagModePower,
+                                             CoagModeMinPower,
+                                             CoagModeMaxPower,
+                                             CoagModeInstrIndex,
+                                             CoagModeInstrID,
+                                             CoagModeIsEndo });
             return true;
         }
         return false;
     case CutModeIndex:
         if (socketItem.setCutModeIndex(value.toInt())) {
             emitSocketDataChanged(index.row());
+            // уведомляем QML о связанных ролях, включая isEndo
+            emit dataChanged(index, index, { CutModeIndex,
+                                             CutModeId,
+                                             CutModeNum,
+                                             CutModeBrief,
+                                             CutModeDescript,
+                                             CutModeName,
+                                             CutModePower,
+                                             CutModeMinPower,
+                                             CutModeMaxPower,
+                                             CutModeInstrIndex,
+                                             CutModeInstrID,
+                                             CutModeIsEndo });
             return true;
         }
         return false;
@@ -463,6 +497,7 @@ bool SocketModel::commitModeChange(int socketId, int modeIndex, const QVariantMa
             roles.append(CoagModeInstrName);
             roles.append(CoagModeMaxPower);
             roles.append(CoagModePower);
+            roles.append(CoagModeIsEndo);
             // roles.append(Coa);
             res = true;
         }
@@ -491,6 +526,7 @@ bool SocketModel::commitModeChange(int socketId, int modeIndex, const QVariantMa
             roles.append(CutModeInstrName);
             roles.append(CutModeMaxPower);
             roles.append(CutModePower);
+            roles.append(CutModeIsEndo);
             res = true;
         }
         if (iter->second->setCutModePower(param.value("currentpower").toInt())) {

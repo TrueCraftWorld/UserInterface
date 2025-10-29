@@ -89,6 +89,9 @@ Repeater {
         coagModeId:        model.coagmodeid
         coagModeName:      model.coagmodename
         coagInstrumName:   model.coagmodeinstrname
+        coagIsEndo:        model.coagmodeisendo
+        
+        cutIsEndo:         model.cutmodeisendo
 
         Component.onCompleted: {
             if (delegateSoc.socketId === (count-1)) {

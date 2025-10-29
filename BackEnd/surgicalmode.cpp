@@ -9,7 +9,8 @@ SurgicalMode::SurgicalMode(const QString& name,
                            const std::map<int, InstrInfo>& _instrs,
                            int num,
                            const QString& brief,
-                           const QString& descript) :
+                           const QString& descript,
+                           bool isEndo) :
     m_maximumPower(maximum),
     m_minimumPower(minimum),
     m_currentPower(1),
@@ -19,6 +20,7 @@ SurgicalMode::SurgicalMode(const QString& name,
     m_num(num),
     m_brief(brief),
     m_descript(descript),
+    m_isEndo(isEndo),
     m_InstrConstraints(_instrs)
 {
     // Q_UNUSED(parent);
@@ -61,6 +63,11 @@ QString SurgicalMode::brief() const
 QString SurgicalMode::descript() const
 {
     return m_descript;
+}
+
+bool SurgicalMode::isEndo() const
+{
+    return m_isEndo;
 }
 
 int SurgicalMode::selectedInstrIndex() const

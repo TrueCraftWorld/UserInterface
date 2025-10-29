@@ -199,6 +199,7 @@ public:
     void setLinkStm(LinkStm* linkStm);
 
 private:
+    const int ENDO_MAX = 3;
     bool m_argonCylinder1Connected;         // Подключение баллона 1
     bool m_argonCylinder2Connected;         // Баллона 2
     bool m_autoStStopTissue;                // Захвачена ткань в режиме АСС

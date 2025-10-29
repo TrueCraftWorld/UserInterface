@@ -1,6 +1,7 @@
 #include "socketmodel.h"
 #include <QQmlEngine>
 #include <QTimer>
+#include <cmath>
 
 SocketModel::SocketModel(QObject *parent)
     : QAbstractListModel{parent}
@@ -501,7 +502,23 @@ bool SocketModel::commitModeChange(int socketId, int modeIndex, const QVariantMa
             // roles.append(Coa);
             res = true;
         }
-        if (iter->second->setCoagModePower(param.value("currentpower").toInt())) {
+        
+        int coagPower = param.value("currentpower").toInt();
+        
+        // Проверка для эндоскопических режимов: округление и валидация значений
+        auto coagMode = iter->second->curCoagMode();
+        if (!coagMode.isNull() && coagMode->isEndo()) {
+            const int ENDO_MAX = 3;
+            int endoCut = static_cast<int>(std::floor(coagPower / 10.0));
+            int endoCoag = coagPower % 10;
+            if (endoCut < 1) endoCut = 1;
+            else if (endoCut > ENDO_MAX) endoCut = ENDO_MAX;
+            if (endoCoag < 1) endoCoag = 1;
+            else if (endoCoag > ENDO_MAX) endoCoag = ENDO_MAX;
+            coagPower = endoCut * 10 + endoCoag;
+        }
+        
+        if (iter->second->setCoagModePower(coagPower)) {
             roles.append(CoagModePower);
             res = true;
         }
@@ -529,7 +546,23 @@ bool SocketModel::commitModeChange(int socketId, int modeIndex, const QVariantMa
             roles.append(CutModeIsEndo);
             res = true;
         }
-        if (iter->second->setCutModePower(param.value("currentpower").toInt())) {
+        
+        int cutPower = param.value("currentpower").toInt();
+        
+        // Проверка для эндоскопических режимов: округление и валидация значений
+        auto cutMode = iter->second->curCutMode();
+        if (!cutMode.isNull() && cutMode->isEndo()) {
+            const int ENDO_MAX = 3;
+            int endoCut = static_cast<int>(std::floor(cutPower / 10.0));
+            int endoCoag = cutPower % 10;
+            if (endoCut < 1) endoCut = 1;
+            else if (endoCut > ENDO_MAX) endoCut = ENDO_MAX;
+            if (endoCoag < 1) endoCoag = 1;
+            else if (endoCoag > ENDO_MAX) endoCoag = ENDO_MAX;
+            cutPower = endoCut * 10 + endoCoag;
+        }
+        
+        if (iter->second->setCutModePower(cutPower)) {
             roles.append(CutModePower);
             res = true;
         }

@@ -694,6 +694,18 @@ void ControlCenter::programmLoadSocketInit(int progId)
 
                 socket->setInstrumId(firstInstrId, isCoag);
 
+                // Проверка для эндоскопических режимов: если мощность = 1, устанавливаем 11
+                auto mode = isCoag ? socket->curCoagMode() : socket->curCutMode();
+                if (!mode.isNull() && mode->isEndo()) {
+                    int endoCut = static_cast<int>(std::floor(defaultPower / 10.0));
+                    int endoCoag = defaultPower % 10;
+                    if (endoCut < 1) endoCut = 1;
+                    else if (endoCut > ENDO_MAX) endoCut = ENDO_MAX;
+                    if (endoCoag < 1) endoCoag = 1;
+                    else if (endoCoag > ENDO_MAX) endoCoag = ENDO_MAX;
+                    defaultPower = endoCut * 10 + endoCoag;
+                }
+
                 isCoag ? socket->setCoagModePower(defaultPower)
                        : socket->setCutModePower(defaultPower);
             }
@@ -1222,6 +1234,30 @@ void ControlCenter::loadCurrentState()
         // Устанавливаем режимы
         socket->setModeId(cutModeId, false);
         socket->setModeId(coagModeId, true);
+        
+        // Проверка для эндоскопических режимов: округление и валидация значений
+        auto cutMode = socket->curCutMode();
+        if (!cutMode.isNull() && cutMode->isEndo()) {
+
+            int endoCut = static_cast<int>(std::floor(cutPower / 10.0));
+            int endoCoag = cutPower % 10;
+            if (endoCut < 1) endoCut = 1;
+            else if (endoCut > ENDO_MAX) endoCut = ENDO_MAX;
+            if (endoCoag < 1) endoCoag = 1;
+            else if (endoCoag > ENDO_MAX) endoCoag = ENDO_MAX;
+            cutPower = endoCut * 10 + endoCoag;
+        }
+        
+        auto coagMode = socket->curCoagMode();
+        if (!coagMode.isNull() && coagMode->isEndo()) {
+            int endoCut = static_cast<int>(std::floor(coagPower / 10.0));
+            int endoCoag = coagPower % 10;
+            if (endoCut < 1) endoCut = 1;
+            else if (endoCut > ENDO_MAX) endoCut = ENDO_MAX;
+            if (endoCoag < 1) endoCoag = 1;
+            else if (endoCoag > ENDO_MAX) endoCoag = ENDO_MAX;
+            coagPower = endoCut * 10 + endoCoag;
+        }
         
         // Устанавливаем мощность
         socket->setCutModePower(cutPower);

@@ -178,14 +178,14 @@ Popup {
             property: "opacity"
             from: 0.0
             to: 1.0
-            duration: 200
+            duration: 50
         }
         NumberAnimation {
             property: "scale"
-            from: 0.8
+            from: 0.9
             to: 1.0
-            duration: 200
-            easing.type: Easing.OutBack
+            duration: 50
+            easing.type: Easing.OutQuad
         }
     }
     
@@ -194,14 +194,14 @@ Popup {
             property: "opacity"
             from: 1.0
             to: 0.0
-            duration: 150
+            duration: 50
         }
         NumberAnimation {
             property: "scale"
             from: 1.0
-            to: 0.8
-            duration: 150
-            easing.type: Easing.InBack
+            to: 0.9
+            duration: 50
+            easing.type: Easing.InQuad
         }
     }
     

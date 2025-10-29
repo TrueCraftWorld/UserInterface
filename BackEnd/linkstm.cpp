@@ -44,7 +44,7 @@ LinkStm::LinkStm(QObject *parent)
     // Таймер обмена по uart
     m_uartTimer = new QTimer(this);
     connect(m_uartTimer, &QTimer::timeout, [this]() {sendCommand();});
-    m_uartTimer->start(1000);
+    m_uartTimer->start(100);
     qDebug(logInfo()) << "start Uart Timer";
 
     connect(m_uart, &UartToQmlBridge::uartRecieve, this, &LinkStm::unpackRxCommand);
@@ -53,6 +53,9 @@ LinkStm::LinkStm(QObject *parent)
 
 void LinkStm::unpackRxCommand(const QByteArray &rxPacket)
 {
+    // Засекаем время начала приёма (отладка была удалена)
+    // QTime rxStartTime = QTime::currentTime();
+    
     quint8 xorValue = 0;
     quint8 rxByte = 0;
     QByteArray destuffedBuffer;         // Для отработки байт-стаффинга
@@ -107,7 +110,7 @@ void LinkStm::unpackRxCommand(const QByteArray &rxPacket)
     m_rxCommand.mc = (McUnit) (destuffedBuffer.at(0) & UART_ADDR);
     // Выбираем команду
     m_rxCommand.com = static_cast<RxCommand>(destuffedBuffer.at(1));
-    qDebug() << "rxCom: " << m_rxCommand.com << ": " << QString::number(destuffedBuffer.at(1), 16);
+//    qDebug() << "rxCom: " << m_rxCommand.com << ": " << QString::number(destuffedBuffer.at(1), 16);
     m_rxCommand.data.clear();
     for (int i = 2; i < destuffedBuffer.size() - 2; i++)
         m_rxCommand.data.append(destuffedBuffer.at(i));
@@ -120,6 +123,9 @@ void LinkStm::unpackRxCommand(const QByteArray &rxPacket)
     else {
         m_state = STATE_RX_ERR;
     }
+    
+    // Отладочный замер времени от readyRead до m_waitAnswer=false удалён
+    
     m_waitAnswer = false;
 //    qDebug() << QString("!!! ").append(getHexStr(destuffedBuffer));
 }
@@ -152,6 +158,9 @@ bool LinkStm::checkRxCommand()
 
 void LinkStm::sendCommand()
 {
+    // Засекаем время начала отправки (отладка была удалена)
+    // QTime startTime = QTime::currentTime();
+    
     QByteArray txPacket;
     static ActiveSocket activeSocket = {99, false, false, false, false};   // Активированный сокет
     static int mode = 1000;             // Активированный режим
@@ -310,7 +319,7 @@ void LinkStm::sendCommand()
         m_uartTimer->setInterval(200);
         break;
     default:
-        m_uartTimer->setInterval(3000);
+        m_uartTimer->setInterval(500);
     }
 
 //    qDebug() << "txCom: " << m_txCommand.com << ": " << QString::number(m_txCommand.com, 16);
@@ -328,6 +337,9 @@ void LinkStm::sendCommand()
         txStr = getHexStr(txPacket);
 //        qDebug() << "Tx: " << getHexStr(txPacket);
     }
+    
+    // Отладочный замер времени от таймера до reportTx удалён
+    
     emit reportTx(txStr);
     m_waitAnswer = true;
 }
@@ -408,10 +420,15 @@ void LinkStm::readRxCommand()
     switch (rxType) {     // Три старших бита определяют тип посылки
     // Стандартная посылка
     case RxDefault:
-        m_unitState.argonCylinder1 = m_rxCommand.com & 0x08 ? true : false;
-        m_unitState.argonCylinder2 = m_rxCommand.com & 0x04 ? true : false;
-        m_unitState.tissueGrab = m_rxCommand.com & 0x02 ? true : false;
-        m_unitState.neutraElConnected = m_rxCommand.com & 0x01 ? true : false;
+    {
+        // Начинаем с копии текущего состояния
+        UnitState unitState = m_unitState;
+        
+        // Обновляем только те поля, которые пришли в этой посылке
+        unitState.argonCylinder1 = m_rxCommand.com & 0x08 ? true : false;
+        unitState.argonCylinder2 = m_rxCommand.com & 0x04 ? true : false;
+        unitState.tissueGrab = m_rxCommand.com & 0x02 ? true : false;
+        unitState.neutraElConnected = m_rxCommand.com & 0x01 ? true : false;
 
         // Преобразуем байт в enum PedalKnobPressed
         if (!m_rxCommand.data.isEmpty()) {
@@ -427,26 +444,39 @@ void LinkStm::readRxCommand()
             case PRESS_PED1:
             case PRESS_PED2_Y:
             case PRESS_PED2_B:
-                m_unitState.pedalKnob = static_cast<PedalKnobPressed>(pressValue);
+                unitState.pedalKnob = static_cast<PedalKnobPressed>(pressValue);
                 m_comState = START_ACTIVATION;
-                qDebug() << "Pressed pedal: " << m_unitState.pedalKnob;
+                qDebug() << "Pressed pedal: " << unitState.pedalKnob;
                 break;
             case PRESS_MONO1_YB:
             case PRESS_MONO2_YB:
             case PRESS_PED2_YB:
             case PRESS_NONE:
-                m_unitState.pedalKnob = static_cast<PedalKnobPressed>(pressValue);
+                unitState.pedalKnob = static_cast<PedalKnobPressed>(pressValue);
                 break;
             default:
-                m_unitState.pedalKnob = PRESS_WRONG;
+                unitState.pedalKnob = PRESS_WRONG;
                 qWarning() << "Invalid pedal/knob press value:" << Qt::hex << pressValue;
                 break;
             }
+            
+            if (m_rxCommand.data.size() > 1) {
+                quint8 otherByte = static_cast<quint8>(m_rxCommand.data.at(1));
+                unitState.pedalCharge = otherByte >> 5;
+                unitState.instrBi2 = static_cast<LinkStm::InstrumentConnected>((otherByte >> 3) & 0x03);
+                unitState.instrMono2 = static_cast<LinkStm::InstrumentConnected>((otherByte >> 1) & 0x03);
+            }
         } else {
             qDebug() << "Посылка от stm отстой - нет нажатий кнопок";
-            m_unitState.pedalKnob = PRESS_NONE;
+            unitState.pedalKnob = PRESS_NONE;
+        }
+        
+        if (m_unitState != unitState) {
+            m_unitState = unitState;
+            emit unitStateChanged(m_unitState);
         }
         break;
+    }
     // Во время активации
     case RxActivation:
         m_unitState.argonRealRate = m_rxCommand.com & 0x07;

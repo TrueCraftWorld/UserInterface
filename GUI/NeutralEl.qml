@@ -21,7 +21,7 @@ Rectangle {
     // Блок НЭ
     Rectangle {
         id: neutralImage
-        property string neColor: neutralConnected ? "green" : "red"
+        property string neColor: neutralConnected ? "lightgreen" : "red"
 
         anchors.left: parent.left
         anchors.bottom: parent.bottom

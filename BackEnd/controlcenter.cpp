@@ -770,14 +770,23 @@ bool ControlCenter::neutralElConnected() const
     return m_neutralElConnected;
 }
 
-void ControlCenter::setNeutralElConnected(bool connected)
+void ControlCenter::unitStateHandler(LinkStm::UnitState state)
 {
-    if (m_neutralElConnected == connected)
-        return;
-    
-    m_neutralElConnected = connected;
-    emit neutralElConnectedChanged(connected);
+    if (m_neutralElConnected != state.neutraElConnected) {
+       m_neutralElConnected = state.neutraElConnected;
+       emit neutralElConnectedChanged(m_neutralElConnected);
+    }
+
+
 }
+//void ControlCenter::setNeutralElConnected(bool connected)
+//{
+//    if (m_neutralElConnected == connected)
+//        return;
+
+//    m_neutralElConnected = connected;
+//    emit neutralElConnectedChanged(connected);
+//}
 
 bool ControlCenter::neutralElDivided() const
 {
@@ -1258,6 +1267,8 @@ void ControlCenter::setLinkStm(LinkStm* linkStm)
     if (!m_linkStm.isNull()) {
         connect(m_linkStm, &LinkStm::recieveData, this, &ControlCenter::uartChat);
         connect(m_linkStm, &LinkStm::error, this, &ControlCenter::uartError);
+//        connect(m_linkStm, &LinkStm::neutralElConnectedChanged, this, &ControlCenter::setNeutralElConnected);
+        connect(m_linkStm, &LinkStm::unitStateChanged, this, &ControlCenter::unitStateHandler);
         
         // Инициализируем текущие значения состояния в LinkStm
         m_linkStm->setEnableActivation(m_enableActivation);
@@ -1368,9 +1379,9 @@ void ControlCenter::onStartActivation(quint8 socketId, bool isCut)
         m_socketModel->expandSocket(socketId);
     }
     
-    // Запускаем активацию с небольшой задержкой, чтобы сокет успел развернуться
+    // Запускаем активацию с минимальной задержкой, чтобы сокет успел развернуться
     // Координаты будут установлены через сигнал socketPositionChanged от QML
-    QTimer::singleShot(500, this, [this]() {
+    QTimer::singleShot(100, this, [this]() {
         setActivation(true);
     });
     

@@ -284,7 +284,8 @@ private:
     
     QTimer* m_saveTimer = nullptr;  // Таймер для отложенного сохранения
     
-    void setNeutralElConnected(bool connected);
+//    void setNeutralElConnected(bool connected);
+    void unitStateHandler(LinkStm::UnitState state);
     void setArgonRealRate(quint8 rate);
     void setActivation(bool active);
     void setActiveSocketName(const QString& name);

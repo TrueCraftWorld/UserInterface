@@ -54,11 +54,8 @@ Window {
         Connections {
             target: socketsDummy
             function onSocketPositionChanged(socketId, x, y, width, height) {
-                console.log("onSocketPositionChanged received: socketId=" + socketId + " activeSocketId=" + control.activeSocketId + " x=" + x + " y=" + y + " w=" + width + " h=" + height)
                 // Обновляем координаты если это активный сокет (даже если activation еще false)
                 if (socketId === control.activeSocketId) {
-                    console.log("Updating active socket geometry")
-                    // Устанавливаем свойства напрямую - это должно работать
                     control.activeSocketX = x
                     control.activeSocketY = y
                     control.activeSocketWidth = width
@@ -229,6 +226,14 @@ Window {
             
             // Клик по свёрнутой правой панели - разворачиваем
             if (!rightPanelExpanded && startX >= container.width - 85) {
+                // Используем функцию из PedalPanel для определения сокета по клику
+                var socketIndex = rightPanel.findSocketIndexByClick(mouse.x, mouse.y)
+                
+                if (socketIndex >= 0) {
+                    rightPanel.lastClickedSocketIndex = socketIndex
+                    rightPanel.openedByPedalClick = true
+                }
+                
                 rightPanelExpanded = true
                 mouse.accepted = true
                 return

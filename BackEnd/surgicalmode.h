@@ -84,10 +84,11 @@ public:
                  const std::map<int, InstrInfo>& _instrs = {},
                  int num = 0,
                  const QString& brief = "",
-                 const QString& descript = "");
+                 const QString& descript = "",
+                 bool isEndo = false);
 
     explicit SurgicalMode()  :
-        SurgicalMode("NoMode", false, 1, 1, 0, {}, 0, "", "") {}
+        SurgicalMode("NoMode", false, 1, 1, 0, {}, 0, "", "", false) {}
 
     int maximumPower() const;
     int currentPower() const;
@@ -123,6 +124,7 @@ public:
     int num() const;
     QString brief() const;
     QString descript() const;
+    bool isEndo() const;
 
 private:
     void setModeName(const QString &newModeName);
@@ -141,6 +143,7 @@ private:
     int m_num;  // Num для формирования имени изображения
     QString m_brief;  // Краткое описание режима
     QString m_descript;  // Полное описание режима
+    bool m_isEndo;  // Флаг эндоскопического режима
     std::map<int, InstrInfo> m_InstrConstraints;
 };
 

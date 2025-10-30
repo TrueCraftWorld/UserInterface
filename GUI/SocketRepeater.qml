@@ -2,6 +2,7 @@ import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Window 2.15
 import QtQuick.Layouts 1.15
+import QtQml 2.15
 import BackEnd 1.0
 
 
@@ -78,19 +79,25 @@ Repeater {
 
         cutInstrumId:      model.cutmodeinstrid
         cutMaxPower:       model.cutmodemaxpower
-        cutModePower:      model.cutmodepower
         cutModeId:         model.cutmodeid
         cutModeName:       model.cutmodename
         cutInstrumName:    model.cutmodeinstrname
 
         coagInstrumId:     model.coagmodeinstrid
         coagMaxPower:      model.coagmodemaxpower
-        coagModePower:     model.coagmodepower
         coagModeId:        model.coagmodeid
         coagModeName:      model.coagmodename
         coagInstrumName:   model.coagmodeinstrname
+        coagIsEndo:        model.coagmodeisendo
+        
+        cutIsEndo:         model.cutmodeisendo
+
+        // Прямой биндинг с защитой от циклов через проверку в onNewPower
+        cutModePower: model.cutmodepower
+        coagModePower: model.coagmodepower
 
         Component.onCompleted: {
+            
             if (delegateSoc.socketId === (count-1)) {
                 //создали последний item - теперь все они доступны для расчёты высоты и
                 //надо триггернуть пересчёт.
@@ -108,11 +115,10 @@ Repeater {
                 if (delegateSoc && delegateSoc.visible) {
                     try {
                         var absPos = delegateSoc.mapToItem(null, 0, 0)
-                        console.log("Socket position changed: id=" + socketid + " x=" + absPos.x + " y=" + absPos.y + " w=" + delegateSoc.width + " h=" + delegateSoc.height)
                         repeatRoot.socketPositionChanged(socketid, absPos.x, absPos.y, delegateSoc.width, delegateSoc.height)
                     } catch (e) {
                         // Игнорируем ошибки при инициализации
-                        console.log("Error getting socket position:", socketid, e)
+                        // console.log("Error getting socket position:", socketid, e)
                     }
                 }
             }
@@ -129,9 +135,16 @@ Repeater {
             }
             function onNewPower(socketid, pwr, iscoag) {
                 var currentPower = iscoag ? model.coagmodepower : model.cutmodepower
-                if (currentPower !== pwr) {
+                var pwrInt = parseInt(pwr)
+                var currentPowerInt = parseInt(currentPower)
+                
+                // Строгая проверка: значение действительно изменилось и валидно
+                if (currentPowerInt !== pwrInt && 
+                    pwrInt >= 1 && 
+                    pwrInt <= (iscoag ? model.coagmodemaxpower : model.cutmodemaxpower)) {
+                    
                     theModel.qmlSetData(index,
-                                        pwr,
+                                        pwrInt,
                                         (iscoag ? "coagmodepower" : "cutmodepower"))
                     
                     // Запускаем отложенное сохранение (через 2 секунды)

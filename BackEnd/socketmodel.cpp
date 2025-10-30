@@ -1,6 +1,7 @@
 #include "socketmodel.h"
 #include <QQmlEngine>
 #include <QTimer>
+#include <cmath>
 
 SocketModel::SocketModel(QObject *parent)
     : QAbstractListModel{parent}
@@ -178,6 +179,14 @@ QVariant SocketModel::data(const QModelIndex &index, int role) const
         if (socketItem.curCutMode().isNull())
             return -1;
         return socketItem.curCutMode()->selectedInstrIndex();
+    case CoagModeIsEndo:
+        if (socketItem.curCoagMode().isNull())
+            return false;
+        return socketItem.curCoagMode()->isEndo();
+    case CutModeIsEndo:
+        if (socketItem.curCutMode().isNull())
+            return false;
+        return socketItem.curCutMode()->isEndo();
     default:
         return QVariant();
     }
@@ -237,12 +246,38 @@ bool SocketModel::setData(const QModelIndex &index, const QVariant &value, int r
     case CoagModeIndex:
         if (socketItem.setCoagModeIndex(value.toInt())) {
             emitSocketDataChanged(index.row());
+            // уведомляем QML о связанных ролях, включая isEndo
+            emit dataChanged(index, index, { CoagModeIndex,
+                                             CoagModeId,
+                                             CoagModeNum,
+                                             CoagModeBrief,
+                                             CoagModeDescript,
+                                             CoagModeName,
+                                             CoagModePower,
+                                             CoagModeMinPower,
+                                             CoagModeMaxPower,
+                                             CoagModeInstrIndex,
+                                             CoagModeInstrID,
+                                             CoagModeIsEndo });
             return true;
         }
         return false;
     case CutModeIndex:
         if (socketItem.setCutModeIndex(value.toInt())) {
             emitSocketDataChanged(index.row());
+            // уведомляем QML о связанных ролях, включая isEndo
+            emit dataChanged(index, index, { CutModeIndex,
+                                             CutModeId,
+                                             CutModeNum,
+                                             CutModeBrief,
+                                             CutModeDescript,
+                                             CutModeName,
+                                             CutModePower,
+                                             CutModeMinPower,
+                                             CutModeMaxPower,
+                                             CutModeInstrIndex,
+                                             CutModeInstrID,
+                                             CutModeIsEndo });
             return true;
         }
         return false;
@@ -463,10 +498,27 @@ bool SocketModel::commitModeChange(int socketId, int modeIndex, const QVariantMa
             roles.append(CoagModeInstrName);
             roles.append(CoagModeMaxPower);
             roles.append(CoagModePower);
+            roles.append(CoagModeIsEndo);
             // roles.append(Coa);
             res = true;
         }
-        if (iter->second->setCoagModePower(param.value("currentpower").toInt())) {
+        
+        int coagPower = param.value("currentpower").toInt();
+        
+        // Проверка для эндоскопических режимов: округление и валидация значений
+        auto coagMode = iter->second->curCoagMode();
+        if (!coagMode.isNull() && coagMode->isEndo()) {
+            const int ENDO_MAX = 3;
+            int endoCut = static_cast<int>(std::floor(coagPower / 10.0));
+            int endoCoag = coagPower % 10;
+            if (endoCut < 1) endoCut = 1;
+            else if (endoCut > ENDO_MAX) endoCut = ENDO_MAX;
+            if (endoCoag < 1) endoCoag = 1;
+            else if (endoCoag > ENDO_MAX) endoCoag = ENDO_MAX;
+            coagPower = endoCut * 10 + endoCoag;
+        }
+        
+        if (iter->second->setCoagModePower(coagPower)) {
             roles.append(CoagModePower);
             res = true;
         }
@@ -491,9 +543,26 @@ bool SocketModel::commitModeChange(int socketId, int modeIndex, const QVariantMa
             roles.append(CutModeInstrName);
             roles.append(CutModeMaxPower);
             roles.append(CutModePower);
+            roles.append(CutModeIsEndo);
             res = true;
         }
-        if (iter->second->setCutModePower(param.value("currentpower").toInt())) {
+        
+        int cutPower = param.value("currentpower").toInt();
+        
+        // Проверка для эндоскопических режимов: округление и валидация значений
+        auto cutMode = iter->second->curCutMode();
+        if (!cutMode.isNull() && cutMode->isEndo()) {
+            const int ENDO_MAX = 3;
+            int endoCut = static_cast<int>(std::floor(cutPower / 10.0));
+            int endoCoag = cutPower % 10;
+            if (endoCut < 1) endoCut = 1;
+            else if (endoCut > ENDO_MAX) endoCut = ENDO_MAX;
+            if (endoCoag < 1) endoCoag = 1;
+            else if (endoCoag > ENDO_MAX) endoCoag = ENDO_MAX;
+            cutPower = endoCut * 10 + endoCoag;
+        }
+        
+        if (iter->second->setCutModePower(cutPower)) {
             roles.append(CutModePower);
             res = true;
         }

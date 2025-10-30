@@ -36,6 +36,7 @@ public:
         CoagModeInstrImage,
         CoagModeInstrIndex,
         CoagModeInstrID,
+        CoagModeIsEndo,
         CutModeIndex,
         CutModeId,
         CutModeNum,
@@ -49,6 +50,7 @@ public:
         CutModeInstrImage,
         CutModeInstrIndex,
         CutModeInstrID,
+        CutModeIsEndo,
         CutModesNames,
         CoagModesNames,
     };

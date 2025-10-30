@@ -286,3 +286,13 @@ int SocketModeEditor::currentPower() const
 {
     return m_currentParameters.value("currentpower").toInt();
 }
+
+const QString SocketModeEditor::modeDescript() const
+{
+    return m_currentParameters.value("modedescript").toString();
+}
+
+const QString SocketModeEditor::modeBrief() const
+{
+    return m_currentParameters.value("modebrief").toString();
+}

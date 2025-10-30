@@ -16,6 +16,10 @@ Rectangle {
     // Отслеживание изменений педалей
     property bool pedalsChanged: false
     
+    // Свойство для отслеживания того, что панель была раскрыта из-за клика на педаль
+    property bool openedByPedalClick: false
+    property int lastClickedSocketIndex: -1
+    
     width: panelExpanded ? expandedWidth : collapsedWidth
     color: "#2c2c2c"
     
@@ -24,6 +28,13 @@ Rectangle {
         if (!panelExpanded && pedalsChanged) {
             control.saveCurrentState()
             pedalsChanged = false
+        }
+        
+        // Если панель только что раскрылась и это было из-за клика на педаль - открываем редактор
+        if (panelExpanded && openedByPedalClick) {
+            openedByPedalClick = false
+            // Находим последнюю нажатую педаль и открываем для неё редактор
+            openEditorForLastClickedPedal()
         }
     }
     
@@ -217,31 +228,34 @@ Rectangle {
             Connections {
                 target: pedalDelegate
                 function onPedalMenuRequest() {
+                    console.log("Pedal clicked, panel expanded:", pedalPanel.panelExpanded)
+                    
                     // Разворачиваем панель если она свёрнута
                     if (!pedalPanel.panelExpanded) {
+                        // Устанавливаем флаг, что раскрытие произошло из-за клика на педаль
+                        pedalPanel.openedByPedalClick = true
+                        // Сохраняем информацию о том, какая педаль была нажата
+                        pedalPanel.lastClickedSocketIndex = socketIndex
                         pedalPanel.panelExpanded = true
+                        console.log("Expand Pedalpanel")
+                    } else {
+                        console.log("Pedalpanel has been expanded")
+                        // Панель уже раскрыта, сразу открываем редактор
+                        globalPedalEditor.selectedPed = pedalDelegate.pedalStateIdx
+                        globalPedalEditor.currentSocketIndex = socketIndex
+                        
+                        var availableTypes = [1, 2]
+                        if (socketIndex === 1) {
+                            availableTypes.push(3)
+                        }
+                        if (socketIndex === 2 || socketIndex === 3) {
+                            availableTypes.push(4)
+                        }
+                        
+                        globalPedalEditor.shownPedalsArray = availableTypes
+                        globalPedalEditor.targetPedalY = pedalDelegate.y
+                        globalPedalEditor.open()
                     }
-                    
-                    globalPedalEditor.selectedPed = pedalDelegate.pedalStateIdx
-                    globalPedalEditor.currentSocketIndex = socketIndex  // socketNumber обновится автоматически
-                    
-                    // Формируем список доступных типов педалей в зависимости от номера сокета
-                    var availableTypes = [1, 2]  // Single и Double доступны всегда
-                    
-                    // biHandle (тип 3) - кнопка термошва доступна только для БИ2 (socketIndex === 1)
-                    if (socketIndex === 1) {
-                        availableTypes.push(3)
-                    }
-                    
-                    // monoHandle (тип 4) - держатель с кнопками доступен только для монополярных сокетов
-                    if (socketIndex === 2 || socketIndex === 3) {
-                        availableTypes.push(4)
-                    }
-                    
-                    globalPedalEditor.shownPedalsArray = availableTypes
-                    // Устанавливаем позицию редактора на уровне педали
-                    globalPedalEditor.targetPedalY = pedalDelegate.y
-                    globalPedalEditor.open()
                 }
             }
         }
@@ -251,6 +265,99 @@ Rectangle {
         id: fontMetrics
         font.pixelSize: 24
         font.bold: true
+    }
+    
+    // Таймер для открытия редактора после раскрытия панели
+    Timer {
+        id: openEditorTimer
+        interval: 50
+        repeat: false
+        onTriggered: {
+            if (lastClickedSocketIndex < 0) return
+            
+            // Находим нужную педаль в Repeater
+            var pedalItem = null
+            for (var i = 0; i < pedalRepeater.count; i++) {
+                var item = pedalRepeater.itemAt(i)
+                if (item && item.socketIndex === lastClickedSocketIndex) {
+                    pedalItem = item
+                    break
+                }
+            }
+            
+            if (!pedalItem) return
+            
+            globalPedalEditor.selectedPed = pedalItem.pedalStateIdx
+            globalPedalEditor.currentSocketIndex = lastClickedSocketIndex
+            
+            var availableTypes = [1, 2]
+            if (lastClickedSocketIndex === 1) {
+                availableTypes.push(3)
+            }
+            if (lastClickedSocketIndex === 2 || lastClickedSocketIndex === 3) {
+                availableTypes.push(4)
+            }
+            
+            globalPedalEditor.shownPedalsArray = availableTypes
+            globalPedalEditor.targetPedalY = pedalItem.y
+            globalPedalEditor.open()
+        }
+    }
+    
+    // Функция для определения номера сокета по клику
+    function findSocketIndexByClick(mouseX, mouseY) {
+        // Ищем socketContainer среди детей родителя
+        var socketContainer = null
+        if (pedalPanel.parent && pedalPanel.parent.children) {
+            for (var i = 0; i < pedalPanel.parent.children.length; i++) {
+                var child = pedalPanel.parent.children[i]
+                if (child && child.objectName === "socketContainer") {
+                    socketContainer = child
+                    break
+                }
+            }
+        }
+        
+        if (!socketContainer) return -1
+        
+        var repeater = null
+        if (socketContainer.children.length > 0) {
+            var layout = socketContainer.children[0]
+            
+            // Ищем SocketRepeater в layout
+            for (var j = 0; j < layout.children.length; j++) {
+                var child2 = layout.children[j]
+                if (child2 && typeof child2.itemAt === 'function') {
+                    repeater = child2
+                    break
+                }
+            }
+        }
+        
+        if (!repeater) return -1
+        
+        // Ищем сокет, в который попал клик
+        for (var k = 0; k < repeater.count; k++) {
+            var socket = repeater.itemAt(k)
+            if (socket) {
+                // Получаем абсолютную позицию сокета
+                var socketAbsolutePos = socket.mapToItem(null, 0, 0)
+                
+                // Проверяем, находится ли клик в пределах сокета
+                if (mouseY >= socketAbsolutePos.y && mouseY <= socketAbsolutePos.y + socket.height) {
+                    return k
+                }
+            }
+        }
+        
+        return -1
+    }
+    
+    // Функция для открытия редактора для последней нажатой педали
+    function openEditorForLastClickedPedal() {
+        if (lastClickedSocketIndex < 0) return
+        // Запускаем таймер с небольшой задержкой, чтобы панель успела раскрыться
+        openEditorTimer.restart()
     }
     
     // Глобальный редактор педалей внутри правой панели
@@ -299,6 +406,7 @@ Rectangle {
         Connections {
             target: pedalPanel
             function onPanelExpandedChanged() {
+                console.log("panelState is changed")
                 if (!panelExpanded && globalPedalEditor.opened) {
                     globalPedalEditor.close()
                 }

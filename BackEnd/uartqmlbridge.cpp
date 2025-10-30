@@ -57,6 +57,9 @@ void UartToQmlBridge::handleError(QSerialPort::SerialPortError error)
 bool UartToQmlBridge::writeData(const QByteArray &txData)
 {
     quint16 writedByte;
+    
+    // Отладочный вывод TX удалён
+    
     // Записываем данные в SerialPort
     writedByte = m_serial->write(txData);
     if (writedByte != txData.size() ||
@@ -73,6 +76,9 @@ QByteArray UartToQmlBridge::readData()
     QTime readTime = QTime::currentTime();
     const QByteArray data = m_serial->readAll();
     m_transmitDelay = m_writeTime.msecsTo(readTime);
+    
+    // Отладочный вывод RX удалён
+    
     // Сбрасываем флаг отправки
     m_waitForAnswer = false;
     if (data != m_rxData) {

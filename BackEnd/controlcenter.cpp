@@ -99,14 +99,15 @@ void makeModes(QMap<int, SurgModePtr>& container,
     int start = isCoag ? 6 : 3;
 
     container.insert(1000, SurgModePtr::create(ESHF::modesNames.last(),
-                                                                    false,
-                                                                    1,
-                                                                    1,
-                                                                    1000,
-                                                                    std::map<int, InstrInfo>(),
-                                                                    1000,
-                                                                    "",
-                                                                    ""));  // Num = 1000, Brief = "", Descript = ""
+                                                                   false,
+                                                                   1,
+                                                                   1,
+                                                                   1000,
+                                                                   std::map<int, InstrInfo>(),
+                                                                   1000,
+                                                                   "",
+                                                                   "",
+                                                                   false));  // Num = 1000, Brief = "", Descript = "", isEndo = false
 
 
     for (const auto& item : modes) {
@@ -130,6 +131,8 @@ void makeModes(QMap<int, SurgModePtr>& container,
             filterMapByKey(tmp, parseCommaSeparatedNumbers(progItem.at(start + 6*socketNum).toString()));
         }
 
+        bool isEndo = item.size() > 6 ? item.at(6).toBool() : false;  // ENDO_REG
+        
         SurgModePtr ptr = SurgModePtr::create(modeName,
                                               isCoag,
                                               item.at(0).toInt(),
@@ -138,7 +141,8 @@ void makeModes(QMap<int, SurgModePtr>& container,
                                               tmp,
                                               modeNum,
                                               modeBrief,
-                                              modeDescript);  // Передаём Brief и Descript
+                                              modeDescript,
+                                              isEndo);  // Передаём Brief, Descript и isEndo
         container.insert(modeId, ptr);
     }
 }
@@ -441,7 +445,12 @@ void ControlCenter::dataBaseSocketInit()
                                             false,
                                             1,
                                             1,
-                                            1000));
+                                            1000,
+                                            std::map<int, InstrInfo>(),
+                                            1000,
+                                            "",
+                                            "",
+                                            false));
 
         for (int cutModeIdx = 0; cutModeIdx < cutModesList.size(); ++ cutModeIdx) {
             const auto& item = cutModesList.at(cutModeIdx);
@@ -452,14 +461,23 @@ void ControlCenter::dataBaseSocketInit()
                                                 item.at(0).toInt(),
                                                 1,
                                                 item.at(2).toInt(),
-                                                instrConstraintsByMode.at(item.at(2).toInt())));
+                                                instrConstraintsByMode.at(item.at(2).toInt()),
+                                                0,
+                                                "",
+                                                "",
+                                                false));
         }
         coagModes.insert(1000,
                          SurgModePtr::create(ESHF::modesNames.last(),
                                             true,
                                             1,
                                             1,
-                                            1000));
+                                            1000,
+                                            std::map<int, InstrInfo>(),
+                                            1000,
+                                            "",
+                                            "",
+                                            false));
 
         for (int coagModeIdx = 0; coagModeIdx < coagModesList.size(); ++ coagModeIdx) {
             const auto& item = coagModesList.at(coagModeIdx);
@@ -470,7 +488,11 @@ void ControlCenter::dataBaseSocketInit()
                                                 item.at(0).toInt(),
                                                 1,
                                                 item.at(2).toInt(),
-                                                instrConstraintsByMode.at(item.at(2).toInt())));
+                                                instrConstraintsByMode.at(item.at(2).toInt()),
+                                                0,
+                                                "",
+                                                "",
+                                                false));
         }
         socket->setCoagModes(coagModes, modeNamesList);
         socket->setCutModes(cutModes, modeNamesList);
@@ -609,7 +631,7 @@ void ControlCenter::programmLoadSocketInit(int progId, bool clear)
                 bool isCoag = (halfSocket == 0);
                 QMap<int, SurgModePtr> modes;
                 QList<QVariantList> modesList = m_dbReader->slotSendSelectQuery(QStringList{"Modes"},
-                            QStringList{"MaxPower","Name_RU", "id", "Num", "Brief_RU", "Descript_RU"},
+                            QStringList{"MaxPower","Name_RU", "id", "Num", "Brief_RU", "Descript_RU", "ENDO_REG"},
                             queryConditionModes
                                         .arg(socket->socketType() <= SOCKET::BIPOLAR_2 ? 0 : 1)
                                         .arg(halfSocket)
@@ -679,6 +701,18 @@ void ControlCenter::programmLoadSocketInit(int progId, bool clear)
                 socket->setModeId(firstModeId, isCoag);
 
                 socket->setInstrumId(firstInstrId, isCoag);
+
+                // Проверка для эндоскопических режимов: если мощность = 1, устанавливаем 11
+                auto mode = isCoag ? socket->curCoagMode() : socket->curCutMode();
+                if (!mode.isNull() && mode->isEndo()) {
+                    int endoCut = static_cast<int>(std::floor(defaultPower / 10.0));
+                    int endoCoag = defaultPower % 10;
+                    if (endoCut < 1) endoCut = 1;
+                    else if (endoCut > ENDO_MAX) endoCut = ENDO_MAX;
+                    if (endoCoag < 1) endoCoag = 1;
+                    else if (endoCoag > ENDO_MAX) endoCoag = ENDO_MAX;
+                    defaultPower = endoCut * 10 + endoCoag;
+                }
 
                 isCoag ? socket->setCoagModePower(defaultPower)
                        : socket->setCutModePower(defaultPower);
@@ -778,14 +812,23 @@ bool ControlCenter::neutralElConnected() const
     return m_neutralElConnected;
 }
 
-void ControlCenter::setNeutralElConnected(bool connected)
+void ControlCenter::unitStateHandler(LinkStm::UnitState state)
 {
-    if (m_neutralElConnected == connected)
-        return;
-    
-    m_neutralElConnected = connected;
-    emit neutralElConnectedChanged(connected);
+    if (m_neutralElConnected != state.neutraElConnected) {
+       m_neutralElConnected = state.neutraElConnected;
+       emit neutralElConnectedChanged(m_neutralElConnected);
+    }
+
+
 }
+//void ControlCenter::setNeutralElConnected(bool connected)
+//{
+//    if (m_neutralElConnected == connected)
+//        return;
+
+//    m_neutralElConnected = connected;
+//    emit neutralElConnectedChanged(connected);
+//}
 
 bool ControlCenter::neutralElDivided() const
 {
@@ -1200,6 +1243,30 @@ void ControlCenter::loadCurrentState()
         socket->setModeId(cutModeId, false);
         socket->setModeId(coagModeId, true);
         
+        // Проверка для эндоскопических режимов: округление и валидация значений
+        auto cutMode = socket->curCutMode();
+        if (!cutMode.isNull() && cutMode->isEndo()) {
+
+            int endoCut = static_cast<int>(std::floor(cutPower / 10.0));
+            int endoCoag = cutPower % 10;
+            if (endoCut < 1) endoCut = 1;
+            else if (endoCut > ENDO_MAX) endoCut = ENDO_MAX;
+            if (endoCoag < 1) endoCoag = 1;
+            else if (endoCoag > ENDO_MAX) endoCoag = ENDO_MAX;
+            cutPower = endoCut * 10 + endoCoag;
+        }
+        
+        auto coagMode = socket->curCoagMode();
+        if (!coagMode.isNull() && coagMode->isEndo()) {
+            int endoCut = static_cast<int>(std::floor(coagPower / 10.0));
+            int endoCoag = coagPower % 10;
+            if (endoCut < 1) endoCut = 1;
+            else if (endoCut > ENDO_MAX) endoCut = ENDO_MAX;
+            if (endoCoag < 1) endoCoag = 1;
+            else if (endoCoag > ENDO_MAX) endoCoag = ENDO_MAX;
+            coagPower = endoCut * 10 + endoCoag;
+        }
+        
         // Устанавливаем мощность
         socket->setCutModePower(cutPower);
         socket->setCoagModePower(coagPower);
@@ -1266,6 +1333,8 @@ void ControlCenter::setLinkStm(LinkStm* linkStm)
     if (!m_linkStm.isNull()) {
         connect(m_linkStm, &LinkStm::recieveData, this, &ControlCenter::uartChat);
         connect(m_linkStm, &LinkStm::error, this, &ControlCenter::uartError);
+//        connect(m_linkStm, &LinkStm::neutralElConnectedChanged, this, &ControlCenter::setNeutralElConnected);
+        connect(m_linkStm, &LinkStm::unitStateChanged, this, &ControlCenter::unitStateHandler);
         
         // Инициализируем текущие значения состояния в LinkStm
         m_linkStm->setEnableActivation(m_enableActivation);
@@ -1376,9 +1445,9 @@ void ControlCenter::onStartActivation(quint8 socketId, bool isCut)
         m_socketModel->expandSocket(socketId);
     }
     
-    // Запускаем активацию с небольшой задержкой, чтобы сокет успел развернуться
+    // Запускаем активацию с минимальной задержкой, чтобы сокет успел развернуться
     // Координаты будут установлены через сигнал socketPositionChanged от QML
-    QTimer::singleShot(500, this, [this]() {
+    QTimer::singleShot(100, this, [this]() {
         setActivation(true);
     });
     

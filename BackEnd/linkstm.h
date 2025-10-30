@@ -3,6 +3,7 @@
 
 #include <QObject>
 #include <QTimer>
+#include <QTime>
 #include <QQueue>
 #include <QThread>
 #include <QDebug>
@@ -154,16 +155,33 @@ public:
 
     // Состояние аппарата
     struct UnitState {
-        bool argonCylinder1;             // Подключение баллонов
-        bool argonCylinder2;
-        quint8 argonRealRate;            // Реальный расход аргона во время активации
-        bool neutraElConnected;          // Подключение нейтрального электрода НЭ
-        bool tissueGrab;                 // Обнаружен захват ткани
-        PedalKnobPressed pedalKnob;      // Состояние кнопок и педалей
-        quint8  pedalCharge;             // Заряд беспроводной педали
-        InstrumentConnected instrBi2;    // Подключение инструментов (держателей) с определителем
-        InstrumentConnected instrMono2;
-        quint8 activOutput;              // Активированный выход
+        bool argonCylinder1{false};             // Подключение баллонов
+        bool argonCylinder2{false};
+        quint8 argonRealRate{0};            // Реальный расход аргона во время активации
+        bool neutraElConnected{false};          // Подключение нейтрального электрода НЭ
+        bool tissueGrab{false};                 // Обнаружен захват ткани
+        PedalKnobPressed pedalKnob{PRESS_NONE};      // Состояние кнопок и педалей
+        quint8  pedalCharge{0};             // Заряд беспроводной педали
+        InstrumentConnected instrBi2{INSTR_NOT_CONNECTED};    // Подключение инструментов (держателей) с определителем
+        InstrumentConnected instrMono2{INSTR_NOT_CONNECTED};
+        quint8 activOutput{0};              // Активированный выход
+        
+        bool operator==(const UnitState& other) const {
+            return argonCylinder1 == other.argonCylinder1
+                && argonCylinder2 == other.argonCylinder2
+                && argonRealRate == other.argonRealRate
+                && neutraElConnected == other.neutraElConnected
+                && tissueGrab == other.tissueGrab
+                && pedalKnob == other.pedalKnob
+                && pedalCharge == other.pedalCharge
+                && instrBi2 == other.instrBi2
+                && instrMono2 == other.instrMono2
+                && activOutput == other.activOutput;
+        }
+        
+        bool operator!=(const UnitState& other) const {
+            return !(*this == other);
+        }
     };
 
     struct SocketState {
@@ -218,6 +236,8 @@ public:
     void initializeAllSockets();
 
 signals:
+    void unitStateChanged(UnitState state);
+//    void neutralElConnectedChanged(bool connected);
 //    void txError();
 //    void rxError();
     void recieveData(UartRx* rxData);

@@ -199,6 +199,7 @@ public:
     void setLinkStm(LinkStm* linkStm);
 
 private:
+    const int ENDO_MAX = 3;
     bool m_argonCylinder1Connected;         // Подключение баллона 1
     bool m_argonCylinder2Connected;         // Баллона 2
     bool m_autoStStopTissue;                // Захвачена ткань в режиме АСС
@@ -285,7 +286,8 @@ private:
     
     QTimer* m_saveTimer = nullptr;  // Таймер для отложенного сохранения
     
-    void setNeutralElConnected(bool connected);
+//    void setNeutralElConnected(bool connected);
+    void unitStateHandler(LinkStm::UnitState state);
     void setArgonRealRate(quint8 rate);
     void setActivation(bool active);
     void setActiveSocketName(const QString& name);

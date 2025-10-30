@@ -21,8 +21,8 @@ Popup {
     property var itemIdArr: []
     property var itemNameArr: []
     property var itemNumArr: []
-    property var itemBriefArr: []
-    property var itemDescriptArr: []
+//    property var itemBriefArr: []
+//    property var itemDescriptArr: []
     property bool changed: false
     
     // Определяем префикс для изображения на основе типа сокета
@@ -38,19 +38,19 @@ Popup {
         return parseInt(itemNumArr[modeEditor.currentModeIndex])
     }
     
-    // Получаем краткое описание текущего режима
-    property string currentModeBrief: {
-        if (modeEditor.currentModeIndex < 0 || modeEditor.currentModeIndex >= itemBriefArr.length)
-            return ""
-        return itemBriefArr[modeEditor.currentModeIndex]
-    }
+//    // Получаем краткое описание текущего режима
+//    property string currentModeBrief: {
+//        if (modeEditor.currentModeIndex < 0 || modeEditor.currentModeIndex >= itemBriefArr.length)
+//            return ""
+//        return itemBriefArr[modeEditor.currentModeIndex]
+//    }
     
-    // Получаем полное описание текущего режима
-    property string currentModeDescript: {
-        if (modeEditor.currentModeIndex < 0 || modeEditor.currentModeIndex >= itemDescriptArr.length)
-            return ""
-        return itemDescriptArr[modeEditor.currentModeIndex]
-    }
+//    // Получаем полное описание текущего режима
+//    property string currentModeDescript: {
+//        if (modeEditor.currentModeIndex < 0 || modeEditor.currentModeIndex >= itemDescriptArr.length)
+//            return ""
+//        return itemDescriptArr[modeEditor.currentModeIndex]
+//    }
 
     ListModel {
         id: combinedModel
@@ -83,8 +83,8 @@ Popup {
         itemNameArr = modeEditor.modeNames
         itemIdArr = modeEditor.modeNamesIds()
         itemNumArr = modeEditor.modeNamesNums()
-        itemBriefArr = modeEditor.modeNamesBriefs()
-        itemDescriptArr = modeEditor.modeNamesDescripts()
+//        itemBriefArr = modeEditor.modeNamesBriefs()
+//        itemDescriptArr = modeEditor.modeNamesDescripts()
         
         updateModel()
         modeEditor.currentModeIndex = modeIndex
@@ -457,7 +457,7 @@ Popup {
 
                     Label {
                         id: briefText
-                        text: currentModeBrief
+                        text: modeEditor.modeBrief
                         color: "cyan"
                         font.pixelSize: 21
                         font.bold: true
@@ -512,7 +512,7 @@ Popup {
 
                     Label {
                         id: descriptText
-                        text: currentModeDescript
+                        text: modeEditor.modeDescript
                         color: "white"
                         font.pixelSize: 24
                         wrapMode: Text.WordWrap

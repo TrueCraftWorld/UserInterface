@@ -13,6 +13,7 @@ Rectangle {
     property int socketId
     property int instrumId
     property string instrumName: qsTr("не выбран")
+    property bool isEndo: false
 
     signal modeEditDialogRequest()
     signal instrumEditDialogRequest()
@@ -38,6 +39,7 @@ Rectangle {
         modePower: halfSocketRoot.modePower
         modeId: halfSocketRoot.modeId
         maxPower: halfSocketRoot.maxPower
+        isEndo: halfSocketRoot.isEndo
         anchors {
             top: instrumRect.bottom
             left: parent.left

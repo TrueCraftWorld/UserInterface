@@ -14,6 +14,7 @@ Rectangle {
     property int cutMaxPower
     property int cutInstrumId
     property string cutInstrumName: qsTr("не выбран")
+    property bool cutIsEndo: false
 
     property string coagModeName
     property int coagModePower
@@ -21,6 +22,7 @@ Rectangle {
     property int coagMaxPower
     property int coagInstrumId
     property string coagInstrumName: qsTr("не выбран")
+    property bool coagIsEndo: false
 
     signal modeEditDialogRequest(int socketId, bool isCoag)
     signal instrumEditDialogRequest(int socketId, bool isCoag)
@@ -87,6 +89,7 @@ Rectangle {
         maxPower:   socketRoot.cutMaxPower
         instrumId:  socketRoot.cutInstrumId
         instrumName:socketRoot.cutInstrumName
+        isEndo:     socketRoot.cutIsEndo
 
         // Перехватываем события от HalfSocket только для разворачивания
         MouseArea {
@@ -112,6 +115,7 @@ Rectangle {
         maxPower:   socketRoot.coagMaxPower
         instrumId:  socketRoot.coagInstrumId
         instrumName:socketRoot.coagInstrumName
+        isEndo:     socketRoot.coagIsEndo
 
         // Перехватываем события от HalfSocket только для разворачивания
         MouseArea {

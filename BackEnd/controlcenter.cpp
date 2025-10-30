@@ -818,8 +818,6 @@ void ControlCenter::unitStateHandler(LinkStm::UnitState state)
        m_neutralElConnected = state.neutraElConnected;
        emit neutralElConnectedChanged(m_neutralElConnected);
     }
-
-
 }
 //void ControlCenter::setNeutralElConnected(bool connected)
 //{

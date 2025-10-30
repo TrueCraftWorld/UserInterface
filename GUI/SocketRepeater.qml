@@ -76,7 +76,7 @@ Repeater {
         state: model.socketdisplaymode
         title: model.socketname
         socketId: index
-        socketState: model.socketstate
+        socketState: model.socketstatus
 
         cutInstrumId:      model.cutmodeinstrid
         cutMaxPower:       model.cutmodemaxpower

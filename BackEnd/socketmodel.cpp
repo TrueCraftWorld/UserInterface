@@ -193,9 +193,7 @@ QVariant SocketModel::data(const QModelIndex &index, int role) const
 
     return QVariant();
 }
-
-
-
+//
 
 bool SocketModel::setData(const QModelIndex &index, const QVariant &value, int role)
 {

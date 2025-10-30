@@ -33,15 +33,15 @@ class ControlCenter : public QObject
     Q_PROPERTY(quint8 argonRealRate READ argonRealRate NOTIFY argonRealRateChanged)
     Q_PROPERTY(bool enableActivation READ enableActivation WRITE setEnableActivation NOTIFY enableActivationChanged)
     Q_PROPERTY(bool activation READ activation NOTIFY activationChanged)
-    Q_PROPERTY(QString activeSocketName READ activeSocketName NOTIFY activeSocketNameChanged)
-    Q_PROPERTY(QString activeModeName READ activeModeName NOTIFY activeModeNameChanged)
-    Q_PROPERTY(int activePower READ activePower NOTIFY activePowerChanged)
-    Q_PROPERTY(bool activeIsCoag READ activeIsCoag NOTIFY activeIsCoagChanged)
-    Q_PROPERTY(int activeSocketX READ activeSocketX WRITE setActiveSocketX NOTIFY activeSocketXChanged)
-    Q_PROPERTY(int activeSocketY READ activeSocketY WRITE setActiveSocketY NOTIFY activeSocketYChanged)
-    Q_PROPERTY(int activeSocketWidth READ activeSocketWidth WRITE setActiveSocketWidth NOTIFY activeSocketWidthChanged)
-    Q_PROPERTY(int activeSocketHeight READ activeSocketHeight WRITE setActiveSocketHeight NOTIFY activeSocketHeightChanged)
-    Q_PROPERTY(int activeSocketId READ activeSocketId NOTIFY activeSocketIdChanged FINAL)
+    // Q_PROPERTY(QString activeSocketName READ activeSocketName NOTIFY activeSocketNameChanged)
+    // Q_PROPERTY(QString activeModeName READ activeModeName NOTIFY activeModeNameChanged)
+    // Q_PROPERTY(int activePower READ activePower NOTIFY activePowerChanged)
+    // Q_PROPERTY(bool activeIsCoag READ activeIsCoag NOTIFY activeIsCoagChanged)
+    // Q_PROPERTY(int activeSocketX READ activeSocketX WRITE setActiveSocketX NOTIFY activeSocketXChanged)
+    // Q_PROPERTY(int activeSocketY READ activeSocketY WRITE setActiveSocketY NOTIFY activeSocketYChanged)
+    // Q_PROPERTY(int activeSocketWidth READ activeSocketWidth WRITE setActiveSocketWidth NOTIFY activeSocketWidthChanged)
+    // Q_PROPERTY(int activeSocketHeight READ activeSocketHeight WRITE setActiveSocketHeight NOTIFY activeSocketHeightChanged)
+    // Q_PROPERTY(int activeSocketId READ activeSocketId NOTIFY activeSocketIdChanged FINAL)
 public:
     explicit ControlCenter(QObject *parent = nullptr);
     ~ControlCenter();
@@ -107,67 +107,67 @@ public:
      */
     bool enableActivation() const;
     
-    /**
-     * @brief Устанавливает состояние разрешения активации
-     * @param enable true для разрешения, false для запрета
-     */
+    // /**
+    //  * @brief Устанавливает состояние разрешения активации
+    //  * @param enable true для разрешения, false для запрета
+    //  */
     void setEnableActivation(bool enable);
     
-    /**
-     * @brief Возвращает состояние активации
-     * @return true если активация выполняется, false если нет
-     */
+    // /**
+    //  * @brief Возвращает состояние активации
+    //  * @return true если активация выполняется, false если нет
+    //  */
     bool activation() const;
     
-    /**
-     * @brief Возвращает имя активного сокета
-     */
-    QString activeSocketName() const;
+    // /**
+    //  * @brief Возвращает имя активного сокета
+    //  */
+    // QString activeSocketName() const;
     
-    /**
-     * @brief Возвращает имя активного режима
-     */
-    QString activeModeName() const;
+    // /**
+    //  * @brief Возвращает имя активного режима
+    //  */
+    // QString activeModeName() const;
     
-    /**
-     * @brief Возвращает мощность активного режима
-     */
-    int activePower() const;
+    // /**
+    //  * @brief Возвращает мощность активного режима
+    //  */
+    // int activePower() const;
     
-    /**
-     * @brief Возвращает тип активного режима (коагуляция/резка)
-     */
-    bool activeIsCoag() const;
+    // /**
+    //  * @brief Возвращает тип активного режима (коагуляция/резка)
+    //  */
+    // bool activeIsCoag() const;
     
-    /**
-     * @brief Возвращает X-координату активного сокета
-     */
-    int activeSocketX() const;
+    // /**
+    //  * @brief Возвращает X-координату активного сокета
+    //  */
+    // int activeSocketX() const;
     
-    /**
-     * @brief Возвращает Y-координату активного сокета
-     */
-    int activeSocketY() const;
+    // /**
+    //  * @brief Возвращает Y-координату активного сокета
+    //  */
+    // int activeSocketY() const;
     
-    /**
-     * @brief Возвращает ширину активного сокета
-     */
-    int activeSocketWidth() const;
+    // /**
+    //  * @brief Возвращает ширину активного сокета
+    //  */
+    // int activeSocketWidth() const;
     
-    /**
-     * @brief Возвращает высоту активного сокета
-     */
-    int activeSocketHeight() const;
+    // /**
+    //  * @brief Возвращает высоту активного сокета
+    //  */
+    // int activeSocketHeight() const;
     
-    /**
-     * @brief Возвращает ID активного сокета
-     */
-    int activeSocketId() const;
+    // /**
+    //  * @brief Возвращает ID активного сокета
+    //  */
+    // int activeSocketId() const;
 
-    void setActiveSocketX(int x);
-    void setActiveSocketY(int y);
-    void setActiveSocketWidth(int width);
-    void setActiveSocketHeight(int height);
+    // void setActiveSocketX(int x);
+    // void setActiveSocketY(int y);
+    // void setActiveSocketWidth(int width);
+    // void setActiveSocketHeight(int height);
 
     /**
      * @brief инициализация - чтение предыдущих настроек, загрузка режимов из БД и т.д.
@@ -199,7 +199,7 @@ public:
     void setLinkStm(LinkStm* linkStm);
 
 private:
-    const int ENDO_MAX = 3;
+    static constexpr int ENDO_MAX = 3;
     bool m_argonCylinder1Connected;         // Подключение баллона 1
     bool m_argonCylinder2Connected;         // Баллона 2
     bool m_autoStStopTissue;                // Захвачена ткань в режиме АСС
@@ -211,15 +211,15 @@ private:
     quint8 m_wirelessPedalCharge;           // Заряд беспроводной педали
     bool m_enableActivation;                // Запрет активации (открыты popup)
     bool m_activation;                      // Активация выполняется
-    QString m_activeSocketName;             // Имя активного сокета
-    QString m_activeModeName;               // Имя активного режима
-    int m_activePower;                      // Мощность активного режима
-    bool m_activeIsCoag;                    // Тип активного режима
-    int m_activeSocketX;                    // X-координата активного сокета
-    int m_activeSocketY;                    // Y-координата активного сокета
-    int m_activeSocketWidth;                 // Ширина активного сокета
-    int m_activeSocketHeight;                // Высота активного сокета
-    int m_activeSocketId;                    // ID активного сокета
+    // QString m_activeSocketName;             // Имя активного сокета
+    // QString m_activeModeName;               // Имя активного режима
+    // int m_activePower;                      // Мощность активного режима
+    // bool m_activeIsCoag;                    // Тип активного режима
+    // int m_activeSocketX;                    // X-координата активного сокета
+    // int m_activeSocketY;                    // Y-координата активного сокета
+    // int m_activeSocketWidth;                 // Ширина активного сокета
+    // int m_activeSocketHeight;                // Высота активного сокета
+    // int m_activeSocketId;                    // ID активного сокета
 
 
     void makeHandleConnections();
@@ -289,12 +289,12 @@ private:
 //    void setNeutralElConnected(bool connected);
     void unitStateHandler(LinkStm::UnitState state);
     void setArgonRealRate(quint8 rate);
-    void setActivation(bool active);
-    void setActiveSocketName(const QString& name);
-    void setActiveModeName(const QString& name);
-    void setActivePower(int power);
-    void setActiveIsCoag(bool isCoag);
-    void setActiveSocketId(int socketId);
+    void setActivation(bool active, int socketId, bool isCoag);
+    // void setActiveSocketName(const QString& name);
+    // void setActiveModeName(const QString& name);
+    // void setActivePower(int power);
+    // void setActiveIsCoag(bool isCoag);
+    // void setActiveSocketId(int socketId);
 
 signals:
     void neutralElConnectedChanged(bool connected);
@@ -303,15 +303,15 @@ signals:
     void argonRealRateChanged(quint8 rate);
     void enableActivationChanged(bool enable);
     void activationChanged(bool active);
-    void activeSocketNameChanged(const QString& name);
-    void activeModeNameChanged(const QString& name);
-    void activePowerChanged(int power);
-    void activeIsCoagChanged(bool isCoag);
-    void activeSocketXChanged(int x);
-    void activeSocketYChanged(int y);
-    void activeSocketWidthChanged(int width);
-    void activeSocketHeightChanged(int height);
-    void activeSocketIdChanged(int socketId);
+    // void activeSocketNameChanged(const QString& name);
+    // void activeModeNameChanged(const QString& name);
+    // void activePowerChanged(int power);
+    // void activeIsCoagChanged(bool isCoag);
+    // void activeSocketXChanged(int x);
+    // void activeSocketYChanged(int y);
+    // void activeSocketWidthChanged(int width);
+    // void activeSocketHeightChanged(int height);
+    // void activeSocketIdChanged(int socketId);
 };
 
 #endif // CONTROLCENTER_H

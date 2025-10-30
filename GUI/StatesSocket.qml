@@ -7,6 +7,7 @@ Rectangle {
 
     property string title
     property int socketId
+    property int socketState
 
     property string cutModeName
     property int cutModePower
@@ -29,39 +30,54 @@ Rectangle {
     signal newPower(int socketId, int pwr, bool isCoag)
     signal socketExpandRequest()
     signal socketCollapseRequest()
-    signal absolutePositionChanged(int socketId, real absoluteY)  // Изменение позиции для привязки педалей
+    // signal absolutePositionChanged(int socketId, real absoluteY)  // Изменение позиции для привязки педалей
 
 //    state: "expanded"
-    state: model.socketdisplaymode
+    // state: model.socketdisplaymode
 
     // Принудительно обновляем state при изменении модели
     property string currentModelState: model.socketdisplaymode
     onCurrentModelStateChanged: {
         if (state !== currentModelState) {
-            state = currentModelState
+            socketRoot.state = currentModelState
+        }
+    }
+    onSocketStateChanged: {
+        if (socketState == 3) {
+            activationIndicator.isCoag = true
+            activationIndicator.modeName = coagModeName
+            activationIndicator.power = coagModePower
+            activationIndicator.open();
+        } else if (socketState == 4) {
+            activationIndicator.isCoag = false
+            activationIndicator.modeName = cutModeName
+            activationIndicator.power = cutModePower
+            activationIndicator.open();
+        } else {
+            activationIndicator.close();
         }
     }
 
     // Логирование абсолютного положения по высоте при изменении позиции
-    onYChanged: {
-        var absY = mapToItem(null, 0, 0).y
-        absolutePositionChanged(socketId, absY)
-    }
+    // onYChanged: {
+    //     var absY = mapToItem(null, 0, 0).y
+    //     absolutePositionChanged(socketId, absY)
+    // }
 
-    onHeightChanged: {
-        var absY = mapToItem(null, 0, 0).y
-        absolutePositionChanged(socketId, absY)
-    }
+    // onHeightChanged: {
+    //     var absY = mapToItem(null, 0, 0).y
+    //     absolutePositionChanged(socketId, absY)
+    // }
 
-    onStateChanged: {
-        var absY = mapToItem(null, 0, 0).y
-        absolutePositionChanged(socketId, absY)
-    }
+    // onStateChanged: {
+    //     var absY = mapToItem(null, 0, 0).y
+    //     absolutePositionChanged(socketId, absY)
+    // }
 
-    Component.onCompleted: {
-        var absY = mapToItem(null, 0, 0).y
-        absolutePositionChanged(socketId, absY)
-    }
+    // Component.onCompleted: {
+    //     var absY = mapToItem(null, 0, 0).y
+    //     absolutePositionChanged(socketId, absY)
+    // }
 
     // MouseArea для всего сокета - переход в expanded
    MouseArea {
@@ -163,7 +179,12 @@ Rectangle {
             }
         }
     }
+    Activation {
+        id: activationIndicator
+        parent: socketRoot
+    }
     
+
     Connections {
         target: rightRect
         function onNewPower(pwr) {
@@ -285,17 +306,4 @@ Rectangle {
 //            }
         }
     ]
-//    // Переходы между состояниями (опционально)
-//    transitions: [
-//        Transition {
-//            from: "collapsed"
-//            to: "expanded"
-//            NumberAnimation {  duration: 100; easing.type: Easing.InQuad }
-//        },
-//        Transition {
-//            from: "expanded"
-//            to: "collapsed"
-//            NumberAnimation { duration: 100; easing.type: Easing.InQuad }
-//        }
-//    ]
 }

@@ -17,7 +17,7 @@ Window {
 
     // Константы для анимации панелей
     readonly property int panelAnimationDuration: 300
-    readonly property var panelAnimationEasing: Easing.InOutQuad
+    readonly property int panelAnimationEasing: Easing.InOutQuad
 
     // Свойства для управления панелями
     property bool leftPanelExpanded: false
@@ -246,9 +246,9 @@ Window {
     }
     
     // Индикатор активации
-    Activation {
-        id: activationIndicator
-    }
+    // Activation {
+    //     id: activationIndicator
+    // }
 
 //    Connections {
 //        target: statusDummy

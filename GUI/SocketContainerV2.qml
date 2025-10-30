@@ -8,7 +8,7 @@ Rectangle {
     property var innerModel
     color: "gray"
     
-    signal socketPositionChanged(int socketId, int x, int y, int width, int height)
+    // signal socketPositionChanged(int socketId, int x, int y, int width, int height)
     ColumnLayout {
         id: layout
         anchors.fill: parent
@@ -124,9 +124,9 @@ Rectangle {
             modeDialog.isCoag = iscoag
             modeDialog.open()
         }
-        function onSocketPositionChanged(socketId, x, y, width, height) {
-            socketContainer.socketPositionChanged(socketId, x, y, width, height)
-        }
+        // function onSocketPositionChanged(socketId, x, y, width, height) {
+        //     socketContainer.socketPositionChanged(socketId, x, y, width, height)
+        // }
     }
 }
 

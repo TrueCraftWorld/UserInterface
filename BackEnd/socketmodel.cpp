@@ -213,6 +213,13 @@ bool SocketModel::setData(const QModelIndex &index, const QVariant &value, int r
     SOCKET& socketItem = *(socketIter);
 
     switch (role) {
+    case SocketStatus:
+    {
+        if (value.toInt() == SOCKET::S_ENABLED) {
+            socketItem.setSocketStatus(static_cast<SOCKET::SocStatus>(value.toUInt()) );
+            return true;
+        }
+    }
     case SocketEnabled:
     {
         if (socketItem.socketStatus() == SOCKET::S_OFF)
@@ -354,6 +361,7 @@ void SocketModel::qmlSetData(int row, const QVariant &value, const QString &role
     if (role == -1)
         return;
     QModelIndex idx = createIndex(row,0);
+
     if (setData(idx,value,role)) {
         emit dataChanged(idx,idx,{role});
     }
@@ -361,7 +369,7 @@ void SocketModel::qmlSetData(int row, const QVariant &value, const QString &role
 
 void SocketModel::recalcCollapsed()
 {
-    int role = roleIntByName("socketdisplaymode");
+    // int role = roleIntByName("socketdisplaymode");
     qmlSetData(0, SOCKET::S_EXPANDED, "socketdisplaymode");
     qmlSetData(0, SOCKET::S_COLLAPSED, "socketdisplaymode");
 }
@@ -451,6 +459,18 @@ int SocketModel::selectedInstrumIdByMode(int socketId, int modeIndex, bool isCoa
     if (ptr.isNull())
         return -1;
     return ptr->selectedInstrId();
+}
+
+void SocketModel::stopActivation()
+{
+    if (m_itemsMap == nullptr)
+        return ;
+    for (auto& item : *m_itemsMap) {
+        if (item.second->socketStatus() == SOCKET::S_ACTIVE_COAG
+            || item.second->socketStatus() == SOCKET::S_ACTIVE_COAG) {
+            qmlSetData(item.first, SOCKET::S_ENABLED, "socketstatus");
+        }
+    }
 }
 
 int SocketModel::selectedInstrumIndexByMode(int socketId, int modeIndex, bool isCoag)

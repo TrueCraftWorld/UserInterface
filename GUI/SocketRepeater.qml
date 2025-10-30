@@ -18,7 +18,7 @@ Repeater {
 
     signal modeDialogRequest(int socketId, int modeIndex, bool isCoag)
     signal instrumDialogRequest(int socketId, int modeIndex, bool isCoag)
-    signal socketPositionChanged(int socketId, int x, int y, int width, int height)
+    // signal socketPositionChanged(int socketId, int x, int y, int width, int height)
 
     function calculateExpandedHeight() {
         var totalFixedHeight = 0
@@ -76,6 +76,7 @@ Repeater {
         state: model.socketdisplaymode
         title: model.socketname
         socketId: index
+        socketState: model.socketstate
 
         cutInstrumId:      model.cutmodeinstrid
         cutMaxPower:       model.cutmodemaxpower
@@ -110,18 +111,18 @@ Repeater {
 
         Connections {
             target: delegateSoc
-            function onAbsolutePositionChanged(socketid, absoluteY) {
-                // Эмитируем сигнал с полной информацией о позиции сокета
-                if (delegateSoc && delegateSoc.visible) {
-                    try {
-                        var absPos = delegateSoc.mapToItem(null, 0, 0)
-                        repeatRoot.socketPositionChanged(socketid, absPos.x, absPos.y, delegateSoc.width, delegateSoc.height)
-                    } catch (e) {
-                        // Игнорируем ошибки при инициализации
-                        // console.log("Error getting socket position:", socketid, e)
-                    }
-                }
-            }
+            // function onAbsolutePositionChanged(socketid, absoluteY) {
+            //     // Эмитируем сигнал с полной информацией о позиции сокета
+            //     if (delegateSoc && delegateSoc.visible) {
+            //         try {
+            //             var absPos = delegateSoc.mapToItem(null, 0, 0)
+            //             repeatRoot.socketPositionChanged(socketid, absPos.x, absPos.y, delegateSoc.width, delegateSoc.height)
+            //         } catch (e) {
+            //             // Игнорируем ошибки при инициализации
+            //             // console.log("Error getting socket position:", socketid, e)
+            //         }
+            //     }
+            // }
             function onInstrumEditDialogRequest(socketid, iscoag) {
 
                 repeatRoot.instrumDialogRequest(socketid,

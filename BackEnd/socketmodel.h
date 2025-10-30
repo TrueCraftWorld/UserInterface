@@ -85,6 +85,7 @@ public:
     int selectedInstrumIdByMode(int socketId, int modeIndex, bool isCoag);
 
 public:
+    void stopActivation();
     bool commitModeChange(int socketId, int modeINdex, const QVariantMap& param);
     SockPtr socketByName(const QString& socket) const;
     SockPtr socketById(int id) const;
@@ -113,6 +114,7 @@ private:
     std::map<int, SockPtr>* m_itemsMap = nullptr;
     std::vector<std::map<int, SockPtr >> m_itemsMapVect;
     int m_subProgIdx = 0;
+    int activeSocket = -1;
     std::map<int, QSharedPointer<Instrument>> m_instrumMap;
     QStringList m_socketNames;
 

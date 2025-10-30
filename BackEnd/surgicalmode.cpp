@@ -195,6 +195,8 @@ QVariantMap SurgicalMode::params() const
     res["iscoag"] = m_isCoag;
     res["instrid"] = m_selectedInstrId;
     res["instrindex"] = m_selectedInstrIndex;
+    res["modebrief"] = m_brief;
+    res["modedescript"] = m_descript;
     return res;
 }
 

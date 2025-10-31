@@ -43,18 +43,22 @@ Rectangle {
         }
     }
     onSocketStateChanged: {
+        console.log("socketState", socketState)
         if (socketState == 3) {
             activationIndicator.isCoag = true
             activationIndicator.modeName = coagModeName
             activationIndicator.power = coagModePower
             activationIndicator.open();
+            console.log("activation ON")
         } else if (socketState == 4) {
             activationIndicator.isCoag = false
             activationIndicator.modeName = cutModeName
             activationIndicator.power = cutModePower
             activationIndicator.open();
-        } else {
+            console.log("activation ON")
+        } else if (socketState == 2) {
             activationIndicator.close();
+            console.log("activation OFF")
         }
     }
 

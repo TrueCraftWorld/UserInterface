@@ -226,10 +226,10 @@ bool SOCKET::setInstrumId(int id, bool isCoag)
 
 void SOCKET::setAllowed(bool allow)
 {
-    if (m_socketStatus >= S_DISABLED && allow)
-        return;
-    if (m_socketStatus == S_OFF && (!allow))
-        return;
+    // if (m_socketStatus >= S_DISABLED && allow)
+    //     return;
+    // if (m_socketStatus == S_OFF && (!allow))
+    //     return;
 
     if (allow)
         m_socketStatus = S_ENABLED;

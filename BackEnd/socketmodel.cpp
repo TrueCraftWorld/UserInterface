@@ -215,10 +215,9 @@ bool SocketModel::setData(const QModelIndex &index, const QVariant &value, int r
     switch (role) {
     case SocketStatus:
     {
-        if (value.toInt() == SOCKET::S_ENABLED) {
-            socketItem.setSocketStatus(static_cast<SOCKET::SocStatus>(value.toUInt()) );
-            return true;
-        }
+        socketItem.setSocketStatus(static_cast<SOCKET::SocStatus>(value.toUInt()) );
+        return true;
+        break;
     }
     case SocketEnabled:
     {
@@ -253,51 +252,21 @@ bool SocketModel::setData(const QModelIndex &index, const QVariant &value, int r
     }
     case CoagModeIndex:
         if (socketItem.setCoagModeIndex(value.toInt())) {
-            emitSocketDataChanged(index.row());
-            // уведомляем QML о связанных ролях, включая isEndo
-            emit dataChanged(index, index, { CoagModeIndex,
-                                             CoagModeId,
-                                             CoagModeNum,
-                                             CoagModeBrief,
-                                             CoagModeDescript,
-                                             CoagModeName,
-                                             CoagModePower,
-                                             CoagModeMinPower,
-                                             CoagModeMaxPower,
-                                             CoagModeInstrIndex,
-                                             CoagModeInstrID,
-                                             CoagModeIsEndo });
             return true;
         }
         return false;
     case CutModeIndex:
         if (socketItem.setCutModeIndex(value.toInt())) {
-            emitSocketDataChanged(index.row());
-            // уведомляем QML о связанных ролях, включая isEndo
-            emit dataChanged(index, index, { CutModeIndex,
-                                             CutModeId,
-                                             CutModeNum,
-                                             CutModeBrief,
-                                             CutModeDescript,
-                                             CutModeName,
-                                             CutModePower,
-                                             CutModeMinPower,
-                                             CutModeMaxPower,
-                                             CutModeInstrIndex,
-                                             CutModeInstrID,
-                                             CutModeIsEndo });
             return true;
         }
         return false;
     case CutModePower:
         if (socketItem.setCutModePower(value.toInt())) {
-            emitSocketDataChanged(index.row());
             return true;
         }
         return false;
     case CoagModePower:
         if (socketItem.setCoagModePower(value.toInt())) {
-            emitSocketDataChanged(index.row());
             return true;
         }
         return false;
@@ -309,38 +278,38 @@ bool SocketModel::setData(const QModelIndex &index, const QVariant &value, int r
 
 void SocketModel::emitSocketDataChanged(int socketId)
 {
-    if (m_itemsMap == nullptr)
-        return;
+    // if (m_itemsMap == nullptr)
+    //     return;
         
-    auto iter = m_itemsMap->find(socketId);
-    if (iter == m_itemsMap->end() || iter->second.isNull())
-        return;
+    // auto iter = m_itemsMap->find(socketId);
+    // if (iter == m_itemsMap->end() || iter->second.isNull())
+    //     return;
         
-    auto socket = iter->second;
+    // auto socket = iter->second;
     
     // Получаем текущие данные сокета
-    quint16 cutModeNum = 1000;  // По умолчанию
-    quint16 coagModeNum = 1000; // По умолчанию
-    quint16 cutModePower = 0;
-    quint16 coagModePower = 0;
-    quint8 pedal = socket->pedal();
+    // quint16 cutModeNum = 1000;  // По умолчанию
+    // quint16 coagModeNum = 1000; // По умолчанию
+    // quint16 cutModePower = 0;
+    // quint16 coagModePower = 0;
+    // quint8 pedal = socket->pedal();
     
     // Получаем Num режимов (не ID!)
-    auto cutMode = socket->curCutMode();
-    if (!cutMode.isNull()) {
-        cutModeNum = cutMode->num();
-    }
+    // auto cutMode = socket->curCutMode();
+    // if (!cutMode.isNull()) {
+    //     cutModeNum = cutMode->num();
+    // }
     
-    auto coagMode = socket->curCoagMode();
-    if (!coagMode.isNull()) {
-        coagModeNum = coagMode->num();
-    }
+    // auto coagMode = socket->curCoagMode();
+    // if (!coagMode.isNull()) {
+    //     coagModeNum = coagMode->num();
+    // }
     
-    cutModePower = socket->cutModePower();
-    coagModePower = socket->coagModePower();
+    // cutModePower = socket->cutModePower();
+    // coagModePower = socket->coagModePower();
     
-    emit signalSocketDataChanged(socketId, cutModeNum, coagModeNum, 
-                               cutModePower, coagModePower, pedal);
+    // emit signalSocketDataChanged(socketId, cutModeNum, coagModeNum,
+    //                            cutModePower, coagModePower, pedal);
 }
 
 QVariantMap SocketModel::modeParam(int socketId, int modeIndeex, bool isCoag) const
@@ -466,7 +435,7 @@ void SocketModel::stopActivation()
     if (m_itemsMap == nullptr)
         return ;
     for (auto& item : *m_itemsMap) {
-        if (item.second->socketStatus() == SOCKET::S_ACTIVE_COAG
+        if (item.second->socketStatus() == SOCKET::S_ACTIVE_CUT
             || item.second->socketStatus() == SOCKET::S_ACTIVE_COAG) {
             qmlSetData(item.first, SOCKET::S_ENABLED, "socketstatus");
         }

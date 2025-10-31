@@ -304,12 +304,12 @@ void ControlCenter::initSockets()
         if (m_dbReader.isNull())
             // m_dbReader = new DataBaseReader("/home/kikorik/FOTEK/eshfDb.db");
             m_dbReader = new DataBaseReader("/home/kikorik/FOTEK/someShadyDB.db");
-        programmLoadSocketInit(14);
+        // programmLoadSocketInit(14);
 //        programmLoadSocketInit(28);
-        // programmLoadSocketInit(0);
+        programmLoadSocketInit(0);
         
         // Загружаем последнее сохранённое состояние
-        // loadCurrentState();
+        loadCurrentState();
     } else {
         defaultSocketInit();
     }
@@ -1351,6 +1351,29 @@ void ControlCenter::setLinkStm(LinkStm* linkStm)
         
         qDebug() << "LinkStm connected to ControlCenter";
     }
+
+
+    ///ТЕСТОВЫЙ ТАЙМЕР ДЛЯ НАСТРОЙКИ АНИМАЦИИ АКТИВАЦИИ
+    debugTimer = new QTimer(this);
+    debugTimer->setInterval(5000);
+    crya.first = 1;
+    crya.second = false;
+    connect(debugTimer, &QTimer::timeout, this, [this] () {
+        if (crya.second) {
+            crya.second = false;
+            if (crya.first >= 3)
+                crya.first = 0;
+            else
+                crya.first++;
+
+            onStopActivation(0);
+        } else {
+            crya.second = true;
+            onStartActivation(crya.first, true);
+        }
+    });
+    debugTimer->start();
+
 }
 
 void ControlCenter::initializeAllSocketsInLinkStm()
@@ -1447,7 +1470,11 @@ void ControlCenter::onStartActivation(quint8 socketId, bool isCut)
     // Координаты будут установлены через сигнал socketPositionChanged от QML
 
     QTimer::singleShot(100, this, [this, socketId, isCut]() {
-        m_socketModel->qmlSetData(socketId, isCut ? SOCKET::S_ACTIVE_CUT : SOCKET::S_ACTIVE_COAG, "socketstate");
+        if (m_socketModel) {
+            m_socketModel->expandSocket(socketId);
+        }
+
+        m_socketModel->qmlSetData(socketId, isCut ? SOCKET::S_ACTIVE_CUT : SOCKET::S_ACTIVE_COAG, "socketstatus");
         // setActivation(true, socketId);
     });
     

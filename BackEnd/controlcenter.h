@@ -285,6 +285,8 @@ private:
     std::map<int, InstrPtr> getInstrums();
     
     QTimer* m_saveTimer = nullptr;  // Таймер для отложенного сохранения
+    QTimer* debugTimer = nullptr;  // Таймер для отложенного сохранения
+    std::pair<int, bool> crya;
     
 //    void setNeutralElConnected(bool connected);
     void unitStateHandler(LinkStm::UnitState state);

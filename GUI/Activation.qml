@@ -15,6 +15,8 @@ Popup {
     closePolicy: Popup.NoAutoClose  // Закрывается только программно
     // parent: Overlay.overlay
     anchors.centerIn: parent
+    width: parent.width
+    height: parent.height
     
     // Привязка к координатам и размерам активного сокета
     // x: control.activeSocketX || 0

@@ -43,11 +43,11 @@ int main(int argc, char *argv[])
     QGuiApplication app(argc, argv);
 
     // Устанавливаем файл логирования,
-    m_logFile.reset(new QFile("/home/kikorik/OnyxLog/logFile.txt"));
+    // m_logFile.reset(new QFile("/home/kikorik/OnyxLog/logFile.txt"));
     // Открываем файл логирования
-    m_logFile.data()->open(QFile::Append | QFile::Text);
+    // m_logFile.data()->open(QFile::Append | QFile::Text);
     // Устанавливаем обработчик
-    qInstallMessageHandler(messageHandler);
+    // qInstallMessageHandler(messageHandler);
 
     NetworkControl::registerNetworkControl();
     UpdateClient::registerUpdateClient();
@@ -60,7 +60,11 @@ int main(int argc, char *argv[])
     engine.rootContext()->setContextProperty("theModel", ctrl->getSocketModel());
     engine.rootContext()->setContextProperty("Editor", ctrl->editor());
     engine.rootContext()->setContextProperty("recomHandle", ctrl->getHandle());
+
+    ///TODO remove direct god-object access
     engine.rootContext()->setContextProperty("control", ctrl.data());
+
+
     engine.addImageProvider(QLatin1String("instrums"), new InstrImageProvider);
 
     const QUrl url(QStringLiteral("qrc:/main.qml"));

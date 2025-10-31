@@ -263,9 +263,13 @@ int SOCKET::displayMode() const
     return m_displayMode;
 }
 
-void SOCKET::setDisplayMode(SocDisplayMode newDisplayMode)
+bool SOCKET::setDisplayMode(SocDisplayMode newDisplayMode)
 {
+    if (newDisplayMode < SOCKET::S_COLLAPSED
+        || newDisplayMode > SOCKET::S_EXPANDED)
+        return false;
     m_displayMode = newDisplayMode;
+    return true;
 }
 
 void SOCKET::setCoagModes(const QMap<int, SurgModePtr > &newCoagModes,
@@ -289,7 +293,7 @@ int SOCKET::pedal() const
     return m_pedal.pedalType();
 }
 
-void SOCKET::setPedal(int type)
-{
-    m_pedal.setPedType(type);
+bool SOCKET::setPedal(int type)
+{           
+    return m_pedal.setPedType(type);
 }

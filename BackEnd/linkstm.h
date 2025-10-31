@@ -272,14 +272,13 @@ private:
     // Проверка, есть ли команда уже в списке, чтобы не плодить дубликаты
     bool checkCommandList(const UartTx &newTxCommand);
 
-    static const quint8 MAX_PACKET_LEN = 40;        // Длина пакета
+    static constexpr quint8 MAX_PACKET_LEN = 40;        // Длина пакета
      // Команды для байт-стаффинга
-    static const quint8 FRAME_START = 0x8A;         // Начало посылки
-    static const quint8 FRAME_ESCAPE_CHAR = 0x8B;   // Маскирующий символ
-    static const quint8 FRAME_XOR_CHAR = 0x20;      // Значение для преобразования
-
-    static const quint8 UART_ADDR = 0xE0;           // Маска адреса модуля в сети uart
-    static const quint8 UART_LEN = 0x1F;            // Маска длины сообщения
+    static constexpr quint8 FRAME_START = 0x8A;         // Начало посылки
+    static constexpr quint8 FRAME_ESCAPE_CHAR = 0x8B;   // Маскирующий символ
+    static constexpr quint8 FRAME_XOR_CHAR = 0x20;      // Значение для преобразования
+    static constexpr quint8 UART_ADDR = 0xE0;           // Маска адреса модуля в сети uart
+    static constexpr quint8 UART_LEN = 0x1F;            // Маска длины сообщения
 
 private:
 //    QByteArray* m_txPacket;

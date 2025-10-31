@@ -9,8 +9,10 @@ int Pedal::pedalType() const
     return static_cast<int>(m_pedType);
 }
 
-void Pedal::setPedType(int newPedId)
+bool Pedal::setPedType(int newPedId)
 {
-    if (newPedId >= 0 && newPedId < PED_COUNT)
-        m_pedType = static_cast<PedalType>(newPedId);
+    if (newPedId < Pedal::NO_PED || newPedId > Pedal::INSTR_BUTTON_MONO)
+        return false;
+    m_pedType = static_cast<PedalType>(newPedId);
+    return true;
 }

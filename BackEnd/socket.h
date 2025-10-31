@@ -236,10 +236,10 @@ public:
     void setAllowed(bool allow);
 
     int displayMode() const;
-    void setDisplayMode(SocDisplayMode newDisplayMode);
+    bool setDisplayMode(SocDisplayMode newDisplayMode);
 
     int pedal() const;
-    void setPedal(int);
+    bool setPedal(int);
 
 private:
     HalfSockPtr m_cutHalf = nullptr;

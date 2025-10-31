@@ -233,10 +233,8 @@ bool SocketModel::setData(const QModelIndex &index, const QVariant &value, int r
         int mode = value.toInt(&isOk);
         if (!isOk)
             return isOk;
-        if (mode < SOCKET::S_COLLAPSED || mode > SOCKET::S_EXPANDED)
-            return false;
-        socketItem.setDisplayMode(static_cast<SOCKET::SocDisplayMode>(mode));
-        return true;
+        return socketItem.setDisplayMode(static_cast<SOCKET::SocDisplayMode>(mode));
+        // return true;
     }
     case SocketPedal:
     {
@@ -244,11 +242,8 @@ bool SocketModel::setData(const QModelIndex &index, const QVariant &value, int r
         int ped = value.toInt(&isOk);
         if (!isOk)
             return isOk;
-        if (ped < Pedal::NO_PED || ped > Pedal::INSTR_BUTTON_MONO)
-            return false;
-        socketItem.setPedal(ped);
-        emitSocketDataChanged(index.row());
-        return true;
+        return socketItem.setPedal(ped);
+        // return true;
     }
     case CoagModeIndex:
         if (socketItem.setCoagModeIndex(value.toInt())) {
@@ -274,42 +269,6 @@ bool SocketModel::setData(const QModelIndex &index, const QVariant &value, int r
         break;
     }
     return false;
-}
-
-void SocketModel::emitSocketDataChanged(int socketId)
-{
-    // if (m_itemsMap == nullptr)
-    //     return;
-        
-    // auto iter = m_itemsMap->find(socketId);
-    // if (iter == m_itemsMap->end() || iter->second.isNull())
-    //     return;
-        
-    // auto socket = iter->second;
-    
-    // Получаем текущие данные сокета
-    // quint16 cutModeNum = 1000;  // По умолчанию
-    // quint16 coagModeNum = 1000; // По умолчанию
-    // quint16 cutModePower = 0;
-    // quint16 coagModePower = 0;
-    // quint8 pedal = socket->pedal();
-    
-    // Получаем Num режимов (не ID!)
-    // auto cutMode = socket->curCutMode();
-    // if (!cutMode.isNull()) {
-    //     cutModeNum = cutMode->num();
-    // }
-    
-    // auto coagMode = socket->curCoagMode();
-    // if (!coagMode.isNull()) {
-    //     coagModeNum = coagMode->num();
-    // }
-    
-    // cutModePower = socket->cutModePower();
-    // coagModePower = socket->coagModePower();
-    
-    // emit signalSocketDataChanged(socketId, cutModeNum, coagModeNum,
-    //                            cutModePower, coagModePower, pedal);
 }
 
 QVariantMap SocketModel::modeParam(int socketId, int modeIndeex, bool isCoag) const
@@ -354,7 +313,7 @@ QStringList SocketModel::modeNames(int socketID, bool isCoag) const
     return isCoag ? iter->second->coagModeNames() : iter->second->cutModeNames();
 }
 
-QStringList SocketModel::instrumNames(int socketId, int modeIndex, bool isCoag)
+QStringList SocketModel::instrumNames(int socketId, int modeIndex, bool isCoag) const
 {
     if (m_itemsMap == nullptr)
         return QStringList{};
@@ -387,7 +346,7 @@ QStringList SocketModel::modeNamesIds(int socketID, bool isCoag) const
     return isCoag ? iter->second->coagModeNamesIds() : iter->second->cutModeNamesIds();
 }
 
-QStringList SocketModel::instrumNamesIds(int socketId, int modeIndex, bool isCoag)
+QStringList SocketModel::instrumNamesIds(int socketId, int modeIndex, bool isCoag) const
 {
     if (m_itemsMap == nullptr)
         return QStringList{};
@@ -498,8 +457,10 @@ bool SocketModel::commitModeChange(int socketId, int modeIndex, const QVariantMa
         // Проверка для эндоскопических режимов: округление и валидация значений
         auto coagMode = iter->second->curCoagMode();
         if (!coagMode.isNull() && coagMode->isEndo()) {
-            const int ENDO_MAX = 3;
-            int endoCut = static_cast<int>(std::floor(coagPower / 10.0));
+            // const int ENDO_MAX = 3;
+            // int endoCut = static_cast<int>(std::floor(coagPower / 10.0));
+
+            int endoCut = coagPower / 10;
             int endoCoag = coagPower % 10;
             if (endoCut < 1) endoCut = 1;
             else if (endoCut > ENDO_MAX) endoCut = ENDO_MAX;
@@ -542,8 +503,9 @@ bool SocketModel::commitModeChange(int socketId, int modeIndex, const QVariantMa
         // Проверка для эндоскопических режимов: округление и валидация значений
         auto cutMode = iter->second->curCutMode();
         if (!cutMode.isNull() && cutMode->isEndo()) {
-            const int ENDO_MAX = 3;
-            int endoCut = static_cast<int>(std::floor(cutPower / 10.0));
+            // const int ENDO_MAX = 3;
+            // int endoCut = static_cast<int>(std::floor(cutPower / 10.0));
+            int endoCut = cutPower / 10;
             int endoCoag = cutPower % 10;
             if (endoCut < 1) endoCut = 1;
             else if (endoCut > ENDO_MAX) endoCut = ENDO_MAX;
@@ -621,8 +583,8 @@ int SocketModel::roleIntByName(const QString &name)
 
 void SocketModel::socketCollapser(int expandedSocket)
 {
-    for (int i = 0; i < m_itemsMap->size(); ++i) {
-        if (i == expandedSocket)
+    for (size_t i = 0; i < m_itemsMap->size(); ++i) {
+        if (i == static_cast<size_t>(expandedSocket))
             continue;
         qmlSetData(i, 0, "socketdisplaymode");
     }
@@ -630,8 +592,8 @@ void SocketModel::socketCollapser(int expandedSocket)
 
 void SocketModel::pedalRemover(int socketToSkip, int pedalToRemove)
 {
-    for (int i = 0; i < m_itemsMap->size(); ++i) {
-        if (i == socketToSkip)
+    for (size_t i = 0; i < m_itemsMap->size(); ++i) {
+        if (i == static_cast<size_t>(socketToSkip))
             continue;
         //тут не надо изменять все сокеты - переназначенная педаль могла быть в одном сокетет только
         if (m_itemsMap->at(i)->pedal() == pedalToRemove && pedalToRemove != Pedal::INSTR_BUTTON_MONO) {
@@ -658,6 +620,7 @@ void SocketModel::expandSocket(int socketId)
 
 void SocketModel::populateRoles()
 {
+    //грёбаная мета-магия, но это приятное
     QMetaEnum metaEnum = QMetaEnum::fromType<SocketRoles>();
     // static QHash<int, QByteArray> roles;
     m_roles.clear();
@@ -719,7 +682,6 @@ void SocketModel::setItemsMapVector(const std::vector<std::map<int, SockPtr> > &
 
 QHash<int, QByteArray> SocketModel::roleNames() const
 {
-    //грёбаная мета-магия, но это приятное
     return m_roles;
 }
 
@@ -730,10 +692,9 @@ int SocketModel::subProgIdx() const
 
 void SocketModel::setSubProgIdx(int newIndex)
 {
-    if (newIndex >= m_itemsMapVect.size() || newIndex < 0)
+    if (newIndex < 0
+        || static_cast<size_t>(newIndex) >= m_itemsMapVect.size())
         return;
-    // if (newIndex == m_curMapIdx)
-    //     return true;
 
     beginResetModel();
     m_subProgIdx = newIndex;
@@ -758,13 +719,13 @@ int SocketModel::subProgCount() const
 
 void SocketModel::removeSubProg(int index)
 {
-    if (index >= m_itemsMapVect.size() || m_itemsMapVect.size() == 1 || index < 0)
+    if (m_itemsMapVect.size() == 1 || index < 0 || static_cast<size_t>(index) >= m_itemsMapVect.size())
         return;
     auto iter = m_itemsMapVect.begin();
     iter += index;
     m_itemsMapVect.erase(iter);
     m_subProgCount--;
-    int tmpIdx = m_subProgIdx;
+    size_t tmpIdx = m_subProgIdx;
     if (tmpIdx >= m_itemsMapVect.size())
         --tmpIdx;
 

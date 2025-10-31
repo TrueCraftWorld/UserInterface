@@ -202,17 +202,6 @@ ControlCenter::ControlCenter(QObject *parent)
     m_argonFlowRate(0),
     m_argonRealRate(0),
     m_wirelessPedalCharge(0),
-    // m_enableActivation(true),  // По умолчанию активация разрешена
-    // m_activation(false),       // По умолчанию активация не выполняется
-    // m_activeSocketName(""),
-    // m_activeModeName(""),
-    // m_activePower(0),
-    // m_activeIsCoag(false),
-    // m_activeSocketX(0),
-    // m_activeSocketY(0),
-    // m_activeSocketWidth(0),
-    // m_activeSocketHeight(0),
-    // m_activeSocketId(-1),
     m_socketModel(new SocketModel(this)),
     m_editor(new SocketModeEditor(m_socketModel,this)),
     m_handle(new ProgHandle(this)),
@@ -226,9 +215,9 @@ ControlCenter::ControlCenter(QObject *parent)
     QQmlEngine::setObjectOwnership(this, QQmlEngine::CppOwnership);
     
     // Настройка таймера для отложенного сохранения
-    // m_saveTimer->setSingleShot(true);
-    // m_saveTimer->setInterval(2000);  // 2 секунды
-    // connect(m_saveTimer, &QTimer::timeout, this, &ControlCenter::saveCurrentState);
+    m_saveTimer->setSingleShot(true);
+    m_saveTimer->setInterval(2000);  // 2 секунды
+    connect(m_saveTimer, &QTimer::timeout, this, &ControlCenter::saveCurrentState);
     
     makeHandleConnections();
 }
@@ -278,9 +267,9 @@ void ControlCenter::makeHandleConnections()
     // Автосохранение при успешном изменении режима
     connect(m_editor, &SocketModeEditor::editingFinished, 
             this, [this](bool success) {
-        // if (success) {
-        //     saveCurrentState();
-        // }
+        if (success) {
+            saveCurrentState();
+        }
     });
 
     connect(m_handle, &ProgHandle::signalScopeRequest,
@@ -332,77 +321,7 @@ bool ControlCenter::readPreviousSocketSettings()
 
 void ControlCenter::defaultSocketInit()
 {
-    // QList<QSharedPointer<SOCKET>> socketList;
-    // // std::map<int, QSharedPointer<SOCKET>> socketMap;
 
-    // //may change count based on config later
-    // //NEED to parallel cause it is on start and it does some nasty sorting
-    // for (int i = 0; i < 4; ++i) {
-    //     SOCKET::SocType type = SOCKET::SocType(i+1);
-    //     // socketMap.emplace(type, QSharedPointer<SOCKET>::create(type));
-    //     QSharedPointer<SOCKET> socket = QSharedPointer<SOCKET>::create(i < SOCKET::MONOPOLAR_2 ? SOCKET::SocType(i+1) : SOCKET::EMPTY);
-
-    //     int coagStart = 0;
-    //     int cutStart = 0;
-    //     int coagStop = 0;
-    //     int cutStop = 0;
-    //     QString socketName = "";
-    //     QHash<QString, QSharedPointer<SurgicalMode>> cutModes;
-    //     QHash<QString, QSharedPointer<SurgicalMode>> coagModes;
-    //     switch (type) {
-    //     case SOCKET::EMPTY:
-    //         socketName = QString("EMPTY");
-    //         cutStart = 0;  cutStop = 0;
-    //         coagStart = 0;   coagStop = 0;
-    //         break;
-    //     case SOCKET::BIPOLAR_1:
-    //         socketName = QString("BIPOLAR 1");
-    //         cutStart = 1+1;  cutStop = 4+1+1;
-    //         coagStart = 5+1;   coagStop = 6+1+1;
-    //         break;
-    //     case SOCKET::BIPOLAR_2:
-    //         socketName = QString("BIPOLAR 2");
-    //         cutStart = 1+1;  cutStop = 4+1+1;
-    //         coagStart = 5+1;   coagStop = 7+1+1;
-    //         break;
-    //     case SOCKET::MONOPOLAR_1:
-    //         socketName = QString("MONOPOLAR 1");
-    //         cutStart = 8+1;   cutStop = 18+1+1;
-    //         coagStart = 19+1;   coagStop = 26+1+1;
-    //         break;
-    //     case SOCKET::MONOPOLAR_2:
-    //         socketName = QString("MONOPOLAR 2");
-    //         cutStart = 8+1;  cutStop = 18+1+1;
-    //         coagStart = 19+1;   coagStop = 22+1+1;
-    //         break;
-    //     }
-    //     socket->setSocketName(socketName);
-    //     cutModes.insert(ESHF::modesNames[0], QSharedPointer<SurgicalMode>::create(ESHF::modesNames[0],
-    //                                                                      false,
-    //                                                                      ESHF::modesMaxPowers[0],
-    //                                                                      1));
-    //     coagModes.insert(ESHF::modesNames[1], QSharedPointer<SurgicalMode>::create(ESHF::modesNames[1],
-    //                                                                            true,
-    //                                                                            ESHF::modesMaxPowers[1],
-    //                                                                            1));
-
-    //     for (int j = cutStart; j < cutStop; ++j) {
-    //         cutModes.insert(ESHF::modesNames[j], QSharedPointer<SurgicalMode>::create(ESHF::modesNames[j],
-    //                                                                               false,
-    //                                                                               ESHF::modesMaxPowers[j],
-    //                                                                               1));
-    //     }
-    //     for (int j = coagStart; j < coagStop; ++j) {
-    //         coagModes.insert(ESHF::modesNames[j], QSharedPointer<SurgicalMode>::create(ESHF::modesNames[j],
-    //                                                                                false,
-    //                                                                                ESHF::modesMaxPowers[j],
-    //                                                                                1));
-    //     }
-    //     socket->setCoagModes(coagModes, ESHF::modesNames);
-    //     socket->setCutModes(cutModes, ESHF::modesNames);
-    //     socketList.append(socket);
-    // }
-    // m_socketModel->setItems(socketList);
 }
 
 void ControlCenter::dataBaseSocketInit()
@@ -899,136 +818,6 @@ bool ControlCenter::activation() const
     return m_activation;
 }
 
-void ControlCenter::setActivation(bool active, int socketId, bool isCoag)
-{
-    if (m_activation == active)
-        return;
-    
-    m_activation = active;
-    // emit activationChanged(active, socketId, isCoag);
-}
-
-// QString ControlCenter::activeSocketName() const
-// {
-//     return m_activeSocketName;
-// }
-
-// void ControlCenter::setActiveSocketName(const QString& name)
-// {
-//     if (m_activeSocketName == name)
-//         return;
-    
-//     m_activeSocketName = name;
-//     emit activeSocketNameChanged(name);
-// }
-
-// QString ControlCenter::activeModeName() const
-// {
-//     return m_activeModeName;
-// }
-
-// void ControlCenter::setActiveModeName(const QString& name)
-// {
-//     if (m_activeModeName == name)
-//         return;
-    
-//     m_activeModeName = name;
-//     emit activeModeNameChanged(name);
-// }
-
-// int ControlCenter::activePower() const
-// {
-//     return m_activePower;
-// }
-
-// void ControlCenter::setActivePower(int power)
-// {
-//     if (m_activePower == power)
-//         return;
-    
-//     m_activePower = power;
-//     emit activePowerChanged(power);
-// }
-
-// bool ControlCenter::activeIsCoag() const
-// {
-//     return m_activeIsCoag;
-// }
-
-// void ControlCenter::setActiveIsCoag(bool isCoag)
-// {
-//     if (m_activeIsCoag == isCoag)
-//         return;
-    
-//     m_activeIsCoag = isCoag;
-//     emit activeIsCoagChanged(isCoag);
-// }
-
-// int ControlCenter::activeSocketX() const
-// {
-//     return m_activeSocketX;
-// }
-
-// int ControlCenter::activeSocketY() const
-// {
-//     return m_activeSocketY;
-// }
-
-// int ControlCenter::activeSocketWidth() const
-// {
-//     return m_activeSocketWidth;
-// }
-
-// int ControlCenter::activeSocketHeight() const
-// {
-//     return m_activeSocketHeight;
-// }
-
-// int ControlCenter::activeSocketId() const
-// {
-//     return m_activeSocketId;
-// }
-
-// void ControlCenter::setActiveSocketX(int x)
-// {
-//     if (m_activeSocketX != x) {
-//         m_activeSocketX = x;
-//         emit activeSocketXChanged(x);
-//     }
-// }
-
-// void ControlCenter::setActiveSocketY(int y)
-// {
-//     if (m_activeSocketY != y) {
-//         m_activeSocketY = y;
-//         emit activeSocketYChanged(y);
-//     }
-// }
-
-// void ControlCenter::setActiveSocketWidth(int width)
-// {
-//     if (m_activeSocketWidth != width) {
-//         m_activeSocketWidth = width;
-//         emit activeSocketWidthChanged(width);
-//     }
-// }
-
-// void ControlCenter::setActiveSocketHeight(int height)
-// {
-//     if (m_activeSocketHeight != height) {
-//         m_activeSocketHeight = height;
-//         emit activeSocketHeightChanged(height);
-//     }
-// }
-
-// void ControlCenter::setActiveSocketId(int socketId)
-// {
-//     if (m_activeSocketId == socketId)
-//         return;
-    
-//     m_activeSocketId = socketId;
-//     emit activeSocketIdChanged(socketId);
-// }
 
 std::map<int, InstrPtr > ControlCenter::getInstrums()
 {
@@ -1339,8 +1128,21 @@ void ControlCenter::setLinkStm(LinkStm* linkStm)
         m_linkStm->setNeutralElDivided(m_neutralElDivided);
         
         // Подключаем сигнал обновления данных сокетов
-        connect(m_socketModel, &SocketModel::signalSocketDataChanged, 
-                m_linkStm, &LinkStm::updateSocketData);
+        // чуть громоздко но без лишних сигналов, полностью нативно
+        connect(m_socketModel, &SocketModel::dataChanged,
+                this, [this] (const QModelIndex &topLeft, const QModelIndex &bottomRight, const QVector<int> &roles = QVector<int>()) {
+            int idxStart = topLeft.row();
+            int idxStop = bottomRight.row();
+            for (int i = idxStart; i <= idxStop; ++i) {
+                m_linkStm->updateSocketData(i,
+                                            topLeft.siblingAtRow(i).data(SocketModel::CutModeNum).value<quint16>(),
+                                            topLeft.siblingAtRow(i).data(SocketModel::CoagModeNum).value<quint16>(),
+                                            topLeft.siblingAtRow(i).data(SocketModel::CutModePower).value<quint16>(),
+                                            topLeft.siblingAtRow(i).data(SocketModel::CoagModePower).value<quint16>(),
+                                            topLeft.siblingAtRow(i).data(SocketModel::SocketPedal).value<quint8>()
+                                            );
+            }
+        });
         
         // Подключаем сигналы активации
         connect(m_linkStm, &LinkStm::startActivation, this, &ControlCenter::onStartActivation);
@@ -1351,29 +1153,6 @@ void ControlCenter::setLinkStm(LinkStm* linkStm)
         
         qDebug() << "LinkStm connected to ControlCenter";
     }
-
-
-    ///ТЕСТОВЫЙ ТАЙМЕР ДЛЯ НАСТРОЙКИ АНИМАЦИИ АКТИВАЦИИ
-    debugTimer = new QTimer(this);
-    debugTimer->setInterval(5000);
-    crya.first = 1;
-    crya.second = false;
-    connect(debugTimer, &QTimer::timeout, this, [this] () {
-        if (crya.second) {
-            crya.second = false;
-            if (crya.first >= 3)
-                crya.first = 0;
-            else
-                crya.first++;
-
-            onStopActivation(0);
-        } else {
-            crya.second = true;
-            onStartActivation(crya.first, true);
-        }
-    });
-    debugTimer->start();
-
 }
 
 void ControlCenter::initializeAllSocketsInLinkStm()
@@ -1428,9 +1207,7 @@ void ControlCenter::onStartActivation(quint8 socketId, bool isCut)
         qWarning() << "Cannot start activation: socket" << socketId << "not found";
         return;
     }
-    
     auto socket = iter->second;
-    
     // Получаем данные для активации
     QString socketName = socket->socketName();
     QString modeName = "Режим не выбран";
@@ -1452,30 +1229,14 @@ void ControlCenter::onStartActivation(quint8 socketId, bool isCut)
         }
     }
     
-    // Устанавливаем данные для индикатора активации
-    // setActiveSocketName(socketName);
-    // setActiveModeName(modeName);
-    // setActivePower(power);
-    // setActiveIsCoag(isCoag);
-    
-    // // Устанавливаем ID активного сокета
-    // setActiveSocketId(socketId);
-    
-    // Разворачиваем сокет (сворачиваем остальные)
-    // if (m_socketModel) {
-    //     m_socketModel->expandSocket(socketId);
-    // }
     
     // Запускаем активацию с минимальной задержкой, чтобы сокет успел развернуться
-    // Координаты будут установлены через сигнал socketPositionChanged от QML
 
-    QTimer::singleShot(100, this, [this, socketId, isCut]() {
+    QTimer::singleShot(0, this, [this, socketId, isCut]() {
         if (m_socketModel) {
             m_socketModel->expandSocket(socketId);
+            m_socketModel->qmlSetData(socketId, isCut ? SOCKET::S_ACTIVE_CUT : SOCKET::S_ACTIVE_COAG, "socketstatus");
         }
-
-        m_socketModel->qmlSetData(socketId, isCut ? SOCKET::S_ACTIVE_CUT : SOCKET::S_ACTIVE_COAG, "socketstatus");
-        // setActivation(true, socketId);
     });
     
     qDebug() << "Activation started: socket" << socketId << "mode:" << modeName << "power:" << power;
@@ -1484,10 +1245,7 @@ void ControlCenter::onStartActivation(quint8 socketId, bool isCut)
 void ControlCenter::onStopActivation(quint8 stopReason)
 {
     // Останавливаем активацию
-
-    //передаём в любой сокет - стоп всегда стоп. из активного переключение всё равно только во вкл
     m_socketModel->stopActivation();
-    // setActivation(false);
     
     qDebug() << "Activation stopped, reason:" << stopReason;
 }

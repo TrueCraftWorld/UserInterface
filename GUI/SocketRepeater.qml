@@ -27,7 +27,6 @@ Repeater {
         for (var i = 0; i < count; i++) {
             if (!(itemAt(i) instanceof StatesSocket)) {
                 console.log("oops")
-                // console.log("Object type:", getObjectType(itemAt(i)));
                 continue
             }
             if (itemAt(i).state === "expanded") {
@@ -50,7 +49,6 @@ Repeater {
         // console.log(count, "col")
         for (var i = 0; i < count; i++) {
             if (!(itemAt(i) instanceof StatesSocket)) {
-                // console.log("Object type:", getObjectType(itemAt(i)));
                 continue
             }
             if (itemAt(i).state === "expanded") {
@@ -111,18 +109,6 @@ Repeater {
 
         Connections {
             target: delegateSoc
-            // function onAbsolutePositionChanged(socketid, absoluteY) {
-            //     // Эмитируем сигнал с полной информацией о позиции сокета
-            //     if (delegateSoc && delegateSoc.visible) {
-            //         try {
-            //             var absPos = delegateSoc.mapToItem(null, 0, 0)
-            //             repeatRoot.socketPositionChanged(socketid, absPos.x, absPos.y, delegateSoc.width, delegateSoc.height)
-            //         } catch (e) {
-            //             // Игнорируем ошибки при инициализации
-            //             // console.log("Error getting socket position:", socketid, e)
-            //         }
-            //     }
-            // }
             function onInstrumEditDialogRequest(socketid, iscoag) {
 
                 repeatRoot.instrumDialogRequest(socketid,

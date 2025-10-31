@@ -50,19 +50,6 @@ Window {
             top: statusDummy.bottom
         }
         
-        // Обработка изменений позиции сокетов для Activation popup
-        Connections {
-            target: socketsDummy
-            function onSocketPositionChanged(socketId, x, y, width, height) {
-                // Обновляем координаты если это активный сокет (даже если activation еще false)
-                if (socketId === control.activeSocketId) {
-                    control.activeSocketX = x
-                    control.activeSocketY = y
-                    control.activeSocketWidth = width
-                    control.activeSocketHeight = height
-                }
-            }
-        }
     }
 
     // Левая панель - перекрывает центральный контейнер
@@ -244,11 +231,6 @@ Window {
         }
 
     }
-    
-    // Индикатор активации
-    // Activation {
-    //     id: activationIndicator
-    // }
 
 //    Connections {
 //        target: statusDummy

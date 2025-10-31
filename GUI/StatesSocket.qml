@@ -32,11 +32,12 @@ Rectangle {
     signal socketCollapseRequest()
     // signal absolutePositionChanged(int socketId, real absoluteY)  // Изменение позиции для привязки педалей
 
-//    state: "expanded"
+   state: "expanded"
     // state: model.socketdisplaymode
 
     // Принудительно обновляем state при изменении модели
     property string currentModelState: model.socketdisplaymode
+
     onCurrentModelStateChanged: {
         if (state !== currentModelState) {
             socketRoot.state = currentModelState
@@ -56,32 +57,11 @@ Rectangle {
             activationIndicator.power = cutModePower
             activationIndicator.open();
             console.log("activation ON")
-        } else if (socketState == 2) {
+        } else {
             activationIndicator.close();
             console.log("activation OFF")
         }
     }
-
-    // Логирование абсолютного положения по высоте при изменении позиции
-    // onYChanged: {
-    //     var absY = mapToItem(null, 0, 0).y
-    //     absolutePositionChanged(socketId, absY)
-    // }
-
-    // onHeightChanged: {
-    //     var absY = mapToItem(null, 0, 0).y
-    //     absolutePositionChanged(socketId, absY)
-    // }
-
-    // onStateChanged: {
-    //     var absY = mapToItem(null, 0, 0).y
-    //     absolutePositionChanged(socketId, absY)
-    // }
-
-    // Component.onCompleted: {
-    //     var absY = mapToItem(null, 0, 0).y
-    //     absolutePositionChanged(socketId, absY)
-    // }
 
     // MouseArea для всего сокета - переход в expanded
    MouseArea {

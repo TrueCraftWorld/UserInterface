@@ -1262,21 +1262,22 @@ void ControlCenter::uartError(quint8 errorState)
         // Все в порядке
         break;
     case (LinkStm::STATE_TX_ERR + 32):
-        qWarning() << "UART TX Error";
+        // qWarning() << "UART TX Error";
         break;
     case (LinkStm::STATE_NO_RX + 32):
-        qWarning() << "UART No RX";
+        // qWarning() << "UART No RX";
         break;
     case (LinkStm::STATE_RX_ERR + 32):
-        qWarning() << "UART RX Error";
+        // qWarning() << "UART RX Error";
         break;
     case (LinkStm::STATE_RX_LEN_ERR + 32):
-        qWarning() << "UART RX Length Error";
+        // qWarning() << "UART RX Length Error";
         break;
     case (LinkStm::STATE_RX_CRC_ERR + 32):
-        qWarning() << "UART RX CRC Error";
+        // qWarning() << "UART RX CRC Error";
         break;
     default:
-        qWarning() << "Some error: " << errorState;
+        // qWarning() << "Some error: " << errorState;
+        break;
     }
 }

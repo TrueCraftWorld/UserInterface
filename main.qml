@@ -16,7 +16,7 @@ Window {
     color: "black"
 
     // Константы для анимации панелей
-    readonly property int panelAnimationDuration: 300
+    readonly property int panelAnimationDuration: 150
     readonly property int panelAnimationEasing: Easing.InOutQuad
 
     // Свойства для управления панелями
@@ -42,7 +42,7 @@ Window {
         id: socketsDummy
         objectName: "socketContainer"
         innerModel: theModel
-        width: parent.width - 170
+        width: parent.width - 180
         z: 5  // Ниже панелей, но выше фонового MouseArea
         anchors {
             horizontalCenter: parent.horizontalCenter
@@ -57,7 +57,7 @@ Window {
         id: leftPanel
         panelExpanded: leftPanelExpanded
         expandedWidth: container.width / 2
-        collapsedWidth: 85
+        collapsedWidth: 90
         animationDuration: container.panelAnimationDuration
         animationEasing: container.panelAnimationEasing
         height: socketsDummy.height
@@ -77,7 +77,7 @@ Window {
         panelExpanded: rightPanelExpanded
         socketModel: theModel
         expandedWidth: container.width / 2
-        collapsedWidth: 85
+        collapsedWidth: 90
         animationDuration: container.panelAnimationDuration
         animationEasing: container.panelAnimationEasing
         height: socketsDummy.height
@@ -90,6 +90,25 @@ Window {
             rightPanelExpanded = panelExpanded
         }
     }
+
+    PedalContainer {
+        id: pedalContainerrr
+        innerModel: theModel
+        z: 20
+        anchors {
+            left: socketsDummy.right
+            right: parent.right
+            bottom: parent.bottom
+            top: statusDummy.bottom
+        }
+    }
+
+    // Connections {
+    //     target: pedalContainerrr
+    //     function onPedMenuRequest() {
+    //         rightPanelExpanded = true
+    //     }
+    // }
 
 //    Drawer {
 //        id: leftDrawer

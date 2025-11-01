@@ -124,17 +124,17 @@ Repeater {
                 var currentPower = iscoag ? model.coagmodepower : model.cutmodepower
                 var pwrInt = parseInt(pwr)
                 var currentPowerInt = parseInt(currentPower)
-                
+                //не нужна нам здесь строгая проверка - во первых в сокет не встанет больше допустимого в плюсах
+                //во-вторых у нас слайдер ограничен только валидными значениями, третий уровнь проверок - перебор
                 // Строгая проверка: значение действительно изменилось и валидно
-                if (currentPowerInt !== pwrInt && 
-                    pwrInt >= 1 && 
-                    pwrInt <= (iscoag ? model.coagmodemaxpower : model.cutmodemaxpower)) {
+                if (currentPowerInt !== pwrInt) {
                     
                     theModel.qmlSetData(index,
                                         pwrInt,
                                         (iscoag ? "coagmodepower" : "cutmodepower"))
                     
                     // Запускаем отложенное сохранение (через 2 секунды)
+                    ///TODO: это должно в плюсах отрабатывать
                     control.scheduleSave()
                 }
             }

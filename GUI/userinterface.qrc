@@ -27,5 +27,7 @@
         <file>PedalPanel.qml</file>
         <file>ProgAdditionPop.qml</file>
         <file>Activation.qml</file>
+        <file>PedalContainer.qml</file>
+        <file>PedalRepeater.qml</file>
     </qresource>
 </RCC>

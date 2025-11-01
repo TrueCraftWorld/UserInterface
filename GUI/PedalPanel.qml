@@ -108,7 +108,6 @@ Rectangle {
 //            onExited: parent.color = "#404040"
 //        }
 //    }
-    
     // 4 объекта pedal, привязанные к положению сокетов
     Repeater {
         id: pedalRepeater

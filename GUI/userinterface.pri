@@ -15,8 +15,10 @@ DISTFILES += \
     $$PWD/ModePowerRect.qml \
     $$PWD/NeutralEl.qml \
     $$PWD/Pedal.qml \
+    $$PWD/PedalContainer.qml \
     $$PWD/PedalEditor.qml \
     $$PWD/PedalPanel.qml \
+    $$PWD/PedalRepeater.qml \
     $$PWD/PowerRect.qml \
     $$PWD/ProgAdditionPop.qml \
     $$PWD/ProgItemList.qml \

@@ -30,19 +30,9 @@ Rectangle {
     signal newPower(int socketId, int pwr, bool isCoag)
     signal socketExpandRequest()
     signal socketCollapseRequest()
-    // signal absolutePositionChanged(int socketId, real absoluteY)  // Изменение позиции для привязки педалей
 
-   state: "expanded"
-    // state: model.socketdisplaymode
+    state: "expanded"
 
-    // Принудительно обновляем state при изменении модели
-    property string currentModelState: model.socketdisplaymode
-
-    onCurrentModelStateChanged: {
-        if (state !== currentModelState) {
-            socketRoot.state = currentModelState
-        }
-    }
     onSocketStateChanged: {
         console.log("socketState", socketState)
         if (socketState == 3) {
@@ -50,16 +40,13 @@ Rectangle {
             activationIndicator.modeName = coagModeName
             activationIndicator.power = coagModePower
             activationIndicator.open();
-            console.log("activation ON")
         } else if (socketState == 4) {
             activationIndicator.isCoag = false
             activationIndicator.modeName = cutModeName
             activationIndicator.power = cutModePower
             activationIndicator.open();
-            console.log("activation ON")
         } else {
             activationIndicator.close();
-            console.log("activation OFF")
         }
     }
 
@@ -69,13 +56,11 @@ Rectangle {
        anchors.fill: parent
        onClicked: {
            if (socketRoot.state === "collapsed") {
-               socketRoot.state = "expanded"
                socketRoot.socketExpandRequest()
            }
        }
        // Не перехватываем события от дочерних элементов
        propagateComposedEvents: true
-       // Не перехватываем события, если сокет уже развернут
        enabled: socketRoot.state === "collapsed"
    }
 
@@ -96,7 +81,6 @@ Rectangle {
             anchors.fill: parent
             onClicked: {
                 if (socketRoot.state === "collapsed") {
-                    socketRoot.state = "expanded"
                     socketRoot.socketExpandRequest()
                 }
                 mouse.accepted = true // Останавливаем распространение события
@@ -122,7 +106,6 @@ Rectangle {
             anchors.fill: parent
             onClicked: {
                 if (socketRoot.state === "collapsed") {
-                    socketRoot.state = "expanded"
                     socketRoot.socketExpandRequest()
                 }
                 mouse.accepted = true // Останавливаем распространение события
@@ -230,11 +213,7 @@ Rectangle {
                 anchors.top: parent.top
                 anchors.bottom: parent.bottom
             }
-//            PropertyChanges {
-//                target: leftRect
-//                color: "black"
-//                width: (parent.width - fontMetrics.advanceWidth("MONO 22MONO")) * .5
-//            }
+
             AnchorChanges {
                 target: rightRect
                 anchors.left: middleRect.right
@@ -242,11 +221,6 @@ Rectangle {
                 anchors.top: parent.top
                 anchors.bottom: parent.bottom
             }
-//            PropertyChanges {
-//                target: rightRect
-//                color: "black"
-//                width: (parent.width - fontMetrics.advanceWidth("MONO 22MONO")) * .5
-//            }
         },
         // Развернутое состояние
         State {
@@ -272,10 +246,6 @@ Rectangle {
                 anchors.top: parent.top
                 anchors.bottom: parent.bottom
             }
-//            PropertyChanges {
-//                target: leftRect
-//                width: (parent.width - fontMetrics.advanceWidth("MONO")) * .5
-//            }
 
             AnchorChanges {
                 target: rightRect
@@ -284,10 +254,6 @@ Rectangle {
                 anchors.top: parent.top
                 anchors.bottom: parent.bottom
             }
-//            PropertyChanges {
-//                target: rightRect
-//                width: (parent.width - fontMetrics.advanceWidth("MONO")) * .5
-//            }
         }
     ]
 }

@@ -849,6 +849,16 @@ void ControlCenter::setNeutralElDivided(bool divided)
     }
 }
 
+bool ControlCenter::argonCylinder1Connected() const
+{
+    return m_argonCylinder1Connected;
+}
+
+bool ControlCenter::argonCylinder2Connected() const
+{
+    return m_argonCylinder2Connected;
+}
+
 quint8 ControlCenter::argonFlowRate() const
 {
     return m_argonFlowRate;
@@ -861,6 +871,8 @@ void ControlCenter::setArgonFlowRate(quint8 rate)
     
     m_argonFlowRate = rate;
     emit argonFlowRateChanged(rate);
+    
+    // TODO: Отправить команду установки расхода в LinkStm при необходимости
 }
 
 quint8 ControlCenter::argonRealRate() const

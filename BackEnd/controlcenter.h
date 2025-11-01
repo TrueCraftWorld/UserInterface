@@ -29,6 +29,8 @@ class ControlCenter : public QObject
     Q_PROPERTY(QPointer<ProgHandle> handle READ getHandle CONSTANT FINAL)
     Q_PROPERTY(bool neutralElConnected READ neutralElConnected NOTIFY neutralElConnectedChanged)
     Q_PROPERTY(bool neutralElDivided READ neutralElDivided WRITE setNeutralElDivided NOTIFY neutralElDividedChanged)
+    Q_PROPERTY(bool argonCylinder1Connected READ argonCylinder1Connected NOTIFY argonCylinder1ConnectedChanged)
+    Q_PROPERTY(bool argonCylinder2Connected READ argonCylinder2Connected NOTIFY argonCylinder2ConnectedChanged)
     Q_PROPERTY(quint8 argonFlowRate READ argonFlowRate WRITE setArgonFlowRate NOTIFY argonFlowRateChanged)
     Q_PROPERTY(quint8 argonRealRate READ argonRealRate NOTIFY argonRealRateChanged)
     Q_PROPERTY(bool enableActivation READ enableActivation WRITE setEnableActivation NOTIFY enableActivationChanged)
@@ -82,6 +84,18 @@ public:
      * @param divided true если разделённый, false если единый
      */
     void setNeutralElDivided(bool divided);
+    
+    /**
+     * @brief Возвращает статус подключения баллона аргона №1
+     * @return true если баллон подключён, false если нет
+     */
+    bool argonCylinder1Connected() const;
+    
+    /**
+     * @brief Возвращает статус подключения баллона аргона №2
+     * @return true если баллон подключён, false если нет
+     */
+    bool argonCylinder2Connected() const;
     
     /**
      * @brief Возвращает скорость потока аргона
@@ -299,6 +313,8 @@ private:
 signals:
     void neutralElConnectedChanged(bool connected);
     void neutralElDividedChanged(bool divided);
+    void argonCylinder1ConnectedChanged(bool connected);
+    void argonCylinder2ConnectedChanged(bool connected);
     void argonFlowRateChanged(quint8 rate);
     void argonRealRateChanged(quint8 rate);
     void enableActivationChanged(bool enable);

@@ -12,6 +12,7 @@
         <file>ModePowerRect.qml</file>
         <file>LeftPanel.qml</file>
         <file>NeutralEl.qml</file>
+        <file>Argon.qml</file>
         <file>SocketRepeater.qml</file>
         <file>StatesSocket.qml</file>
         <file>SocketContainerV2.qml</file>

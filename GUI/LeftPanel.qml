@@ -36,80 +36,52 @@ Rectangle {
         }
     }
     
-    // В развернутом состоянии - полный блок аргона
-    Rectangle {
-        id: argonDummy
-        radius: 8
-        color: "lightgray"
-        height: 100
+    Label {
+        id: argonChoice
+        visible: panelExpanded
+        anchors {
+            top: parent.top
+            topMargin: 5
+            horizontalCenter: parent.horizontalCenter
+        }
+        horizontalAlignment: Qt.AlignHCenter
+        text: qsTr("НАСТРОЙКА ГАЗОВОГО ТРАКТА")
+        color: "white"
+        font.pixelSize: 16
+        font.bold: true
+    }
+    // Компонент аргона
+    Argon {
+        id: argonControl
+        height: panelExpanded ? 350 : 430
         anchors {
             left: parent.left
             right: parent.right
-            top: parent.top
-            margins: 10
+            top: panelExpanded ? argonChoice.bottom : parent.top
+            topMargin: 5
+            leftMargin: panelExpanded ? 10 : 5
+            rightMargin: panelExpanded ? 10 : 5
         }
-        border {
-            color: "black"
-            width: 1
-        }
-        visible: panelExpanded
         z: 10  // Выше фонового MouseArea
-
-        Text {
-            anchors.centerIn: parent
-            text: "Argon"
-            font.pixelSize: 16
-            color: "black"
-        }
         
-        MouseArea {
-            anchors.fill: parent
-            onClicked: {
-                // Обработка клика по аргону
-                mouse.accepted = true
-            }
+        // Передаем параметры из control
+        showControls: panelExpanded
+        cylinder1Сonnected: control.argonCylinder1Connected
+        cylinder2Connected: control.argonCylinder2Connected
+        flowRate: control.argonFlowRate
+        
+        // Обработчик изменения расхода
+        onFlowRateUpdated: {
+            // Обновляем значение в control
+            control.argonFlowRate = newRate
         }
     }
 
-    // В свернутом состоянии - маленькая кнопка
-    Rectangle {
-        id: argonButton
-        width: parent.width
-        height: 100
-        radius: 5
-        color: "lightgray"
-        anchors {
-            top: parent.top
-            horizontalCenter: parent.horizontalCenter
-            topMargin: 20
-        }
-        border {
-            color: "black"
-            width: 1
-        }
-        visible: !panelExpanded
-        z: 10  // Выше фонового MouseArea
-
-        Text {
-            anchors.centerIn: parent
-            text: "A"
-            font.pixelSize: 12
-            color: "black"
-        }
-        
-        MouseArea {
-            anchors.fill: parent
-            onClicked: {
-                // Обработка клика по кнопке аргона
-                mouse.accepted = true
-            }
-        }
-    }
 
     // NeutralEl компонент
     NeutralEl {
         id: neutralEl
-        height: panelExpanded ? 290 : 170
+        height: panelExpanded ? 260 : 165
         anchors {
             left: parent.left
             bottom: parent.bottom
@@ -130,6 +102,21 @@ Rectangle {
         onNeutralSizeChanged: {
             // Можно добавить обработку изменения размера
         }
+    }
+
+    Label {
+        id: neutralChoice
+        visible: panelExpanded
+        anchors {
+            bottom: neutralEl.top
+            bottomMargin: 5
+            horizontalCenter: parent.horizontalCenter
+        }
+        horizontalAlignment: Qt.AlignHCenter
+        text: qsTr("ВЫБОР НЕЙТРАЛЬНОГО ЭЛЕКТРОДА")
+        color: "white"
+        font.pixelSize: 16
+        font.bold: true
     }
 }
 

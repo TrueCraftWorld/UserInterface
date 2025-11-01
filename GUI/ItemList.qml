@@ -9,7 +9,7 @@ Rectangle {
     property string imageSourceTemplate
     property alias curIndex: theView.currentIndex
     property bool noImage: false
-    property int selectedIndex: -1  // Индекс реально выбранного элемента (при клике)
+    // property int selectedIndex: -1  // Индекс реально выбранного элемента (при клике)
     signal newIndexSelected(int newIndex)
 
     color: "transparent"
@@ -103,7 +103,7 @@ Rectangle {
                         top:parent.top
                         left: parent.left
                     }
-                    color: "black"
+                    color: "transparent"
                     Rectangle {
                         height: parent.height/3
                         width: parent.height/3
@@ -148,8 +148,8 @@ Rectangle {
                 MouseArea {
                     anchors.fill: parent
                     onClicked: {
-                        itemList.selectedIndex = index
-                        theView.currentIndex = index
+                        // itemList.selectedIndex = index
+                        // theView.currentIndex = index
                         itemList.newIndexSelected(index)
                     }
                 }

@@ -4,6 +4,7 @@ CONFIG += c++17 link_pkgconfig disable-desktop
 RESOURCES += $$PWD/userinterface.qrc
 
 DISTFILES += \
+    $$PWD/GradientBack.qml \
     $$PWD/HalfSocket.qml \
     $$PWD/InstrumEditor.qml \
     $$PWD/InstrumRect.qml \

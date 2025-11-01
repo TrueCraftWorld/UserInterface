@@ -33,6 +33,7 @@ Window {
         text: qsTr("В бою с шипящими змеями — эфой и гадюкой — маленький, цепкий, храбрый ёж съел их")
         width: parent.width
         height: 85
+        z: 30
         anchors {
             top: parent.top
         }
@@ -103,25 +104,18 @@ Window {
         }
     }
 
-    // Connections {
-    //     target: pedalContainerrr
-    //     function onPedMenuRequest() {
-    //         rightPanelExpanded = true
-    //     }
-    // }
+   Drawer {
+       id: leftDrawer
+       width: 0.8 * container.width
+       height: container.height
 
-//    Drawer {
-//        id: leftDrawer
-//        width: 0.8 * container.width
-//        height: container.height
-
-//        // Loader
-//        // SettingsMain {
-//        MenuLoader {
-//            id: menuLoad
-//            anchors.fill: parent
-//        }
-//    }
+       // Loader
+       // SettingsMain {
+       MenuLoader {
+           id: menuLoad
+           anchors.fill: parent
+       }
+   }
 
     // Область для свайпов и закрытия панелей
     MouseArea {
@@ -251,17 +245,17 @@ Window {
 
     }
 
-//    Connections {
-//        target: statusDummy
-//        function onDrawerCalled() {
-//            leftDrawer.open()
-//        }
-//    }
-//    Connections {
-//        target: menuLoad
-//        function onCloseMe() {
-//            leftDrawer.close()
-//        }
-//    }
+   Connections {
+       target: statusDummy
+       function onDrawerCalled() {
+           leftDrawer.open()
+       }
+   }
+   Connections {
+       target: menuLoad
+       function onCloseMe() {
+           leftDrawer.close()
+       }
+   }
 
 }

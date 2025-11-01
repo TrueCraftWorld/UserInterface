@@ -29,5 +29,6 @@
         <file>Activation.qml</file>
         <file>PedalContainer.qml</file>
         <file>PedalRepeater.qml</file>
+        <file>GradientBack.qml</file>
     </qresource>
 </RCC>

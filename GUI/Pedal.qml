@@ -6,6 +6,7 @@ Rectangle {
 
     signal pedalMenuRequest()
     property int pedalStateIdx
+    property int socketId
 
     Connections {
         target: pedalRoot
@@ -201,10 +202,13 @@ Rectangle {
                 }
             }
         }
-    }
-    MouseArea {
-        onClicked: {
-            pedalRoot.pedalMenuRequest()
+        MouseArea {
+
+            anchors.fill: parent
+            onClicked: {
+                console.log("initial PedClick")
+                pedalRoot.pedalMenuRequest()
+            }
         }
     }
     // MouseArea {

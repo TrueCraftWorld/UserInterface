@@ -88,6 +88,7 @@ Popup {
             startColor: isCoag ? "#000066" : "#443300"
             stopColor: isCoag ? "#0000aa" : "#665500"
             beamColor: isCoag ? "rgba(80, 120, 255, 0.6)" : "rgba(180, 150, 60, 0.5)"
+            bright: !isCoag
         }
 
         Rectangle {
@@ -171,7 +172,7 @@ Popup {
                     left: parent.left
                     right: parent.right
                 }
-                // innerModel: combinedModel
+                innerModel: combinedModel
                 imageSourceTemplate: "image://instrums/" + imagePrefix + "%1"
             }
             Rectangle {

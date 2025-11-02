@@ -70,7 +70,7 @@ Rectangle {
 
     GradientBack {
         anchors.fill: parent
-        startColor: "cyan"
+        startColor: "darkblue"
         stopColor: "darkcyan"
         beamColor: "rgba(80, 120, 255, 0.6)"
     }

@@ -18,14 +18,14 @@ Rectangle {
     function scrollUp() {
         if (theView.currentIndex > 3) {
             theView.currentIndex -= 3
-            theView.positionViewAtIndex(theView.currentIndex, ListView.Center)
+            theView.positionViewAtIndex(curIndex, ListView.Center)
         }
     }
     
     function scrollDown() {
         if (theView.currentIndex < theView.count - 3) {
             theView.currentIndex += 2
-            theView.positionViewAtIndex(theView.currentIndex, ListView.Center)
+            theView.positionViewAtIndex(curIndex, ListView.Center)
         }
     }
     ColumnLayout {
@@ -43,12 +43,13 @@ Rectangle {
             displayMarginBeginning: 15
             displayMarginEnd: 15
             spacing: 10
-
+            // ScrollBar.vertical
             clip: true
 
             delegate: Rectangle {
-                property bool isCurrent: (index === theView.currentIndex)
-                property bool isSelected: (index === itemList.selectedIndex)
+                // property bool isCurrent: (index === theView.currentIndex)
+                // property bool isSelected: (index === itemList.selectedIndex)
+                property bool isSelected: (index === curIndex)
                 height: 100
                 width: ListView.view.width
                 radius: 8

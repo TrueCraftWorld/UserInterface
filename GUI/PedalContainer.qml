@@ -15,7 +15,7 @@ Rectangle {
         // anchors.margins: 10
         anchors.topMargin: 10
         anchors.bottomMargin: 0
-        anchors.leftMargin: 10
+        anchors.leftMargin: 0
         anchors.rightMargin: 0
         spacing: 10
         Rectangle {
@@ -30,14 +30,23 @@ Rectangle {
             containerMargins: layout.anchors.margins
             containerHeight: layout.height - layout.spacing - progPage.height
             usedSpacing: layout.spacing
+            Layout.alignment: Qt.AlignHCenter
         }
         Item {
             Layout.fillHeight: true
         }
     }
-    MouseArea {
-        anchors.fill: parent
-        onClicked: pedContainer.pedMenuRequest()
+    Connections {
+        target: repeat
+        function onPedalMenuRequest() {
+            console.log("container PedClick")
+            pedContainer.pedMenuRequest()
+        }
     }
+
+    // MouseArea {
+    //     anchors.fill: parent
+    //     onClicked: pedContainer.pedMenuRequest()
+    // }
 
 }

@@ -115,15 +115,22 @@ Repeater {
                                                 iscoag ? model.coagmodeindex : model.cutmodeindex,
                                                 iscoag)
             }
+
             function onModeEditDialogRequest(socketid, iscoag) {
                 repeatRoot.modeDialogRequest(socketid,
                                             iscoag ? model.coagmodeindex : model.cutmodeindex,
                                             iscoag)
             }
+
             function onNewPower(socketid, pwr, iscoag) {
-                var currentPower = iscoag ? model.coagmodepower : model.cutmodepower
-                var pwrInt = parseInt(pwr)
-                var currentPowerInt = parseInt(currentPower)
+                //current power это всегда инт, модель их отдаёт интами
+                // var currentPower = iscoag ? model.coagmodepower : model.cutmodepower
+                var currentPowerInt = iscoag ? model.coagmodepower : model.cutmodepower
+                //если мы не ошиблись нигде, то передаём в сигнал инт,
+                //да и записываться будет только инт поэтому, пусть лучше ничего не запишеться если мы флоат отдали
+                // var pwrInt = parseInt(pwr)
+                var pwrInt = (pwr)
+                // var currentPowerInt = parseInt(currentPower)
                 //не нужна нам здесь строгая проверка - во первых в сокет не встанет больше допустимого в плюсах
                 //во-вторых у нас слайдер ограничен только валидными значениями, третий уровнь проверок - перебор
                 // Строгая проверка: значение действительно изменилось и валидно
@@ -131,16 +138,17 @@ Repeater {
                     
                     theModel.qmlSetData(index,
                                         pwrInt,
-                                        (iscoag ? "coagmodepower" : "cutmodepower"))
-                    
+                                        (iscoag ? "coagmodepower" : "cutmodepower"))   
                     // Запускаем отложенное сохранение (через 2 секунды)
                     ///TODO: это должно в плюсах отрабатывать
                     control.scheduleSave()
                 }
             }
+
             function onSocketCollapseRequest() {
                 theModel.qmlSetData(index, 0, "socketdisplaymode")
             }
+
             function onSocketExpandRequest() {
                 theModel.qmlSetData(index, 1, "socketdisplaymode")
             }

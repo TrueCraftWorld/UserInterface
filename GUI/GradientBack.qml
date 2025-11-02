@@ -4,6 +4,7 @@ Rectangle {
     property color startColor
     property color stopColor
     property string beamColor
+    property bool bright: true
     color: "transparent"
 
     // Слой 1: Базовый градиент (зависит от режима)
@@ -35,7 +36,7 @@ Rectangle {
         // Вычисляем цвета на основе pulsePhase и isCoag
         property color topColor: {
             var intensity = 0.4 + pulsePhase * 0.3  // 0.4 - 0.7
-            if (isCoag) {
+            if (!bright) {
                 return Qt.rgba(0, intensity * 0.3, intensity, 1)  // Синий
             } else {
                 return Qt.rgba(intensity * 0.6, intensity * 0.5, 0, 1)  // Приглушённый жёлто-коричневый
@@ -44,7 +45,7 @@ Rectangle {
 
         property color bottomColor: {
             var intensity = 0.5 + pulsePhase * 0.4  // 0.5 - 0.9
-            if (isCoag) {
+            if (!bright) {
                 return Qt.rgba(0, intensity * 0.4, intensity, 1)  // Светло-синий
             } else {
                 return Qt.rgba(intensity * 0.7, intensity * 0.6, 0, 1)  // Приглушённый жёлтый
@@ -155,9 +156,9 @@ Rectangle {
             GradientStop {
                 position: 0.5
                 color: Qt.rgba(
-                    isCoag ? 0.1 : 0.7,
-                    isCoag ? 0.4 : 0.6,
-                    isCoag ? 1.0 : 0.1,
+                    !bright ? 0.1 : 0.7,
+                    !bright ? 0.4 : 0.6,
+                    !bright ? 1.0 : 0.1,
                     centerGlow.glowIntensity
                 )
             }

@@ -1,7 +1,7 @@
 #include "socketmodel.h"
 #include <QQmlEngine>
 #include <QTimer>
-#include <cmath>
+#include <algorithm>
 
 SocketModel::SocketModel(QObject *parent)
     : QAbstractListModel{parent}
@@ -70,6 +70,16 @@ QVariant SocketModel::data(const QModelIndex &index, int role) const
             break;
         }
         break;
+    }
+    case SocketAllowedPedal:
+    {
+        QList<int> tmp = socketItem.allowedPedals();
+        QVariantList varList;
+        std::transform(tmp.begin(), tmp.end(),
+                   std::back_inserter(varList),
+                   [](int value) { return QVariant(value); });
+
+        return varList;
     }
     case SocketName:
         return socketItem.socketName();

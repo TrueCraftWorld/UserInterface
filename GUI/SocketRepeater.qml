@@ -7,7 +7,7 @@ import BackEnd 1.0
 
 
 Repeater {
-// ListView {
+
     id: repeatRoot
 
     required property int containerMargins
@@ -71,6 +71,7 @@ Repeater {
         Layout.preferredHeight: state === "expanded" ?
                                     repeatRoot.calculateExpandedHeight() :
                                     repeatRoot.calculateCollapsedHeight()
+
         state: model.socketdisplaymode
         title: model.socketname
         socketId: index
@@ -87,8 +88,8 @@ Repeater {
         coagModeId:        model.coagmodeid
         coagModeName:      model.coagmodename
         coagInstrumName:   model.coagmodeinstrname
+
         coagIsEndo:        model.coagmodeisendo
-        
         cutIsEndo:         model.cutmodeisendo
 
         // Прямой биндинг с защитой от циклов через проверку в onNewPower

@@ -5,14 +5,12 @@ Rectangle {
     id: pedContainer
 
     property var innerModel
-    signal pedMenuRequest()
-    // color: "gray"
+    signal pedMenuRequest(int socketId)
     color: "#2c2c2c"
 
     ColumnLayout {
         id: layout
         anchors.fill: parent
-        // anchors.margins: 10
         anchors.topMargin: 10
         anchors.bottomMargin: 0
         anchors.leftMargin: 0
@@ -38,15 +36,9 @@ Rectangle {
     }
     Connections {
         target: repeat
-        function onPedalMenuRequest() {
+        function onPedalMenuRequest(socketId) {
             console.log("container PedClick")
-            pedContainer.pedMenuRequest()
+            pedContainer.pedMenuRequest(socketId)
         }
     }
-
-    // MouseArea {
-    //     anchors.fill: parent
-    //     onClicked: pedContainer.pedMenuRequest()
-    // }
-
 }

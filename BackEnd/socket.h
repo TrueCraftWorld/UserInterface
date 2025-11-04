@@ -241,11 +241,13 @@ public:
     int pedal() const;
     bool setPedal(int);
 
+    QList<int> allowedPedals() const;
+
 private:
     HalfSockPtr m_cutHalf = nullptr;
     HalfSockPtr m_coagHalf = nullptr;
 
-    // CSurgModePtr getMode(const QString& name, bool isCoag) const;
+    QList<int> m_allowedPedals = {};
 
     bool setModePower(int newPower, bool isCoag);
     bool setModeIndex(int index, bool isCoag);

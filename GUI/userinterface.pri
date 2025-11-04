@@ -17,6 +17,7 @@ DISTFILES += \
     $$PWD/NeutralEl.qml \
     $$PWD/Pedal.qml \
     $$PWD/PedalContainer.qml \
+    $$PWD/PedalDrawer.qml \
     $$PWD/PedalEditor.qml \
     $$PWD/PedalPanel.qml \
     $$PWD/PedalRepeater.qml \

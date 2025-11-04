@@ -103,12 +103,26 @@ Window {
          top: statusDummy.bottom
       }
    }
+   PedalDrawer {
+      id: pedDrawer
+      innerModel: theModel
+      width: .5 * container.width
+      height: container.height
+      edge: Qt.RightEdge
+   }
+   Connections {
+      target: pedalContainerrr
+      function onPedMenuRequest(socketId) {
+         pedDrawer.socketId = socketId
+         pedDrawer.open()
+      }
+   }
 
    Drawer {
       id: leftDrawer
       width: 0.8 * container.width
       height: container.height
-
+      edge: Qt.LeftEdge
       // Loader
       // SettingsMain {
       MenuLoader {
@@ -257,11 +271,4 @@ Window {
          leftDrawer.close()
       }
    }
-   Connections {
-      target: pedalContainerrr
-      // function onPedMenuRequest() {
-      //    rightPanelExpanded = true
-      // }
-   }
-
 }

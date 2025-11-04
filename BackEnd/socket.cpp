@@ -64,6 +64,22 @@ void SOCKET::setSocketType(SOCKET::SocType newSocketType)
     m_socketType = newSocketType;
     m_cutHalf = HalfSockPtr::create(false);
     m_coagHalf = HalfSockPtr::create(true);
+    switch (m_socketType) {
+    case BIPOLAR_1:
+        m_allowedPedals = {Pedal::NO_PED, Pedal::SINGLE_PED, Pedal::DOUBLE_PED};
+        break;
+    case BIPOLAR_2:
+        m_allowedPedals = {Pedal::NO_PED, Pedal::SINGLE_PED, Pedal::DOUBLE_PED, Pedal::INSTR_BUTTON_BI};
+        break;
+    case MONOPOLAR_1:
+        m_allowedPedals = {Pedal::NO_PED, Pedal::SINGLE_PED, Pedal::DOUBLE_PED, Pedal::INSTR_BUTTON_MONO};
+        break;
+    case MONOPOLAR_2:
+        m_allowedPedals = {Pedal::NO_PED, Pedal::SINGLE_PED, Pedal::DOUBLE_PED, Pedal::INSTR_BUTTON_MONO};
+        break;
+    default:
+        break;
+    }
 }
 
 SOCKET::SocStatus SOCKET::socketStatus() const
@@ -296,4 +312,9 @@ int SOCKET::pedal() const
 bool SOCKET::setPedal(int type)
 {           
     return m_pedal.setPedType(type);
+}
+
+QList<int> SOCKET::allowedPedals() const
+{
+    return m_allowedPedals;
 }

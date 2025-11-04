@@ -13,7 +13,7 @@ Repeater {
 
     property int collapsedFixedHeight: 85
 
-    signal pedalMenuRequest()
+    signal pedalMenuRequest(int socketId)
 
     function calculateExpandedHeight() {
         var totalFixedHeight = 0
@@ -85,10 +85,10 @@ Repeater {
         Connections {
             target: pedIcon
             function onPedalMenuRequest() {
-                console.log("Repeater PedClick" , pedIcon.socketId, index)
+                // console.log("Repeater PedClick" , pedIcon.socketId, index)
                 //раскрываем сокет в котором педаль - чтобы менбшка не была больше него
                 theModel.qmlSetData(pedIcon.socketId, 1, "socketdisplaymode")
-                repeatRoot.pedalMenuRequest()
+                repeatRoot.pedalMenuRequest(pedIcon.socketId)
             }
         }
     }

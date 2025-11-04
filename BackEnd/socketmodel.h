@@ -25,6 +25,7 @@ public:
         SocketName,
         SocketPolarity,
         SocketPedal,
+        SocketAllowedPedal,
         CoagModeIndex,
         CoagModeId,
         CoagModeNum,

@@ -30,9 +30,13 @@ Rectangle {
         propagateComposedEvents: true
         
         // Принимаем событие по умолчанию, но разрешаем передачу дочерним элементам
+        onPressed: {
+            // Не принимаем событие - пусть дочерние элементы его обработают
+            mouse.accepted = false
+        }
         onClicked: {
             // Клик по пустому месту - ничего не делаем, просто перехватываем
-            mouse.accepted = true
+            mouse.accepted = false
         }
     }
     
@@ -66,14 +70,21 @@ Rectangle {
         
         // Передаем параметры из control
         showControls: panelExpanded
-        cylinder1Сonnected: control.argonCylinder1Connected
+        cylinder1Connected: control.argonCylinder1Connected
         cylinder2Connected: control.argonCylinder2Connected
         flowRate: control.argonFlowRate
+        activCylinderFirst: control.activCylinderFirst
         
         // Обработчик изменения расхода
         onFlowRateUpdated: {
             // Обновляем значение в control
             control.argonFlowRate = newRate
+        }
+        
+        // Обработчик продувки аргона
+        onArgonBlow: {
+            // Вызываем метод продувки в control
+            control.argonBlow()
         }
     }
 

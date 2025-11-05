@@ -33,6 +33,7 @@ class ControlCenter : public QObject
     Q_PROPERTY(bool argonCylinder2Connected READ argonCylinder2Connected NOTIFY argonCylinder2ConnectedChanged)
     Q_PROPERTY(quint8 argonFlowRate READ argonFlowRate WRITE setArgonFlowRate NOTIFY argonFlowRateChanged)
     Q_PROPERTY(quint8 argonRealRate READ argonRealRate NOTIFY argonRealRateChanged)
+    Q_PROPERTY(bool activCylinderFirst READ activCylinderFirst WRITE setActivCylinderFirst NOTIFY activCylinderFirstChanged)
     Q_PROPERTY(bool enableActivation READ enableActivation WRITE setEnableActivation NOTIFY enableActivationChanged)
     Q_PROPERTY(bool activation READ activation NOTIFY activationChanged)
     Q_PROPERTY(QString activeSocketName READ activeSocketName NOTIFY activeSocketNameChanged)
@@ -114,6 +115,18 @@ public:
      * @return значение реальной скорости потока аргона
      */
     quint8 argonRealRate() const;
+    
+    /**
+     * @brief Возвращает активный баллон аргона
+     * @return true если активен первый баллон, false если второй
+     */
+    bool activCylinderFirst() const;
+    
+    /**
+     * @brief Устанавливает активный баллон аргона
+     * @param first true для первого баллона, false для второго
+     */
+    void setActivCylinderFirst(bool first);
     
     /**
      * @brief Возвращает состояние разрешения активации
@@ -211,6 +224,12 @@ public:
      * @param linkStm Указатель на объект LinkStm
      */
     void setLinkStm(LinkStm* linkStm);
+    
+    /**
+     * @brief Запускает продувку аргона
+     * Отправляет команду на выполнение продувки через UART
+     */
+    Q_INVOKABLE void argonBlow();
 
 private:
     const int ENDO_MAX = 3;
@@ -222,6 +241,7 @@ private:
     quint8 m_autoSSmode;                    // Режим AutoStop
     quint8 m_argonFlowRate;                 // Скорость потока аргона (установленная)
     quint8 m_argonRealRate;                 // Реальная скорость потока аргона
+    bool m_activCylinderFirst;              // Активный баллон (true - первый, false - второй)
     quint8 m_wirelessPedalCharge;           // Заряд беспроводной педали
     bool m_enableActivation;                // Запрет активации (открыты popup)
     bool m_activation;                      // Активация выполняется
@@ -317,6 +337,7 @@ signals:
     void argonCylinder2ConnectedChanged(bool connected);
     void argonFlowRateChanged(quint8 rate);
     void argonRealRateChanged(quint8 rate);
+    void activCylinderFirstChanged(bool first);
     void enableActivationChanged(bool enable);
     void activationChanged(bool active);
     void activeSocketNameChanged(const QString& name);

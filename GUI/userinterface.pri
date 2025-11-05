@@ -4,6 +4,8 @@ CONFIG += c++17 link_pkgconfig disable-desktop
 RESOURCES += $$PWD/userinterface.qrc
 
 DISTFILES += \
+    $$PWD/Activation.qml \
+    $$PWD/Argon.qml \
     $$PWD/HalfSocket.qml \
     $$PWD/InstrumEditor.qml \
     $$PWD/InstrumRect.qml \
@@ -23,5 +25,4 @@ DISTFILES += \
     $$PWD/SocketRepeater.qml \
     $$PWD/StatesSocket.qml \
     $$PWD/SocketContainerV2.qml \
-    $$PWD/StatusBar.qml \
-    $$PWD/Activation.qml
+    $$PWD/StatusBar.qml

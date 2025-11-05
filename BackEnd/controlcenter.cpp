@@ -201,6 +201,7 @@ ControlCenter::ControlCenter(QObject *parent)
     m_autoSSmode(0),
     m_argonFlowRate(0),
     m_argonRealRate(0),
+    m_activCylinderFirst(true),  // По умолчанию активен первый баллон
     m_wirelessPedalCharge(0),
     m_enableActivation(true),  // По умолчанию активация разрешена
     m_activation(false),       // По умолчанию активация не выполняется
@@ -818,8 +819,37 @@ void ControlCenter::unitStateHandler(LinkStm::UnitState state)
        m_neutralElConnected = state.neutraElConnected;
        emit neutralElConnectedChanged(m_neutralElConnected);
     }
-
-
+    
+    bool cylinder1Changed = false;
+    bool cylinder2Changed = false;
+    
+    if (m_argonCylinder1Connected != state.argonCylinder1) {
+        m_argonCylinder1Connected = state.argonCylinder1;
+        cylinder1Changed = true;
+        emit argonCylinder1ConnectedChanged(m_argonCylinder1Connected);
+    }
+    
+    if (m_argonCylinder2Connected != state.argonCylinder2) {
+        m_argonCylinder2Connected = state.argonCylinder2;
+        cylinder2Changed = true;
+        emit argonCylinder2ConnectedChanged(m_argonCylinder2Connected);
+    }
+    
+    // Автоматическое переключение активного баллона
+    if (cylinder1Changed || cylinder2Changed) {
+        // Если второй баллон подключён, а первый нет - переключаемся на второй
+        if (m_argonCylinder2Connected && !m_argonCylinder1Connected) {
+            if (m_activCylinderFirst) {
+                setActivCylinderFirst(false);
+            }
+        }
+        // Если первый баллон подключён, а второй нет - переключаемся на первый
+        else if (m_argonCylinder1Connected && !m_argonCylinder2Connected) {
+            if (!m_activCylinderFirst) {
+                setActivCylinderFirst(true);
+            }
+        }
+    }
 }
 //void ControlCenter::setNeutralElConnected(bool connected)
 //{
@@ -875,9 +905,35 @@ void ControlCenter::setArgonFlowRate(quint8 rate)
     // TODO: Отправить команду установки расхода в LinkStm при необходимости
 }
 
+void ControlCenter::argonBlow()
+{
+    // TODO: Отправить команду продувки аргона через LinkStm
+    // Например: m_linkStm->sendArgonBlowCommand();
+    qDebug() << "Argon blow command triggered";
+}
+
 quint8 ControlCenter::argonRealRate() const
 {
     return m_argonRealRate;
+}
+
+bool ControlCenter::activCylinderFirst() const
+{
+    return m_activCylinderFirst;
+}
+
+void ControlCenter::setActivCylinderFirst(bool first)
+{
+    if (m_activCylinderFirst == first)
+        return;
+    
+    m_activCylinderFirst = first;
+    emit activCylinderFirstChanged(first);
+    
+    // Передаём значение в LinkStm
+    if (m_linkStm) {
+        m_linkStm->setActivCylinderFirst(first);
+    }
 }
 
 void ControlCenter::setArgonRealRate(quint8 rate)

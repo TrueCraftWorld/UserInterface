@@ -419,13 +419,13 @@ void LinkStm::readRxCommand()
         }
     }
 
+    // Начинаем с копии текущего состояния
+    UnitState unitState = m_unitState;
+
     switch (rxType) {     // Три старших бита определяют тип посылки
     // Стандартная посылка
     case RxDefault:
     {
-        // Начинаем с копии текущего состояния
-        UnitState unitState = m_unitState;
-        
         // Обновляем только те поля, которые пришли в этой посылке
         unitState.argonCylinder1 = m_rxCommand.com & 0x08 ? true : false;
         unitState.argonCylinder2 = m_rxCommand.com & 0x04 ? true : false;
@@ -483,10 +483,24 @@ void LinkStm::readRxCommand()
     }
     // Во время активации
     case RxActivation:
-        m_unitState.activOutput = (m_rxCommand.com >> 3) & 0x03;
-        m_unitState.activMode = static_cast<quint8>(m_rxCommand.data.at(0)) & 0x1F;         // Активированный режим
+        unitState.activOutput = (m_rxCommand.com >> 3) & 0x03;
+        
+        // Проверяем наличие данных перед доступом
+        if (m_rxCommand.data.size() >= 1) {
+            unitState.activMode = static_cast<quint8>(m_rxCommand.data.at(0)) & 0x1F;     // Активированный режим
+        }
+        
         // TODO - сделать проверку, что режим и выход совпадают с тем, что мы передали при активации
-        m_unitState.argonRealRate = static_cast<quint8>(m_rxCommand.data.at(1)) & 0x3F;     // Реальный расход от 0,0 до 8,0 (0-80)
+        
+        if (m_rxCommand.data.size() >= 2) {
+            unitState.argonRealRate = static_cast<quint8>(m_rxCommand.data.at(1)) & 0x3F; // Реальный расход от 0,0 до 8,0 (0-80)
+        }
+
+        if (m_unitState != unitState) {
+            m_unitState = unitState;
+            emit unitStateChanged(m_unitState);
+        }
+        
         m_comState = ACTIVATION;
         break;
     // Остановка

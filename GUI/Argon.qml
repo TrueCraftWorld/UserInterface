@@ -8,7 +8,9 @@ Rectangle {
     // Публичные свойства
     property bool cylinder1Connected: true      // Баллон 1 наполнен
     property bool cylinder2Connected: false     // Баллон 2 наполнен
-    property int flowRate: 5               // Уровень расхода (л/мин)
+    property int flowRate: 5               // Уровень расхода (л/мин) - установленный
+    property int realFlowRate: 0           // Реальный расход аргона во время активации
+    property bool isActivation: false      // Активация в данный момент
     property int minFlowRate: 0
     property int maxFlowRate: 80
     property bool showControls: true       // Показывать элементы управления (в развернутом состоянии)
@@ -30,14 +32,21 @@ Rectangle {
     onShowControlsChanged: {
         // Когда панель сворачивается (showControls становится false)
         if (!showControls && lastSentFlowRate !== flowRate) {
-            flowRateUpdated(flowRate)
+            flowRateUpdated(flowRate)       // Отправляем сигнал об изменении расхода
             lastSentFlowRate = flowRate
         }
     }
     
     color: "transparent"
-//    radius: 7
-//    border.color: "orange"
+    
+    // MouseArea для перехвата всех событий в области компонента
+    MouseArea {
+        anchors.fill: parent
+        z: 0
+        onPressed: mouse.accepted = true
+        onReleased: mouse.accepted = true
+        onClicked: mouse.accepted = true
+    }
 
     Rectangle {
         id: argonView
@@ -48,6 +57,7 @@ Rectangle {
         color: "grey"
         radius: 7
         border.color: "orange"
+        z: 1
 //        visible: !showControls
         
         // Иконка баллона
@@ -67,6 +77,7 @@ Rectangle {
             width: 85
             height: step * 12.5
             anchors.top: arLabel.bottom
+            anchors.topMargin: 8
             x: showControls ? 100 : (parent.width - width) / 2
             color: "transparent"
 
@@ -247,10 +258,12 @@ Rectangle {
                 id: argonFlow
                 anchors.top: parent.top
                 anchors.horizontalCenter: parent.horizontalCenter
-                text: Math.floor(flowRate / 10) + "." + (flowRate % 10)
+                // Во время активации показываем реальный расход, иначе установленный
+                property int displayRate: isActivation ? realFlowRate : flowRate
+                text: Math.floor(displayRate / 10) + "." + (displayRate % 10)
                 font.pixelSize: step * 3
                 font.bold: true
-                color: "#2c2c2c"
+                color: isActivation ? "#000000" : "#2c2c2c"  // чёрный во время активации
             }
             Text {
                 id: litrPerMin
@@ -368,7 +381,7 @@ Rectangle {
             width: showControls ? (step * 7) : parent.width
             height: step * 12.5
             anchors.top: showControls ? arLabel.bottom : argonFlowRect.bottom
-            anchors.topMargin: showControls ? 0 : 25
+            anchors.topMargin: showControls ? 8 : 25
             x: showControls ? (parent.width - width - 100) : (parent.width - width) / 2
             color: "transparent"
 
@@ -439,7 +452,7 @@ Rectangle {
         Rectangle {
             id: blowButton
             width: parent.width - 40
-            height: buttonStep * 4
+            height: buttonStep * 4.5
             anchors.horizontalCenter: parent.horizontalCenter
             anchors.bottom: parent.bottom
             anchors.bottomMargin: 10

@@ -73,6 +73,8 @@ Rectangle {
         cylinder1Connected: control.argonCylinder1Connected
         cylinder2Connected: control.argonCylinder2Connected
         flowRate: control.argonFlowRate
+        realFlowRate: control.argonRealRate
+        isActivation: control.activation
         activCylinderFirst: control.activCylinderFirst
         
         // Обработчик изменения расхода

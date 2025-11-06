@@ -199,7 +199,7 @@ ControlCenter::ControlCenter(QObject *parent)
     m_neutralElConnected(false),
     m_neutralElDivided(true),
     m_autoSSmode(0),
-    m_argonFlowRate(0),
+    m_argonFlowRate(80),
     m_argonRealRate(0),
     m_activCylinderFirst(true),  // По умолчанию активен первый баллон
     m_wirelessPedalCharge(0),
@@ -833,6 +833,13 @@ void ControlCenter::unitStateHandler(LinkStm::UnitState state)
         m_argonCylinder2Connected = state.argonCylinder2;
         cylinder2Changed = true;
         emit argonCylinder2ConnectedChanged(m_argonCylinder2Connected);
+    }
+    
+    // Обновляем реальный расход аргона
+    if (m_argonRealRate != state.argonRealRate) {
+        m_argonRealRate = state.argonRealRate;
+        qDebug() << "РЕАЛЬНЫЙ РАСХОД: " << m_argonRealRate;
+        emit argonRealRateChanged(m_argonRealRate);
     }
     
     // Автоматическое переключение активного баллона

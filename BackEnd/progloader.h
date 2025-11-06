@@ -27,7 +27,7 @@ public:
 
 	bool readPreviousSocketSettings();
 	void defaultSocketInit();
-	void removeSubProg(int index);
+	// void removeSubProg(int index);
 	/**
 	 * @brief ControlCenter::programmLoadSocketInit
 	 * @param progId

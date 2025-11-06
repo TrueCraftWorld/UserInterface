@@ -349,12 +349,12 @@ bool ProgLoader::readPreviousSocketSettings()
     return false;
 }
 
-void ProgLoader::removeSubProg(int index)
-{
-    if (m_socketModelPtr.isNull())
-        return;
-    m_socketModelPtr->removeSubProg(index);
-}
+// void ProgLoader::removeSubProg(int index)
+// {
+//     if (m_socketModelPtr.isNull())
+//         return;
+//     m_socketModelPtr->removeSubProg(index);
+// }
 
 void ProgLoader::defaultSocketInit()
 {

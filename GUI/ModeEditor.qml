@@ -59,7 +59,7 @@ Popup {
 
     onOpened: {
         // Запрещаем активацию при открытии popup
-        control.enableActivation = false
+        // control.enableActivation = false
         
         modeEditor.initialize(socId, modeIndex, isCoag)
 
@@ -75,7 +75,7 @@ Popup {
     
     onClosed: {
         // Разрешаем активацию при закрытии popup
-        control.enableActivation = true
+        // control.enableActivation = true
     }
 
     Rectangle {

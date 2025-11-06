@@ -77,6 +77,7 @@ public:
      */
     Q_INVOKABLE void recalcCollapsed();
 
+
     // Q_INVOKABLE void setModePower(int socketId, int pwr, bool isCoag);
 
     QStringList modeNames(int socketID, bool isCoag) const;
@@ -85,6 +86,9 @@ public:
     QStringList instrumNamesIds(int socketId, int modeIndex, bool isCoag) const;
     int selectedInstrumIndexByMode(int socketId, int modeIndex, bool isCoag);
     int selectedInstrumIdByMode(int socketId, int modeIndex, bool isCoag);
+
+public slots:
+    void slotRemoveSubProg();
 
 public:
     void stopActivation();
@@ -96,7 +100,7 @@ public:
     std::map<int, SockPtr>* itemsMap() const { return m_itemsMapPtr; }
     std::map<int, InstrPtr>* instrMap() const { return m_instrMapPtr; }
 
-    void removeSubProg(int index);
+
 
     void loadProgs( const std::vector<std::map<int, SockPtr >> &itemsMapVect,
                     const std::vector<std::map<int, InstrPtr >> &instrMapVect,
@@ -108,6 +112,7 @@ signals:
 
 //методы
 private:
+    void removeSubProg(int index);
     void addList(const std::map<int, SockPtr > &itemsMap,
                  const std::map<int, InstrPtr > &newInstrumMap);
 

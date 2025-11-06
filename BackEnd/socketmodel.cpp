@@ -309,6 +309,12 @@ void SocketModel::recalcCollapsed()
     qmlSetData(0, SOCKET::S_COLLAPSED, "socketdisplaymode");
 }
 
+void SocketModel::slotRemoveSubProg()
+{
+    if (m_subProgCount > 1)
+        removeSubProg(m_subProgIdx);
+}
+
 QStringList SocketModel::modeNames(int socketID, bool isCoag) const
 {
     if (m_itemsMapPtr == nullptr || m_instrMapPtr == nullptr)
@@ -584,7 +590,8 @@ void SocketModel::pedalRemover(int socketToSkip, int pedalToRemove)
         if (i == static_cast<size_t>(socketToSkip))
             continue;
         //тут не надо изменять все сокеты - переназначенная педаль могла быть в одном сокетет только
-        if (m_itemsMapPtr->at(i)->pedal() == pedalToRemove && pedalToRemove != Pedal::INSTR_BUTTON_MONO) {
+        if (m_itemsMapPtr->at(i)->pedal() == pedalToRemove
+            && pedalToRemove != Pedal::INSTR_BUTTON_MONO) {
             qmlSetData(i, 0, "socketpedal");
             // break;
         }
@@ -633,7 +640,7 @@ void SocketModel::setSubProgIdx(int newIndex)
         || static_cast<size_t>(newIndex) >= m_itemsMapVect.size())
         return;
 
-    // beginResetModel();
+    beginResetModel();
     m_subProgIdx = newIndex;
     m_itemsMapPtr = &(m_itemsMapVect.at(m_subProgIdx));
     m_socketNames.clear();
@@ -645,9 +652,9 @@ void SocketModel::setSubProgIdx(int newIndex)
         m_socketNames.append(iter->second->socketName());
     }
     // m_socketNames.append(m_itemsMap->SOCKET::BIPOLAR_1);
-    // endResetModel();
+    endResetModel();
 
-    emit dataChanged(QModelIndex(), QModelIndex(), {});
+    // emit dataChanged(QModelIndex(), QModelIndex(), {});
     emit subProgIdxChanged();
 
 }
@@ -677,7 +684,7 @@ void SocketModel::removeSubProg(int index)
 
     while (tmpIdx >= m_itemsMapVect.size())
         --tmpIdx;
-
+    emit subProgCountChanged();
     setSubProgIdx(tmpIdx);
 }
 

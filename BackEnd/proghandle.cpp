@@ -21,10 +21,9 @@ void ProgHandle::loadRecommendedProg(int recomProgIdx, bool clear)
     emit signalRecomProgChosen(iter.key(), clear);
 }
 
-void ProgHandle::removeSubProg(int idx)
+void ProgHandle::removeSubProg()
 {
-
-    emit signalRemoveSub(idx);
+    emit signalRemoveSub();
 }
 
 void ProgHandle::loadUserProg(int recomProgId)

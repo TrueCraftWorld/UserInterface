@@ -28,7 +28,7 @@ ControlCenter::ControlCenter(QObject *parent)
     m_argonRealRate(0),
     m_wirelessPedalCharge(0),
     m_socketModel(new SocketModel()),
-    m_editor(new SocketModeEditor(m_socketModel.data(),this)),
+    m_editor(new SocketModeEditor(m_socketModel,this)),
     m_handle(new ProgHandle(this)),
     m_progLoader(new ProgLoader(this)),
     // m_dbReader(nullptr),
@@ -85,7 +85,7 @@ void ControlCenter::makeHandleConnections()
         return;
 
     connect(m_handle, &ProgHandle::signalRemoveSub,
-            m_progLoader, &ProgLoader::removeSubProg);
+            m_socketModel.data(), &SocketModel::slotRemoveSubProg);
 
     connect(m_handle, &ProgHandle::signalRecomProgChosen, 
             m_progLoader, &ProgLoader::programmLoadSocketInit);

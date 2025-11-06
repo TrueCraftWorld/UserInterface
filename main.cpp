@@ -62,7 +62,7 @@ int main(int argc, char *argv[])
     engine.rootContext()->setContextProperty("recomHandle", ctrl->getHandle());
 
     ///TODO remove direct god-object access
-    engine.rootContext()->setContextProperty("control", ctrl.data());
+    // engine.rootContext()->setContextProperty("control", ctrl.data());
 
 
     engine.addImageProvider(QLatin1String("instrums"), new InstrImageProvider);

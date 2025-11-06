@@ -64,6 +64,17 @@ Popup {
         // Разрешаем активацию при закрытии popup
         control.enableActivation = true
     }
+    Rectangle {
+        id: back
+        anchors.fill: parent
+        color: "darkgray"
+    GradientBack {
+            anchors.fill: parent
+            startColor: isCoag ? "#000066" : "#443300"
+            stopColor: isCoag ? "#0000aa" : "#665500"
+            beamColor: isCoag ? "rgba(80, 120, 255, 0.6)" : "rgba(180, 150, 60, 0.5)"
+            bright: !isCoag
+    }
     
     Rectangle {
         id: header
@@ -71,7 +82,7 @@ Popup {
         anchors.left: parent.left
         anchors.right: parent.right
         height: 100
-        color: "black"
+        color: "transparent"
         
         Label {
             id: titleLable
@@ -122,7 +133,7 @@ Popup {
                 left: titleLable.right
             }
             background: Rectangle {
-                color: "black"
+                color: "transparent"
                 radius: 8
             }
             Text {
@@ -149,7 +160,7 @@ Popup {
                 right: titleLable.left
             }
             background: Rectangle {
-                color: "black"
+                color: "transparent"
                 radius: 8
             }
             Text {
@@ -167,7 +178,7 @@ Popup {
     
     Rectangle {
         id: instrumList
-        color: "black"
+        color: "transparent"
         anchors {
             left: parent.left
             bottom: parent.bottom
@@ -188,7 +199,7 @@ Popup {
         Rectangle {
             id: footer
             height: 100
-            color: "black"
+            color: "transparent"
             anchors {
                 bottom: parent.bottom
                 left: parent.left
@@ -203,7 +214,7 @@ Popup {
                     left: parent.left
                 }
                 background: Rectangle {
-                    color: "black"
+                    color: "transparent"
                     radius: 8
                 }
                 Text {
@@ -228,7 +239,7 @@ Popup {
                     margins: 10
                 }
                 background: Rectangle {
-                    color: "black"
+                    color: "transparent"
                     radius: 8
                     border.width: 2
                     border.color: "green"
@@ -259,7 +270,7 @@ Popup {
             right: parent.right
             left: instrumList.right
         }
-        color: "black"
+        color: "transparent"
         Image {
             id: previewImage
             fillMode: Image.PreserveAspectFit
@@ -281,7 +292,7 @@ Popup {
                 right: parent.right
                 bottom: parent.bottom
             }
-            color: "black"
+            color: "transparent"
             RowLayout {
                 id:lay
                 anchors.fill: parent
@@ -321,6 +332,7 @@ Popup {
                 }
             }
         }
+    }
     }
     Connections {
         target: but3

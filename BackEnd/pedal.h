@@ -12,10 +12,11 @@ public:
                     INSTR_BUTTON_MONO,
                     PED_COUNT
                     };
+
     Pedal(PedalType pedType = NO_PED);
 
     int pedalType() const;
-    void setPedType(int newPedType);
+    bool setPedType(int newPedType);
 
 private:
     PedalType m_pedType;

@@ -8,14 +8,13 @@ Rectangle {
     property var innerModel
     color: "gray"
     
-    signal socketPositionChanged(int socketId, int x, int y, int width, int height)
     ColumnLayout {
         id: layout
         anchors.fill: parent
         anchors.topMargin: 10
         anchors.bottomMargin: 0
-        anchors.leftMargin: 10
-        anchors.rightMargin: 10
+        anchors.leftMargin: 5
+        anchors.rightMargin: 5
         spacing: 10
         Rectangle {
             id: progPage
@@ -57,8 +56,8 @@ Rectangle {
                     border.color: "white"
                     border.width: 1
                     radius: 6
-
                     visible: theModel.subProgCount < 5 ? true : false
+
                     Text {
                         text: "+"
                         horizontalAlignment: Qt.AlignHCenter
@@ -68,7 +67,6 @@ Rectangle {
                     }
                     MouseArea {
                         anchors.fill: parent
-
                         onClicked: progSelector.open()
                     }
                 }
@@ -76,15 +74,7 @@ Rectangle {
                     Layout.fillWidth: true
                 }
             }
-            ProgAdditionPop {
-                id: progSelector
-                width: socketContainer.width
-                height: 200
-                x: repeat.x
-                y: repeat.y
-            }
         }
-
         SocketRepeater {
             id: repeat
             model: innerModel
@@ -96,7 +86,14 @@ Rectangle {
             Layout.fillHeight: true
         }
     }
-
+    ProgAdditionPop {
+        id: progSelector
+        width: socketContainer.width
+        height: 200
+        anchors.centerIn: parent
+        y: 0
+        // y: - socketContainer.height/2
+    }
     InstrumEditor {
         id: instrDialog
     }
@@ -123,9 +120,6 @@ Rectangle {
             modeDialog.modeIndex = mod
             modeDialog.isCoag = iscoag
             modeDialog.open()
-        }
-        function onSocketPositionChanged(socketId, x, y, width, height) {
-            socketContainer.socketPositionChanged(socketId, x, y, width, height)
         }
     }
 }

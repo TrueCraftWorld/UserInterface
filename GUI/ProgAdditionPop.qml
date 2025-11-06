@@ -5,11 +5,10 @@ Popup {
     id: addTypeSelector
 
     signal typeChosen(int buttonType)
-    parent: Overlay.overlay
+    // parent: Overlay.overlay
 
     component VariantRect: Rectangle {
         id: someRect
-
         property int buttonType: 0
         property alias title : titleLabel.text
 
@@ -45,16 +44,12 @@ Popup {
     signal pageAdditionRequest(int additionType)
 
     Rectangle {
-
-        // anchors.fill: parent
         anchors.centerIn: parent
         color: "black"
 
         Row {
             id: buttonRow
-            // anchors.fill: parent
             anchors.centerIn: parent
-
             spacing: 50
 
             VariantRect{

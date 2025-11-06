@@ -85,16 +85,4 @@ Rectangle {
             }
         }
     ]
-//    transitions: [
-//        Transition {
-//            from: "collapsed"
-//            to: "expanded"
-//            NumberAnimation { duration: 100; easing.type: Easing.InQuad }
-//        },
-//        Transition {
-//            from: "expanded"
-//            to: "collapsed"
-//            NumberAnimation { duration: 100; easing.type: Easing.InQuad }
-//        }
-//    ]
 }

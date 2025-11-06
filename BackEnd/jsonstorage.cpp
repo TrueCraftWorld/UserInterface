@@ -1,23 +1,33 @@
 #include "jsonstorage.h"
 #include <QFile>
+#include <QFileInfo>
+#include <QDir>
 #include <QVariantMap>
 
 JsonStorage::JsonStorage(QObject *parent, QVariantMap* initMap)
     : QObject{parent}
 {
+    QFileInfo info(JSON_FILE_NAME);
+
+    QDir dir = info.absoluteDir();
+    if (!dir.exists()) {
+        dir.mkpath(dir.absolutePath());
+    }
+    // if (info.absoluteDir())
+
     QFile jsonFile(JSON_FILE_NAME);
+
     // Читаем файл, если есть
     if (QFile::exists(JSON_FILE_NAME)) {
         if (!jsonFile.open(QIODevice::ReadOnly)) {
-            qDebug() << "Ошибка чтения файла json";
+            // qDebug() << "Ошибка чтения файла json";
         }
         else {
             QByteArray jsonData = jsonFile.readAll();
             m_document = QJsonDocument::fromJson(jsonData);
             m_object = m_document.object();
         }
-    }
-    else {
+    } else {
         // Если файла нет, заполняем его значениями по умолчанию
         m_object = QJsonObject::fromVariantMap(*initMap);
         m_document.setObject(m_object);
@@ -28,7 +38,7 @@ JsonStorage::JsonStorage(QObject *parent, QVariantMap* initMap)
 
 JsonStorage::~JsonStorage()
 {
-//    save();
+   // save();
 }
 
 void JsonStorage::save(QString key, QJsonValue data)
@@ -38,7 +48,7 @@ void JsonStorage::save(QString key, QJsonValue data)
 
     QFile jsonFile(JSON_FILE_NAME);
     if (!jsonFile.open(QIODevice::WriteOnly)) {
-        qDebug() << "не открывается json";
+        // qDebug() << "не открывается json";
     }
     else {
         jsonFile.write(QJsonDocument(m_object).toJson(QJsonDocument::Indented));

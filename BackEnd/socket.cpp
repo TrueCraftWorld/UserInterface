@@ -64,6 +64,22 @@ void SOCKET::setSocketType(SOCKET::SocType newSocketType)
     m_socketType = newSocketType;
     m_cutHalf = HalfSockPtr::create(false);
     m_coagHalf = HalfSockPtr::create(true);
+    switch (m_socketType) {
+    case BIPOLAR_1:
+        m_allowedPedals = {Pedal::NO_PED, Pedal::SINGLE_PED, Pedal::DOUBLE_PED};
+        break;
+    case BIPOLAR_2:
+        m_allowedPedals = {Pedal::NO_PED, Pedal::SINGLE_PED, Pedal::DOUBLE_PED, Pedal::INSTR_BUTTON_BI};
+        break;
+    case MONOPOLAR_1:
+        m_allowedPedals = {Pedal::NO_PED, Pedal::SINGLE_PED, Pedal::DOUBLE_PED, Pedal::INSTR_BUTTON_MONO};
+        break;
+    case MONOPOLAR_2:
+        m_allowedPedals = {Pedal::NO_PED, Pedal::SINGLE_PED, Pedal::DOUBLE_PED, Pedal::INSTR_BUTTON_MONO};
+        break;
+    default:
+        break;
+    }
 }
 
 SOCKET::SocStatus SOCKET::socketStatus() const
@@ -226,10 +242,10 @@ bool SOCKET::setInstrumId(int id, bool isCoag)
 
 void SOCKET::setAllowed(bool allow)
 {
-    if (m_socketStatus >= S_DISABLED && allow)
-        return;
-    if (m_socketStatus == S_OFF && (!allow))
-        return;
+    // if (m_socketStatus >= S_DISABLED && allow)
+    //     return;
+    // if (m_socketStatus == S_OFF && (!allow))
+    //     return;
 
     if (allow)
         m_socketStatus = S_ENABLED;
@@ -263,9 +279,13 @@ int SOCKET::displayMode() const
     return m_displayMode;
 }
 
-void SOCKET::setDisplayMode(SocDisplayMode newDisplayMode)
+bool SOCKET::setDisplayMode(SocDisplayMode newDisplayMode)
 {
+    if (newDisplayMode < SOCKET::S_COLLAPSED
+        || newDisplayMode > SOCKET::S_EXPANDED)
+        return false;
     m_displayMode = newDisplayMode;
+    return true;
 }
 
 void SOCKET::setCoagModes(const QMap<int, SurgModePtr > &newCoagModes,
@@ -289,7 +309,12 @@ int SOCKET::pedal() const
     return m_pedal.pedalType();
 }
 
-void SOCKET::setPedal(int type)
+bool SOCKET::setPedal(int type)
+{           
+    return m_pedal.setPedType(type);
+}
+
+QList<int> SOCKET::allowedPedals() const
 {
-    m_pedal.setPedType(type);
+    return m_allowedPedals;
 }

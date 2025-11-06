@@ -3,7 +3,8 @@ import QtQuick.Controls 2.15
 // import QtQuick.Layouts 1.15
 import StratifyLabs.UI 2.0
 
-Popup {
+// Popup {
+Rectangle {
     // property alias pedTitle : title.text
     property var shownPedalsArray: []
     property int selectedPed
@@ -12,61 +13,86 @@ Popup {
 
     id: pedalSelectRoot
 
-    function calcDimensions() {
-        var rowMargins = 30  //
-        var itemCount = pedalSelectRoot.shownPedalsArray.length + 1  // +1 для emptyPed
+    // function calcDimensions() {
+    //     var rowMargins = 30  //
+    //     var itemCount = pedalSelectRoot.shownPedalsArray.length + 1  // +1 для emptyPed
         
-        // Доступная высота (элементы квадратные)
-        var availableHeight = pedalSelectRoot.height - rowMargins
+    //     // Доступная высота (элементы квадратные)
+    //     var availableHeight = pedalSelectRoot.height - rowMargins
         
-        // Доступная ширина с минимальным spacing = 5px
-        var minSpacing = 5
-        var totalMinSpacing = minSpacing * (itemCount + 1)
-        var availableWidthForItems = pedalSelectRoot.width - rowMargins - totalMinSpacing
-        var widthPerItem = availableWidthForItems / itemCount
+    //     // Доступная ширина с минимальным spacing = 5px
+    //     var minSpacing = 5
+    //     var totalMinSpacing = minSpacing * (itemCount + 1)
+    //     var availableWidthForItems = pedalSelectRoot.width - rowMargins - totalMinSpacing
+    //     var widthPerItem = availableWidthForItems / itemCount
         
-        // Размер элемента = минимум из доступной ширины и высоты
-        var size = Math.min(widthPerItem, availableHeight)
-        return Math.floor(size)
-    }
+    //     // Размер элемента = минимум из доступной ширины и высоты
+    //     var size = Math.min(widthPerItem, availableHeight)
+    //     return Math.floor(size)
+    // }
     
-    function calcSpacing() {
-        var rowMargins = 30
-        var itemCount = pedalSelectRoot.shownPedalsArray.length + 1
-        var elementSize = calcDimensions()
+    // function calcSpacing() {
+    //     var rowMargins = 30
+    //     var itemCount = pedalSelectRoot.shownPedalsArray.length + 1
+    //     var elementSize = calcDimensions()
         
-        // Вычисляем фактический spacing на основе размера элементов
-        var totalItemsWidth = elementSize * itemCount
-        var availableWidth = pedalSelectRoot.width - rowMargins
-        var remainingSpace = availableWidth - totalItemsWidth
+    //     // Вычисляем фактический spacing на основе размера элементов
+    //     var totalItemsWidth = elementSize * itemCount
+    //     var availableWidth = pedalSelectRoot.width - rowMargins
+    //     var remainingSpace = availableWidth - totalItemsWidth
         
-        // Распределяем оставшееся пространство между элементами
-        if (itemCount > 1) {
-            var spacing = remainingSpace / (itemCount + 1)
-            // Гарантируем минимум 5px
-            return Math.floor(Math.max(5, spacing))
-        }
-        return 5
-    }
+    //     // Распределяем оставшееся пространство между элементами
+    //     if (itemCount > 1) {
+    //         var spacing = remainingSpace / (itemCount + 1)
+    //         // Гарантируем минимум 5px
+    //         return Math.floor(Math.max(5, spacing))
+    //     }
+    //     return 5
+    // }
 
 
-    // Позиционирование и размеры задаются в PedalPanel.qml
-    modal: false
-    focus: true
+    // // Позиционирование и размеры задаются в PedalPanel.qml
+    // // modal: false
+    // // focus: true
     
-    background: Rectangle {
-        color: "#3c3c3c"
-        radius: 8
-        border.color: "white"
-        border.width: 2
-    }
+    // background: Rectangle {
+    //     color: "#3c3c3c"
+    //     radius: 8
+    //     border.color: "white"
+    //     border.width: 2
+    // }
 
-    onOpened: {
+    // onOpened: {
+    //     singlePed.visible = false;
+    //     doublePed.visible = false;
+    //     biHandle.visible = false;
+    //     monoHandle.visible = false;
+        
+    //     for (var idx = 0; idx < shownPedalsArray.length; ++idx) {
+    //         if (shownPedalsArray[idx] === 1) {
+    //             singlePed.visible = true;
+    //         }
+    //         if (shownPedalsArray[idx] === 2) {
+    //             doublePed.visible = true;
+    //         }
+    //         // кнопка термошва доступна только для сокета с номером 1 (БИ2)
+    //         if (shownPedalsArray[idx] === 3 && socketNumber === 1) {
+    //             biHandle.visible = true;
+    //         }
+    //         // держатель с кнопками доступен только для монополярных сокетов
+    //         if (shownPedalsArray[idx] === 4 && (socketNumber === 2 || socketNumber === 3)) {
+    //             monoHandle.visible = true;
+    //         }
+    //     }
+    //     layoutRow.elementSize = calcDimensions()
+    //     layoutRow.spacing = calcSpacing()
+    // }
+    onShownPedalsArrayChanged: {
         singlePed.visible = false;
         doublePed.visible = false;
         biHandle.visible = false;
         monoHandle.visible = false;
-        
+        console.log("onShownPedalsArrayChanged", shownPedalsArray)
         for (var idx = 0; idx < shownPedalsArray.length; ++idx) {
             if (shownPedalsArray[idx] === 1) {
                 singlePed.visible = true;
@@ -75,22 +101,21 @@ Popup {
                 doublePed.visible = true;
             }
             // кнопка термошва доступна только для сокета с номером 1 (БИ2)
-            if (shownPedalsArray[idx] === 3 && socketNumber === 1) {
+            if (shownPedalsArray[idx] === 3 ) {
                 biHandle.visible = true;
             }
             // держатель с кнопками доступен только для монополярных сокетов
-            if (shownPedalsArray[idx] === 4 && (socketNumber === 2 || socketNumber === 3)) {
+            if (shownPedalsArray[idx] === 4 ) {
                 monoHandle.visible = true;
             }
         }
-        layoutRow.elementSize = calcDimensions()
-        layoutRow.spacing = calcSpacing()
     }
 
     Row {
         id: layoutRow
-        property int elementSize
-        spacing: layoutRow.spacing
+        property int elementSize: 100
+        // spacing: layoutRow.spacing
+        spacing: 15
         anchors.fill: parent
         anchors.margins: 5
         Rectangle {

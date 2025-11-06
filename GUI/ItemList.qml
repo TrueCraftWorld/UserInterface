@@ -9,7 +9,7 @@ Rectangle {
     property string imageSourceTemplate
     property alias curIndex: theView.currentIndex
     property bool noImage: false
-    property int selectedIndex: -1  // Индекс реально выбранного элемента (при клике)
+    // property int selectedIndex: -1  // Индекс реально выбранного элемента (при клике)
     signal newIndexSelected(int newIndex)
 
     color: "transparent"
@@ -18,14 +18,14 @@ Rectangle {
     function scrollUp() {
         if (theView.currentIndex > 3) {
             theView.currentIndex -= 3
-            theView.positionViewAtIndex(theView.currentIndex, ListView.Center)
+            theView.positionViewAtIndex(curIndex, ListView.Center)
         }
     }
     
     function scrollDown() {
         if (theView.currentIndex < theView.count - 3) {
             theView.currentIndex += 2
-            theView.positionViewAtIndex(theView.currentIndex, ListView.Center)
+            theView.positionViewAtIndex(curIndex, ListView.Center)
         }
     }
     ColumnLayout {
@@ -43,12 +43,13 @@ Rectangle {
             displayMarginBeginning: 15
             displayMarginEnd: 15
             spacing: 10
-
+            // ScrollBar.vertical
             clip: true
 
             delegate: Rectangle {
-                property bool isCurrent: (index === theView.currentIndex)
-                property bool isSelected: (index === itemList.selectedIndex)
+                // property bool isCurrent: (index === theView.currentIndex)
+                // property bool isSelected: (index === itemList.selectedIndex)
+                property bool isSelected: (index === curIndex)
                 height: 100
                 width: ListView.view.width
                 radius: 8
@@ -103,7 +104,7 @@ Rectangle {
                         top:parent.top
                         left: parent.left
                     }
-                    color: "black"
+                    color: "transparent"
                     Rectangle {
                         height: parent.height/3
                         width: parent.height/3
@@ -148,8 +149,8 @@ Rectangle {
                 MouseArea {
                     anchors.fill: parent
                     onClicked: {
-                        itemList.selectedIndex = index
-                        theView.currentIndex = index
+                        // itemList.selectedIndex = index
+                        // theView.currentIndex = index
                         itemList.newIndexSelected(index)
                     }
                 }

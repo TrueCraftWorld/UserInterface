@@ -37,11 +37,15 @@ Popup {
         }
         MouseArea {
             anchors.fill: parent
-            onClicked: addTypeSelector.typeChosen(someRect.buttonType)
+            onClicked: {
+
+                addTypeSelector.typeChosen(someRect.buttonType)
+                addTypeSelector.close()
+            }
         }
     }
 
-    signal pageAdditionRequest(int additionType)
+    // signal pageAdditionRequest(int additionType)
 
     Rectangle {
         anchors.centerIn: parent

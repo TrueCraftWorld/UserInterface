@@ -27,7 +27,7 @@ ControlCenter::ControlCenter(QObject *parent)
     m_argonFlowRate(0),
     m_argonRealRate(0),
     m_wirelessPedalCharge(0),
-    m_socketModel(new SocketModel(this)),
+    m_socketModel(new SocketModel()),
     m_editor(new SocketModeEditor(m_socketModel.data(),this)),
     m_handle(new ProgHandle(this)),
     m_progLoader(new ProgLoader(this)),

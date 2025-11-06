@@ -4,14 +4,11 @@
 #include <QObject>
 #include <QPointer>
 #include <QTimer>
-#include <map>
 
 #include "BackEnd/socketmodeeditor.h"
 #include "socketmodel.h"
-#include "databasereader.h"
-#include "instrument.h"
 #include "proghandle.h"
-#include "surgicalmode.h"
+#include "progloader.h"
 #include "linkstm.h"
 
 /**
@@ -23,6 +20,7 @@ class ControlCenter : public QObject
     Q_OBJECT
     Q_PROPERTY(QPointer<SocketModel> socketModel READ getSocketModel CONSTANT FINAL)
     Q_PROPERTY(QPointer<ProgHandle> handle READ getHandle CONSTANT FINAL)
+    // Q_PROPERTY(QPointer<ProgLoader> progLoader READ getLoader CONSTANT FINAL)
     Q_PROPERTY(bool neutralElConnected READ neutralElConnected NOTIFY neutralElConnectedChanged)
     Q_PROPERTY(bool neutralElDivided READ neutralElDivided WRITE setNeutralElDivided NOTIFY neutralElDividedChanged)
     Q_PROPERTY(quint8 argonFlowRate READ argonFlowRate WRITE setArgonFlowRate NOTIFY argonFlowRateChanged)
@@ -114,15 +112,15 @@ public:
 
     Q_INVOKABLE QPointer<ProgHandle> getHandle() const;
     
-    /**
-     * @brief Сохраняет текущее состояние всех сокетов в БД (таблица Lists, id=1000)
-     */
-    Q_INVOKABLE void saveCurrentState();
+    // /**
+    //  * @brief Сохраняет текущее состояние всех сокетов в БД (таблица Lists, id=1000)
+    //  */
+    // Q_INVOKABLE void saveCurrentState();
     
-    /**
-     * @brief Загружает последнее сохранённое состояние из БД
-     */
-    void loadCurrentState();
+    // /**
+    //  * @brief Загружает последнее сохранённое состояние из БД
+    //  */
+    // void loadCurrentState();
     
     /**
      * @brief Запускает отложенное сохранение (с задержкой 2 секунды)
@@ -150,10 +148,12 @@ private:
     bool m_enableActivation;                // Запрет активации (открыты popup)
     bool m_activation;                      // Активация выполняется
 
-    QPointer<SocketModel> m_socketModel;
+    QSharedPointer<SocketModel> m_socketModel;
     QPointer<SocketModeEditor> m_editor;
     QPointer<ProgHandle> m_handle;
-    QPointer<DataBaseReader> m_dbReader;
+    QPointer<ProgLoader> m_progLoader;
+    // QPointer<PeriphHandle> m_periphery;
+
     QPointer<LinkStm> m_linkStm;
     QTimer* m_saveTimer = nullptr;  // Таймер для отложенного сохранения
 
@@ -173,47 +173,6 @@ private:
     void initSockets();
     void readConfigs();
     void prepareConnectios();
-
-    bool readPreviousSocketSettings();
-
-    void defaultSocketInit();
-    void dataBaseSocketInit();
-    void removeSubProg(int index);
-
-    /**
-     * @brief ControlCenter::programmLoadSocketInit
-     * @param progId
-     * @details я тут с ума сойду - вся эта функция за раз в голове не помещается
-     * Шаг 1 - получить строки таблицы Lists, с соответствующими id (каждая строка - 1 рабочий экран)
-     * Шаг 2 - поличить строки таблицы EnabledMods, с соответствующими id
-     *         (каждая строка - 1 разрещённый режим)
-     * Шаг 3 - поличить строки таблицы EnabledInstr, с соответствующими id
-     *         (каждая строка - 1 разрещённый инструмент)
-     * Шаг 4 - из таблицы Instrum получить список допустимых инструментов
-     *         для каждого режима в списке режимов (Шаг 2)
-     * Шаг 5 - Проредить полученный список инструментов оставив в нём только
-     *         те, которые разрешены в данной программе (Шаг 3)
-     * Шаг 6 - Поселедовательная инициализация полусокетов по строкам из (Шаг 1)
-     *         Если сокет включён:
-     *         6.1 - для каждого полусокета прореживание списка режимов
-     *         6.2 - для каждого полусокета прореживания списка инструментов
-     *         6.3 инициализация сокета полученным списком допустимыз режимов и инструментов
-     *         6.4 установка режима, мощностии и инструмента по умолчанию
-     */
-    void programmLoadSocketInit(int progId, bool clear = true);
-
-    /**
-     * @brief getListOfPrograms получение списка доспуных программ в категории
-     * @param scopeID
-     * @return
-     */
-    QMap<int, QString> getListOfPrograms(int scopeID);
-    QMap<int, QString> getScopes();
-
-
-    std::map<int, std::map<int, InstrInfo>> getConstarints(const QList<int> &idList);
-    std::map<int, InstrPtr> getInstrums();
-    
     
 //    void setNeutralElConnected(bool connected);
     void unitStateHandler(LinkStm::UnitState state);

@@ -260,6 +260,6 @@ private:
     QString m_socketName;
 };
 
-using SockPtr=QSharedPointer<SOCKET>;
+using SockPtr = QSharedPointer<SOCKET>;
 
 #endif // SOCKET_H

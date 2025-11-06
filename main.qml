@@ -102,8 +102,6 @@ Window {
       width: 0.8 * container.width
       height: container.height
       edge: Qt.LeftEdge
-      // Loader
-      // SettingsMain {
       MenuLoader {
          id: menuLoad
          anchors.fill: parent

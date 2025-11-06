@@ -75,9 +75,12 @@ QVariant SocketModel::data(const QModelIndex &index, int role) const
     {
         QList<int> tmp = socketItem.allowedPedals();
         QVariantList varList;
-        std::transform(tmp.begin(), tmp.end(),
-                   std::back_inserter(varList),
-                   [](int value) { return QVariant(value); });
+        qDebug() << socketItem.socketName() << tmp.length();
+        for (const auto& item : tmp) {
+            qDebug() << "allowed Pedal" << item;
+
+            varList.append(item);
+        }
 
         return varList;
     }

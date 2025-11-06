@@ -7,7 +7,7 @@ import BackEnd 1.0
 
 Drawer {
 //с одной стороный многовато из-за необходимости репитер городить ради доступа к индексам
-//с другой строны -
+//с другой строны - всё ещё короче чем ручная передача параметров
     id: repeatRoot
 
     property int socketId: 0
@@ -28,7 +28,7 @@ Drawer {
         var spacersHeight = (localRepeater.count) * repeatRoot.usedSpacing;
         for (var i = 0; i < localRepeater.count; i++) {
             if (!(localRepeater.itemAt(i) instanceof Rectangle)) {
-                console.log("oops")
+                // console.log("oops")
                 continue
             }
             if (localRepeater.itemAt(i).state === "expanded") {
@@ -64,7 +64,6 @@ Drawer {
             /(localRepeater.count)
         }
     }
-
 
     ColumnLayout {
         id: layout
@@ -113,6 +112,7 @@ Drawer {
                     anchors.left: parent.left
                     anchors.leftMargin: 20
                 }
+
                 Connections {
                     target: pedEditor
                     function onPedSelected (pedal) {

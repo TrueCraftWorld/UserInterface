@@ -206,7 +206,7 @@ Rectangle {
 
             anchors.fill: parent
             onClicked: {
-                console.log("initial PedClick")
+                // console.log("initial PedClick")
                 pedalRoot.pedalMenuRequest()
             }
         }

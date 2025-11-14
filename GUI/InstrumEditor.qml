@@ -20,6 +20,7 @@ Popup {
     
     property var itemIdArr: []
     property var itemNameArr: []
+    property var itemNumArr: []
 
 
     ListModel {
@@ -31,13 +32,13 @@ Popup {
     function updateModel() {
         combinedModel.clear()
         
-        if (itemIdArr.length !== itemNameArr.length) {
+        if (itemIdArr.length !== itemNameArr.length || itemIdArr.length !== itemNumArr.length) {
             console.warn("Lists from C++ have different lengths!")
             return
         }
         for (var i = 0; i < itemIdArr.length; i++) {
             combinedModel.append({
-                itemId: itemIdArr[i],
+                itemId: itemNumArr[i],  // Используем Num вместо ID для изображений
                 itemName: itemNameArr[i],
                 rowIndex: i
             })
@@ -53,6 +54,7 @@ Popup {
 
         itemNameArr = modeEditor.instrList
         itemIdArr = modeEditor.instrListIds()
+        itemNumArr = modeEditor.instrListNums()
         updateModel()
         //кринж, но т.к. вызывается переназначение свойств
         //и триггерятся сигналы
@@ -64,17 +66,6 @@ Popup {
         // Разрешаем активацию при закрытии popup
         control.enableActivation = true
     }
-    Rectangle {
-        id: back
-        anchors.fill: parent
-        color: "darkgray"
-    GradientBack {
-            anchors.fill: parent
-            startColor: isCoag ? "#000066" : "#443300"
-            stopColor: isCoag ? "#0000aa" : "#665500"
-            beamColor: isCoag ? "rgba(80, 120, 255, 0.6)" : "rgba(180, 150, 60, 0.5)"
-            bright: !isCoag
-    }
     
     Rectangle {
         id: header
@@ -82,7 +73,7 @@ Popup {
         anchors.left: parent.left
         anchors.right: parent.right
         height: 100
-        color: "transparent"
+        color: "black"
         
         Label {
             id: titleLable
@@ -133,7 +124,7 @@ Popup {
                 left: titleLable.right
             }
             background: Rectangle {
-                color: "transparent"
+                color: "black"
                 radius: 8
             }
             Text {
@@ -160,7 +151,7 @@ Popup {
                 right: titleLable.left
             }
             background: Rectangle {
-                color: "transparent"
+                color: "black"
                 radius: 8
             }
             Text {
@@ -178,7 +169,7 @@ Popup {
     
     Rectangle {
         id: instrumList
-        color: "transparent"
+        color: "black"
         anchors {
             left: parent.left
             bottom: parent.bottom
@@ -194,12 +185,12 @@ Popup {
                 left: parent.left
                 right: parent.right
             }
-            imageSourceTemplate: "image://instrums/miniInstr%1"
+            imageSourceTemplate: "image://instruments/minstr%1"
         }
         Rectangle {
             id: footer
             height: 100
-            color: "transparent"
+            color: "black"
             anchors {
                 bottom: parent.bottom
                 left: parent.left
@@ -207,14 +198,14 @@ Popup {
             }
             Button {
                 id: downButton
-                width: upButton.width
+                width: instrumList.width * .4
                 anchors {
                     top: parent.top
                     bottom: parent.bottom
                     left: parent.left
                 }
                 background: Rectangle {
-                    color: "transparent"
+                    color: "black"
                     radius: 8
                 }
                 Text {
@@ -227,6 +218,36 @@ Popup {
                     verticalAlignment: Qt.AlignVCenter
                     color: "white"
                 }
+                onClicked: {
+                    instrumListView.scrollDown()
+                }
+            }
+            Button {
+                id: upButtonFooter
+                width: downButton.width
+                anchors {
+                    top: parent.top
+                    bottom: parent.bottom
+                    left: downButton.right
+                    leftMargin: 20
+                }
+                background: Rectangle {
+                    color: "black"
+                    radius: 8
+                }
+                Text {
+                    id: upTextFooter
+                    text: qsTr("▲")
+                    font.pixelSize: 34
+                    font.bold: true
+                    anchors.fill: parent
+                    horizontalAlignment: Qt.AlignHCenter
+                    verticalAlignment: Qt.AlignVCenter
+                    color: "white"
+                }
+                onClicked: {
+                    instrumListView.scrollUp()
+                }
             }
             Button {
                 id: acceptButton
@@ -234,12 +255,12 @@ Popup {
                 anchors {
                     top: parent.top
                     bottom: parent.bottom
-                    left: downButton.right
+                    left: upButtonFooter.right
                     right: parent.right
                     margins: 10
                 }
                 background: Rectangle {
-                    color: "transparent"
+                    color: "black"
                     radius: 8
                     border.width: 2
                     border.color: "green"
@@ -270,12 +291,17 @@ Popup {
             right: parent.right
             left: instrumList.right
         }
-        color: "transparent"
+        color: "black"
         Image {
             id: previewImage
             fillMode: Image.PreserveAspectFit
             asynchronous: true
-            source: ("image://instrums/maxiInstr%1").arg(modeEditor.currentInstrIndex)
+            source: {
+                if (modeEditor.currentInstrIndex >= 0 && modeEditor.currentInstrIndex < itemNumArr.length) {
+                    return ("image://instruments/instr%1").arg(itemNumArr[modeEditor.currentInstrIndex])
+                }
+                return ""
+            }
             anchors {
                 left: parent.left
                 right: parent.right
@@ -292,7 +318,7 @@ Popup {
                 right: parent.right
                 bottom: parent.bottom
             }
-            color: "transparent"
+            color: "black"
             RowLayout {
                 id:lay
                 anchors.fill: parent
@@ -332,7 +358,6 @@ Popup {
                 }
             }
         }
-    }
     }
     Connections {
         target: but3

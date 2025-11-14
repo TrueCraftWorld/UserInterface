@@ -8,6 +8,7 @@ Popup {
     property int modeIndex
     property bool isCoag
     property var modeEditor: Editor
+    // property string imageNameTemplate
 
     id: root
     modal: true
@@ -20,12 +21,14 @@ Popup {
     property var itemIdArr: []
     property var itemNameArr: []
     property var itemNumArr: []
+//    property var itemBriefArr: []
+//    property var itemDescriptArr: []
     property bool changed: false
     
-
+    // Определяем префикс для изображения на основе типа сокета
     property string imagePrefix: {
         // socId: 0 = БИ1, 1 = БИ2, 2 = МОНО1, 3 = МОНО2
-        /*return*/ (socId <= 1) ? "bimode" : "monomode"
+        return (socId <= 1) ? "bimode" : "monomode"
     }
     
     // Получаем Num текущего режима
@@ -35,6 +38,20 @@ Popup {
         return parseInt(itemNumArr[modeEditor.currentModeIndex])
     }
     
+//    // Получаем краткое описание текущего режима
+//    property string currentModeBrief: {
+//        if (modeEditor.currentModeIndex < 0 || modeEditor.currentModeIndex >= itemBriefArr.length)
+//            return ""
+//        return itemBriefArr[modeEditor.currentModeIndex]
+//    }
+    
+//    // Получаем полное описание текущего режима
+//    property string currentModeDescript: {
+//        if (modeEditor.currentModeIndex < 0 || modeEditor.currentModeIndex >= itemDescriptArr.length)
+//            return ""
+//        return itemDescriptArr[modeEditor.currentModeIndex]
+//    }
+
     ListModel {
         id: combinedModel
     }
@@ -66,11 +83,12 @@ Popup {
         itemNameArr = modeEditor.modeNames
         itemIdArr = modeEditor.modeNamesIds()
         itemNumArr = modeEditor.modeNamesNums()
+//        itemBriefArr = modeEditor.modeNamesBriefs()
+//        itemDescriptArr = modeEditor.modeNamesDescripts()
         
         updateModel()
-
         modeEditor.currentModeIndex = modeIndex
-        // modeListView.selectedIndex = modeEditor.currentModeIndex
+        modeListView.selectedIndex = modeEditor.currentModeIndex
     }
     
     onClosed: {
@@ -83,12 +101,177 @@ Popup {
         anchors.fill: parent
         color: "#0a0a0a"
         
-        GradientBack {
+        // Слой 1: Базовый градиент (зависит от режима)
+        Rectangle {
+            id: baseLayer
             anchors.fill: parent
-            startColor: isCoag ? "#000066" : "#443300"
-            stopColor: isCoag ? "#0000aa" : "#665500"
-            beamColor: isCoag ? "rgba(80, 120, 255, 0.6)" : "rgba(180, 150, 60, 0.5)"
-            bright: !isCoag
+            
+            gradient: Gradient {
+                orientation: Gradient.Vertical
+                GradientStop { 
+                    position: 0.0
+                    color: isCoag ? "#000066" : "#443300"
+                }
+                GradientStop { 
+                    position: 1.0
+                    color: isCoag ? "#0000aa" : "#665500"
+                }
+            }
+        }
+        
+        // Слой 2: Пульсирующий цветовой слой
+        Rectangle {
+            id: pulseLayer
+            anchors.fill: parent
+            opacity: 0.5
+            
+            property real pulsePhase: 0.0
+            
+            // Вычисляем цвета на основе pulsePhase и isCoag
+            property color topColor: {
+                var intensity = 0.4 + pulsePhase * 0.3  // 0.4 - 0.7
+                if (isCoag) {
+                    return Qt.rgba(0, intensity * 0.3, intensity, 1)  // Синий
+                } else {
+                    return Qt.rgba(intensity * 0.6, intensity * 0.5, 0, 1)  // Приглушённый жёлто-коричневый
+                }
+            }
+            
+            property color bottomColor: {
+                var intensity = 0.5 + pulsePhase * 0.4  // 0.5 - 0.9
+                if (isCoag) {
+                    return Qt.rgba(0, intensity * 0.4, intensity, 1)  // Светло-синий
+                } else {
+                    return Qt.rgba(intensity * 0.7, intensity * 0.6, 0, 1)  // Приглушённый жёлтый
+                }
+            }
+            
+            gradient: Gradient {
+                orientation: Gradient.Vertical
+                GradientStop { position: 0.0; color: pulseLayer.topColor }
+                GradientStop { position: 0.5; color: "#000000" }
+                GradientStop { position: 1.0; color: pulseLayer.bottomColor }
+            }
+            
+            // Анимация фазы пульсации
+            SequentialAnimation on pulsePhase {
+                running: true
+                loops: Animation.Infinite
+                
+                NumberAnimation {
+                    to: 1.0
+                    duration: 4000
+                    easing.type: Easing.InOutQuad
+                }
+                NumberAnimation {
+                    to: 0.0
+                    duration: 4000
+                    easing.type: Easing.InOutQuad
+                }
+            }
+        }
+        
+        // Слой 3: Диагональный луч света
+        Canvas {
+            id: diagonalBeam
+            anchors.fill: parent
+            opacity: 0.2
+            
+            property real beamPosition: -0.5
+            property bool useCoagColors: isCoag
+            
+            onPaint: {
+                var ctx = getContext("2d")
+                ctx.clearRect(0, 0, width, height)
+                
+                // Создаём диагональный градиент
+                var x1 = width * beamPosition - 150
+                var y1 = -150
+                var x2 = width * beamPosition + height
+                var y2 = height
+                
+                var gradient = ctx.createLinearGradient(x1, y1, x2, y2)
+                
+                // Прозрачный → яркий → прозрачный
+                gradient.addColorStop(0, "rgba(0, 0, 0, 0)")
+                gradient.addColorStop(0.4, "rgba(0, 0, 0, 0)")
+                
+                // Явно задаём цвет луча для каждого режима
+                if (useCoagColors) {
+                    gradient.addColorStop(0.5, "rgba(80, 120, 255, 0.6)")  // Синий луч
+                } else {
+                    gradient.addColorStop(0.5, "rgba(180, 150, 60, 0.5)")  // Приглушённый жёлтый луч
+                }
+                
+                gradient.addColorStop(0.6, "rgba(0, 0, 0, 0)")
+                gradient.addColorStop(1, "rgba(0, 0, 0, 0)")
+                
+                ctx.fillStyle = gradient
+                ctx.fillRect(0, 0, width, height)
+            }
+            
+            SequentialAnimation on beamPosition {
+                running: true
+                loops: Animation.Infinite
+                
+                NumberAnimation {
+                    to: 1.5
+                    duration: 8000
+                    easing.type: Easing.InOutCubic
+                }
+                NumberAnimation {
+                    to: -1.0
+                    duration: 0
+                }
+            }
+            
+            onBeamPositionChanged: {
+                requestPaint()
+            }
+            
+            onUseCoagColorsChanged: {
+                requestPaint()
+            }
+        }
+        
+        // Слой 4: Мягкое пульсирующее сияние в центре
+        Rectangle {
+            id: centerGlow
+            anchors.fill: parent
+            opacity: 0.25
+            
+            property real glowIntensity: 0.0
+            
+            gradient: Gradient {
+                orientation: Gradient.Vertical
+                GradientStop { position: 0.0; color: "transparent" }
+                GradientStop { 
+                    position: 0.5
+                    color: Qt.rgba(
+                        isCoag ? 0.1 : 0.7,
+                        isCoag ? 0.4 : 0.6,
+                        isCoag ? 1.0 : 0.1,
+                        centerGlow.glowIntensity
+                    )
+                }
+                GradientStop { position: 1.0; color: "transparent" }
+            }
+            
+            SequentialAnimation on glowIntensity {
+                running: true
+                loops: Animation.Infinite
+                
+                NumberAnimation {
+                    to: 0.5
+                    duration: 3500
+                    easing.type: Easing.InOutQuad
+                }
+                NumberAnimation {
+                    to: 0.1
+                    duration: 3500
+                    easing.type: Easing.InOutQuad
+                }
+            }
         }
 
         Rectangle {
@@ -115,11 +298,12 @@ Popup {
                 height: parent.height / 2
                 width: parent.width * 0.8
                 color: isCoag ? "white" : "black"
-                background: Rectangle {
-                    id: titleRect
-                    color: isCoag ? "blue" : "yellow"
-                    anchors.fill: parent
-                }
+                background:
+                    Rectangle {
+                        id: titleRect
+                        color: isCoag ? "blue" : "yellow"
+                        anchors.fill: parent
+                    }
             }
 
             Button {
@@ -147,7 +331,7 @@ Popup {
                 }
                 onClicked: {
                     modeEditor.rollBack()
-                    // changed = false
+                    changed = false
                     root.close()
                 }
             }
@@ -172,8 +356,8 @@ Popup {
                     left: parent.left
                     right: parent.right
                 }
-                innerModel: combinedModel
-                imageSourceTemplate: "image://instrums/" + imagePrefix + "%1"
+                // innerModel: combinedModel
+                imageSourceTemplate: "image://modes/" + imagePrefix + "%1"
             }
             Rectangle {
                 id: footer
@@ -241,7 +425,7 @@ Popup {
         }
 
         Rectangle {
-            id: modePreview
+            id: instrumPreview
             anchors {
                 top: header.bottom
                 bottom: declineButton.top
@@ -258,7 +442,7 @@ Popup {
                     top: parent.top
                     left: parent.left
                     right: previewImage.left
-                    margins: 20
+                    margins: 10
                 }
 
                 color: "transparent"
@@ -266,11 +450,10 @@ Popup {
                 border.width: 1
                 radius: 5
 
-                // ScrollView {
-                //     anchors.fill: parent
-                //     anchors.margins: 10
-                //     ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
-                //     clip: true
+                ScrollView {
+                    anchors.fill: parent
+                    anchors.margins: 10
+                    clip: true
 
                     Label {
                         id: briefText
@@ -279,11 +462,17 @@ Popup {
                         font.pixelSize: 21
                         font.bold: true
                         wrapMode: Text.WordWrap
-                        // width: briefRect.width - 10
-                        anchors.margins: 10
-                        anchors.fill: parent
+                        width: briefRect.width - 10
+
+                        Component.onCompleted: {
+//                            console.log("briefText initialized, text:", text)
+                        }
+
+                        onTextChanged: {
+//                            console.log("briefText changed to:", text)
+                        }
                     }
-                // }
+                }
             }
 
             Image {
@@ -292,7 +481,8 @@ Popup {
                 height: width
                 fillMode: Image.PreserveAspectFit
                 asynchronous: true
-                source: ("image://instrums/" + imagePrefix + "%1").arg(currentModeNum)
+                source: ("image://modes/" + imagePrefix + "%1").arg(currentModeNum)
+                // source: "file"
                 anchors {
                     right: parent.right
                     top: parent.top
@@ -302,23 +492,23 @@ Popup {
             // Полное описание
             Rectangle {
                 id: descriptRect
-                // width: parent.width
+                width: parent.width
                 anchors {
                     left: parent.left
                     top: previewImage.bottom
                     bottom: parent.bottom
-                    right: parent.right
-                    margins: 20
+                    margins: 10
                 }
 
                 color: "transparent"
+//                border.color: "white"
+//                border.width: 1
+//                radius: 5
 
-
-                // ScrollView {
-                //     anchors.fill: parent
-                //     anchors.margins: 10
-                //     ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
-                //     clip: true
+                ScrollView {
+                    anchors.fill: parent
+                    anchors.margins: 10
+                    clip: true
 
                     Label {
                         id: descriptText
@@ -326,17 +516,23 @@ Popup {
                         color: "white"
                         font.pixelSize: 24
                         wrapMode: Text.WordWrap
-                        // width: descriptRect.width - 10
-                        anchors.margins: 10
-                        anchors.fill: parent
+                        width: descriptRect.width - 10
+
+                        Component.onCompleted: {
+//                            console.log("descriptText initialized, text:", text)
+                        }
+
+                        onTextChanged: {
+//                            console.log("descriptText changed to:", text)
+                        }
                     }
-                // }
+                }
             }
         }
 
         Button {
             id: declineButton
-            visible: modeEditor.hasChanges
+    //        visible: modeEditor.hasChanges
             width: parent.width * .2
             height: parent.height * .15
             anchors {
@@ -364,7 +560,7 @@ Popup {
             }
             onClicked: {
                 modeEditor.rollBack()
-                // changed = false
+                changed = false
                 root.close()
             }
         }
@@ -373,9 +569,8 @@ Popup {
             id: acceptButton
             width: parent.width * .2
             height: parent.height * .15
-            //так надо оставиь только проверять в плюсах равенство нормально
-            enabled: modeEditor.hasChanges
-            // visible: changed
+    //        enabled: modeEditor.hasChanges
+            visible: changed
             anchors {
                 bottom: parent.bottom
                 bottomMargin: 10
@@ -400,7 +595,7 @@ Popup {
             }
             onClicked: {
                 modeEditor.commitChanges()
-                // changed = false
+                changed = false
                 root.close();
             }
         }
@@ -410,7 +605,7 @@ Popup {
         target: modeListView
         function onNewIndexSelected(index) {
             modeEditor.currentModeIndex = index
-            // changed = true
+            changed = true
         }
     }
 }

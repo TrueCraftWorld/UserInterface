@@ -28,6 +28,11 @@ int Instrument::id() const
     return m_id;
 }
 
+int Instrument::legacyNumber() const
+{
+    return m_legacyNumber;
+}
+
 int Instrument::hadleType() const
 {
     return m_handleType;

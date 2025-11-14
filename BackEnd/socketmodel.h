@@ -84,6 +84,7 @@ public:
     QStringList instrumNames(int socketId, int modeIndex, bool isCoag) const;
     QStringList modeNamesIds(int socketID, bool isCoag) const;
     QStringList instrumNamesIds(int socketId, int modeIndex, bool isCoag) const;
+    QStringList instrumNamesNums(int socketId, int modeIndex, bool isCoag) const;
     int selectedInstrumIndexByMode(int socketId, int modeIndex, bool isCoag);
     int selectedInstrumIdByMode(int socketId, int modeIndex, bool isCoag);
 

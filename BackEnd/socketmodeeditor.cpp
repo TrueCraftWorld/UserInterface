@@ -20,6 +20,7 @@ void SocketModeEditor::initialize(int socket, int mode, bool isCoag)
     m_originalParameters =  m_model->modeParam(socket, mode, isCoag);
     m_instrList =           m_model->instrumNames(socket, mode, isCoag);
     m_instrListIds =        m_model->instrumNamesIds(socket, mode, isCoag);
+    m_instrListNums =       m_model->instrumNamesNums(socket, mode, isCoag);
 
     m_socketName = m_model->index(socket,0).data(SocketModel::SocketName).toString();
     m_originalModeIndex = mode;
@@ -42,6 +43,7 @@ void SocketModeEditor::loadModeParameters(int modeIndex)
     m_currentParameters = m_model->modeParam(m_socketID, (modeIndex), m_isCoag);
     m_instrList = m_model->instrumNames(m_socketID, modeIndex, m_isCoag);
     m_instrListIds = m_model->instrumNamesIds(m_socketID, modeIndex, m_isCoag);
+    m_instrListNums = m_model->instrumNamesNums(m_socketID, modeIndex, m_isCoag);
 
     emit parametersLoaded();
 
@@ -184,6 +186,11 @@ QStringList SocketModeEditor::modeNamesDescripts() const
 QStringList SocketModeEditor::instrListIds() const
 {
     return m_instrListIds;
+}
+
+QStringList SocketModeEditor::instrListNums() const
+{
+    return m_instrListNums;
 }
 
 QVariantMap SocketModeEditor::fetchModeParameters(int modeIndex)

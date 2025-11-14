@@ -9,7 +9,7 @@ DataBaseReader::DataBaseReader(const QString& pathToDb)
 {
     QSqlDatabase someDb = QSqlDatabase::addDatabase("QSQLITE", "etoBasa");
 
-    // qDebug() << "Исходный путь:" << pathToDb;
+    qDebug() << "Исходный путь:" << pathToDb;
 
     // Преобразуем относительный путь в абсолютный
     QFileInfo fileInfo(pathToDb);
@@ -18,25 +18,25 @@ DataBaseReader::DataBaseReader(const QString& pathToDb)
     if (fileInfo.isRelative()) {
         // Если путь относительный, используем папку с исполняемым файлом
         QString appDir = QCoreApplication::applicationDirPath();
-        // qDebug() << "Папка приложения:" << appDir;
+        qDebug() << "Папка приложения:" << appDir;
         absolutePath = appDir + "/" + pathToDb;
-        // qDebug() << "Относительный путь преобразован в абсолютный:" << absolutePath;
+        qDebug() << "Относительный путь преобразован в абсолютный:" << absolutePath;
     } else {
         absolutePath = fileInfo.absoluteFilePath();
-        // qDebug() << "Путь уже абсолютный:" << absolutePath;
+        qDebug() << "Путь уже абсолютный:" << absolutePath;
     }
 
     // Проверяем существование файла
     QFileInfo finalFileInfo(absolutePath);
     if (!finalFileInfo.exists()) {
         QString m_lastError = QString("Файл базы данных не найден: %1").arg(absolutePath);
-        // qWarning() << m_lastError;
+        qWarning() << m_lastError;
     }
     else {
-        // qDebug() << "Файл базы данных найден:" << absolutePath;
-        // qDebug() << "Размер файла:" << finalFileInfo.size() << "байт";
-        // qDebug() << "Права доступа:" << finalFileInfo.permissions();
-        // qDebug() << "Абсолютный путь:" << absolutePath;
+        qDebug() << "Файл базы данных найден:" << absolutePath;
+        qDebug() << "Размер файла:" << finalFileInfo.size() << "байт";
+        qDebug() << "Права доступа:" << finalFileInfo.permissions();
+        qDebug() << "Абсолютный путь:" << absolutePath;
     }
 
     someDb.setDatabaseName(pathToDb);
@@ -53,7 +53,7 @@ void DataBaseReader::slotSendQuery(const QString &queryStr, int valueNumbersAwai
     query.setForwardOnly(true);
 
     if (!query.exec()) {
-        // qDebug() << query.lastError().text();
+        qDebug() << query.lastError().text();
     }
 
     while (query.next()) {
@@ -91,7 +91,7 @@ QList<QVariantList> DataBaseReader::slotSendSelectQuery(const QStringList &table
     query.setForwardOnly(true);
 
     if (!query.exec()) {
-        // qDebug() << query.lastError().text() << tmp;
+        qDebug() << query.lastError().text() << tmp;
     }
 
     int colCount = columns.size();
@@ -110,7 +110,7 @@ bool DataBaseReader::executeUpdateQuery(const QString &queryStr)
 {
     QSqlDatabase db = QSqlDatabase::database("etoBasa");
     if (!db.open()) {
-        // qWarning() << "Failed to open database for update query";
+        qWarning() << "Failed to open database for update query";
         return false;
     }
 
@@ -118,8 +118,8 @@ bool DataBaseReader::executeUpdateQuery(const QString &queryStr)
     query.prepare(queryStr);
 
     if (!query.exec()) {
-        // qWarning() << "Update query failed:" << query.lastError().text();
-        // qWarning() << "Query was:" << queryStr;
+        qWarning() << "Update query failed:" << query.lastError().text();
+        qWarning() << "Query was:" << queryStr;
         return false;
     }
 

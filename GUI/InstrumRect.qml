@@ -60,7 +60,8 @@ Rectangle {
             width: 120
             height: 120
             fillMode: Image.PreserveAspectFit
-            source: "image://instrums/miniInstr" + (instrumId+1)
+            source: "image://instruments/minstr" + (instrumId+1)
+//            source: "image://instrum/miniInstr" + (instrumId+1)
             visible: (modeId != 1000)
             anchors {
                 top: parent.top

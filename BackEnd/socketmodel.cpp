@@ -378,6 +378,28 @@ QStringList SocketModel::instrumNamesIds(int socketId, int modeIndex, bool isCoa
     return names;
 }
 
+QStringList SocketModel::instrumNamesNums(int socketId, int modeIndex, bool isCoag) const
+{
+    if (m_itemsMap == nullptr)
+        return QStringList{};
+
+    auto iter = m_itemsMap->find(socketId);
+    if (iter == m_itemsMap->end() || iter->second.isNull())
+        return {};
+
+    SockPtr sock = iter->second;
+    CSurgModePtr mode = sock->getMode(modeIndex, isCoag);
+    const std::map<int, InstrInfo>& compatible = mode->InstrConstraints();
+
+    QStringList nums;
+    for (const auto&[key, item] : compatible) {
+        const auto instIter = m_instrumMap.find(item.id);
+        if (instIter != m_instrumMap.end())
+            nums.append(QString("%1").arg(instIter->second->legacyNumber()));
+    }
+    return nums;
+}
+
 int SocketModel::selectedInstrumIdByMode(int socketId, int modeIndex, bool isCoag)
 {
     if (socketId >= m_socketNames.size())

@@ -14,6 +14,8 @@ public:
 
     int id() const;
 
+    int legacyNumber() const;
+
     int hadleType() const;
 
     void setHandleType(int newHandleType);

@@ -114,6 +114,7 @@ public:
     Q_INVOKABLE QStringList modeNamesBriefs() const;
     Q_INVOKABLE QStringList modeNamesDescripts() const;
     Q_INVOKABLE QStringList instrListIds() const;
+    Q_INVOKABLE QStringList instrListNums() const;
     Q_INVOKABLE QVariantMap currentMode() const;
     Q_INVOKABLE QString socketName() const;
     Q_INVOKABLE int currentModeIndex() const;
@@ -162,6 +163,7 @@ private:
     QStringList m_modeNameIds;
     QStringList m_instrList;
     QStringList m_instrListIds;
+    QStringList m_instrListNums;
     QVariantMap m_currentParameters;
     QString m_socketName;
     int m_currentModeIndex = -1;

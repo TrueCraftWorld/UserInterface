@@ -113,23 +113,23 @@ Window {
       function onProgAddRequest(addType) {
       switch (addType) {
          case 0: {
-
+            recomHandle.copyCurrent()
+            break;
          }
 
-         break;
          case 1: {
             menuLoad.source = "ProgItemList.qml"
             menuLoad.shortcut = true
             menuLoad.item.loadClear = false
             leftDrawer.open()
+            break;
          }
 
-         break;
          case 2: {
-
+            recomHandle.addEmptyDefault()
+            break;
          }
 
-         break;
       }
       }
    }

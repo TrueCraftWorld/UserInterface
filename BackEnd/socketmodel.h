@@ -87,6 +87,8 @@ public:
     int selectedInstrumIndexByMode(int socketId, int modeIndex, bool isCoag);
     int selectedInstrumIdByMode(int socketId, int modeIndex, bool isCoag);
 
+    void copyCurrentList();
+
 public slots:
     void slotRemoveSubProg();
 

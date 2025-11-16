@@ -41,6 +41,16 @@ void ProgHandle::saveProg(int id, const QString &name)
     emit signalSave(id, name);
 }
 
+void ProgHandle::addEmptyDefault()
+{
+    emit signalAddEmptyDefault(false);
+}
+
+void ProgHandle::copyCurrent()
+{
+    emit signalCopyCurrent();
+}
+
 void ProgHandle::permitAll()
 {
     emit signalUnlockProg();

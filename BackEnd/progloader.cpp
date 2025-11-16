@@ -356,7 +356,7 @@ bool ProgLoader::readPreviousSocketSettings()
 //     m_socketModelPtr->removeSubProg(index);
 // }
 
-void ProgLoader::defaultSocketInit()
+void ProgLoader::defaultSocketInit(bool clear)
 {
     std::vector<std::map<int, SockPtr>> socketMapVector;
     std::vector<std::map<int, InstrPtr >> instrMapVector;
@@ -506,8 +506,11 @@ void ProgLoader::defaultSocketInit()
         }
         instrMapVector.push_back(getInstrums());
     }
-
-    m_socketModelPtr->loadProgs(socketMapVector, instrMapVector);
+    // if (clear) {
+        m_socketModelPtr->loadProgs(socketMapVector, instrMapVector, !clear);
+    // } else {
+        // m_socketModelPtr->
+    // }
 }
 
 void ProgLoader::programmLoadSocketInit(int progId, bool clear)

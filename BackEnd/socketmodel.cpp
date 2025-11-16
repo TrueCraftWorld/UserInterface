@@ -734,3 +734,14 @@ void SocketModel::addList(const std::map<int, SockPtr> &itemsMap,
     m_subProgCount = m_itemsMapVect.size();
     m_subProgIdx = m_subProgCount - 1;
 }
+
+void SocketModel::copyCurrentList()
+{
+    // beginResetModel();
+    std::map<int, SockPtr> itemsMap = m_itemsMapVect.at(m_subProgIdx);
+    std::map<int, InstrPtr> instrMap = m_instrMapVect.at(m_subProgIdx);
+    // addList(itemsMap, instrMap);
+    loadProgs({itemsMap}, {instrMap}, true);
+    // endResetModel();
+    // emit subProgCountChanged();
+}

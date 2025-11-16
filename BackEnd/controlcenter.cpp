@@ -2,11 +2,9 @@
 #include "socket.h"
 #include "proghandle.h"
 
-#include <algorithm>
-#include <cmath>
+// #include <algorithm>
+// #include <cmath>
 #include <map>
-// #include <vector>
-// #include <unordered_set>
 
 #include <QQmlEngine>
 #include <QString>
@@ -91,7 +89,9 @@ void ControlCenter::makeHandleConnections()
             m_progLoader, &ProgLoader::programmLoadSocketInit);
     
     connect(m_handle, &ProgHandle::signalLoadEmpty, 
-            m_progLoader, &ProgLoader::defaultSocketInit);
+            this, [this] () {
+            m_progLoader->defaultSocketInit(true);
+    });
     
     // Автосохранение при успешном изменении режима
     connect(m_editor, &SocketModeEditor::editingFinished, 
@@ -105,6 +105,15 @@ void ControlCenter::makeHandleConnections()
             this, [this] (int id) {
         m_handle->setProgList(m_progLoader->getListOfPrograms(id));
     });
+
+    //     void signalCopyCurrent();
+
+    // void signalAddEmptyDefault(bool clearLoad);
+    connect(m_handle, &ProgHandle::signalAddEmptyDefault,
+            m_progLoader, &ProgLoader::defaultSocketInit);
+
+    connect(m_handle, &ProgHandle::signalCopyCurrent,
+            m_socketModel.data(), &SocketModel::copyCurrentList);
 }
 
 QPointer<SocketModeEditor> ControlCenter::editor() const

@@ -26,7 +26,7 @@ signals:
 public:
 
 	bool readPreviousSocketSettings();
-	void defaultSocketInit();
+	void defaultSocketInit(bool clear = true);
 	// void removeSubProg(int index);
 	/**
 	 * @brief ControlCenter::programmLoadSocketInit
@@ -67,6 +67,8 @@ public:
 	std::map<int, std::map<int, InstrInfo>> getConstarints(const QList<int> &idList);
 
 	void setSocketModelPtr(QSharedPointer<SocketModel> newSocketModelPtr);
+
+
 
 private:
 	std::map<int, InstrPtr> getInstrums();

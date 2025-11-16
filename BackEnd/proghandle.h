@@ -26,6 +26,8 @@ public:
     Q_INVOKABLE void loadEmptyProg();
     Q_INVOKABLE void permitAll();
     Q_INVOKABLE void saveProg(int id, const QString& name);
+    Q_INVOKABLE void addEmptyDefault();
+    Q_INVOKABLE void copyCurrent();
 
     QStringList scopeNameList() const;
     QStringList progNameList() const;
@@ -40,6 +42,13 @@ public:
     void setScopeNameList(QMap<int, QString> scopes);
 
 signals:
+    //все этим методы и сигналы нужны т.к. возможно хочется сделать модель ридонли внутри qml
+    // а редачить только через хендлеры для разграничения доступа
+
+    void signalCopyCurrent();
+
+    void signalAddEmptyDefault(bool clearLoad = true);
+
     void signalLoadRecommend(int scopeIdx, int progIdx, int subProgIdx);
 
     void signalRecomProgChosen(int progId, bool clear);

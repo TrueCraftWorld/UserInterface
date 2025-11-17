@@ -95,7 +95,9 @@ class SocketModeEditor : public QObject
     Q_PROPERTY(int highPowerBound READ highPowerBound NOTIFY currentInstrChanged)
     Q_PROPERTY(QString modeBrief READ modeBrief NOTIFY currentModeIndexChanged)
     Q_PROPERTY(QString modeDescript READ modeDescript NOTIFY currentModeIndexChanged)
+    Q_PROPERTY(QString instrBrief READ instrBrief NOTIFY currentInstrChanged)
     Q_PROPERTY(bool isCoag READ isCoag NOTIFY parametersLoaded)
+    Q_PROPERTY(bool isEndo READ isEndo NOTIFY currentModeIndexChanged)
 
 public:
     explicit SocketModeEditor(SocketModel * model, QObject *parent = nullptr);
@@ -141,6 +143,10 @@ public:
     const QString modeDescript() const;
 
     const QString modeBrief() const;
+
+    const QString instrBrief() const;
+
+    bool isEndo() const;
 
 signals:
     void currentParamsChanged();

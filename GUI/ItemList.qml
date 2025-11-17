@@ -18,14 +18,12 @@ Rectangle {
     function scrollUp() {
         if (theView.currentIndex > 3) {
             theView.currentIndex -= 3
-            theView.positionViewAtIndex(curIndex, ListView.Center)
         }
     }
     
     function scrollDown() {
         if (theView.currentIndex < theView.count - 3) {
             theView.currentIndex += 2
-            theView.positionViewAtIndex(curIndex, ListView.Center)
         }
     }
     ColumnLayout {
@@ -149,8 +147,7 @@ Rectangle {
                 MouseArea {
                     anchors.fill: parent
                     onClicked: {
-                        // itemList.selectedIndex = index
-                        // theView.currentIndex = index
+                        theView.currentIndex = index
                         itemList.newIndexSelected(index)
                     }
                 }

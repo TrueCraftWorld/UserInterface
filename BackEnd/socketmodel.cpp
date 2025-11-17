@@ -129,6 +129,17 @@ QVariant SocketModel::data(const QModelIndex &index, int role) const
             return -1;
         return socketItem.curCoagMode()->selectedInstrId();
 
+    case CoagModeInstrNum:
+    {
+        if (socketItem.curCoagMode().isNull())
+            return -1;
+        int instrId = socketItem.curCoagMode()->selectedInstrId();
+        auto iter = m_instrumMap.find(instrId);
+        if (iter != m_instrumMap.end())
+            return iter->second->legacyNumber();
+        return -1;
+    }
+
     case CoagModeInstrImage:
         return QVariant();
         //тут можно возращеть строку с именем или даже целиком с нужным ImageProvider
@@ -183,6 +194,16 @@ QVariant SocketModel::data(const QModelIndex &index, int role) const
         if (socketItem.curCutMode().isNull())
             return -1;
         return socketItem.curCutMode()->selectedInstrId();
+    case CutModeInstrNum:
+    {
+        if (socketItem.curCutMode().isNull())
+            return -1;
+        int instrId = socketItem.curCutMode()->selectedInstrId();
+        auto iter = m_instrumMap.find(instrId);
+        if (iter != m_instrumMap.end())
+            return iter->second->legacyNumber();
+        return -1;
+    }
     case CutModeInstrImage:
         return QVariant();
     case CutModeInstrIndex:
@@ -421,6 +442,14 @@ int SocketModel::selectedInstrumIdByMode(int socketId, int modeIndex, bool isCoa
     return ptr->selectedInstrId();
 }
 
+InstrPtr SocketModel::getInstrumentById(int id) const
+{
+    auto iter = m_instrumMap.find(id);
+    if (iter != m_instrumMap.end())
+        return iter->second;
+    return nullptr;
+}
+
 void SocketModel::stopActivation()
 {
     if (m_itemsMap == nullptr)
@@ -477,6 +506,7 @@ bool SocketModel::commitModeChange(int socketId, int modeIndex, const QVariantMa
             roles.append(CoagModeInstrID);
             roles.append(CoagModeInstrIndex);
             roles.append(CoagModeInstrName);
+            roles.append(CoagModeInstrNum);
             roles.append(CoagModeMaxPower);
             roles.append(CoagModePower);
             roles.append(CoagModeIsEndo);
@@ -509,6 +539,7 @@ bool SocketModel::commitModeChange(int socketId, int modeIndex, const QVariantMa
             roles.append(CoagModeInstrName);
             roles.append(CoagModeInstrIndex);
             roles.append(CoagModeInstrID);
+            roles.append(CoagModeInstrNum);
             res = true;
         }
         if (res)
@@ -524,6 +555,7 @@ bool SocketModel::commitModeChange(int socketId, int modeIndex, const QVariantMa
             roles.append(CutModeInstrID);
             roles.append(CutModeInstrIndex);
             roles.append(CutModeInstrName);
+            roles.append(CutModeInstrNum);
             roles.append(CutModeMaxPower);
             roles.append(CutModePower);
             roles.append(CutModeIsEndo);
@@ -554,6 +586,7 @@ bool SocketModel::commitModeChange(int socketId, int modeIndex, const QVariantMa
             roles.append(CutModeInstrName);
             roles.append(CutModeInstrIndex);
             roles.append(CutModeInstrID);
+            roles.append(CutModeInstrNum);
             res = true;
         }
         if (res)

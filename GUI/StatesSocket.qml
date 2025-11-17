@@ -13,7 +13,7 @@ Rectangle {
     property int cutModePower
     property int cutModeId
     property int cutMaxPower
-    property int cutInstrumId
+    property int cutInstrumNum
     property string cutInstrumName: qsTr("не выбран")
     property bool cutIsEndo: false
 
@@ -21,7 +21,7 @@ Rectangle {
     property int coagModePower
     property int coagModeId
     property int coagMaxPower
-    property int coagInstrumId
+    property int coagInstrumNum
     property string coagInstrumName: qsTr("не выбран")
     property bool coagIsEndo: false
 
@@ -72,7 +72,7 @@ Rectangle {
         modePower:  socketRoot.cutModePower
         modeId:     socketRoot.cutModeId
         maxPower:   socketRoot.cutMaxPower
-        instrumId:  socketRoot.cutInstrumId
+        instrumNum: socketRoot.cutInstrumNum
         instrumName:socketRoot.cutInstrumName
         isEndo:     socketRoot.cutIsEndo
 
@@ -97,7 +97,7 @@ Rectangle {
         modePower:  socketRoot.coagModePower
         modeId:     socketRoot.coagModeId
         maxPower:   socketRoot.coagMaxPower
-        instrumId:  socketRoot.coagInstrumId
+        instrumNum: socketRoot.coagInstrumNum
         instrumName:socketRoot.coagInstrumName
         isEndo:     socketRoot.coagIsEndo
 

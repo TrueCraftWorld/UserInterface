@@ -32,6 +32,7 @@ void SocketModeEditor::initialize(int socket, int mode, bool isCoag)
                                                                : SocketModel::CutModeInstrIndex).toInt());
 
     m_hasChanges = false;
+    emit currentModeIndexChanged();  // Уведомляем об изменении режима (включая isEndo)
     emit parametersLoaded();
     emit currentParamsChanged();
 }
@@ -302,4 +303,31 @@ const QString SocketModeEditor::modeDescript() const
 const QString SocketModeEditor::modeBrief() const
 {
     return m_currentParameters.value("modebrief").toString();
+}
+
+const QString SocketModeEditor::instrBrief() const
+{
+    // Получаем ID инструмента из текущего режима
+    CSurgModePtr mode = m_model->socketById(m_socketID)->getMode(m_currentModeIndex, m_isCoag);
+    if (mode.isNull())
+        return QString();
+    
+    std::optional<InstrInfo> info = mode->getConstraints(m_currentInstrIndex);
+    if (info == std::nullopt)
+        return QString();
+    
+    // Получаем инструмент по ID
+    InstrPtr instr = m_model->getInstrumentById(info->id);
+    if (instr.isNull())
+        return QString();
+    
+    return instr->description();
+}
+
+bool SocketModeEditor::isEndo() const
+{
+    CSurgModePtr mode = m_model->socketById(m_socketID)->getMode(m_currentModeIndex, m_isCoag);
+    if (mode.isNull())
+        return false;
+    return mode->isEndo();
 }

@@ -8,8 +8,8 @@ Rectangle {
     property int cutModePower
     property int coagModePower
     property int socketId
-    property int cutInstrumId
-    property int coagInstrumId
+    property int cutInstrumNum
+    property int coagInstrumNum
     property string cutInstrumName: qsTr("не выбран")
     property string coagInstrumName: qsTr("не выбран")
     property int socketDispMode: 3
@@ -70,7 +70,7 @@ Rectangle {
             id: cutInstrImage
             // anchors.centerIn: parent
             asynchronous: true
-            source: "image://instrums/" + (cutInstrumId+1)
+            source: "image://instrums/" + cutInstrumNum
             fillMode: Image.PreserveAspectFit
             anchors {
                 left: parent.left
@@ -145,7 +145,7 @@ Rectangle {
             id: coagInstrImage
             // anchors.centerIn: parent
             asynchronous: true
-            source: "image://instrums/" + ("Cut_" + (coagInstrumId+1))
+            source: "image://instrums/" + ("Cut_" + coagInstrumNum)
             fillMode: Image.PreserveAspectFit
             anchors {
                 left: parent.left

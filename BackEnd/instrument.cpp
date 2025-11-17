@@ -47,3 +47,8 @@ bool Instrument::isMono() const
 {
     return m_isMono;
 }
+
+QString Instrument::description() const
+{
+    return m_description;
+}

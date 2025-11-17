@@ -5,6 +5,7 @@ Button {
     property color borderColor: "transparent"
     property int power
     property bool selected: false
+    property bool isEndo: false
     signal powerChosen(int pwr)
     id: but
     visible: (power != 0)
@@ -12,18 +13,57 @@ Button {
         radius: 8
         border.width: 2
         border.color: borderColor
-        color: selected ? borderColor : "black"
+        color: selected ? borderColor : "transparent"
     }
     Label {
         id:powerText
         text: power
+        visible: !isEndo
         anchors.fill: parent
 
         horizontalAlignment: Qt.AlignHCenter
         verticalAlignment: Qt.AlignVCenter
 
         font.bold: true
-        font.pixelSize: 34
+        font.pixelSize: 48
+        color: selected ? "black" : "white"
     }
+    Row {
+        id: endoRow
+        visible: isEndo
+        anchors.horizontalCenter: parent.horizontalCenter
+        anchors.verticalCenter: parent.verticalCenter
+        spacing: 10
+
+        Text {
+            text: qsTr("эф.рез.")
+            horizontalAlignment: Qt.AlignHCenter
+            verticalAlignment: Qt.AlignVCenter
+            font.pixelSize: 26
+            color: selected ? "black" : "white"
+        }
+        Text {
+            text: Math.floor(power / 10)
+            horizontalAlignment: Qt.AlignHCenter
+            verticalAlignment: Qt.AlignVCenter
+            font.pixelSize: 48
+            color: selected ? "black" : "white"
+        }
+        Text {
+            text: qsTr("эф.коаг.")
+            horizontalAlignment: Qt.AlignHCenter
+            verticalAlignment: Qt.AlignVCenter
+            font.pixelSize: 26
+            color: selected ? "black" : "white"
+        }
+        Text {
+            text: (power % 10)
+            horizontalAlignment: Qt.AlignHCenter
+            verticalAlignment: Qt.AlignVCenter
+            font.pixelSize: 48
+            color: selected ? "black" : "white"
+        }
+    }
+
     onClicked: but.powerChosen(power)
 }

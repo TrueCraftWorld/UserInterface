@@ -77,13 +77,13 @@ Repeater {
         socketId: index
         socketState: model.socketstatus
 
-        cutInstrumId:      model.cutmodeinstrid
+        cutInstrumNum:     model.cutmodeinstrnum
         cutMaxPower:       model.cutmodemaxpower
         cutModeId:         model.cutmodeid
         cutModeName:       model.cutmodename
         cutInstrumName:    model.cutmodeinstrname
 
-        coagInstrumId:     model.coagmodeinstrid
+        coagInstrumNum:    model.coagmodeinstrnum
         coagMaxPower:      model.coagmodemaxpower
         coagModeId:        model.coagmodeid
         coagModeName:      model.coagmodename

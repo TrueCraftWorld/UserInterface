@@ -22,6 +22,8 @@ public:
 
     bool isMono() const;
 
+    QString description() const;
+
 private:
     QString m_coagImagePath;
     QString m_cutImagePath;

@@ -39,6 +39,7 @@ public:
         CoagModeInstrImage,
         CoagModeInstrIndex,
         CoagModeInstrID,
+        CoagModeInstrNum,
         CoagModeIsEndo,
         CutModeIndex,
         CutModeId,
@@ -53,6 +54,7 @@ public:
         CutModeInstrImage,
         CutModeInstrIndex,
         CutModeInstrID,
+        CutModeInstrNum,
         CutModeIsEndo,
         CutModesNames,
         CoagModesNames,
@@ -87,6 +89,7 @@ public:
     QStringList instrumNamesNums(int socketId, int modeIndex, bool isCoag) const;
     int selectedInstrumIndexByMode(int socketId, int modeIndex, bool isCoag);
     int selectedInstrumIdByMode(int socketId, int modeIndex, bool isCoag);
+    InstrPtr getInstrumentById(int id) const;
 
 public:
     void stopActivation();

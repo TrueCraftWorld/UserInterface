@@ -1,4 +1,5 @@
 #include "socketmodeeditor.h"
+// #include "instrument.h"
 
 #include <optional>
 #include <QDebug>
@@ -315,7 +316,7 @@ const QString SocketModeEditor::instrBrief() const
     std::optional<InstrInfo> info = mode->getConstraints(m_currentInstrIndex);
     if (info == std::nullopt)
         return QString();
-    
+    // mode->
     // Получаем инструмент по ID
     InstrPtr instr = m_model->getInstrumentById(info->id);
     if (instr.isNull())

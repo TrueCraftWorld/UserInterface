@@ -70,8 +70,7 @@ public:
     virtual QVariant data(const QModelIndex &index, int role) const override;
     virtual bool setData(const QModelIndex &index, const QVariant &value, int role) override;
     Q_INVOKABLE QVariantMap modeParam(int socketId, int modeIndeex, bool isCoag) const;
-    // Q_INVOKABLE void expandSocket(int row);
-    // Q_INVOKABLE void collapseSocket(int row);
+
 
     Q_INVOKABLE void qmlSetData(int row, const QVariant &value, const QString& roleName);
 
@@ -79,6 +78,7 @@ public:
      * @brief Это какой-то костыль по дерганью состояний сокетов после ресета модели
      */
     Q_INVOKABLE void recalcCollapsed();
+
 
     // Q_INVOKABLE void setModePower(int socketId, int pwr, bool isCoag);
 
@@ -89,7 +89,14 @@ public:
     QStringList instrumNamesNums(int socketId, int modeIndex, bool isCoag) const;
     int selectedInstrumIndexByMode(int socketId, int modeIndex, bool isCoag);
     int selectedInstrumIdByMode(int socketId, int modeIndex, bool isCoag);
+
     InstrPtr getInstrumentById(int id) const;
+
+
+    void copyCurrentList();
+
+public slots:
+    void slotRemoveSubProg();
 
 public:
     void stopActivation();
@@ -97,39 +104,59 @@ public:
     SockPtr socketByName(const QString& socket) const;
     SockPtr socketById(int id) const;
     void expandSocket(int socketId);
-    std::map<int, SockPtr>* itemsMap() const { return m_itemsMap; }
-    void setItemsMap(const std::map<int, SockPtr > &newItemsMap, bool add = false);
-    void setItemsMapVector(const std::vector<std::map<int, SockPtr >> &newItemsMapVector, bool add =false);
-    void setInstrumMap(const std::map<int, QSharedPointer<Instrument> > &newInstrumMap, bool clear = true);
-    void removeSubProg(int index);
+
+    std::map<int, SockPtr>* itemsMap() const { return m_itemsMapPtr; }
+    std::map<int, InstrPtr>* instrMap() const { return m_instrMapPtr; }
+
+
+
+    void loadProgs( const std::vector<std::map<int, SockPtr >> &itemsMapVect,
+                    const std::vector<std::map<int, InstrPtr >> &instrMapVect,
+                    bool add = false);
 
 signals:
-    void signalSocketDataChanged(int socketId, quint16 cutModeNum, quint16 coagModeNum, 
-                                quint16 cutModePower, quint16 coagModePower, quint8 pedal);
     void subProgIdxChanged();
     void subProgCountChanged();
 
+//методы
 private:
+    void removeSubProg(int index);
+    void addList(const std::map<int, SockPtr > &itemsMap,
+                 const std::map<int, InstrPtr > &newInstrumMap);
+
     virtual QHash<int, QByteArray> roleNames() const override final;
     int subProgIdx() const;
-    void setSubProgIdx(int newIndex);
-
     int subProgCount() const;
-    
-    std::map<int, SockPtr>* m_itemsMap = nullptr;
+
+    void setSubProgIdx(int newIndex);
+    int roleIntByName(const QString& name);
+
+    void socketCollapser(int expandedSocket);
+    /**
+     * @brief pedalRemover удалятор педалей из сокетов
+     * @param socketToSkip - айди сокета, который не участвует в удалении ( в него мы педаль добавили)
+     * @param pedalToRemove - айди педали, которую удаляем
+     */
+    void pedalRemover(int socketToSkip, int pedalToRemove);
+
+    /**
+     * @brief populateRoles - метамагическая запонялка имён ролей по именам енума ролей
+     */
+    void populateRoles();
+
+//поля
+private:
+    std::map<int, SockPtr>* m_itemsMapPtr = nullptr;
     std::vector<std::map<int, SockPtr >> m_itemsMapVect;
+
+    std::map<int, InstrPtr>* m_instrMapPtr = nullptr;
+    std::vector<std::map<int, InstrPtr >> m_instrMapVect;
+
     int m_subProgIdx = 0;
     int activeSocket = -1;
-    std::map<int, QSharedPointer<Instrument>> m_instrumMap;
+
     QStringList m_socketNames;
-
-    int roleIntByName(const QString& name);
-    void socketCollapser(int expandedSocket);
-    void pedalRemover(int socketToSkip, int pedalToRemove);
-    void emitSocketDataChanged(int socketId);
-
     QHash<int, QByteArray> m_roles;
-    void populateRoles();
     int m_subProgCount;
 };
 

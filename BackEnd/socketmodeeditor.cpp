@@ -34,7 +34,7 @@ void SocketModeEditor::initialize(int socket, int mode, bool isCoag)
                                                                : SocketModel::CutModeInstrIndex).toInt());
 
     m_hasChanges = false;
-    emit currentModeIndexChanged();  // Уведомляем об изменении режима (включая isEndo)
+    // emit currentModeIndexChanged();  // Уведомляем об изменении режима (включая isEndo)
     emit parametersLoaded();
     emit currentParamsChanged();
 }

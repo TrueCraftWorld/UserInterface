@@ -14,6 +14,7 @@ HEADERS += \
     $$PWD/loggingcategories.h \
     $$PWD/pedal.h \
     $$PWD/proghandle.h \
+    $$PWD/progloader.h \
     $$PWD/socket.h \
     $$PWD/socketmodeeditor.h \
     $$PWD/socketmodel.h \
@@ -32,6 +33,7 @@ SOURCES += \
     $$PWD/loggingcategories.cpp \
     $$PWD/pedal.cpp \
     $$PWD/proghandle.cpp \
+    $$PWD/progloader.cpp \
     $$PWD/socket.cpp \
     $$PWD/socketmodeeditor.cpp \
     $$PWD/socketmodel.cpp \

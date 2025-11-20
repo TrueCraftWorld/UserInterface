@@ -30,13 +30,14 @@ public:
                         };
 
     /*! Перечисление возможных состояний сокета */
-    enum SocStatus {S_OFF, /*!< ОТКЛЮЧЕН */
+    enum SocStatus  {S_OFF = 0, /*!< ОТКЛЮЧЕН */
                     S_DISABLED, /*!< Выключен, активация запрещена */
                     S_ENABLED, /*!< Включен, активация разрешена */
-                    S_ACTIVE_COAG, /*!< Активирован, коагуляция */
-                    S_ACTIVE_CUT, /*!< Активирован, резание */
+                    S_ACTIVE_COAG, /*!< Активирован, коагуляция 3*/
+                    S_ACTIVE_CUT, /*!< Активирован, резание 4*/
                     S_ERROR /*!< Ошибка, активация запрещена */
-                        }; 
+                        };
+    // Q_ENUM(SocStatus);
 
     /*! Перечисление возможных отображений сокета */
     enum SocDisplayMode : int {   S_COLLAPSED = 0, /*!< свёрнут  */
@@ -235,16 +236,18 @@ public:
     void setAllowed(bool allow);
 
     int displayMode() const;
-    void setDisplayMode(SocDisplayMode newDisplayMode);
+    bool setDisplayMode(SocDisplayMode newDisplayMode);
 
     int pedal() const;
-    void setPedal(int);
+    bool setPedal(int);
+
+    QList<int> allowedPedals() const;
 
 private:
     HalfSockPtr m_cutHalf = nullptr;
     HalfSockPtr m_coagHalf = nullptr;
 
-    // CSurgModePtr getMode(const QString& name, bool isCoag) const;
+    QList<int> m_allowedPedals = {};
 
     bool setModePower(int newPower, bool isCoag);
     bool setModeIndex(int index, bool isCoag);
@@ -257,6 +260,6 @@ private:
     QString m_socketName;
 };
 
-using SockPtr=QSharedPointer<SOCKET>;
+using SockPtr = QSharedPointer<SOCKET>;
 
 #endif // SOCKET_H

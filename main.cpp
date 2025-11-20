@@ -60,7 +60,11 @@ int main(int argc, char *argv[])
     engine.rootContext()->setContextProperty("theModel", ctrl->getSocketModel());
     engine.rootContext()->setContextProperty("Editor", ctrl->editor());
     engine.rootContext()->setContextProperty("recomHandle", ctrl->getHandle());
-    engine.rootContext()->setContextProperty("control", ctrl.data());
+
+    ///TODO remove direct god-object access
+    // engine.rootContext()->setContextProperty("control", ctrl.data());
+
+
     engine.addImageProvider(QLatin1String("instrums"), new InstrImageProvider);
 
     const QUrl url(QStringLiteral("qrc:/main.qml"));

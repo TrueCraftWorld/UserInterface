@@ -9,7 +9,7 @@ Rectangle {
     // property alias innerModel: repeatRoot.model
     signal clickedButton(int idx)
     signal returnButtonPressed()
-    color: "black"
+    color: "transparent"
 
     property var itemIdArr: []
     property var itemNameArr: []
@@ -68,6 +68,13 @@ Rectangle {
         recomHandle.scopeIdx = 0
     }
 
+    GradientBack {
+        anchors.fill: parent
+        startColor: "darkblue"
+        stopColor: "darkcyan"
+        beamColor: "rgba(80, 120, 255, 0.6)"
+    }
+
     Rectangle {
         id: headerRect
         height: 60
@@ -88,6 +95,7 @@ Rectangle {
 
     Rectangle {
         id: scopeRect
+        color: "transparent"
         width: parent.width * 0.42
         anchors {
             left: parent.left
@@ -105,6 +113,7 @@ Rectangle {
     }
     Rectangle {
         id: progRect
+        color: "transparent"
         anchors {
             left: border.right
             top: headerRect.bottom
@@ -117,7 +126,6 @@ Rectangle {
             anchors.fill: parent
             id: progList
             noImage: true
-            // imageSourceTemplate: "image://instrums/%1"
         }
     }
     Rectangle {

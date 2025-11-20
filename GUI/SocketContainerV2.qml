@@ -8,18 +8,17 @@ Rectangle {
     property var innerModel
     color: "gray"
     
-    signal socketPositionChanged(int socketId, int x, int y, int width, int height)
     ColumnLayout {
         id: layout
         anchors.fill: parent
         anchors.topMargin: 10
         anchors.bottomMargin: 0
-        anchors.leftMargin: 10
-        anchors.rightMargin: 10
+        anchors.leftMargin: 5
+        anchors.rightMargin: 5
         spacing: 10
         Rectangle {
             id: progPage
-            height: 20
+            height: 30
             Layout.fillWidth: true
             color: "transparent"
             RowLayout {
@@ -30,8 +29,8 @@ Rectangle {
                 Repeater {
                     model: theModel.subProgCount
                     delegate: Rectangle {
-                        height: 18
-                        width: 36
+                        height: 27
+                        width: 40
                         color: index === theModel.subProgIdx ? "white" : "black"
                         border.color: "white"
                         border.width: 1
@@ -51,14 +50,15 @@ Rectangle {
                     }
                 }
                 Rectangle {
-                    height: 18
-                    width: 36
+                    id: progAddSign
+                    height: 27
+                    width: 40
                     color: "black"
                     border.color: "white"
                     border.width: 1
                     radius: 6
-
                     visible: theModel.subProgCount < 5 ? true : false
+
                     Text {
                         text: "+"
                         horizontalAlignment: Qt.AlignHCenter
@@ -68,23 +68,36 @@ Rectangle {
                     }
                     MouseArea {
                         anchors.fill: parent
-
                         onClicked: progSelector.open()
                     }
                 }
                 Item {
                     Layout.fillWidth: true
                 }
-            }
-            ProgAdditionPop {
-                id: progSelector
-                width: socketContainer.width
-                height: 200
-                x: repeat.x
-                y: repeat.y
+                Rectangle {
+                    id: progDeleteSign
+                    height: 27
+                    width: 40*5
+                    color: "black"
+                    border.color: "red"
+                    border.width: 1
+                    radius: 6
+                    visible: theModel.subProgCount < 5 ? true : false
+
+                    Text {
+                        text: qsTr("удалить")
+                        horizontalAlignment: Qt.AlignHCenter
+                        verticalAlignment: Qt.AlignVCenter
+                        anchors.fill: parent
+                        color: "white"
+                    }
+                    MouseArea {
+                        anchors.fill: parent
+                        onClicked: recomHandle.removeSubProg()
+                    }
+                }
             }
         }
-
         SocketRepeater {
             id: repeat
             model: innerModel
@@ -102,6 +115,17 @@ Rectangle {
     }
     ModeEditor {
         id: modeDialog
+    }
+    ProgAdditionPop {
+        id: progSelector
+        width: socketContainer.width
+        height: socketContainer.height/3
+
+        // width: 900
+        // anchors.centerIn: parent
+        y: 0
+        modal: true
+    // y: - socketContainer.height/2
     }
 
     Connections {
@@ -123,9 +147,6 @@ Rectangle {
             modeDialog.modeIndex = mod
             modeDialog.isCoag = iscoag
             modeDialog.open()
-        }
-        function onSocketPositionChanged(socketId, x, y, width, height) {
-            socketContainer.socketPositionChanged(socketId, x, y, width, height)
         }
     }
 }

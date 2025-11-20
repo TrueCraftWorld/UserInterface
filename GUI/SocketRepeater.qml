@@ -7,7 +7,7 @@ import BackEnd 1.0
 
 
 Repeater {
-// ListView {
+
     id: repeatRoot
 
     required property int containerMargins
@@ -18,7 +18,7 @@ Repeater {
 
     signal modeDialogRequest(int socketId, int modeIndex, bool isCoag)
     signal instrumDialogRequest(int socketId, int modeIndex, bool isCoag)
-    signal socketPositionChanged(int socketId, int x, int y, int width, int height)
+    // signal socketPositionChanged(int socketId, int x, int y, int width, int height)
 
     function calculateExpandedHeight() {
         var totalFixedHeight = 0
@@ -27,7 +27,6 @@ Repeater {
         for (var i = 0; i < count; i++) {
             if (!(itemAt(i) instanceof StatesSocket)) {
                 console.log("oops")
-                // console.log("Object type:", getObjectType(itemAt(i)));
                 continue
             }
             if (itemAt(i).state === "expanded") {
@@ -50,7 +49,6 @@ Repeater {
         // console.log(count, "col")
         for (var i = 0; i < count; i++) {
             if (!(itemAt(i) instanceof StatesSocket)) {
-                // console.log("Object type:", getObjectType(itemAt(i)));
                 continue
             }
             if (itemAt(i).state === "expanded") {
@@ -73,23 +71,25 @@ Repeater {
         Layout.preferredHeight: state === "expanded" ?
                                     repeatRoot.calculateExpandedHeight() :
                                     repeatRoot.calculateCollapsedHeight()
+
         state: model.socketdisplaymode
         title: model.socketname
         socketId: index
+        socketState: model.socketstatus
 
-        cutInstrumId:      model.cutmodeinstrid
+        cutInstrumNum:     model.cutmodeinstrnum
         cutMaxPower:       model.cutmodemaxpower
         cutModeId:         model.cutmodeid
         cutModeName:       model.cutmodename
         cutInstrumName:    model.cutmodeinstrname
 
-        coagInstrumId:     model.coagmodeinstrid
+        coagInstrumNum:    model.coagmodeinstrnum
         coagMaxPower:      model.coagmodemaxpower
         coagModeId:        model.coagmodeid
         coagModeName:      model.coagmodename
         coagInstrumName:   model.coagmodeinstrname
+
         coagIsEndo:        model.coagmodeisendo
-        
         cutIsEndo:         model.cutmodeisendo
 
         // Прямой биндинг с защитой от циклов через проверку в onNewPower
@@ -110,50 +110,46 @@ Repeater {
 
         Connections {
             target: delegateSoc
-            function onAbsolutePositionChanged(socketid, absoluteY) {
-                // Эмитируем сигнал с полной информацией о позиции сокета
-                if (delegateSoc && delegateSoc.visible) {
-                    try {
-                        var absPos = delegateSoc.mapToItem(null, 0, 0)
-                        repeatRoot.socketPositionChanged(socketid, absPos.x, absPos.y, delegateSoc.width, delegateSoc.height)
-                    } catch (e) {
-                        // Игнорируем ошибки при инициализации
-                        // console.log("Error getting socket position:", socketid, e)
-                    }
-                }
-            }
             function onInstrumEditDialogRequest(socketid, iscoag) {
 
                 repeatRoot.instrumDialogRequest(socketid,
                                                 iscoag ? model.coagmodeindex : model.cutmodeindex,
                                                 iscoag)
             }
+
             function onModeEditDialogRequest(socketid, iscoag) {
                 repeatRoot.modeDialogRequest(socketid,
                                             iscoag ? model.coagmodeindex : model.cutmodeindex,
                                             iscoag)
             }
+
             function onNewPower(socketid, pwr, iscoag) {
-                var currentPower = iscoag ? model.coagmodepower : model.cutmodepower
-                var pwrInt = parseInt(pwr)
-                var currentPowerInt = parseInt(currentPower)
-                
+                //current power это всегда инт, модель их отдаёт интами
+                // var currentPower = iscoag ? model.coagmodepower : model.cutmodepower
+                var currentPowerInt = iscoag ? model.coagmodepower : model.cutmodepower
+                //если мы не ошиблись нигде, то передаём в сигнал инт,
+                //да и записываться будет только инт поэтому, пусть лучше ничего не запишеться если мы флоат отдали
+                // var pwrInt = parseInt(pwr)
+                var pwrInt = (pwr)
+                // var currentPowerInt = parseInt(currentPower)
+                //не нужна нам здесь строгая проверка - во первых в сокет не встанет больше допустимого в плюсах
+                //во-вторых у нас слайдер ограничен только валидными значениями, третий уровнь проверок - перебор
                 // Строгая проверка: значение действительно изменилось и валидно
-                if (currentPowerInt !== pwrInt && 
-                    pwrInt >= 1 && 
-                    pwrInt <= (iscoag ? model.coagmodemaxpower : model.cutmodemaxpower)) {
+                if (currentPowerInt !== pwrInt) {
                     
                     theModel.qmlSetData(index,
                                         pwrInt,
-                                        (iscoag ? "coagmodepower" : "cutmodepower"))
-                    
+                                        (iscoag ? "coagmodepower" : "cutmodepower"))   
                     // Запускаем отложенное сохранение (через 2 секунды)
+                    ///TODO: это должно в плюсах отрабатывать
                     control.scheduleSave()
                 }
             }
+
             function onSocketCollapseRequest() {
                 theModel.qmlSetData(index, 0, "socketdisplaymode")
             }
+
             function onSocketExpandRequest() {
                 theModel.qmlSetData(index, 1, "socketdisplaymode")
             }

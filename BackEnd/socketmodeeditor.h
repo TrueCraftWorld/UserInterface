@@ -95,7 +95,9 @@ class SocketModeEditor : public QObject
     Q_PROPERTY(int highPowerBound READ highPowerBound NOTIFY currentInstrChanged)
     Q_PROPERTY(QString modeBrief READ modeBrief NOTIFY currentModeIndexChanged)
     Q_PROPERTY(QString modeDescript READ modeDescript NOTIFY currentModeIndexChanged)
+    Q_PROPERTY(QString instrBrief READ instrBrief NOTIFY currentInstrChanged)
     Q_PROPERTY(bool isCoag READ isCoag NOTIFY parametersLoaded)
+    Q_PROPERTY(bool isEndo READ isEndo NOTIFY currentModeIndexChanged)
 
 public:
     explicit SocketModeEditor(QSharedPointer<SocketModel> model, QObject *parent = nullptr);
@@ -114,6 +116,7 @@ public:
     Q_INVOKABLE QStringList modeNamesBriefs() const;
     Q_INVOKABLE QStringList modeNamesDescripts() const;
     Q_INVOKABLE QStringList instrListIds() const;
+    Q_INVOKABLE QStringList instrListNums() const;
     Q_INVOKABLE QVariantMap currentMode() const;
     Q_INVOKABLE QString socketName() const;
     Q_INVOKABLE int currentModeIndex() const;
@@ -141,6 +144,10 @@ public:
 
     const QString modeBrief() const;
 
+    const QString instrBrief() const;
+
+    bool isEndo() const;
+
 signals:
     void currentParamsChanged();
     void currentModeIndexChanged();
@@ -162,6 +169,7 @@ private:
     QStringList m_modeNameIds;
     QStringList m_instrList;
     QStringList m_instrListIds;
+    QStringList m_instrListNums;
     QVariantMap m_currentParameters;
     QString m_socketName;
     int m_currentModeIndex = -1;

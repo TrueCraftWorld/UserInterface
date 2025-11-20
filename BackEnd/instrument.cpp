@@ -28,6 +28,11 @@ int Instrument::id() const
     return m_id;
 }
 
+int Instrument::legacyNumber() const
+{
+    return m_legacyNumber;
+}
+
 int Instrument::hadleType() const
 {
     return m_handleType;
@@ -41,4 +46,9 @@ void Instrument::setHandleType(int newHandleType)
 bool Instrument::isMono() const
 {
     return m_isMono;
+}
+
+QString Instrument::description() const
+{
+    return m_description;
 }

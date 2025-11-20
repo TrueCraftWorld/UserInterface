@@ -7,12 +7,13 @@ Rectangle {
 
     property string title
     property int socketId
+    property int socketState
 
     property string cutModeName
     property int cutModePower
     property int cutModeId
     property int cutMaxPower
-    property int cutInstrumId
+    property int cutInstrumNum
     property string cutInstrumName: qsTr("не выбран")
     property bool cutIsEndo: false
 
@@ -20,7 +21,7 @@ Rectangle {
     property int coagModePower
     property int coagModeId
     property int coagMaxPower
-    property int coagInstrumId
+    property int coagInstrumNum
     property string coagInstrumName: qsTr("не выбран")
     property bool coagIsEndo: false
 
@@ -29,38 +30,24 @@ Rectangle {
     signal newPower(int socketId, int pwr, bool isCoag)
     signal socketExpandRequest()
     signal socketCollapseRequest()
-    signal absolutePositionChanged(int socketId, real absoluteY)  // Изменение позиции для привязки педалей
 
-//    state: "expanded"
-    state: model.socketdisplaymode
+    state: "expanded"
 
-    // Принудительно обновляем state при изменении модели
-    property string currentModelState: model.socketdisplaymode
-    onCurrentModelStateChanged: {
-        if (state !== currentModelState) {
-            state = currentModelState
+    onSocketStateChanged: {
+        console.log("socketState", socketState)
+        if (socketState == 3) {
+            activationIndicator.isCoag = true
+            activationIndicator.modeName = coagModeName
+            activationIndicator.power = coagModePower
+            activationIndicator.open();
+        } else if (socketState == 4) {
+            activationIndicator.isCoag = false
+            activationIndicator.modeName = cutModeName
+            activationIndicator.power = cutModePower
+            activationIndicator.open();
+        } else {
+            activationIndicator.close();
         }
-    }
-
-    // Логирование абсолютного положения по высоте при изменении позиции
-    onYChanged: {
-        var absY = mapToItem(null, 0, 0).y
-        absolutePositionChanged(socketId, absY)
-    }
-
-    onHeightChanged: {
-        var absY = mapToItem(null, 0, 0).y
-        absolutePositionChanged(socketId, absY)
-    }
-
-    onStateChanged: {
-        var absY = mapToItem(null, 0, 0).y
-        absolutePositionChanged(socketId, absY)
-    }
-
-    Component.onCompleted: {
-        var absY = mapToItem(null, 0, 0).y
-        absolutePositionChanged(socketId, absY)
     }
 
     // MouseArea для всего сокета - переход в expanded
@@ -69,13 +56,11 @@ Rectangle {
        anchors.fill: parent
        onClicked: {
            if (socketRoot.state === "collapsed") {
-               socketRoot.state = "expanded"
                socketRoot.socketExpandRequest()
            }
        }
        // Не перехватываем события от дочерних элементов
        propagateComposedEvents: true
-       // Не перехватываем события, если сокет уже развернут
        enabled: socketRoot.state === "collapsed"
    }
 
@@ -87,7 +72,7 @@ Rectangle {
         modePower:  socketRoot.cutModePower
         modeId:     socketRoot.cutModeId
         maxPower:   socketRoot.cutMaxPower
-        instrumId:  socketRoot.cutInstrumId
+        instrumNum: socketRoot.cutInstrumNum
         instrumName:socketRoot.cutInstrumName
         isEndo:     socketRoot.cutIsEndo
 
@@ -96,7 +81,6 @@ Rectangle {
             anchors.fill: parent
             onClicked: {
                 if (socketRoot.state === "collapsed") {
-                    socketRoot.state = "expanded"
                     socketRoot.socketExpandRequest()
                 }
                 mouse.accepted = true // Останавливаем распространение события
@@ -113,7 +97,7 @@ Rectangle {
         modePower:  socketRoot.coagModePower
         modeId:     socketRoot.coagModeId
         maxPower:   socketRoot.coagMaxPower
-        instrumId:  socketRoot.coagInstrumId
+        instrumNum: socketRoot.coagInstrumNum
         instrumName:socketRoot.coagInstrumName
         isEndo:     socketRoot.coagIsEndo
 
@@ -122,7 +106,6 @@ Rectangle {
             anchors.fill: parent
             onClicked: {
                 if (socketRoot.state === "collapsed") {
-                    socketRoot.state = "expanded"
                     socketRoot.socketExpandRequest()
                 }
                 mouse.accepted = true // Останавливаем распространение события
@@ -163,7 +146,12 @@ Rectangle {
             }
         }
     }
+    Activation {
+        id: activationIndicator
+        parent: socketRoot
+    }
     
+
     Connections {
         target: rightRect
         function onNewPower(pwr) {
@@ -225,11 +213,7 @@ Rectangle {
                 anchors.top: parent.top
                 anchors.bottom: parent.bottom
             }
-//            PropertyChanges {
-//                target: leftRect
-//                color: "black"
-//                width: (parent.width - fontMetrics.advanceWidth("MONO 22MONO")) * .5
-//            }
+
             AnchorChanges {
                 target: rightRect
                 anchors.left: middleRect.right
@@ -237,11 +221,6 @@ Rectangle {
                 anchors.top: parent.top
                 anchors.bottom: parent.bottom
             }
-//            PropertyChanges {
-//                target: rightRect
-//                color: "black"
-//                width: (parent.width - fontMetrics.advanceWidth("MONO 22MONO")) * .5
-//            }
         },
         // Развернутое состояние
         State {
@@ -267,10 +246,6 @@ Rectangle {
                 anchors.top: parent.top
                 anchors.bottom: parent.bottom
             }
-//            PropertyChanges {
-//                target: leftRect
-//                width: (parent.width - fontMetrics.advanceWidth("MONO")) * .5
-//            }
 
             AnchorChanges {
                 target: rightRect
@@ -279,23 +254,6 @@ Rectangle {
                 anchors.top: parent.top
                 anchors.bottom: parent.bottom
             }
-//            PropertyChanges {
-//                target: rightRect
-//                width: (parent.width - fontMetrics.advanceWidth("MONO")) * .5
-//            }
         }
     ]
-//    // Переходы между состояниями (опционально)
-//    transitions: [
-//        Transition {
-//            from: "collapsed"
-//            to: "expanded"
-//            NumberAnimation {  duration: 100; easing.type: Easing.InQuad }
-//        },
-//        Transition {
-//            from: "expanded"
-//            to: "collapsed"
-//            NumberAnimation { duration: 100; easing.type: Easing.InQuad }
-//        }
-//    ]
 }

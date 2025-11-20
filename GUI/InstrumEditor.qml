@@ -20,7 +20,8 @@ Popup {
     
     property var itemIdArr: []
     property var itemNameArr: []
-
+    property var itemNumArr: []
+    property bool changed: false
 
     ListModel {
         id: combinedModel
@@ -31,13 +32,13 @@ Popup {
     function updateModel() {
         combinedModel.clear()
         
-        if (itemIdArr.length !== itemNameArr.length) {
+        if (itemIdArr.length !== itemNameArr.length || itemIdArr.length !== itemNumArr.length) {
             console.warn("Lists from C++ have different lengths!")
             return
         }
         for (var i = 0; i < itemIdArr.length; i++) {
             combinedModel.append({
-                itemId: itemIdArr[i],
+                itemId: itemNumArr[i],  // Используем Num вместо ID для изображений
                 itemName: itemNameArr[i],
                 rowIndex: i
             })
@@ -53,6 +54,7 @@ Popup {
 
         itemNameArr = modeEditor.instrList
         itemIdArr = modeEditor.instrListIds()
+        itemNumArr = modeEditor.instrListNums()
         updateModel()
         //кринж, но т.к. вызывается переназначение свойств
         //и триггерятся сигналы
@@ -66,68 +68,200 @@ Popup {
     }
     
     Rectangle {
-        id: header
-        anchors.top: parent.top
-        anchors.left: parent.left
-        anchors.right: parent.right
-        height: 100
-        color: "black"
-        
-        Label {
-            id: titleLable
-            text: qsTr("Выбор инструмента для выхода %1")
-                    .arg(modeEditor.socketName)
-            horizontalAlignment: Qt.AlignHCenter
-            verticalAlignment: Qt.AlignVCenter
-            wrapMode: Text.WordWrap
-            font.pixelSize: 28
-            font.bold: true
-            anchors.horizontalCenter: parent.horizontalCenter
-            anchors.top: parent.top
-            height: parent.height / 2
-            width: parent.width * 0.8
-            color: "white"
-        }
-        Rectangle {
-            id: titleLowerRect
-            color: isCoag ? "blue" : "yellow"
-            anchors.horizontalCenter: parent.horizontalCenter
-            anchors.bottom: parent.bottom
-            height: parent.height / 2
-            width: titleLableLower.contentWidth + 50
+        id: back
+        anchors.fill: parent
+        color: "transparent"
+
+        GradientBack {
+            id: gradientBack
+            anchors.fill: parent
+            startColor: isCoag ? "#000066" : "#443300"
+            stopColor: isCoag ? "#0000aa" : "#665500"
+            beamColor: isCoag ? "#5078FF" : "#B4963C"
         }
 
-        Label {
-            id: titleLableLower
-            text: qsTr("РЕЖИМ: %1")
-                    .arg(modeEditor.currentMode.name)
-            horizontalAlignment: Qt.AlignHCenter
-            verticalAlignment: Qt.AlignVCenter
-            wrapMode: Text.WordWrap
-            font.pixelSize: 28
-            font.bold: true
-            color: isCoag ? "white" : "black"
-            anchors.horizontalCenter: parent.horizontalCenter
-            anchors.bottom: parent.bottom
-            height: parent.height / 2
-            width: parent.width * 0.8
+        Rectangle {
+            id: header
+            anchors.top: parent.top
+            anchors.left: parent.left
+            anchors.right: parent.right
+            height: 100
+            color: "transparent"
+
+            Label {
+                id: titleLable
+                text: qsTr("Выбор инструмента для выхода %1")
+                        .arg(modeEditor.socketName)
+                horizontalAlignment: Qt.AlignHCenter
+                verticalAlignment: Qt.AlignVCenter
+                wrapMode: Text.WordWrap
+                font.pixelSize: 28
+                font.bold: true
+                anchors.horizontalCenter: parent.horizontalCenter
+                anchors.top: parent.top
+                height: parent.height / 2
+                width: parent.width * 0.8
+                color: "white"
+            }
+            Rectangle {
+                id: titleLowerRect
+                color: isCoag ? "blue" : "yellow"
+                anchors.horizontalCenter: parent.horizontalCenter
+                anchors.bottom: parent.bottom
+                height: parent.height / 2
+                width: titleLableLower.contentWidth + 50
+            }
+
+            Label {
+                id: titleLableLower
+                text: qsTr("РЕЖИМ: %1")
+                        .arg(modeEditor.currentMode.name)
+                horizontalAlignment: Qt.AlignHCenter
+                verticalAlignment: Qt.AlignVCenter
+                wrapMode: Text.WordWrap
+                font.pixelSize: 28
+                font.bold: true
+                color: isCoag ? "white" : "black"
+                anchors.horizontalCenter: parent.horizontalCenter
+                anchors.bottom: parent.bottom
+                height: parent.height / 2
+                width: parent.width * 0.8
+            }
+
+            Button {
+                id: cancelButton
+                anchors {
+                    top: parent.top
+                    bottom: parent.bottom
+                    right: parent.right
+                    left: titleLable.right
+                }
+                background: Rectangle {
+                    color: "transparent"
+                    radius: 8
+                }
+                Text {
+                    id: cancelText
+                    text: qsTr("X")
+                    font.pixelSize: 34
+                    font.bold: true
+                    anchors.fill: parent
+                    horizontalAlignment: Qt.AlignHCenter
+                    verticalAlignment: Qt.AlignVCenter
+                    color: "white"
+                }
+                onClicked: {
+                    modeEditor.rollBack()
+                    root.close()
+                }
+            }
+        }
+
+        Rectangle {
+            id: instrumList
+            color: "transparent"
+            anchors {
+                left: parent.left
+                bottom: parent.bottom
+                top: header.bottom
+            }
+            width: .3 * parent.width
+            ItemList {
+                id: instrumListView
+                curIndex: modeEditor.currentInstrIndex
+                anchors {
+                    top: parent.top
+                    bottom: footer.top
+                    left: parent.left
+                    right: parent.right
+                }
+                imageSourceTemplate: "image://instruments/minstr%1"
+            }
+            Rectangle {
+                id: footer
+                height: 100
+                color: "transparent"
+                anchors {
+                    bottom: parent.bottom
+                    left: parent.left
+                    right: parent.right
+                }
+                Button {
+                    id: downButton
+                    width: instrumList.width * .4
+                    anchors {
+                        top: parent.top
+                        bottom: parent.bottom
+                        left: parent.left
+                    }
+                    background: Rectangle {
+                        color: "transparent"
+                        radius: 8
+                    }
+                    Text {
+                        id: downText
+                        text: qsTr("▼")
+                        font.pixelSize: 34
+                        font.bold: true
+                        anchors.fill: parent
+                        horizontalAlignment: Qt.AlignHCenter
+                        verticalAlignment: Qt.AlignVCenter
+                        color: "white"
+                    }
+                    onClicked: {
+                        instrumListView.scrollDown()
+                    }
+                }
+                Button {
+                    id: upButton
+                    width: downButton.width
+                    anchors {
+                        top: parent.top
+                        bottom: parent.bottom
+                        left: downButton.right
+                        leftMargin: 20
+                    }
+                    background: Rectangle {
+                        color: "transparent"
+                        radius: 8
+                    }
+                    Text {
+                        id: upText
+                        text: qsTr("▲")
+                        font.pixelSize: 34
+                        font.bold: true
+                        anchors.fill: parent
+                        horizontalAlignment: Qt.AlignHCenter
+                        verticalAlignment: Qt.AlignVCenter
+                        color: "white"
+                    }
+                    onClicked: {
+                        instrumListView.scrollUp()
+                    }
+                }
+            }
         }
 
         Button {
-            id: cancelButton
+            id: declineButton
+            width: parent.width * .2
+            height: parent.height * .1
             anchors {
-                top: parent.top
                 bottom: parent.bottom
-                right: parent.right
-                left: titleLable.right
+                bottomMargin: 10
+                left: instrumList.right
+                leftMargin: 20
             }
             background: Rectangle {
-                color: "black"
+                color: "transparent"
+                border.width: 3
+                border.color: "white"
                 radius: 8
             }
+
             Text {
-                id: cancelText
-                text: qsTr("X")
+                id: declineText
+                text: qsTr("ОТМЕНА")
                 font.pixelSize: 34
                 font.bold: true
                 anchors.fill: parent
@@ -137,212 +271,198 @@ Popup {
             }
             onClicked: {
                 modeEditor.rollBack()
+                changed = false
                 root.close()
             }
         }
+
         Button {
-            id: upButton
+            id: acceptButton
+            width: parent.width * .2
+            height: parent.height * .1
+            visible: changed
             anchors {
-                top: parent.top
                 bottom: parent.bottom
-                left: parent.left
-                right: titleLable.left
+                bottomMargin: 10
+                left: declineButton.right
+                leftMargin: 80
             }
             background: Rectangle {
-                color: "black"
+                color: "transparent"
+                border.width: 3
+                border.color: "lightgreen"
                 radius: 8
             }
             Text {
-                id: upText
-                text: qsTr("▲")
+                id: acceptText
+                text: qsTr("ПРИНЯТЬ")
                 font.pixelSize: 34
                 font.bold: true
+                color: "lightgreen"
                 anchors.fill: parent
                 horizontalAlignment: Qt.AlignHCenter
                 verticalAlignment: Qt.AlignVCenter
+            }
+            onClicked: {
+                modeEditor.commitChanges()
+                changed = false
+                root.close();
+            }
+        }
+
+        Rectangle {
+            id: instrumPreview
+            anchors {
+                top: header.bottom
+                bottom: acceptButton.top
+                right: parent.right
+                left: instrumList.right
+            }
+            color: "transparent"
+            Image {
+                id: previewImage
+                fillMode: Image.PreserveAspectFit
+                asynchronous: true
+                source: {
+                    if (modeEditor.currentInstrIndex >= 0 && modeEditor.currentInstrIndex < itemNumArr.length) {
+                        return ("image://instruments/instrum%1").arg(itemNumArr[modeEditor.currentInstrIndex])
+                    }
+                    return ""
+                }
+                anchors {
+                    left: parent.left
+                    right: parent.right
+                    bottom: instrBriefText.top
+                    top: parent.top
+                    margins: 10
+                }
+            }
+            
+            Text {
+                id: instrBriefText
+                text: modeEditor.instrBrief
+                color: "white"
+                font.pixelSize: 30
+                font.bold: true
+                wrapMode: Text.WordWrap
+                horizontalAlignment: Text.AlignHCenter
+                anchors {
+                    left: parent.left
+                    right: parent.right
+                    bottom: buttonRow.top
+                    margins: 10
+                }
+            }
+            
+            Rectangle {
+                id: buttonRow
+                height: 100
+                anchors {
+                    left: parent.left
+                    right: parent.right
+                    bottom: recommendText.top
+                }
+                color: "transparent"
+                RowLayout {
+                    id:lay
+                    anchors.fill: parent
+                    spacing: 5
+                    property int pwr
+
+                    PowerRect {
+                        id: but1
+                        Layout.fillHeight: true
+                        Layout.fillWidth: true
+                        Layout.alignment: Qt.AlignCenter
+                        Layout.margins: 10
+                        borderColor: "darkcyan"
+                        power: modeEditor.lowPowerBound
+                        selected: (modeEditor.currentPower === power)
+                        isEndo: modeEditor.isEndo
+                        onPowerChosen: {
+                            if (modeEditor.midPowerBound === 0) {
+                                modeEditor.updateParameter("currentpower", but1.power)
+                            }
+                            console.log("1 midPower = ", modeEditor.midPowerBound)
+                        }
+                    }
+                    PowerRect {
+                        id: but2
+                        Layout.fillHeight: true
+                        Layout.fillWidth: true
+                        Layout.alignment: Qt.AlignCenter
+                        Layout.margins: 10
+                        borderColor: "lightgreen"
+                        power: modeEditor.midPowerBound
+                        selected: (modeEditor.currentPower === power)
+                        isEndo: modeEditor.isEndo
+                        onPowerChosen: {
+                            if (modeEditor.midPowerBound !== 0) {
+                                modeEditor.updateParameter("currentpower", but2.power)
+                            }
+                            console.log("2 midPower = ", modeEditor.midPowerBound)
+                        }
+                    }
+                    PowerRect {
+                        id: but3
+                        Layout.fillHeight: true
+                        Layout.fillWidth: true
+                        Layout.alignment: Qt.AlignCenter
+                        Layout.margins: 10
+                        borderColor: "gold"
+                        power: modeEditor.highPowerBound
+                        selected: (modeEditor.currentPower === power)
+                        isEndo: modeEditor.isEndo
+                    }
+                }
+            }
+
+            Text {
+                id: recommendText
+                text: qsTr("Выберите рекомендуемую мощность")
+                anchors.bottom: parent.bottom
+                anchors.horizontalCenter: parent.horizontalCenter
+                anchors.bottomMargin: 10
+                font.pixelSize: 20
+                font.bold: true
                 color: "white"
             }
         }
     }
-    
-    Rectangle {
-        id: instrumList
-        color: "black"
-        anchors {
-            left: parent.left
-            bottom: parent.bottom
-            top: header.bottom
-        }
-        width: .3 * parent.width
-        ItemList {
-            id: instrumListView
-            curIndex: modeEditor.currentInstrIndex
-            anchors {
-                top: parent.top
-                bottom: footer.top
-                left: parent.left
-                right: parent.right
-            }
-            imageSourceTemplate: "image://instrums/miniInstr%1"
-        }
-        Rectangle {
-            id: footer
-            height: 100
-            color: "black"
-            anchors {
-                bottom: parent.bottom
-                left: parent.left
-                right: parent.right
-            }
-            Button {
-                id: downButton
-                width: upButton.width
-                anchors {
-                    top: parent.top
-                    bottom: parent.bottom
-                    left: parent.left
-                }
-                background: Rectangle {
-                    color: "black"
-                    radius: 8
-                }
-                Text {
-                    id: downText
-                    text: qsTr("▼")
-                    font.pixelSize: 34
-                    font.bold: true
-                    anchors.fill: parent
-                    horizontalAlignment: Qt.AlignHCenter
-                    verticalAlignment: Qt.AlignVCenter
-                    color: "white"
-                }
-            }
-            Button {
-                id: acceptButton
-                enabled: modeEditor.hasChanges
-                anchors {
-                    top: parent.top
-                    bottom: parent.bottom
-                    left: downButton.right
-                    right: parent.right
-                    margins: 10
-                }
-                background: Rectangle {
-                    color: "black"
-                    radius: 8
-                    border.width: 2
-                    border.color: "green"
-                }
-                Text {
-                    id: acceptText
-                    text: qsTr("Принять")
-                    font.pixelSize: 34
-                    font.bold: true
-                    color: "green"
-                    anchors.fill: parent
-                    horizontalAlignment: Qt.AlignHCenter
-                    verticalAlignment: Qt.AlignVCenter
-                }
-                onClicked: {
-                    modeEditor.commitChanges()
-                    root.close();
-                }
-            }
-        }
-    }
-    
-    Rectangle {
-        id: instrumPreview
-        anchors {
-            top: header.bottom
-            bottom: parent.bottom
-            right: parent.right
-            left: instrumList.right
-        }
-        color: "black"
-        Image {
-            id: previewImage
-            fillMode: Image.PreserveAspectFit
-            asynchronous: true
-            source: ("image://instrums/maxiInstr%1").arg(modeEditor.currentInstrIndex)
-            anchors {
-                left: parent.left
-                right: parent.right
-                bottom: buttonRow.top
-                top: parent.top
-                margins: 10
-            }
-        }
-        Rectangle {
-            id: buttonRow
-            height: 100
-            anchors {
-                left: parent.left
-                right: parent.right
-                bottom: parent.bottom
-            }
-            color: "black"
-            RowLayout {
-                id:lay
-                anchors.fill: parent
-                spacing: 5
-                property int pwr
 
-                PowerRect {
-                    id: but1
-                    Layout.fillHeight: true
-                    Layout.fillWidth: true
-                    Layout.alignment: Qt.AlignCenter
-                    Layout.margins: 10
-                    borderColor: "darkcyan"
-                    power: modeEditor.lowPowerBound
-                    selected: (modeEditor.currentPower === power)
-                }
-                PowerRect {
-                    id: but2
-                    Layout.fillHeight: true
-                    Layout.fillWidth: true
-                    Layout.alignment: Qt.AlignCenter
-                    Layout.margins: 10
-                    borderColor: "lightgreen"
-                    power: modeEditor.midPowerBound
-                    selected: (modeEditor.currentPower === power)
-                    onPowerChosen: modeEditor.updateParameter("currentpower", but2.power)
-                }
-                PowerRect {
-                    id: but3
-                    Layout.fillHeight: true
-                    Layout.fillWidth: true
-                    Layout.alignment: Qt.AlignCenter
-                    Layout.margins: 10
-                    borderColor: "gold"
-                    power: modeEditor.highPowerBound
-                    selected: (modeEditor.currentPower === power)
-                }
-            }
-        }
-    }
     Connections {
         target: but3
         function onPowerChosen() {
             modeEditor.updateParameter("currentpower", but3.power)
+            changed = true
         }
     }
     Connections {
         target: but2
         function onPowerChosen() {
             modeEditor.updateParameter("currentpower", but2.power)
+            changed = true
         }
         //мощность на кнопке меняется при инициализации
         //и мы по умолчанию устанавливаем в диалоге среднюю мощность
         function onPowerChanged() {
             modeEditor.updateParameter("currentpower", but2.power)
+            changed = true
         }
     }
     Connections {
         target: but1
         function onPowerChosen() {
             modeEditor.updateParameter("currentpower", but1.power)
+            changed = true
+        }
+        //мощность на кнопке меняется при инициализации
+        //если средней мощности нет, по умолчанию устанавливаем в диалоге минимальную
+        function onPowerChanged() {
+            if (modeEditor.midPowerBound === 0) {
+                modeEditor.updateParameter("currentpower", but1.power)
+                changed = true
+            }
         }
     }
 
@@ -350,6 +470,7 @@ Popup {
         target: instrumListView
         function onNewIndexSelected(index) {
             modeEditor.currentInstrIndex = index
+            changed = true
         }
     }
 }

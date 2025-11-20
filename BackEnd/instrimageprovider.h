@@ -16,7 +16,11 @@ public:
     
 private:
     QHash<QString, QPixmap> m_cache;
-    QFileInfoList m_knownFiles;
+    
+    // Статический список файлов, сканируется только один раз
+    static QFileInfoList s_knownFiles;
+    static bool s_filesScanned;
+    static void scanFiles();
 };
 
 #endif // INSTRIMAGEPROVIDER_H

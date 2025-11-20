@@ -128,7 +128,7 @@ Rectangle {
                 easing.type: Easing.InOutCubic
             }
             NumberAnimation {
-                to: -1.0
+                to: -3.0
                 duration: 0
             }
         }

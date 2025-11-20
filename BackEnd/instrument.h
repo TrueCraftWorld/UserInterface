@@ -14,11 +14,15 @@ public:
 
     int id() const;
 
+    int legacyNumber() const;
+
     int hadleType() const;
 
     void setHandleType(int newHandleType);
 
     bool isMono() const;
+
+    QString description() const;
 
 private:
     QString m_coagImagePath;

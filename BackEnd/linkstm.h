@@ -165,6 +165,7 @@ public:
         InstrumentConnected instrBi2{INSTR_NOT_CONNECTED};    // Подключение инструментов (держателей) с определителем
         InstrumentConnected instrMono2{INSTR_NOT_CONNECTED};
         quint8 activOutput{0};              // Активированный выход
+        quint8 activMode{0};                // Активированный режим
         
         bool operator==(const UnitState& other) const {
             return argonCylinder1 == other.argonCylinder1
@@ -229,6 +230,7 @@ public:
     void setEnableActivation(bool enable);
     void setNeutralElDivided(bool divided);
     void setAutoSSmode(quint8 mode);
+    void setActivCylinderFirst(bool first);
     
     // Методы для обновления данных сокетов
     void updateSocketData(int socketIndex, quint16 cutModeNum, quint16 coagModeNum, 
@@ -304,6 +306,7 @@ private:
     bool m_enableActivation;
     bool m_neutralElDivided;
     quint8 m_argonFlowRate;
+    bool m_activCylinderFirst;
 
     UnitState m_unitState;
     SocketState m_socketList[4];

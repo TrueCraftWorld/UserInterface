@@ -219,10 +219,12 @@ void LinkStm::sendCommand()
                 m_txCommand.com |= activeSocket.id << 3;
                 m_txCommand.com |= activeSocket.autoMode ? (1 << 2) : 0;
                 m_txCommand.com |= m_neutralElDivided ? (1 << 1) : 0;
-                m_txCommand.com += power%2;                 // Младший бит мощности
                 m_txCommand.data.clear();
-                m_txCommand.data.append(power >> 1);
-                m_txCommand.data.append(((m_argonFlowRate & 0x07) << 5) & (mode & 0x1F));
+                m_txCommand.data.append(power >> 1);        // Старшие биты мощности
+                m_txCommand.data.append((power % 2) << 7);  // Младший бит мощности
+                m_txCommand.data.append(mode);              // Режим
+                // В старшем бите 0 - использовать первый баллон, 1 - второй; дальше - установленный расход от 0,0 до 8,0
+                m_txCommand.data.append((m_activCylinderFirst ? 0 : 0x80) | (m_argonFlowRate & 0x1F));
             }
         }
 
@@ -417,18 +419,20 @@ void LinkStm::readRxCommand()
         }
     }
 
+    // Начинаем с копии текущего состояния
+    UnitState unitState = m_unitState;
+
     switch (rxType) {     // Три старших бита определяют тип посылки
     // Стандартная посылка
     case RxDefault:
     {
-        // Начинаем с копии текущего состояния
-        UnitState unitState = m_unitState;
-        
         // Обновляем только те поля, которые пришли в этой посылке
         unitState.argonCylinder1 = m_rxCommand.com & 0x08 ? true : false;
         unitState.argonCylinder2 = m_rxCommand.com & 0x04 ? true : false;
         unitState.tissueGrab = m_rxCommand.com & 0x02 ? true : false;
         unitState.neutraElConnected = m_rxCommand.com & 0x01 ? true : false;
+
+//        qDebug() << "баллон 1: " << unitState.argonCylinder1 << " баллон 2: " << unitState.argonCylinder2;
 
         // Преобразуем байт в enum PedalKnobPressed
         if (!m_rxCommand.data.isEmpty()) {
@@ -479,8 +483,24 @@ void LinkStm::readRxCommand()
     }
     // Во время активации
     case RxActivation:
-        m_unitState.argonRealRate = m_rxCommand.com & 0x07;
-        m_unitState.activOutput = (m_rxCommand.com >> 3) & 0x03;
+        unitState.activOutput = (m_rxCommand.com >> 3) & 0x03;
+        
+        // Проверяем наличие данных перед доступом
+        if (m_rxCommand.data.size() >= 1) {
+            unitState.activMode = static_cast<quint8>(m_rxCommand.data.at(0)) & 0x1F;     // Активированный режим
+        }
+        
+        // TODO - сделать проверку, что режим и выход совпадают с тем, что мы передали при активации
+        
+        if (m_rxCommand.data.size() >= 2) {
+            unitState.argonRealRate = static_cast<quint8>(m_rxCommand.data.at(1)) & 0x3F; // Реальный расход от 0,0 до 8,0 (0-80)
+        }
+
+        if (m_unitState != unitState) {
+            m_unitState = unitState;
+            emit unitStateChanged(m_unitState);
+        }
+        
         m_comState = ACTIVATION;
         break;
     // Остановка
@@ -730,6 +750,11 @@ void LinkStm::setEnableActivation(bool enable)
 void LinkStm::setNeutralElDivided(bool divided)
 {
     m_neutralElDivided = divided;
+}
+
+void LinkStm::setActivCylinderFirst(bool first)
+{
+    m_activCylinderFirst = first;
 }
 
 void LinkStm::updateSocketData(int socketIndex, quint16 cutModeNum, quint16 coagModeNum, 

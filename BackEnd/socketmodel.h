@@ -9,6 +9,8 @@
 
 #include "socket.h"
 
+constexpr int ENDO_MAX = 3;
+
 class SocketModel : public QAbstractListModel
 {
     Q_OBJECT
@@ -23,6 +25,7 @@ public:
         SocketName,
         SocketPolarity,
         SocketPedal,
+        SocketAllowedPedal,
         CoagModeIndex,
         CoagModeId,
         CoagModeNum,
@@ -36,6 +39,7 @@ public:
         CoagModeInstrImage,
         CoagModeInstrIndex,
         CoagModeInstrID,
+        CoagModeInstrNum,
         CoagModeIsEndo,
         CutModeIndex,
         CutModeId,
@@ -50,6 +54,7 @@ public:
         CutModeInstrImage,
         CutModeInstrIndex,
         CutModeInstrID,
+        CutModeInstrNum,
         CutModeIsEndo,
         CutModesNames,
         CoagModesNames,
@@ -78,13 +83,16 @@ public:
     // Q_INVOKABLE void setModePower(int socketId, int pwr, bool isCoag);
 
     QStringList modeNames(int socketID, bool isCoag) const;
-    QStringList instrumNames(int socketId, int modeIndex, bool isCoag);
+    QStringList instrumNames(int socketId, int modeIndex, bool isCoag) const;
     QStringList modeNamesIds(int socketID, bool isCoag) const;
-    QStringList instrumNamesIds(int socketId, int modeIndex, bool isCoag);
+    QStringList instrumNamesIds(int socketId, int modeIndex, bool isCoag) const;
+    QStringList instrumNamesNums(int socketId, int modeIndex, bool isCoag) const;
     int selectedInstrumIndexByMode(int socketId, int modeIndex, bool isCoag);
     int selectedInstrumIdByMode(int socketId, int modeIndex, bool isCoag);
+    InstrPtr getInstrumentById(int id) const;
 
 public:
+    void stopActivation();
     bool commitModeChange(int socketId, int modeINdex, const QVariantMap& param);
     SockPtr socketByName(const QString& socket) const;
     SockPtr socketById(int id) const;
@@ -96,8 +104,6 @@ public:
     void removeSubProg(int index);
 
 signals:
-    void signalSocketStateChanged(int socketId, int state);
-    void signalSocketContentChanged(int socketId, const QByteArray& content);
     void signalSocketDataChanged(int socketId, quint16 cutModeNum, quint16 coagModeNum, 
                                 quint16 cutModePower, quint16 coagModePower, quint8 pedal);
     void subProgIdxChanged();
@@ -113,6 +119,7 @@ private:
     std::map<int, SockPtr>* m_itemsMap = nullptr;
     std::vector<std::map<int, SockPtr >> m_itemsMapVect;
     int m_subProgIdx = 0;
+    int activeSocket = -1;
     std::map<int, QSharedPointer<Instrument>> m_instrumMap;
     QStringList m_socketNames;
 
@@ -123,7 +130,6 @@ private:
 
     QHash<int, QByteArray> m_roles;
     void populateRoles();
-    // SocketModeEditor * editor;
     int m_subProgCount;
 };
 

@@ -11,7 +11,7 @@ Rectangle {
     property int modeId
     property int maxPower
     property int socketId
-    property int instrumId
+    property int instrumNum
     property string instrumName: qsTr("не выбран")
     property bool isEndo: false
 
@@ -24,7 +24,8 @@ Rectangle {
         id: instrumRect
         isCoag: halfSocketRoot.isCoag
         instrumName: halfSocketRoot.instrumName
-        instrumId: halfSocketRoot.instrumId
+        instrumNum: halfSocketRoot.instrumNum
+        isEndo: halfSocketRoot.isEndo
         anchors {
             top: parent.top
             left: parent.left
@@ -85,16 +86,4 @@ Rectangle {
             }
         }
     ]
-//    transitions: [
-//        Transition {
-//            from: "collapsed"
-//            to: "expanded"
-//            NumberAnimation { duration: 100; easing.type: Easing.InQuad }
-//        },
-//        Transition {
-//            from: "expanded"
-//            to: "collapsed"
-//            NumberAnimation { duration: 100; easing.type: Easing.InQuad }
-//        }
-//    ]
 }

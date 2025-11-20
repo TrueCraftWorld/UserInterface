@@ -20,6 +20,7 @@ void SocketModeEditor::initialize(int socket, int mode, bool isCoag)
     m_originalParameters =  m_model->modeParam(socket, mode, isCoag);
     m_instrList =           m_model->instrumNames(socket, mode, isCoag);
     m_instrListIds =        m_model->instrumNamesIds(socket, mode, isCoag);
+    m_instrListNums =       m_model->instrumNamesNums(socket, mode, isCoag);
 
     m_socketName = m_model->index(socket,0).data(SocketModel::SocketName).toString();
     m_originalModeIndex = mode;
@@ -31,6 +32,7 @@ void SocketModeEditor::initialize(int socket, int mode, bool isCoag)
                                                                : SocketModel::CutModeInstrIndex).toInt());
 
     m_hasChanges = false;
+    emit currentModeIndexChanged();  // Уведомляем об изменении режима (включая isEndo)
     emit parametersLoaded();
     emit currentParamsChanged();
 }
@@ -42,6 +44,7 @@ void SocketModeEditor::loadModeParameters(int modeIndex)
     m_currentParameters = m_model->modeParam(m_socketID, (modeIndex), m_isCoag);
     m_instrList = m_model->instrumNames(m_socketID, modeIndex, m_isCoag);
     m_instrListIds = m_model->instrumNamesIds(m_socketID, modeIndex, m_isCoag);
+    m_instrListNums = m_model->instrumNamesNums(m_socketID, modeIndex, m_isCoag);
 
     emit parametersLoaded();
 
@@ -186,6 +189,11 @@ QStringList SocketModeEditor::instrListIds() const
     return m_instrListIds;
 }
 
+QStringList SocketModeEditor::instrListNums() const
+{
+    return m_instrListNums;
+}
+
 QVariantMap SocketModeEditor::fetchModeParameters(int modeIndex)
 {
     if (modeIndex >= m_modeNames.size())
@@ -295,4 +303,31 @@ const QString SocketModeEditor::modeDescript() const
 const QString SocketModeEditor::modeBrief() const
 {
     return m_currentParameters.value("modebrief").toString();
+}
+
+const QString SocketModeEditor::instrBrief() const
+{
+    // Получаем ID инструмента из текущего режима
+    CSurgModePtr mode = m_model->socketById(m_socketID)->getMode(m_currentModeIndex, m_isCoag);
+    if (mode.isNull())
+        return QString();
+    
+    std::optional<InstrInfo> info = mode->getConstraints(m_currentInstrIndex);
+    if (info == std::nullopt)
+        return QString();
+    
+    // Получаем инструмент по ID
+    InstrPtr instr = m_model->getInstrumentById(info->id);
+    if (instr.isNull())
+        return QString();
+    
+    return instr->description();
+}
+
+bool SocketModeEditor::isEndo() const
+{
+    CSurgModePtr mode = m_model->socketById(m_socketID)->getMode(m_currentModeIndex, m_isCoag);
+    if (mode.isNull())
+        return false;
+    return mode->isEndo();
 }

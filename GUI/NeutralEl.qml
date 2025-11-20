@@ -25,7 +25,7 @@ Rectangle {
 
         anchors.left: parent.left
         anchors.bottom: parent.bottom
-        height: parent.height * .9
+        height: parent.height
         width: panelExpanded ? 160 : parent.width
         color: neutralConnected ? "gray" : "white"
         radius: panelExpanded ? 14 : 7
@@ -141,15 +141,16 @@ Rectangle {
             leftMargin: 5
             rightMargin: 5
         }
-        height: parent.height * .9
+        height: parent.height
         color: "transparent"
         radius: 10
         border.color: "white"
+//        width: showControls ? undefined : 1
         visible: showControls
         z: 20  // Выше любых MouseArea
 
         // Кнопки выбора типа
-    Rectangle {
+        Rectangle {
             id: buttonDivided
             color: neutralDivided ? "cyan" : "lightgray"
             height: parent.height * .43
@@ -157,9 +158,9 @@ Rectangle {
             radius: 10
             border.color: neutralDivided ? "white" : "transparent"
             border.width: neutralDivided ? 3 : 0
-        anchors {
-            top: parent.top
-            left: parent.left
+            anchors {
+                top: parent.top
+                left: parent.left
                 leftMargin: 10
                 topMargin: 10
             }
@@ -361,20 +362,5 @@ Rectangle {
                 }
             }
         }
-    }
-
-    Label {
-        id: neutralChoice
-        visible: panelExpanded
-        anchors {
-            top: parent.top
-            horizontalCenter: neutralControlContainer.horizontalCenter
-            topMargin: 5
-        }
-        horizontalAlignment: Qt.AlignHCenter
-        text: qsTr("ВЫБОР НЕЙТРАЛЬНОГО ЭЛЕКТРОДА")
-        color: "white"
-        font.pixelSize: 16
-        font.bold: true
     }
 }

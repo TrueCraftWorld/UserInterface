@@ -6,8 +6,9 @@ Rectangle {
     color: "transparent"
 
     property bool isCoag
-    property string instrumName/*: "Биполярный лапороскопический инструмент"*/
-    property int instrumId
+    property string instrumName
+    property int instrumNum
+    property bool isEndo: false
 
     signal instrumEditDialogRequest()
 
@@ -60,7 +61,7 @@ Rectangle {
             width: 120
             height: 120
             fillMode: Image.PreserveAspectFit
-            source: "image://instrums/miniInstr" + (instrumId+1)
+            source: "image://instruments/minstr" + instrumNum
             visible: (modeId != 1000)
             anchors {
                 top: parent.top
@@ -84,7 +85,8 @@ Rectangle {
             verticalAlignment: Qt.AlignVCenter
             anchors.left: isCoag ? parent.left : instrImage.right
             anchors.right: isCoag ? instrImage.left : parent.right
-            anchors.bottom: parent.bottom
+//            anchors.bottom: parent.bottom
+            anchors.verticalCenter: parent.verticalCenter
             anchors.margins: 10
         }
 

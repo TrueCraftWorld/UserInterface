@@ -88,7 +88,7 @@ Rectangle {
 
     Rectangle {
         id: shell
-        width: 75
+        width: 85
         height: 85
         anchors.top: parent.top
         anchors.right: parent.right

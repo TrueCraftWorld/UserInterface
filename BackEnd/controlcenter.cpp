@@ -155,6 +155,44 @@ void ControlCenter::unitStateHandler(LinkStm::UnitState state)
        m_neutralElConnected = state.neutraElConnected;
        emit neutralElConnectedChanged(m_neutralElConnected);
     }
+    
+    bool cylinder1Changed = false;
+    bool cylinder2Changed = false;
+    
+    if (m_argonCylinder1Connected != state.argonCylinder1) {
+        m_argonCylinder1Connected = state.argonCylinder1;
+        cylinder1Changed = true;
+        emit argonCylinder1ConnectedChanged(m_argonCylinder1Connected);
+    }
+    
+    if (m_argonCylinder2Connected != state.argonCylinder2) {
+        m_argonCylinder2Connected = state.argonCylinder2;
+        cylinder2Changed = true;
+        emit argonCylinder2ConnectedChanged(m_argonCylinder2Connected);
+    }
+    
+    // Обновляем реальный расход аргона
+    if (m_argonRealRate != state.argonRealRate) {
+        m_argonRealRate = state.argonRealRate;
+        qDebug() << "РЕАЛЬНЫЙ РАСХОД: " << m_argonRealRate;
+        emit argonRealRateChanged(m_argonRealRate);
+    }
+    
+    // Автоматическое переключение активного баллона
+    if (cylinder1Changed || cylinder2Changed) {
+        // Если второй баллон подключён, а первый нет - переключаемся на второй
+        if (m_argonCylinder2Connected && !m_argonCylinder1Connected) {
+            if (m_activCylinderFirst) {
+                setActivCylinderFirst(false);
+            }
+        }
+        // Если первый баллон подключён, а второй нет - переключаемся на первый
+        else if (m_argonCylinder1Connected && !m_argonCylinder2Connected) {
+            if (!m_activCylinderFirst) {
+                setActivCylinderFirst(true);
+            }
+        }
+    }
 }
 //void ControlCenter::setNeutralElConnected(bool connected)
 //{

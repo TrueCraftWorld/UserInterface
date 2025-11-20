@@ -50,6 +50,7 @@ Window {
          bottom: parent.bottom
          top: statusDummy.bottom
       }
+
    }
 
    // Левая панель - перекрывает центральный контейнер
@@ -71,8 +72,28 @@ Window {
       }
    }
 
+   // Правая панель - перекрывает центральный контейнер
+   // PedalPanel {
+   //    id: rightPanel
+   //    panelExpanded: rightPanelExpanded
+   //    socketModel: theModel
+   //    expandedWidth: container.width / 2
+   //    collapsedWidth: 90
+   //    animationDuration: container.panelAnimationDuration
+   //    animationEasing: container.panelAnimationEasing
+   //    height: socketsDummy.height
+   //    anchors.bottom: socketsDummy.bottom
+   //    x: container.width - width
+   //    z: 15  // Поверх центрального контейнера
+
+   //    // Синхронизируем состояние панели с контейнером
+   //    onPanelExpandedChanged: {
+   //       rightPanelExpanded = panelExpanded
+   //    }
+   // }
+
    PedalContainer {
-      id: pedalSideBar
+      id: pedalContainerrr
       innerModel: theModel
       z: 30
       anchors {
@@ -90,7 +111,7 @@ Window {
       edge: Qt.RightEdge
    }
    Connections {
-      target: pedalSideBar
+      target: pedalContainerrr
       function onPedMenuRequest(socketId) {
          pedDrawer.socketId = socketId
          pedDrawer.open()
@@ -102,47 +123,14 @@ Window {
       width: 0.8 * container.width
       height: container.height
       edge: Qt.LeftEdge
+      // Loader
+      // SettingsMain {
       MenuLoader {
          id: menuLoad
          anchors.fill: parent
       }
    }
 
-   Connections {
-      target: socketsDummy
-      function onProgAddRequest(addType) {
-         switch (addType) {
-            case 0: {
-               recomHandle.copyCurrent()
-               break;
-            }
-            case 1: {
-               menuLoad.source = "ProgItemList.qml"
-               menuLoad.shortcut = true
-               menuLoad.item.loadClear = false
-               leftDrawer.open()
-               break;
-            }
-            case 2: {
-               recomHandle.addEmptyDefault()
-               break;
-            }
-         }
-      }
-   }
-
-   Connections {
-      target: statusDummy
-      function onDrawerCalled() {
-         leftDrawer.open()
-      }
-   }
-   Connections {
-      target: menuLoad
-      function onCloseMe() {
-         leftDrawer.close()
-      }
-   }
    // Область для свайпов и закрытия панелей
    // MouseArea {
    //    id: swipeArea
@@ -271,4 +259,16 @@ Window {
 
    // }
 
+   Connections {
+      target: statusDummy
+      function onDrawerCalled() {
+         leftDrawer.open()
+      }
+   }
+   Connections {
+      target: menuLoad
+      function onCloseMe() {
+         leftDrawer.close()
+      }
+   }
 }

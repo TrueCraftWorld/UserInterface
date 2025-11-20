@@ -126,7 +126,6 @@ Rectangle {
             anchors.fill: parent
             id: progList
             noImage: true
-            // imageSourceTemplate: "image://instrums/%1"
         }
     }
     Rectangle {

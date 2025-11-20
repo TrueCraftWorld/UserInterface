@@ -100,7 +100,7 @@ class SocketModeEditor : public QObject
     Q_PROPERTY(bool isEndo READ isEndo NOTIFY currentModeIndexChanged)
 
 public:
-    explicit SocketModeEditor(SocketModel * model, QObject *parent = nullptr);
+    explicit SocketModeEditor(QSharedPointer<SocketModel> model, QObject *parent = nullptr);
 
     Q_INVOKABLE void initialize(int socket, int mode, bool isCoag);
     Q_INVOKABLE void loadModeParameters(int modeIndex);
@@ -177,7 +177,7 @@ private:
     int m_currentInstrIndex = -1;
     QVariantMap m_originalParameters;
     QVariantMap fetchModeParameters(int modeIndex);
-    SocketModel * m_model;
+    QSharedPointer<SocketModel> m_model;
 
     bool isParamsEqual(const QVariantMap& a, const QVariantMap& b) const;
     bool m_hasChanges;

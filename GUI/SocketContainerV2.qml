@@ -18,7 +18,7 @@ Rectangle {
         spacing: 10
         Rectangle {
             id: progPage
-            height: 20
+            height: 30
             Layout.fillWidth: true
             color: "transparent"
             RowLayout {
@@ -29,8 +29,8 @@ Rectangle {
                 Repeater {
                     model: theModel.subProgCount
                     delegate: Rectangle {
-                        height: 18
-                        width: 36
+                        height: 27
+                        width: 40
                         color: index === theModel.subProgIdx ? "white" : "black"
                         border.color: "white"
                         border.width: 1
@@ -50,8 +50,9 @@ Rectangle {
                     }
                 }
                 Rectangle {
-                    height: 18
-                    width: 36
+                    id: progAddSign
+                    height: 27
+                    width: 40
                     color: "black"
                     border.color: "white"
                     border.width: 1
@@ -72,6 +73,28 @@ Rectangle {
                 }
                 Item {
                     Layout.fillWidth: true
+                }
+                Rectangle {
+                    id: progDeleteSign
+                    height: 27
+                    width: 40*5
+                    color: "black"
+                    border.color: "red"
+                    border.width: 1
+                    radius: 6
+                    visible: theModel.subProgCount < 5 ? true : false
+
+                    Text {
+                        text: qsTr("удалить")
+                        horizontalAlignment: Qt.AlignHCenter
+                        verticalAlignment: Qt.AlignVCenter
+                        anchors.fill: parent
+                        color: "white"
+                    }
+                    MouseArea {
+                        anchors.fill: parent
+                        onClicked: recomHandle.removeSubProg()
+                    }
                 }
             }
         }
@@ -99,6 +122,17 @@ Rectangle {
     }
     ModeEditor {
         id: modeDialog
+    }
+    ProgAdditionPop {
+        id: progSelector
+        width: socketContainer.width
+        height: socketContainer.height/3
+
+        // width: 900
+        // anchors.centerIn: parent
+        y: 0
+        modal: true
+    // y: - socketContainer.height/2
     }
 
     Connections {

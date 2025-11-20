@@ -37,7 +37,7 @@ Rectangle {
     Connections {
         target: repeat
         function onPedalMenuRequest(socketId) {
-            console.log("container PedClick")
+            // console.log("container PedClick")
             pedContainer.pedMenuRequest(socketId)
         }
     }

@@ -21,10 +21,9 @@ void ProgHandle::loadRecommendedProg(int recomProgIdx, bool clear)
     emit signalRecomProgChosen(iter.key(), clear);
 }
 
-void ProgHandle::removeSubProg(int idx)
+void ProgHandle::removeSubProg()
 {
-
-    emit signalRemoveSub(idx);
+    emit signalRemoveSub();
 }
 
 void ProgHandle::loadUserProg(int recomProgId)
@@ -40,6 +39,16 @@ void ProgHandle::loadEmptyProg()
 void ProgHandle::saveProg(int id, const QString &name)
 {
     emit signalSave(id, name);
+}
+
+void ProgHandle::addEmptyDefault()
+{
+    emit signalAddEmptyDefault(false);
+}
+
+void ProgHandle::copyCurrent()
+{
+    emit signalCopyCurrent();
 }
 
 void ProgHandle::permitAll()
@@ -100,3 +109,4 @@ void ProgHandle::setScopeNameList(QMap<int, QString> scopes)
     setScopeIdx(0);
     emit scopeNameList();
 }
+

@@ -18,12 +18,6 @@ Popup {
     width: parent.width
     height: parent.height
     
-    // Привязка к координатам и размерам активного сокета
-    // x: control.activeSocketX || 0
-    // y: control.activeSocketY || 0
-    // width: control.activeSocketWidth || 350
-    // height: control.activeSocketHeight || 400
-    
     // Перехватываем все события мыши
     MouseArea {
         anchors.fill: parent
@@ -173,18 +167,5 @@ Popup {
             easing.type: Easing.InQuad
         }
     }
-    
-    // Синхронизация с control.activation
-    // Connections {
-    //     target: control
-        
-    //     function onActivationChanged(active) {
-    //         if (active) {
-    //             activationPopup.open()
-    //         } else {
-    //             activationPopup.close()
-    //         }
-    //     }
-    // }
 }
 

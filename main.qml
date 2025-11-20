@@ -111,26 +111,23 @@ Window {
    Connections {
       target: socketsDummy
       function onProgAddRequest(addType) {
-      switch (addType) {
-         case 0: {
-            recomHandle.copyCurrent()
-            break;
+         switch (addType) {
+            case 0: {
+               recomHandle.copyCurrent()
+               break;
+            }
+            case 1: {
+               menuLoad.source = "ProgItemList.qml"
+               menuLoad.shortcut = true
+               menuLoad.item.loadClear = false
+               leftDrawer.open()
+               break;
+            }
+            case 2: {
+               recomHandle.addEmptyDefault()
+               break;
+            }
          }
-
-         case 1: {
-            menuLoad.source = "ProgItemList.qml"
-            menuLoad.shortcut = true
-            menuLoad.item.loadClear = false
-            leftDrawer.open()
-            break;
-         }
-
-         case 2: {
-            recomHandle.addEmptyDefault()
-            break;
-         }
-
-      }
       }
    }
 

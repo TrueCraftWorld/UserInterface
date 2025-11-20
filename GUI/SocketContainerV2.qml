@@ -109,19 +109,23 @@ Rectangle {
             Layout.fillHeight: true
         }
     }
-    ProgAdditionPop {
-        id: progSelector
-        width: socketContainer.width
-        height: 200
-        anchors.centerIn: parent
-        y: 0
-        // y: - socketContainer.height/2
-    }
+
     InstrumEditor {
         id: instrDialog
     }
     ModeEditor {
         id: modeDialog
+    }
+    ProgAdditionPop {
+        id: progSelector
+        width: socketContainer.width
+        height: socketContainer.height/3
+
+        // width: 900
+        // anchors.centerIn: parent
+        y: 0
+        modal: true
+    // y: - socketContainer.height/2
     }
 
     Connections {

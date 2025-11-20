@@ -138,7 +138,6 @@ void ControlCenter::prepareConnectios()
 { }
 
 
-
 QPointer<ProgHandle> ControlCenter::getHandle() const
 {
     return m_handle;

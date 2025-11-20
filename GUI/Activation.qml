@@ -5,18 +5,21 @@ Popup {
     id: activationPopup
     
     // Привязка к данным из ControlCenter
-    property string socketName /*control.activeSocketName || "Неизвестный сокет"*/
-    property string modeName /*control.activeModeName || "Режим не выбран"*/
-    property int power /*control.activePower || 0*/
-    property bool isCoag /*control.activeIsCoag || false*/
+    property string socketName: control.activeSocketName || "Неизвестный сокет"
+    property string modeName: control.activeModeName || "Режим не выбран"
+    property int power: control.activePower || 0
+    property bool isCoag: control.activeIsCoag || false
     
     // Настройки popup
     modal: true  // Модальный - блокируем касания
     closePolicy: Popup.NoAutoClose  // Закрывается только программно
-    // parent: Overlay.overlay
-    anchors.centerIn: parent
-    width: parent.width
-    height: parent.height
+    parent: Overlay.overlay
+    
+    // Привязка к координатам и размерам активного сокета
+    x: control.activeSocketX || 0
+    y: control.activeSocketY || 0
+    width: control.activeSocketWidth || 350
+    height: control.activeSocketHeight || 400
     
     // Перехватываем все события мыши
     MouseArea {
@@ -24,11 +27,11 @@ Popup {
         propagateComposedEvents: false
         preventStealing: true
         
-        // onPressed: mouse.accepted = true
-        // onReleased: mouse.accepted = true
-        // onClicked: mouse.accepted = true
-        // onDoubleClicked: mouse.accepted = true
-        // onWheel: wheel.accepted = true
+        onPressed: mouse.accepted = true
+        onReleased: mouse.accepted = true
+        onClicked: mouse.accepted = true
+        onDoubleClicked: mouse.accepted = true
+        onWheel: wheel.accepted = true
     }
     
     // Фон в зависимости от режима
@@ -84,6 +87,17 @@ Popup {
                 anchors.horizontalCenter: parent.horizontalCenter
             }
             
+//            // Название сокета
+//            Text {
+//                anchors.horizontalCenter: parent.horizontalCenter
+//                text: socketName
+//                font.pixelSize: 32
+//                font.bold: true
+//                color: isCoag ? "white" : "black"
+//                style: Text.Outline
+//                styleColor: isCoag ? "black" : "white"
+//            }
+            
             // Название режима
             Text {
                 anchors.horizontalCenter: parent.horizontalCenter
@@ -103,6 +117,29 @@ Popup {
                 style: Text.Outline
                 styleColor: isCoag ? "black" : "white"
             }
+            
+//            Row {
+//                anchors.horizontalCenter: parent.horizontalCenter
+//                spacing: 10
+                
+//                Text {
+//                    text: qsTr("Мощность:")
+//                    font.pixelSize: 36
+//                    font.bold: true
+//                    color: isCoag ? "white" : "black"
+//                    style: Text.Outline
+//                    styleColor: isCoag ? "black" : "white"
+//                }
+                
+//                Text {
+//                    text: power
+//                    font.pixelSize: 36
+//                    font.bold: true
+//                    color: isCoag ? "yellow" : "brown"
+//                    style: Text.Outline
+//                    styleColor: isCoag ? "black" : "white"
+//                }
+//            }
         }
         
         // Анимированная рамка по краям
@@ -165,6 +202,19 @@ Popup {
             to: 0.9
             duration: 50
             easing.type: Easing.InQuad
+        }
+    }
+    
+    // Синхронизация с control.activation
+    Connections {
+        target: control
+        
+        function onActivationChanged(active) {
+            if (active) {
+                activationPopup.open()
+            } else {
+                activationPopup.close()
+            }
         }
     }
 }

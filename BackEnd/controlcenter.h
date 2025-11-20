@@ -27,7 +27,6 @@ class ControlCenter : public QObject
     Q_PROPERTY(quint8 argonRealRate READ argonRealRate NOTIFY argonRealRateChanged)
     Q_PROPERTY(bool enableActivation READ enableActivation WRITE setEnableActivation NOTIFY enableActivationChanged)
     Q_PROPERTY(bool activation READ activation NOTIFY activationChanged)
-
 public:
     explicit ControlCenter(QObject *parent = nullptr);
     ~ControlCenter();

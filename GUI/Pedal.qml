@@ -6,7 +6,6 @@ Rectangle {
 
     signal pedalMenuRequest()
     property int pedalStateIdx
-    property int socketId
 
     Connections {
         target: pedalRoot
@@ -86,13 +85,28 @@ Rectangle {
         }
     ]
 
+//    Label {
+//        id: name
+//        anchors {
+//            top: parent.top
+//            left: parent.left
+//            right: parent.right
+//            topMargin: 1
+//            rightMargin: 10
+//        }
+//        horizontalAlignment: Qt.AlignHCenter
+//        text: qsTr("ПЕДАЛЬ")
+//        color: "white"
+//        font.pixelSize: 16
+//        font.bold: true
+//    }
     Rectangle {
         id: shell
-        width: 85
-        height: 85
+        width: 72
+        height: 72
         anchors.top: parent.top
         anchors.right: parent.right
-
+//        anchors.margins: 5
         radius: 10
         border.color: "orange"
 
@@ -202,29 +216,22 @@ Rectangle {
                 }
             }
         }
-        MouseArea {
+    }
 
-            anchors.fill: parent
-            onClicked: {
-                // console.log("initial PedClick")
-                pedalRoot.pedalMenuRequest()
-            }
+    MouseArea {
+        id: pressHandle
+        anchors.fill: parent
+        z: 1  // Локальный z-order внутри педали
+        propagateComposedEvents: true
+        
+        onPressed: {
+            mouse.accepted = false  // Пропускаем событие для обработки свайпов
+        }
+        
+        onClicked: {
+            pedalRoot.pedalMenuRequest()
+            mouse.accepted = true
         }
     }
-    // MouseArea {
-    //     id: pressHandle
-    //     anchors.fill: parent
-    //     // z: 1
-    //     propagateComposedEvents: true
-        
-    //     onPressed: {
-    //         mouse.accepted = false  // Пропускаем событие для обработки свайпов
-    //     }
-        
-    //     onClicked: {
-    //         pedalRoot.pedalMenuRequest()
-    //         mouse.accepted = true
-    //     }
-    // }
 
 }

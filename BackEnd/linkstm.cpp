@@ -45,7 +45,7 @@ LinkStm::LinkStm(QObject *parent)
     m_uartTimer = new QTimer(this);
     connect(m_uartTimer, &QTimer::timeout, [this]() {sendCommand();});
     m_uartTimer->start(100);
-    // qDebug(logInfo()) << "start Uart Timer";
+    qDebug(logInfo()) << "start Uart Timer";
 
     connect(m_uart, &UartToQmlBridge::uartRecieve, this, &LinkStm::unpackRxCommand);
 
@@ -97,14 +97,14 @@ void LinkStm::unpackRxCommand(const QByteArray &rxPacket)
         errStr.append(QString::number(destuffedBuffer.at(0)));
         errStr.append(" rxCom ");
         errStr.append(QString::number(m_rxCommand.data.size()));
-        // qDebug() << errStr;
+        qDebug() << errStr;
         m_state = STATE_RX_LEN_ERR;
         return;
     }
     //Проверка CRC
     if (calculateCrc16(destuffedBuffer, destuffedBuffer.size()) != 0) {
         m_state = STATE_RX_CRC_ERR;
-        // qDebug() << "CRC не совпадает";
+        qDebug() << "CRC не совпадает";
     }
     // Модуль, от которого пришло сообщение
     m_rxCommand.mc = (McUnit) (destuffedBuffer.at(0) & UART_ADDR);
@@ -166,7 +166,7 @@ void LinkStm::sendCommand()
     static int mode = 1000;             // Активированный режим
     static int power = 0;               // Активированная мощность
     static int updateCounter = 0;       // Счётчик обновления ПО
-    static int updateProgr = 0;
+   static int updateProgr = 0;
 
     m_comState = IDLE;
 
@@ -182,7 +182,7 @@ void LinkStm::sendCommand()
 
         if (!m_txCommandList.isEmpty()) {   // Какую-то спец команду надо передать
             m_txCommand = m_txCommandList.takeFirst();
-            m_comState = SPECIAL;
+            m_comState == SPECIAL;
         }
 
         //______________Подготовка активации________________
@@ -290,7 +290,7 @@ void LinkStm::sendCommand()
            }
            m_txCommand.data.append((uchar) version);
            m_txCommand.data.append((uchar) subversion);
-           // qDebug() << "new ver: " << getHexStr(m_txCommand.data);
+           qDebug() << "new ver: " << getHexStr(m_txCommand.data);
                     m_comState = IDLE;
                 }
             } // softData
@@ -331,7 +331,7 @@ void LinkStm::sendCommand()
     if (!m_uart->writeData(txPacket)) {
         m_state = STATE_TX_ERR;
         txStr = "!Tx ERROR";
-        // qDebug() << "Tx ERR!";
+        qDebug() << "Tx ERR!";
    }
    else {
         txStr = getHexStr(txPacket);
@@ -355,7 +355,7 @@ QByteArray LinkStm::packTxCommand()
     // Заполняем буфер: адрес модуля + длина, команда, данные, crc
 //    buffer.resize(MAX_PACKET_LEN);
 //    buffer.clear();
-    buffer[0] = static_cast<quint8> (m_txCommand.mc) | (m_txCommand.data.length() / 2); // Т.к. у нас переменна только длина данных, а они кратны 2, то можно передавать меньше
+    buffer[0] = (quint8) m_txCommand.mc | (m_txCommand.data.length() / 2); // Т.к. у нас переменна только длина данных, а они кратны 2, то можно передавать меньше
     buffer[1] = m_txCommand.com;
 
     for (i = 0; i < m_txCommand.data.length(); i++) {
@@ -363,8 +363,8 @@ QByteArray LinkStm::packTxCommand()
     }
     i += 2;
     crc = calculateCrc16(buffer, m_txCommand.data.length() + 2);
-    buffer[i++] = static_cast<quint8> (crc >> 8);
-    buffer[i++] = static_cast<quint8> (crc & 0xFF);
+    buffer[i++] = (quint8) (crc >> 8);
+    buffer[i++] = (quint8) (crc & 0xFF);
 
     // Организуем байт-стаффинг, когда FRAME_START всегда начало посылки
     packet.append(FRAME_START);
@@ -456,7 +456,7 @@ void LinkStm::readRxCommand()
                 break;
             default:
                 unitState.pedalKnob = PRESS_WRONG;
-                // qWarning() << "Invalid pedal/knob press value:" << Qt::hex << pressValue;
+                qWarning() << "Invalid pedal/knob press value:" << Qt::hex << pressValue;
                 break;
             }
             
@@ -467,7 +467,7 @@ void LinkStm::readRxCommand()
                 unitState.instrMono2 = static_cast<LinkStm::InstrumentConnected>((otherByte >> 1) & 0x03);
             }
         } else {
-            // qDebug() << "Посылка от stm отстой - нет нажатий кнопок";
+            qDebug() << "Посылка от stm отстой - нет нажатий кнопок";
             unitState.pedalKnob = PRESS_NONE;
         }
         
@@ -508,7 +508,7 @@ void LinkStm::readRxCommand()
         break;
     default:
         // Что-то странное пришло
-        // qWarning() << "Unknown rx command: " << m_rxCommand.com;
+        qWarning() << "Unknown rx command: " << m_rxCommand.com;
         break;
     }
 }
@@ -631,7 +631,7 @@ void LinkStm::updateTransfer(QList<HexString> hexList, int bank, QString version
     m_update = true;
     m_txCommand = txCom;
     m_versionStr = versionStr;
-    // qDebug() << "startUpdate_" << bank;
+    qDebug() << "startUpdate_" << bank;
 }
 
 // Ставим новую команду в очередь
@@ -742,10 +742,10 @@ void LinkStm::updateSocketData(int socketIndex, quint16 cutModeNum, quint16 coag
         m_socketList[socketIndex].coagModePower = coagModePower;
         m_socketList[socketIndex].pedal = pedal;
         
-        // qDebug() << "LinkStm: Updated socket" << socketIndex
-        //          << "cutMode:" << cutModeNum << "coagMode:" << coagModeNum
-        //          << "cutPower:" << cutModePower << "coagPower:" << coagModePower
-        //          << "pedal:" << pedal;
+        qDebug() << "LinkStm: Updated socket" << socketIndex 
+                 << "cutMode:" << cutModeNum << "coagMode:" << coagModeNum
+                 << "cutPower:" << cutModePower << "coagPower:" << coagModePower
+                 << "pedal:" << pedal;
     }
 }
 
@@ -753,6 +753,6 @@ void LinkStm::initializeAllSockets()
 {
     // Этот метод будет вызываться из ControlCenter для инициализации всех сокетов
     // Пока что просто логируем, что инициализация запрошена
-    // qDebug() << "LinkStm: initializeAllSockets called - will be implemented by ControlCenter";
+    qDebug() << "LinkStm: initializeAllSockets called - will be implemented by ControlCenter";
 }
 

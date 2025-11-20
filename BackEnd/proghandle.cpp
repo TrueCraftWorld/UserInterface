@@ -109,4 +109,3 @@ void ProgHandle::setScopeNameList(QMap<int, QString> scopes)
     setScopeIdx(0);
     emit scopeNameList();
 }
-

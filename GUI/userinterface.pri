@@ -4,7 +4,6 @@ CONFIG += c++17 link_pkgconfig disable-desktop
 RESOURCES += $$PWD/userinterface.qrc
 
 DISTFILES += \
-    $$PWD/GradientBack.qml \
     $$PWD/HalfSocket.qml \
     $$PWD/InstrumEditor.qml \
     $$PWD/InstrumRect.qml \
@@ -16,10 +15,8 @@ DISTFILES += \
     $$PWD/ModePowerRect.qml \
     $$PWD/NeutralEl.qml \
     $$PWD/Pedal.qml \
-    $$PWD/PedalContainer.qml \
-    $$PWD/PedalDrawer.qml \
     $$PWD/PedalEditor.qml \
-    $$PWD/PedalRepeater.qml \
+    $$PWD/PedalPanel.qml \
     $$PWD/PowerRect.qml \
     $$PWD/ProgAdditionPop.qml \
     $$PWD/ProgItemList.qml \

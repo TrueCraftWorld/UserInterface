@@ -3,7 +3,7 @@
 #include <optional>
 #include <QDebug>
 
-SocketModeEditor::SocketModeEditor(SocketModel *model, QObject *parent)
+SocketModeEditor::SocketModeEditor(QSharedPointer<SocketModel> model, QObject *parent)
     : QObject{parent},
     m_model{model}
 {}

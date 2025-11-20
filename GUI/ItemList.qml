@@ -9,6 +9,7 @@ Rectangle {
     property string imageSourceTemplate
     property alias curIndex: theView.currentIndex
     property bool noImage: false
+    property int initialIndex: -1
     // property int selectedIndex: -1  // Индекс реально выбранного элемента (при клике)
     signal newIndexSelected(int newIndex)
 
@@ -48,6 +49,7 @@ Rectangle {
                 // property bool isCurrent: (index === theView.currentIndex)
                 // property bool isSelected: (index === itemList.selectedIndex)
                 property bool isSelected: (index === curIndex)
+                property bool isInitial: (index === initialIndex)
                 height: 100
                 width: ListView.view.width
                 radius: 8
@@ -139,9 +141,10 @@ Rectangle {
                     id: selectionBorder
                     anchors.fill: parent
                     color: "transparent"
-                    border.width: isSelected ? 3 : 0
+                    border.width: (isSelected || isInitial) ? 3 : 0
                     radius: 8
-                    border.color: "white"
+                    ///TODO придумать более визуально уместное выделение исходного элемента
+                    border.color: isInitial ? "magenta" : "white"
                 }
 
                 MouseArea {

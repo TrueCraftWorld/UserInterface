@@ -88,6 +88,8 @@ class SocketModeEditor : public QObject
      */
     Q_PROPERTY(int currentPower READ currentPower NOTIFY currentParamsChanged)
 
+    Q_PROPERTY(bool isEndo READ isEndo NOTIFY currentParamsChanged)
+
 
     Q_PROPERTY(int instrID READ instrID NOTIFY currentInstrChanged)
     Q_PROPERTY(int lowPowerBound READ lowPowerBound NOTIFY currentInstrChanged)
@@ -97,7 +99,6 @@ class SocketModeEditor : public QObject
     Q_PROPERTY(QString modeDescript READ modeDescript NOTIFY currentModeIndexChanged)
     Q_PROPERTY(QString instrBrief READ instrBrief NOTIFY currentInstrChanged)
     Q_PROPERTY(bool isCoag READ isCoag NOTIFY parametersLoaded)
-    Q_PROPERTY(bool isEndo READ isEndo NOTIFY currentModeIndexChanged)
 
 public:
     explicit SocketModeEditor(QSharedPointer<SocketModel> model, QObject *parent = nullptr);
@@ -113,8 +114,6 @@ public:
     Q_INVOKABLE QStringList instrList() const;
     Q_INVOKABLE QStringList modeNamesIds() const;
     Q_INVOKABLE QStringList modeNamesNums() const;
-    Q_INVOKABLE QStringList modeNamesBriefs() const;
-    Q_INVOKABLE QStringList modeNamesDescripts() const;
     Q_INVOKABLE QStringList instrListIds() const;
     Q_INVOKABLE QStringList instrListNums() const;
     Q_INVOKABLE QVariantMap currentMode() const;
@@ -140,11 +139,11 @@ public:
 
     int currentPower() const;
 
-    const QString modeDescript() const;
+    QString modeDescript() const;
 
-    const QString modeBrief() const;
+    QString modeBrief() const;
 
-    const QString instrBrief() const;
+    QString instrBrief() const;
 
     bool isEndo() const;
 
@@ -162,6 +161,8 @@ signals:
 
 private:
     bool checkChanges();
+    QVariantMap fetchModeParameters(int modeIndex);
+    bool isParamsEqual(const QVariantMap& a, const QVariantMap& b) const;
 
     int m_socketRow;
     int m_socketID;
@@ -176,10 +177,8 @@ private:
     int m_originalModeIndex = -1;
     int m_currentInstrIndex = -1;
     QVariantMap m_originalParameters;
-    QVariantMap fetchModeParameters(int modeIndex);
     QSharedPointer<SocketModel> m_model;
 
-    bool isParamsEqual(const QVariantMap& a, const QVariantMap& b) const;
     bool m_hasChanges;
     bool m_isCoag;
     int m_lowPowerBound;

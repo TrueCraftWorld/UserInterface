@@ -68,9 +68,11 @@ struct InstrInfo {
     int miniPower;
     int midiPower;
     int maxiPower;
+    // int legacyNumber;
     InstrInfo() = default;
-    InstrInfo(int _id, int min, int mid, int max)
-        : id(_id), miniPower(min), midiPower(mid), maxiPower(max) {;}
+    InstrInfo(int _id, int min, int mid, int max/*, int _legacyNumber*/)
+        : id(_id), miniPower(min), midiPower(mid), maxiPower(max)/*, legacyNumber(_legacyNumber)*/
+        {;}
 };
 
 class SurgicalMode {

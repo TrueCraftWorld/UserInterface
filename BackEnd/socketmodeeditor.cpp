@@ -17,6 +17,7 @@ void SocketModeEditor::initialize(int socket, int mode, bool isCoag)
     m_socketID = socket;
     m_modeNames = m_model->modeNames(socket, isCoag);
     m_modeNameIds = m_model->modeNamesIds(socket, isCoag);
+    // m_modeNameNums = m_model->
 
     m_originalParameters =  m_model->modeParam(socket, mode, isCoag);
     m_instrList =           m_model->instrumNames(socket, mode, isCoag);
@@ -155,35 +156,6 @@ QStringList SocketModeEditor::modeNamesNums() const
     return nums;
 }
 
-QStringList SocketModeEditor::modeNamesBriefs() const
-{
-    // Получаем Brief для каждого режима по его индексу
-    QStringList briefs;
-    for (int i = 0; i < m_modeNames.size(); ++i) {
-        CSurgModePtr mode = m_model->itemsMap()->at(m_socketID)->getMode(i, m_isCoag);
-        if (!mode.isNull()) {
-            briefs.append(mode->brief());
-        } else {
-            briefs.append("");
-        }
-    }
-    return briefs;
-}
-
-QStringList SocketModeEditor::modeNamesDescripts() const
-{
-    // Получаем Descript для каждого режима по его индексу
-    QStringList descripts;
-    for (int i = 0; i < m_modeNames.size(); ++i) {
-        CSurgModePtr mode = m_model->itemsMap()->at(m_socketID)->getMode(i, m_isCoag);
-        if (!mode.isNull()) {
-            descripts.append(mode->descript());
-        } else {
-            descripts.append("");
-        }
-    }
-    return descripts;
-}
 
 QStringList SocketModeEditor::instrListIds() const
 {
@@ -238,6 +210,7 @@ bool SocketModeEditor::isParamsEqual(const QVariantMap &a, const QVariantMap &b)
 
 bool SocketModeEditor::isCoag() const
 {
+    //в пределах одного едитора параметр isCoag не меняется вовсе
     return m_isCoag;
 }
 
@@ -296,20 +269,23 @@ int SocketModeEditor::currentPower() const
     return m_currentParameters.value("currentpower").toInt();
 }
 
-const QString SocketModeEditor::modeDescript() const
+QString SocketModeEditor::modeDescript() const
 {
     return m_currentParameters.value("modedescript").toString();
 }
 
-const QString SocketModeEditor::modeBrief() const
+QString SocketModeEditor::modeBrief() const
 {
     return m_currentParameters.value("modebrief").toString();
 }
 
-const QString SocketModeEditor::instrBrief() const
+QString SocketModeEditor::instrBrief() const
 {
     // Получаем ID инструмента из текущего режима
-    CSurgModePtr mode = m_model->socketById(m_socketID)->getMode(m_currentModeIndex, m_isCoag);
+    SockPtr sckPtr = m_model->socketById(m_socketID);
+    if (!sckPtr)
+        return "";
+    CSurgModePtr mode = sckPtr->getMode(m_currentModeIndex, m_isCoag);
     if (mode.isNull())
         return QString();
     
@@ -327,8 +303,7 @@ const QString SocketModeEditor::instrBrief() const
 
 bool SocketModeEditor::isEndo() const
 {
-    CSurgModePtr mode = m_model->socketById(m_socketID)->getMode(m_currentModeIndex, m_isCoag);
-    if (mode.isNull())
-        return false;
-    return mode->isEndo();
+    //в пределах одного едитора параметр эндо меняется только при загрузке всех остальных
+    //элементов информации про режим
+    return m_currentParameters.value("isendo").toBool();
 }

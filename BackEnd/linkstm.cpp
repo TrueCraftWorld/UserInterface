@@ -184,7 +184,7 @@ void LinkStm::sendCommand()
 
         if (!m_txCommandList.isEmpty()) {   // Какую-то спец команду надо передать
             m_txCommand = m_txCommandList.takeFirst();
-            m_comState == SPECIAL;
+            m_comState = SPECIAL;
         }
 
         //______________Подготовка активации________________
@@ -338,7 +338,7 @@ void LinkStm::sendCommand()
     if (!m_uart->writeData(txPacket)) {
         m_state = STATE_TX_ERR;
         txStr = "!Tx ERROR";
-        qDebug() << "Tx ERR!";
+        // qDebug() << "Tx ERR!";
    }
    else {
         txStr = getHexStr(txPacket);
@@ -780,10 +780,10 @@ void LinkStm::updateSocketData(int socketIndex, quint16 cutModeNum, quint16 coag
         m_socketList[socketIndex].coagModePower = coagModePower;
         m_socketList[socketIndex].pedal = pedal;
         
-        qDebug() << "LinkStm: Updated socket" << socketIndex 
-                 << "cutMode:" << cutModeNum << "coagMode:" << coagModeNum
-                 << "cutPower:" << cutModePower << "coagPower:" << coagModePower
-                 << "pedal:" << pedal;
+        // qDebug() << "LinkStm: Updated socket" << socketIndex
+        //          << "cutMode:" << cutModeNum << "coagMode:" << coagModeNum
+        //          << "cutPower:" << cutModePower << "coagPower:" << coagModePower
+        //          << "pedal:" << pedal;
     }
 }
 
@@ -791,6 +791,6 @@ void LinkStm::initializeAllSockets()
 {
     // Этот метод будет вызываться из ControlCenter для инициализации всех сокетов
     // Пока что просто логируем, что инициализация запрошена
-    qDebug() << "LinkStm: initializeAllSockets called - will be implemented by ControlCenter";
+    // qDebug() << "LinkStm: initializeAllSockets called - will be implemented by ControlCenter";
 }
 

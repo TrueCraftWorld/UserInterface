@@ -75,18 +75,11 @@ Repeater {
             anchors.rightMargin: 2
             anchors.margins: 0
             pedalStateIdx: model.socketpedal
-            // state: model.socketdisplaymode
             socketId: index
-            // onPedalMenuRequest: {
-            //     theModel.qmlSetData(index, 1, "socketdisplaymode")
-            //     repeatRoot.pedalMenuRequest()
-            // }
         }
         Connections {
             target: pedIcon
             function onPedalMenuRequest() {
-                // console.log("Repeater PedClick" , pedIcon.socketId, index)
-                //раскрываем сокет в котором педаль - чтобы менбшка не была больше него
                 theModel.qmlSetData(pedIcon.socketId, 1, "socketdisplaymode")
                 repeatRoot.pedalMenuRequest(pedIcon.socketId)
             }

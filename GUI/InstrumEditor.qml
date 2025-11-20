@@ -21,7 +21,7 @@ Popup {
     property var itemIdArr: []
     property var itemNameArr: []
     property var itemNumArr: []
-    property bool changed: false
+    property int initiallySelectedItem
 
     ListModel {
         id: combinedModel
@@ -40,7 +40,7 @@ Popup {
             combinedModel.append({
                 itemId: itemNumArr[i],  // Используем Num вместо ID для изображений
                 itemName: itemNameArr[i],
-                rowIndex: i
+                // rowIndex: i
             })
         }
         instrumListView.innerModel = combinedModel
@@ -48,7 +48,7 @@ Popup {
 
     onOpened: {
         // Запрещаем активацию при открытии popup
-        control.enableActivation = false
+        // control.enableActivation = false
         
         modeEditor.initialize(socId, modeIndex, isCoag)
 
@@ -60,12 +60,15 @@ Popup {
         //и триггерятся сигналы
         var bla = modeEditor.currentInstrIndex
         modeEditor.currentInstrIndex = bla
+
+        //запоминаем тот индекс, что был изначально, чтобы отметить элемент
+        initiallySelectedItem = modeEditor.currentInstrIndex
     }
     
-    onClosed: {
-        // Разрешаем активацию при закрытии popup
-        control.enableActivation = true
-    }
+    // onClosed: {
+    //     // Разрешаем активацию при закрытии popup
+    //     control.enableActivation = true
+    // }
     
     Rectangle {
         id: back
@@ -169,6 +172,7 @@ Popup {
             ItemList {
                 id: instrumListView
                 curIndex: modeEditor.currentInstrIndex
+                initialIndex: initiallySelectedItem
                 anchors {
                     top: parent.top
                     bottom: footer.top
@@ -271,7 +275,6 @@ Popup {
             }
             onClicked: {
                 modeEditor.rollBack()
-                changed = false
                 root.close()
             }
         }
@@ -280,7 +283,10 @@ Popup {
             id: acceptButton
             width: parent.width * .2
             height: parent.height * .1
-            visible: changed
+
+            //именно эдитор знает дейсвительно ли есть изменения
+            //именно эдитор занимается их обработкой и внесением в модель
+            visible: modeEditor.hasChanges
             anchors {
                 bottom: parent.bottom
                 bottomMargin: 10
@@ -305,7 +311,6 @@ Popup {
             }
             onClicked: {
                 modeEditor.commitChanges()
-                changed = false
                 root.close();
             }
         }
@@ -379,12 +384,12 @@ Popup {
                         power: modeEditor.lowPowerBound
                         selected: (modeEditor.currentPower === power)
                         isEndo: modeEditor.isEndo
-                        onPowerChosen: {
-                            if (modeEditor.midPowerBound === 0) {
-                                modeEditor.updateParameter("currentpower", but1.power)
-                            }
-                            console.log("1 midPower = ", modeEditor.midPowerBound)
-                        }
+                        // onPowerChosen: {
+                        //     if (modeEditor.midPowerBound === 0) {
+                        //         modeEditor.updateParameter("currentpower", but1.power)
+                        //     }
+                        //     console.log("1 midPower = ", modeEditor.midPowerBound)
+                        // }
                     }
                     PowerRect {
                         id: but2
@@ -396,12 +401,13 @@ Popup {
                         power: modeEditor.midPowerBound
                         selected: (modeEditor.currentPower === power)
                         isEndo: modeEditor.isEndo
-                        onPowerChosen: {
-                            if (modeEditor.midPowerBound !== 0) {
-                                modeEditor.updateParameter("currentpower", but2.power)
-                            }
-                            console.log("2 midPower = ", modeEditor.midPowerBound)
-                        }
+                        //сам PowerRect становится невидимый, если мощность ноль, на него нельзя нажать и получить 0
+                        // onPowerChosen: {
+                        //     if (modeEditor.midPowerBound !== 0) {
+                        //         modeEditor.updateParameter("currentpower", but2.power)
+                        //     }
+                        //     console.log("2 midPower = ", modeEditor.midPowerBound)
+                        // }
                     }
                     PowerRect {
                         id: but3
@@ -434,34 +440,29 @@ Popup {
         target: but3
         function onPowerChosen() {
             modeEditor.updateParameter("currentpower", but3.power)
-            changed = true
         }
     }
     Connections {
         target: but2
         function onPowerChosen() {
             modeEditor.updateParameter("currentpower", but2.power)
-            changed = true
         }
         //мощность на кнопке меняется при инициализации
         //и мы по умолчанию устанавливаем в диалоге среднюю мощность
         function onPowerChanged() {
             modeEditor.updateParameter("currentpower", but2.power)
-            changed = true
         }
     }
     Connections {
         target: but1
         function onPowerChosen() {
             modeEditor.updateParameter("currentpower", but1.power)
-            changed = true
         }
         //мощность на кнопке меняется при инициализации
         //если средней мощности нет, по умолчанию устанавливаем в диалоге минимальную
         function onPowerChanged() {
             if (modeEditor.midPowerBound === 0) {
                 modeEditor.updateParameter("currentpower", but1.power)
-                changed = true
             }
         }
     }
@@ -470,7 +471,6 @@ Popup {
         target: instrumListView
         function onNewIndexSelected(index) {
             modeEditor.currentInstrIndex = index
-            changed = true
         }
     }
 }

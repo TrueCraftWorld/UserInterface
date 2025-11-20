@@ -8,7 +8,7 @@ Popup {
     property int modeIndex
     property bool isCoag
     property var modeEditor: Editor
-    // property string imageNameTemplate
+
 
     id: root
     modal: true
@@ -21,36 +21,23 @@ Popup {
     property var itemIdArr: []
     property var itemNameArr: []
     property var itemNumArr: []
-//    property var itemBriefArr: []
-//    property var itemDescriptArr: []
-    property bool changed: false
+    property int initiallySelectedItem
     
     // Определяем префикс для изображения на основе типа сокета
-    property string imagePrefix: {
-        // socId: 0 = БИ1, 1 = БИ2, 2 = МОНО1, 3 = МОНО2
-        return (socId <= 1) ? "bimode" : "monomode"
-    }
+    property string imagePrefix: (socId <= 1) ? "bimode" : "monomode"
+    // property string imagePrefix: {
+    //     // socId: 0 = БИ1, 1 = БИ2, 2 = МОНО1, 3 = МОНО2
+    //     return (socId <= 1) ? "bimode" : "monomode"
+    // }
     
     // Получаем Num текущего режима
     property int currentModeNum: {
-        if (modeEditor.currentModeIndex < 0 || modeEditor.currentModeIndex >= itemNumArr.length)
+        if (modeEditor.currentModeIndex < 0
+            || modeEditor.currentModeIndex >= itemNumArr.length)
             return 0
-        return parseInt(itemNumArr[modeEditor.currentModeIndex])
+        return itemNumArr[modeEditor.currentModeIndex]
     }
     
-//    // Получаем краткое описание текущего режима
-//    property string currentModeBrief: {
-//        if (modeEditor.currentModeIndex < 0 || modeEditor.currentModeIndex >= itemBriefArr.length)
-//            return ""
-//        return itemBriefArr[modeEditor.currentModeIndex]
-//    }
-    
-//    // Получаем полное описание текущего режима
-//    property string currentModeDescript: {
-//        if (modeEditor.currentModeIndex < 0 || modeEditor.currentModeIndex >= itemDescriptArr.length)
-//            return ""
-//        return itemDescriptArr[modeEditor.currentModeIndex]
-//    }
 
     ListModel {
         id: combinedModel
@@ -68,33 +55,30 @@ Popup {
             combinedModel.append({
                 itemId: itemNumArr[i],  // Используем Num вместо ID для изображений
                 itemName: itemNameArr[i],
-                rowIndex: i
+                // rowIndex: i
             })
         }
         modeListView.innerModel = combinedModel
     }
 
     onOpened: {
-        // Запрещаем активацию при открытии popup
-        control.enableActivation = false
-        
         modeEditor.initialize(socId, modeIndex, isCoag)
 
         itemNameArr = modeEditor.modeNames
         itemIdArr = modeEditor.modeNamesIds()
         itemNumArr = modeEditor.modeNamesNums()
-//        itemBriefArr = modeEditor.modeNamesBriefs()
-//        itemDescriptArr = modeEditor.modeNamesDescripts()
         
         updateModel()
         modeEditor.currentModeIndex = modeIndex
         modeListView.selectedIndex = modeEditor.currentModeIndex
+
+        initiallySelectedItem = modeIndex
     }
     
-    onClosed: {
-        // Разрешаем активацию при закрытии popup
-        control.enableActivation = true
-    }
+    // onClosed: {
+    //     // Разрешаем активацию при закрытии popup
+    //     control.enableActivation = true
+    // }
 
     Rectangle {
         id: back
@@ -166,7 +150,6 @@ Popup {
                 }
                 onClicked: {
                     modeEditor.rollBack()
-                    changed = false
                     root.close()
                 }
             }
@@ -183,6 +166,7 @@ Popup {
             width: .3 * parent.width
             ItemList {
                 id: modeListView
+                initialIndex: initiallySelectedItem
                 curIndex: modeEditor.currentModeIndex
                 color: "transparent"
                 anchors {
@@ -191,7 +175,6 @@ Popup {
                     left: parent.left
                     right: parent.right
                 }
-                // innerModel: combinedModel
                 imageSourceTemplate: "image://modes/" + imagePrefix + "%1"
             }
             Rectangle {
@@ -284,13 +267,16 @@ Popup {
                 border.color: "cyan"
                 border.width: 1
                 radius: 5
-
-                ScrollView {
-                    anchors.fill: parent
-                    anchors.margins: 10
-                    clip: true
+                //я не знаю зачем именно так - но так можно улистать
+                // весть текст вбок так что его не видно
+                // ScrollView {
+                //     anchors.fill: parent
+                //     anchors.margins: 10
+                //     clip: true
 
                     Label {
+                        anchors.fill: parent
+                        anchors.margins: 10
                         id: briefText
                         text: modeEditor.modeBrief
                         color: "cyan"
@@ -299,15 +285,8 @@ Popup {
                         wrapMode: Text.WordWrap
                         width: briefRect.width - 10
 
-                        Component.onCompleted: {
-//                            console.log("briefText initialized, text:", text)
-                        }
-
-                        onTextChanged: {
-//                            console.log("briefText changed to:", text)
-                        }
                     }
-                }
+                // }
             }
 
             Image {
@@ -336,38 +315,29 @@ Popup {
                 }
 
                 color: "transparent"
-//                border.color: "white"
-//                border.width: 1
-//                radius: 5
 
-                ScrollView {
-                    anchors.fill: parent
-                    anchors.margins: 10
-                    clip: true
+                // ScrollView {
+                //     anchors.fill: parent
+                //     anchors.margins: 10
+                //     clip: true
 
                     Label {
                         id: descriptText
+                        anchors.fill: parent
+                        anchors.margins: 10
                         text: modeEditor.modeDescript
                         color: "white"
                         font.pixelSize: 24
                         wrapMode: Text.WordWrap
                         width: descriptRect.width - 10
-
-                        Component.onCompleted: {
-//                            console.log("descriptText initialized, text:", text)
-                        }
-
-                        onTextChanged: {
-//                            console.log("descriptText changed to:", text)
-                        }
                     }
-                }
+                // }
             }
         }
 
         Button {
             id: declineButton
-    //        visible: modeEditor.hasChanges
+            // visible: modeEditor.hasChanges
             width: parent.width * .2
             height: parent.height * .15
             anchors {
@@ -395,7 +365,6 @@ Popup {
             }
             onClicked: {
                 modeEditor.rollBack()
-                changed = false
                 root.close()
             }
         }
@@ -404,8 +373,7 @@ Popup {
             id: acceptButton
             width: parent.width * .2
             height: parent.height * .15
-    //        enabled: modeEditor.hasChanges
-            visible: changed
+            visible: modeEditor.hasChanges
             anchors {
                 bottom: parent.bottom
                 bottomMargin: 10
@@ -430,7 +398,6 @@ Popup {
             }
             onClicked: {
                 modeEditor.commitChanges()
-                changed = false
                 root.close();
             }
         }
@@ -440,7 +407,6 @@ Popup {
         target: modeListView
         function onNewIndexSelected(index) {
             modeEditor.currentModeIndex = index
-            changed = true
         }
     }
 }

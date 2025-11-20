@@ -18,7 +18,7 @@ Rectangle {
         spacing: 10
         Rectangle {
             id: progPage
-            height: 20
+            height: 30
             Layout.fillWidth: true
             color: "transparent"
         }

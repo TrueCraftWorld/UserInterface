@@ -197,6 +197,7 @@ QVariantMap SurgicalMode::params() const
     res["instrindex"] = m_selectedInstrIndex;
     res["modebrief"] = m_brief;
     res["modedescript"] = m_descript;
+    res["isendo"] = m_isEndo;
     return res;
 }
 

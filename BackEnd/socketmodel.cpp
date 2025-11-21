@@ -273,8 +273,26 @@ bool SocketModel::setData(const QModelIndex &index, const QVariant &value, int r
         int ped = value.toInt(&isOk);
         if (!isOk)
             return isOk;
-        return socketItem.setPedal(ped);
-        // return true;
+        bool result = socketItem.setPedal(ped);
+        if (result) {
+            // Получаем данные сокета для сигнала
+            quint16 cutModeNum = 0;
+            quint16 coagModeNum = 0;
+            if (!socketItem.curCutMode().isNull()) {
+                cutModeNum = socketItem.curCutMode()->num();
+            }
+            if (!socketItem.curCoagMode().isNull()) {
+                coagModeNum = socketItem.curCoagMode()->num();
+            }
+            quint16 cutModePower = socketItem.cutModePower();
+            quint16 coagModePower = socketItem.coagModePower();
+            quint8 pedal = socketItem.pedal();
+            
+            // Эмитим сигнал об изменении данных сокета
+            emit signalSocketDataChanged(index.row(), cutModeNum, coagModeNum, 
+                                       cutModePower, coagModePower, pedal);
+        }
+        return result;
     }
     case CoagModeIndex:
         if (socketItem.setCoagModeIndex(value.toInt())) {

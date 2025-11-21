@@ -30,8 +30,97 @@ Rectangle {
     signal newPower(int socketId, int pwr, bool isCoag)
     signal socketExpandRequest()
     signal socketCollapseRequest()
+    signal absolutePositionChanged(int socketId, real absoluteY)
 
     state: "expanded"
+
+    // Функция для обновления абсолютной позиции
+    function updateAbsolutePosition() {
+        try {
+            var absoluteY = socketRoot.mapToItem(null, 0, 0).y
+            absolutePositionChanged(socketRoot.socketId, absoluteY)
+        } catch (error) {
+            // Игнорируем ошибки при вычислении позиции
+        }
+    }
+
+    // Timer для debouncing обновлений координат Activation
+    Timer {
+        id: activationPositionUpdateTimer
+        interval: 50  // Небольшая задержка для объединения множественных обновлений
+        repeat: false
+        onTriggered: {
+            if (control.activeSocketId === socketRoot.socketId) {
+                updateActivationPosition()
+            }
+        }
+    }
+
+    // Отслеживаем изменения позиции и высоты
+    onYChanged: {
+        updateAbsolutePosition()
+    }
+
+    onHeightChanged: {
+        updateAbsolutePosition()
+        // Обновляем координаты Activation, если этот сокет активен
+        // Используем Timer для debouncing, чтобы избежать множественных вызовов
+        if (control.activeSocketId === socketId) {
+            activationPositionUpdateTimer.restart()
+        }
+    }
+
+    onWidthChanged: {
+        // Обновляем координаты Activation, если этот сокет активен
+        // Используем Timer для debouncing, чтобы избежать множественных вызовов
+        if (control.activeSocketId === socketId) {
+            activationPositionUpdateTimer.restart()
+        }
+    }
+
+    // Отслеживаем изменения состояния (expanded/collapsed)
+    onStateChanged: {
+        // Используем Timer для задержки, чтобы позиция успела обновиться после изменения состояния
+        Qt.callLater(function() {
+            updateAbsolutePosition()
+            // Обновляем координаты Activation, если этот сокет активен
+            // Используем Timer для debouncing, чтобы избежать множественных вызовов
+            if (control.activeSocketId === socketId) {
+                activationPositionUpdateTimer.restart()
+            }
+        })
+    }
+
+    // Обновляем позицию при создании компонента
+    Component.onCompleted: {
+        updateAbsolutePosition()
+    }
+
+    // Функция для установки координат активного сокета
+    function updateActivationPosition() {
+        try {
+            var absolutePos = socketRoot.mapToItem(null, 0, 0)
+            var newX = absolutePos.x
+            var newY = absolutePos.y
+            var newWidth = socketRoot.width
+            var newHeight = socketRoot.height
+            
+            // Проверяем, изменились ли координаты, чтобы избежать лишних обновлений
+            if (control.activeSocketX !== newX || control.activeSocketY !== newY ||
+                control.activeSocketWidth !== newWidth || control.activeSocketHeight !== newHeight) {
+                // activeSocketId и activeSocketName устанавливаются в C++ коде (onStartActivation)
+                // Здесь устанавливаем только координаты через присваивание свойств
+                control.activeSocketX = newX
+                control.activeSocketY = newY
+                control.activeSocketWidth = newWidth
+                control.activeSocketHeight = newHeight
+                console.log("updateActivationPosition ", socketRoot.socketId, socketRoot.title, newY, newHeight)
+            }
+        } catch (error) {
+            // Игнорируем ошибки при вычислении позиции
+            console.log("updateActivationPosition error", error)
+        }
+    }
 
     onSocketStateChanged: {
         console.log("socketState", socketState)
@@ -39,12 +128,16 @@ Rectangle {
             activationIndicator.isCoag = true
             activationIndicator.modeName = coagModeName
             activationIndicator.power = coagModePower
-            activationIndicator.open();
+            // Координаты обновятся через другие обработчики (onStateChanged, onHeightChanged)
+            // Просто открываем Activation
+            activationIndicator.open()
         } else if (socketState == 4) {
             activationIndicator.isCoag = false
             activationIndicator.modeName = cutModeName
             activationIndicator.power = cutModePower
-            activationIndicator.open();
+            // Координаты обновятся через другие обработчики (onStateChanged, onHeightChanged)
+            // Просто открываем Activation
+            activationIndicator.open()
         } else {
             activationIndicator.close();
         }
@@ -148,7 +241,7 @@ Rectangle {
     }
     Activation {
         id: activationIndicator
-        parent: socketRoot
+//        parent: socketRoot
     }
     
 
@@ -186,6 +279,22 @@ Rectangle {
         target: leftRect
         function onInstrumEditDialogRequest() {
             socketRoot.instrumEditDialogRequest(socketRoot.socketId, false)
+        }
+    }
+
+    // Обновление координат Activation при изменении activeSocketId
+    Connections {
+        target: control
+        function onActiveSocketIdChanged(socketId) {
+            // Если этот сокет стал активным, обновляем координаты
+            // Используем двойную задержку, чтобы сокет успел раскрыться
+            if (socketId === socketRoot.socketId) {
+                Qt.callLater(function() {
+                    Qt.callLater(function() {
+                        activationPositionUpdateTimer.restart()
+                    })
+                })
+            }
         }
     }
 

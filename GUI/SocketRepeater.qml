@@ -62,6 +62,23 @@ Repeater {
         }
     }
 
+    // Функция для обновления позиций всех сокетов
+    function updateAllSocketPositions() {
+        for (var i = 0; i < count; i++) {
+            var socket = itemAt(i)
+            if (socket && socket.updateAbsolutePosition) {
+                socket.updateAbsolutePosition()
+            }
+        }
+    }
+
+    // Обновляем позиции при изменении высоты контейнера
+    onContainerHeightChanged: {
+        Qt.callLater(function() {
+            updateAllSocketPositions()
+        })
+    }
+
     clip: true
 
     delegate: StatesSocket {
@@ -148,10 +165,18 @@ Repeater {
 
             function onSocketCollapseRequest() {
                 theModel.qmlSetData(index, 0, "socketdisplaymode")
+                // Обновляем позиции всех сокетов после изменения состояния
+                Qt.callLater(function() {
+                    updateAllSocketPositions()
+                })
             }
 
             function onSocketExpandRequest() {
                 theModel.qmlSetData(index, 1, "socketdisplaymode")
+                // Обновляем позиции всех сокетов после изменения состояния
+                Qt.callLater(function() {
+                    updateAllSocketPositions()
+                })
             }
         }
     }

@@ -4,6 +4,7 @@
 #include <QObject>
 #include <QTimer>
 #include <QTime>
+#include <QElapsedTimer>
 #include <QQueue>
 #include <QThread>
 #include <QDebug>
@@ -19,6 +20,7 @@ public:
         Allright = 0x00,                // Базовый запрос
         Activation = 0x20,              // Активация
         StopActivation = 0x40,          // Остановка активации
+        SpecCommand = 0x60,             // Специальная команда
         Signal = 0x80,                  // Выдача звукового сигнала (аварии)
 
         ErrorMU = 0x80,                 // Ошибка модуля управления
@@ -39,6 +41,7 @@ public:
 
     enum RxCommand : quint8 {           // Принимаемые команды
         Whatsup = 0x00,                 // Стандартный запрос
+        SpecAnswer = 0x60,              // Ответ на спец. команду
         ErrRecieve = 0x80,              // Модуль связи не принимает сигналы
         ErrCrc = 0x81,                  // Ошибка CRC
         ErrGenRx = 0x82,                // Генератор не отвечает
@@ -312,6 +315,7 @@ private:
     SocketState m_socketList[4];
     QByteArray m_mcVersions;
     CommunicationState m_comState;
+    QElapsedTimer m_elapsedTimer;  // Для измерения интервалов времени
 
 };
 

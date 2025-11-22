@@ -54,17 +54,17 @@ QVariant SocketModel::data(const QModelIndex &index, int role) const
     case Qt::DisplayRole:
         return QVariant();
     case SocketEnabled:
-        return socketItem.socketStatus() >= SOCKET::S_ENABLED;
+        return socketItem.socketStatus() >= Onyx::S_ENABLED;
     case SocketAllowed:
-        return socketItem.socketStatus() != SOCKET::S_OFF;
+        return socketItem.socketStatus() != Onyx::S_OFF;
     case SocketStatus:
         return static_cast<int>(socketItem.socketStatus());
     case SocketDisplayMode:
     {
         switch (socketItem.displayMode()) {
-        case SOCKET::S_COLLAPSED:
+        case Onyx::S_COLLAPSED:
             return "collapsed";
-        case SOCKET::S_EXPANDED:
+        case Onyx::S_EXPANDED:
             return "expanded";
         default:
             break;
@@ -87,6 +87,12 @@ QVariant SocketModel::data(const QModelIndex &index, int role) const
         return socketItem.socketType();
     case SocketPedal:
         return socketItem.pedal();
+    case SocketUartInfo:
+    {
+        QVariant res;
+        res.setValue<Onyx::SocketState>(socketItem.getInfo());
+        return res;
+    }
     case CoagModeIndex:
         return socketItem.coagModeIndex();
     case CoagModeId:
@@ -248,16 +254,16 @@ bool SocketModel::setData(const QModelIndex &index, const QVariant &value, int r
     switch (role) {
     case SocketStatus:
     {
-        socketItem.setSocketStatus(static_cast<SOCKET::SocStatus>(value.toUInt()) );
+        socketItem.setSocketStatus(static_cast<Onyx::SocStatus>(value.toUInt()) );
         return true;
         break;
     }
     case SocketEnabled:
     {
-        if (socketItem.socketStatus() == SOCKET::S_OFF)
+        if (socketItem.socketStatus() == Onyx::S_OFF)
             return false;
         bool isOk = value.toBool();
-        socketItem.setSocketStatus(isOk ? SOCKET::S_ENABLED : SOCKET::S_DISABLED);
+        socketItem.setSocketStatus(isOk ? Onyx::S_ENABLED : Onyx::S_DISABLED);
         return true;
     }
     case SocketDisplayMode:
@@ -266,7 +272,7 @@ bool SocketModel::setData(const QModelIndex &index, const QVariant &value, int r
         int mode = value.toInt(&isOk);
         if (!isOk)
             return isOk;
-        return socketItem.setDisplayMode(static_cast<SOCKET::SocDisplayMode>(mode));
+        return socketItem.setDisplayMode(static_cast<Onyx::SocDisplayMode>(mode));
     }
     case SocketPedal:
     {
@@ -328,14 +334,8 @@ void SocketModel::qmlSetData(int row, const QVariant &value, const QString &role
 
 void SocketModel::recalcCollapsed()
 {
-    qmlSetData(0, SOCKET::S_EXPANDED, "socketdisplaymode");
-    qmlSetData(0, SOCKET::S_COLLAPSED, "socketdisplaymode");
-}
-
-void SocketModel::slotRemoveSubProg()
-{
-    if (m_subProgCount > 1)
-        removeSubProg(m_subProgIdx);
+    qmlSetData(0, Onyx::S_EXPANDED, "socketdisplaymode");
+    qmlSetData(0, Onyx::S_COLLAPSED, "socketdisplaymode");
 }
 
 QStringList SocketModel::modeNames(int socketID, bool isCoag) const
@@ -360,7 +360,7 @@ QStringList SocketModel::instrumNames(int socketId, int modeIndex, bool isCoag) 
 
     SockPtr sock = iter->second;
     CSurgModePtr mode = sock->getMode(modeIndex, isCoag);
-    const std::map<int, InstrInfo>& compatible = mode->InstrConstraints();
+    const std::map<int, Onyx::InstrInfo>& compatible = mode->InstrConstraints();
 
     QStringList names;
     for (const auto&[key, item] : compatible) {
@@ -393,7 +393,7 @@ QStringList SocketModel::instrumNamesIds(int socketId, int modeIndex, bool isCoa
 
     SockPtr sock = iter->second;
     CSurgModePtr mode = sock->getMode(modeIndex, isCoag);
-    const std::map<int, InstrInfo>& compatible = mode->InstrConstraints();
+    const std::map<int, Onyx::InstrInfo>& compatible = mode->InstrConstraints();
 
     QStringList names;
     for (const auto&[key, item] : compatible) {
@@ -415,7 +415,7 @@ QStringList SocketModel::instrumNamesNums(int socketId, int modeIndex, bool isCo
 
     SockPtr sock = iter->second;
     CSurgModePtr mode = sock->getMode(modeIndex, isCoag);
-    const std::map<int, InstrInfo>& compatible = mode->InstrConstraints();
+    const std::map<int, Onyx::InstrInfo>& compatible = mode->InstrConstraints();
 
     QStringList nums;
     for (const auto&[key, item] : compatible) {
@@ -424,40 +424,6 @@ QStringList SocketModel::instrumNamesNums(int socketId, int modeIndex, bool isCo
             nums.append(QString("%1").arg(instIter->second->legacyNumber()));
     }
     return nums;
-}
-
-
-int SocketModel::selectedInstrumIdByMode(int socketId, int modeIndex, bool isCoag)
-{
-    if (socketId >= m_socketNames.size())
-        return -1;
-
-    if (m_itemsMapPtr == nullptr)
-        return -1;
-
-    const auto socketIter = m_itemsMapPtr->find(socketId);
-    if (socketIter == m_itemsMapPtr->end())
-        return -1;
-    if (socketIter->second.isNull())
-        return -1;
-
-    const SOCKET& socketItem = *(socketIter->second);
-    CSurgModePtr ptr =  socketItem.getMode(modeIndex, isCoag);
-    if (ptr.isNull())
-        return -1;
-    return ptr->selectedInstrId();
-}
-
-void SocketModel::stopActivation()
-{
-    if (m_itemsMapPtr == nullptr)
-        return ;
-    for (auto& item : *m_itemsMapPtr) {
-        if (item.second->socketStatus() == SOCKET::S_ACTIVE_CUT
-            || item.second->socketStatus() == SOCKET::S_ACTIVE_COAG) {
-            qmlSetData(item.first, SOCKET::S_ENABLED, "socketstatus");
-        }
-    }
 }
 
 int SocketModel::selectedInstrumIndexByMode(int socketId, int modeIndex, bool isCoag)
@@ -482,6 +448,27 @@ int SocketModel::selectedInstrumIndexByMode(int socketId, int modeIndex, bool is
 }
 
 
+int SocketModel::selectedInstrumIdByMode(int socketId, int modeIndex, bool isCoag)
+{
+    if (socketId >= m_socketNames.size())
+        return -1;
+
+    if (m_itemsMapPtr == nullptr)
+        return -1;
+
+    const auto socketIter = m_itemsMapPtr->find(socketId);
+    if (socketIter == m_itemsMapPtr->end())
+        return -1;
+    if (socketIter->second.isNull())
+        return -1;
+
+    const SOCKET& socketItem = *(socketIter->second);
+    CSurgModePtr ptr =  socketItem.getMode(modeIndex, isCoag);
+    if (ptr.isNull())
+        return -1;
+    return ptr->selectedInstrId();
+}
+
 InstrPtr SocketModel::getInstrumentById(int id) const
 {
     auto iter = m_instrMapPtr->find(id);
@@ -490,6 +477,40 @@ InstrPtr SocketModel::getInstrumentById(int id) const
     return nullptr;
 }
 
+void SocketModel::copyCurrentList()
+{
+    std::map<int, SockPtr> itemsMap = m_itemsMapVect.at(m_subProgIdx);
+    std::map<int, InstrPtr> instrMap = m_instrMapVect.at(m_subProgIdx);
+    loadProgs({itemsMap}, {instrMap}, true);
+}
+
+
+void SocketModel::slotRemoveSubProg()
+{
+    if (m_subProgCount > 1)
+        removeSubProg(m_subProgIdx);
+}
+
+
+void SocketModel::startActivation(int socketId, bool isCut)
+{
+    QTimer::singleShot(0, this, [this, socketId, isCut]() {
+        expandSocket(socketId);
+        qmlSetData(socketId, isCut ? Onyx::S_ACTIVE_CUT : Onyx::S_ACTIVE_COAG, "socketstatus");
+    });
+}
+
+void SocketModel::stopActivation()
+{
+    if (m_itemsMapPtr == nullptr)
+        return ;
+    for (auto& item : *m_itemsMapPtr) {
+        if (item.second->socketStatus() == Onyx::S_ACTIVE_CUT
+            || item.second->socketStatus() == Onyx::S_ACTIVE_COAG) {
+            qmlSetData(item.first, Onyx::S_ENABLED, "socketstatus");
+        }
+    }
+}
 
 bool SocketModel::commitModeChange(int socketId, int modeIndex, const QVariantMap &param)
 {
@@ -620,41 +641,6 @@ SockPtr SocketModel::socketById(int id) const
     return iter->second;
 }
 
-int SocketModel::roleIntByName(const QString &name)
-{
-    const QHash<int, QByteArray>& hash = m_roles;
-    QByteArray nameArr = name.toLower().toUtf8();
-    for (auto iter = hash.begin(); iter != hash.end(); ++iter) {
-        if (iter.value() == nameArr)
-            return iter.key();
-    }
-    return -1;
-}
-
-void SocketModel::socketCollapser(int expandedSocket)
-{
-    for (size_t i = 0; i < m_itemsMapPtr->size(); ++i) {
-        if (i == static_cast<size_t>(expandedSocket))
-            continue;
-        qmlSetData(i, 0, "socketdisplaymode");
-    }
-}
-
-void SocketModel::pedalRemover(int socketToSkip, int pedalToRemove)
-{
-    for (size_t i = 0; i < m_itemsMapPtr->size(); ++i) {
-        if (i == static_cast<size_t>(socketToSkip))
-            continue;
-        //тут не надо изменять все сокеты - переназначенная педаль могла быть в одном сокетет только
-        if (m_itemsMapPtr->at(i)->pedal() == pedalToRemove
-            && pedalToRemove != Pedal::INSTR_BUTTON_MONO) {
-            qmlSetData(i, 0, "socketpedal");
-            // break;
-        }
-        ///TODO завершению должны бы отдавать в uart новые настройки педали
-    }
-}
-
 void SocketModel::expandSocket(int socketId)
 {
     if ( !m_itemsMapPtr
@@ -662,86 +648,7 @@ void SocketModel::expandSocket(int socketId)
         return;
     //нам тут достаточно отправить команду на разворот -
     // при сигнале о развороте сокета свернутся остальные
-    qmlSetData(socketId, SOCKET::S_EXPANDED, "socketdisplaymode");
-}
-
-void SocketModel::populateRoles()
-{
-    //грёбаная мета-магия, но это приятное
-    QMetaEnum metaEnum = QMetaEnum::fromType<SocketRoles>();
-    // static QHash<int, QByteArray> roles;
-    m_roles.clear();
-    for (int k = 0; k < metaEnum.keyCount(); k++)
-    {
-        int roleKey = metaEnum.value(k);
-        QString roleName = metaEnum.valueToKey(roleKey);
-        roleName = roleName.toLower();
-        m_roles.insert(roleKey, roleName.toUtf8());
-    }
-}
-
-QHash<int, QByteArray> SocketModel::roleNames() const
-{
-    return m_roles;
-}
-
-int SocketModel::subProgIdx() const
-{
-    return m_subProgIdx;
-}
-
-void SocketModel::setSubProgIdx(int newIndex)
-{
-    if (newIndex < 0
-        || static_cast<size_t>(newIndex) >= m_itemsMapVect.size())
-        return;
-
-    beginResetModel();
-    m_subProgIdx = newIndex;
-    m_itemsMapPtr = &(m_itemsMapVect.at(m_subProgIdx));
-    m_socketNames.clear();
-
-    for (int i = SOCKET::BIPOLAR_1; i <= SOCKET::MONOPOLAR_2; ++i) {
-        const auto iter = m_itemsMapPtr->find(i - 1);
-        if (iter == m_itemsMapPtr->cend())
-            continue;
-        m_socketNames.append(iter->second->socketName());
-    }
-    // m_socketNames.append(m_itemsMap->SOCKET::BIPOLAR_1);
-    endResetModel();
-
-    // emit dataChanged(QModelIndex(), QModelIndex(), {});
-    emit subProgIdxChanged();
-
-}
-
-int SocketModel::subProgCount() const
-{
-    return m_subProgCount;
-}
-
-void SocketModel::removeSubProg(int index)
-{
-    if (m_itemsMapVect.size() == 1
-        || index < 0
-        || static_cast<size_t>(index) >= m_itemsMapVect.size())
-        return;
-
-    auto itemIter = m_itemsMapVect.begin();
-    itemIter += index;
-    m_itemsMapVect.erase(itemIter);
-
-    auto instrIter = m_instrMapVect.begin();
-    instrIter += index;
-    m_instrMapVect.erase(instrIter);
-
-    m_subProgCount--;
-    size_t tmpIdx = m_subProgIdx;
-
-    while (tmpIdx >= m_itemsMapVect.size())
-        --tmpIdx;
-    emit subProgCountChanged();
-    setSubProgIdx(tmpIdx);
+    qmlSetData(socketId, Onyx::S_EXPANDED, "socketdisplaymode");
 }
 
 void SocketModel::loadProgs(const std::vector<std::map<int, SockPtr> > &itemsMapVect, const std::vector<std::map<int, InstrPtr> > &instrMapVect, bool add)
@@ -771,7 +678,7 @@ void SocketModel::loadProgs(const std::vector<std::map<int, SockPtr> > &itemsMap
     m_itemsMapPtr = &(m_itemsMapVect.at(m_subProgIdx));
     m_instrMapPtr = &(m_instrMapVect.at(m_subProgIdx));
     m_socketNames.clear();
-    for (int i = SOCKET::BIPOLAR_1; i <= SOCKET::MONOPOLAR_2; ++i) {
+    for (int i = Onyx::BIPOLAR_1; i <= Onyx::MONOPOLAR_2; ++i) {
         const auto iter = m_itemsMapPtr->find(i - 1);
         if (iter == m_itemsMapPtr->cend())
             continue;
@@ -780,6 +687,30 @@ void SocketModel::loadProgs(const std::vector<std::map<int, SockPtr> > &itemsMap
 
     endResetModel();
     emit subProgCountChanged();
+}
+
+void SocketModel::removeSubProg(int index)
+{
+    if (m_itemsMapVect.size() == 1
+        || index < 0
+        || static_cast<size_t>(index) >= m_itemsMapVect.size())
+        return;
+
+    auto itemIter = m_itemsMapVect.begin();
+    itemIter += index;
+    m_itemsMapVect.erase(itemIter);
+
+    auto instrIter = m_instrMapVect.begin();
+    instrIter += index;
+    m_instrMapVect.erase(instrIter);
+
+    m_subProgCount--;
+    size_t tmpIdx = m_subProgIdx;
+
+    while (tmpIdx >= m_itemsMapVect.size())
+        --tmpIdx;
+    emit subProgCountChanged();
+    setSubProgIdx(tmpIdx);
 }
 
 void SocketModel::addList(const std::map<int, SockPtr> &itemsMap,
@@ -791,13 +722,88 @@ void SocketModel::addList(const std::map<int, SockPtr> &itemsMap,
     m_subProgIdx = m_subProgCount - 1;
 }
 
-void SocketModel::copyCurrentList()
+QHash<int, QByteArray> SocketModel::roleNames() const
 {
-    // beginResetModel();
-    std::map<int, SockPtr> itemsMap = m_itemsMapVect.at(m_subProgIdx);
-    std::map<int, InstrPtr> instrMap = m_instrMapVect.at(m_subProgIdx);
-    // addList(itemsMap, instrMap);
-    loadProgs({itemsMap}, {instrMap}, true);
-    // endResetModel();
-    // emit subProgCountChanged();
+    return m_roles;
+}
+
+int SocketModel::subProgIdx() const
+{
+    return m_subProgIdx;
+}
+
+int SocketModel::subProgCount() const
+{
+    return m_subProgCount;
+}
+
+void SocketModel::setSubProgIdx(int newIndex)
+{
+    if (newIndex < 0
+        || static_cast<size_t>(newIndex) >= m_itemsMapVect.size())
+        return;
+
+    beginResetModel();
+    m_subProgIdx = newIndex;
+    m_itemsMapPtr = &(m_itemsMapVect.at(m_subProgIdx));
+    m_socketNames.clear();
+
+    for (int i = Onyx::BIPOLAR_1; i <= Onyx::MONOPOLAR_2; ++i) {
+        const auto iter = m_itemsMapPtr->find(i - 1);
+        if (iter == m_itemsMapPtr->cend())
+            continue;
+        m_socketNames.append(iter->second->socketName());
+    }
+    endResetModel();
+
+    emit subProgIdxChanged();
+}
+
+int SocketModel::roleIntByName(const QString &name)
+{
+    const QHash<int, QByteArray>& hash = m_roles;
+    QByteArray nameArr = name.toLower().toUtf8();
+    for (auto iter = hash.begin(); iter != hash.end(); ++iter) {
+        if (iter.value() == nameArr)
+            return iter.key();
+    }
+    return -1;
+}
+
+void SocketModel::socketCollapser(int expandedSocket)
+{
+    for (size_t i = 0; i < m_itemsMapPtr->size(); ++i) {
+        if (i == static_cast<size_t>(expandedSocket))
+            continue;
+        qmlSetData(i, 0, "socketdisplaymode");
+    }
+}
+
+void SocketModel::pedalRemover(int socketToSkip, int pedalToRemove)
+{
+    for (size_t i = 0; i < m_itemsMapPtr->size(); ++i) {
+        if (i == static_cast<size_t>(socketToSkip))
+            continue;
+        //тут не надо изменять все сокеты - переназначенная педаль могла быть в одном сокетет только
+        if (m_itemsMapPtr->at(i)->pedal() == pedalToRemove
+            && pedalToRemove != Onyx::INSTR_BUTTON_MONO) {
+            qmlSetData(i, 0, "socketpedal");
+            // break;
+        }
+        ///TODO завершению должны бы отдавать в uart новые настройки педали
+    }
+}
+
+void SocketModel::populateRoles()
+{
+    //грёбаная мета-магия, но это приятное
+    QMetaEnum metaEnum = QMetaEnum::fromType<SocketRoles>();
+    m_roles.clear();
+    for (int k = 0; k < metaEnum.keyCount(); k++)
+    {
+        int roleKey = metaEnum.value(k);
+        QString roleName = metaEnum.valueToKey(roleKey);
+        roleName = roleName.toLower();
+        m_roles.insert(roleKey, roleName.toUtf8());
+    }
 }

@@ -3,9 +3,9 @@
 
 UartToQmlBridge::UartToQmlBridge(QObject *parent, QString port, QSerialPort::BaudRate rate)
     : QObject{parent},
+      m_serial(new QSerialPort(this)),
       m_portName(port),
       m_baudRate(rate),
-      m_serial(new QSerialPort(this)),
       m_waitForAnswer(false)
 {
     Q_UNUSED(parent);

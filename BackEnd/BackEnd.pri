@@ -4,6 +4,7 @@ QT += serialport multimedia sql concurrent
 CONFIG += c++17
 
 HEADERS += \
+    $$PWD/Structures.h \
     $$PWD/controlcenter.h \
     $$PWD/databasereader.h \
     $$PWD/halfsocket.h \

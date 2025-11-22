@@ -6,7 +6,6 @@
 #include <map>
 
 #include "instrument.h"
-#include "surgicalmode.h"
 #include "databasereader.h"
 #include "socketmodel.h"
 
@@ -64,7 +63,7 @@ public:
 	 */
 	void loadCurrentState();
 
-	std::map<int, std::map<int, InstrInfo>> getConstarints(const QList<int> &idList);
+	std::map<int, std::map<int, Onyx::InstrInfo>> getConstarints(const QList<int> &idList);
 
 	void setSocketModelPtr(QSharedPointer<SocketModel> newSocketModelPtr);
 

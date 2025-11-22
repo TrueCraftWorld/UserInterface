@@ -231,7 +231,7 @@ void SocketModeEditor::setCurrentInstrIndex(int newCurrentInstrIndex)
     CSurgModePtr mode = m_model->socketById(m_socketID)->getMode(m_currentModeIndex, m_isCoag);
     if (mode.isNull())
         return;
-    std::optional<InstrInfo> info = mode->getConstraints(m_currentInstrIndex);
+    std::optional<Onyx::InstrInfo> info = mode->getConstraints(m_currentInstrIndex);
     if (info != std::nullopt) {
         m_instrID = newCurrentInstrIndex+1;
         m_lowPowerBound = info->miniPower;
@@ -289,7 +289,7 @@ QString SocketModeEditor::instrBrief() const
     if (mode.isNull())
         return QString();
     
-    std::optional<InstrInfo> info = mode->getConstraints(m_currentInstrIndex);
+    std::optional<Onyx::InstrInfo> info = mode->getConstraints(m_currentInstrIndex);
     if (info == std::nullopt)
         return QString();
     // mode->

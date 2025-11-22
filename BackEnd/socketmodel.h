@@ -26,6 +26,7 @@ public:
         SocketPolarity,
         SocketPedal,
         SocketAllowedPedal,
+        SocketUartInfo,
         CoagModeIndex,
         CoagModeId,
         CoagModeNum,
@@ -75,12 +76,9 @@ public:
     Q_INVOKABLE void qmlSetData(int row, const QVariant &value, const QString& roleName);
 
     /**
-     * @brief Это какой-то костыль по дерганью состояний сокетов после ресета модели
+     * @brief Это костыль по дерганью состояний сокетов после ресета модели
      */
     Q_INVOKABLE void recalcCollapsed();
-
-
-    // Q_INVOKABLE void setModePower(int socketId, int pwr, bool isCoag);
 
     QStringList modeNames(int socketID, bool isCoag) const;
     QStringList instrumNames(int socketId, int modeIndex, bool isCoag) const;
@@ -91,15 +89,16 @@ public:
     int selectedInstrumIdByMode(int socketId, int modeIndex, bool isCoag);
 
     InstrPtr getInstrumentById(int id) const;
-
-
     void copyCurrentList();
+
 
 public slots:
     void slotRemoveSubProg();
 
 public:
+    void startActivation(int socketId, bool isCut);
     void stopActivation();
+
     bool commitModeChange(int socketId, int modeINdex, const QVariantMap& param);
     SockPtr socketByName(const QString& socket) const;
     SockPtr socketById(int id) const;
@@ -107,8 +106,6 @@ public:
 
     std::map<int, SockPtr>* itemsMap() const { return m_itemsMapPtr; }
     std::map<int, InstrPtr>* instrMap() const { return m_instrMapPtr; }
-
-
 
     void loadProgs( const std::vector<std::map<int, SockPtr >> &itemsMapVect,
                     const std::vector<std::map<int, InstrPtr >> &instrMapVect,

@@ -8,25 +8,25 @@
 #include <QVector>
 
 namespace {
-QStringList sortByExample(const QStringList& toSort, const QStringList& reference)
-{
-    //это отстойный по эффективности алгоритм, но применяем мы его только 8 раз на старте. (может как-то отпраллелить)
-    //если будет мешать - можно вхардкодить
-    QStringList result = toSort;
+// QStringList sortByExample(const QStringList& toSort, const QStringList& reference)
+// {
+//     //это отстойный по эффективности алгоритм, но применяем мы его только 8 раз на старте. (может как-то отпраллелить)
+//     //если будет мешать - можно вхардкодить
+//     QStringList result = toSort;
 
-    std::stable_sort(result.begin(), result.end(),
-                     [&reference](const QString& a, const QString& b) {
-                         int indexA = reference.indexOf(a);
-                         int indexB = reference.indexOf(b);
+//     std::stable_sort(result.begin(), result.end(),
+//                      [&reference](const QString& a, const QString& b) {
+//                          int indexA = reference.indexOf(a);
+//                          int indexB = reference.indexOf(b);
 
-                         if (indexA != -1 && indexB != -1) return indexA < indexB;
-                         if (indexA != -1) return true;
-                         if (indexB != -1) return false;
-                         return false;
-                     });
+//                          if (indexA != -1 && indexB != -1) return indexA < indexB;
+//                          if (indexA != -1) return true;
+//                          if (indexB != -1) return false;
+//                          return false;
+//                      });
 
-    return result;
-}
+//     return result;
+// }
 }
 
 HalfSocket::HalfSocket(bool isCoag, int state)
@@ -46,9 +46,9 @@ int HalfSocket::modeId() const
     return m_curMode->id();
 }
 
-HalfSocket::HS_State HalfSocket::halfSocketState() const
+Onyx::HS_State HalfSocket::halfSocketState() const
 {
-    return static_cast<HS_State>(m_state);
+    return static_cast<Onyx::HS_State>(m_state);
 }
 
 QString HalfSocket::modeName() const
@@ -85,7 +85,7 @@ bool HalfSocket::setModeId(int id)
     return setModeIndex(getModeIndex(id));
 }
 
-void HalfSocket::setHalfSocketState(HS_State newSocketStatus)
+void HalfSocket::setHalfSocketState(Onyx::HS_State newSocketStatus)
 {
     Q_UNUSED(newSocketStatus)
 }
@@ -107,6 +107,7 @@ bool HalfSocket::setModePower(int newPower)
 
 void HalfSocket::setModes(const QMap<int, SurgModePtr> &newModes, const QStringList &order)
 {
+    Q_UNUSED(order)
     m_modes = newModes;
     
     // Создаём вектор пар (Num, SurgModePtr) для сортировки

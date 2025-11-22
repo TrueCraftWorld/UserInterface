@@ -6,7 +6,7 @@ SurgicalMode::SurgicalMode(const QString& name,
                            int maximum,
                            int minimum,
                            int id,
-                           const std::map<int, InstrInfo>& _instrs,
+                           const std::map<int, Onyx::InstrInfo>& _instrs,
                            int num,
                            const QString& brief,
                            const QString& descript,
@@ -104,7 +104,7 @@ bool SurgicalMode::setSelectedInstrId(int newSelectedInstrId)
     if (iter != m_InstrConstraints.end()) {
         m_selectedInstrId = newSelectedInstrId;
         int id = 0;
-        const InstrInfo& check = iter->second;
+        const Onyx::InstrInfo& check = iter->second;
         for (const auto& [key, item] : m_InstrConstraints)
         {
             if (check.id == item.id) {
@@ -117,12 +117,12 @@ bool SurgicalMode::setSelectedInstrId(int newSelectedInstrId)
     return false;
 }
 
-std::map<int, InstrInfo> SurgicalMode::InstrConstraints() const
+std::map<int, Onyx::InstrInfo> SurgicalMode::InstrConstraints() const
 {
     return m_InstrConstraints;
 }
 
-std::optional<InstrInfo> SurgicalMode::getConstraints(int index) const
+std::optional<Onyx::InstrInfo> SurgicalMode::getConstraints(int index) const
 {
     if (index >= m_InstrConstraints.size())
         return std::nullopt;
@@ -137,7 +137,7 @@ std::optional<InstrInfo> SurgicalMode::getConstraints(int index) const
     return std::nullopt;
 }
 
-void SurgicalMode::setInstrConstraints(const std::map<int, InstrInfo> &newInstrConstraints)
+void SurgicalMode::setInstrConstraints(const std::map<int, Onyx::InstrInfo> &newInstrConstraints)
 {
     m_InstrConstraints = newInstrConstraints;
 }

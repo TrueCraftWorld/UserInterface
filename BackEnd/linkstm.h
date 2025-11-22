@@ -9,6 +9,7 @@
 #include <QDebug>
 #include "uartqmlbridge.h"
 #include "loggingcategories.h"
+#include "Structures.h"
 
 class LinkStm : public QObject
 {
@@ -185,14 +186,14 @@ public:
         }
     };
 
-    struct SocketState {
-        quint16 cutModeNum;
-        quint16 cutModePower;
-        quint16 coagModeNum;
-        quint16 coagModePower;
-        quint8 pedal;
-        quint8 autoMode;
-    };
+    // struct SocketState {
+    //     quint16 cutModeNum;
+    //     quint16 cutModePower;
+    //     quint16 coagModeNum;
+    //     quint16 coagModePower;
+    //     quint8 pedal;
+    //     quint8 autoMode;
+    // };
 
     enum CommunicationState : quint8 {      // Состояние обмена
         IDLE = 0,                           // По умолчанию - просто передача состояния
@@ -235,6 +236,7 @@ public:
     // Методы для обновления данных сокетов
     void updateSocketData(int socketIndex, quint16 cutModeNum, quint16 coagModeNum, 
                          quint16 cutModePower, quint16 coagModePower, quint8 pedal);
+    void updateSocketData(int socketIndex, const Onyx::SocketState& info);
     void initializeAllSockets();
 
 signals:
@@ -309,7 +311,7 @@ private:
     bool m_activCylinderFirst;
 
     UnitState m_unitState;
-    SocketState m_socketList[4];
+    Onyx::SocketState m_socketList[4];
     QByteArray m_mcVersions;
     CommunicationState m_comState;
 

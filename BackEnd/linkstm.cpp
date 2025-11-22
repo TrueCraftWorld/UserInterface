@@ -774,6 +774,13 @@ void LinkStm::updateSocketData(int socketIndex, quint16 cutModeNum, quint16 coag
     }
 }
 
+void LinkStm::updateSocketData(int socketIndex, const Onyx::SocketState& info)
+{
+    if (socketIndex >= 0 && socketIndex < 4) {
+        m_socketList[socketIndex] = info;
+    }
+}
+
 void LinkStm::initializeAllSockets()
 {
     // Этот метод будет вызываться из ControlCenter для инициализации всех сокетов

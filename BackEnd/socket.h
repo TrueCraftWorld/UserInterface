@@ -8,6 +8,7 @@
 #include <QSharedPointer>
 
 #include "surgicalmode.h"
+#include "Structures.h"
 #include "halfsocket.h"
 #include "pedal.h"
 
@@ -21,30 +22,7 @@ class SOCKET
 {
 
 public:
-    /*! Перечисление возможных типов сокета */
-    enum SocType {  EMPTY, /*!<  Пустой сокет - заглушка на случай ошибок*/
-                    BIPOLAR_1, /*!< Биполяр 1 */
-                    BIPOLAR_2, /*!< Биполяр 2 */
-                    MONOPOLAR_1, /*!< Монополяр 1 */
-                    MONOPOLAR_2 /*!< Монополяр 2 */
-                        };
-
-    /*! Перечисление возможных состояний сокета */
-    enum SocStatus  {S_OFF = 0, /*!< ОТКЛЮЧЕН */
-                    S_DISABLED, /*!< Выключен, активация запрещена */
-                    S_ENABLED, /*!< Включен, активация разрешена */
-                    S_ACTIVE_COAG, /*!< Активирован, коагуляция 3*/
-                    S_ACTIVE_CUT, /*!< Активирован, резание 4*/
-                    S_ERROR /*!< Ошибка, активация запрещена */
-                        };
-    // Q_ENUM(SocStatus);
-
-    /*! Перечисление возможных отображений сокета */
-    enum SocDisplayMode : int {   S_COLLAPSED = 0, /*!< свёрнут  */
-                            S_EXPANDED, /*!< развёрнут */
-                        };
-
-    SOCKET(SOCKET::SocType = MONOPOLAR_1);
+    SOCKET(Onyx::SocType = Onyx::MONOPOLAR_1);
 
     /**
      * @brief Возвращает внутренний индекс текущего коаг режима
@@ -68,18 +46,29 @@ public:
      * @return индекс
      */
     int cutModeId() const;
+    /**
+     * @brief Возвращает Num текущего коаг режима
+     * @return индекс
+     */
+    int coagModeNum() const;
+
+    /**
+     * @brief Возвращает Num текущего рез режима
+     * @return индекс
+     */
+    int cutModeNum() const;
 
     /**
      * @brief Возвращает тип сокета - МОНО1\2 Би1\2
      * @return тип
      */
-    SocType socketType() const;
+    Onyx::SocType socketType() const;
 
     /**
      * @brief Возвращает статус сокета
      * @return тип
      */
-    SocStatus socketStatus() const;
+    Onyx::SocStatus socketStatus() const;
 
     /**
      * @brief возвращает назание сокета
@@ -121,13 +110,13 @@ public:
      * @brief установка типа сокеты
      * @param newSocketType
      */
-    void setSocketType(SOCKET::SocType newSocketType);
+    void setSocketType(Onyx::SocType newSocketType);
 
     /**
      * @brief смена текущего состояния сокета
      * @param newSocketStatus
      */
-    void setSocketStatus(SocStatus newSocketStatus);
+    void setSocketStatus(Onyx::SocStatus newSocketStatus);
 
     /**
      * @brief Установка локализированного имени сокета
@@ -225,23 +214,20 @@ public:
      */
     CSurgModePtr curCutMode() const;
 
-    /**
-     * @brief формарование байт-массива текущих настроек сокета
-     * @return
-     */
-    QByteArray toByteArray();
 
     bool setInstrumIndex(int index, bool isCoag);
     bool setInstrumId(int id, bool isCoag);
     void setAllowed(bool allow);
 
     int displayMode() const;
-    bool setDisplayMode(SocDisplayMode newDisplayMode);
+    bool setDisplayMode(Onyx::SocDisplayMode newDisplayMode);
 
     int pedal() const;
     bool setPedal(int);
 
     QList<int> allowedPedals() const;
+
+    Onyx::SocketState getInfo() const;
 
 private:
     HalfSockPtr m_cutHalf = nullptr;
@@ -252,9 +238,9 @@ private:
     bool setModePower(int newPower, bool isCoag);
     bool setModeIndex(int index, bool isCoag);
 
-    SocType m_socketType;
-    SocStatus m_socketStatus;
-    SocDisplayMode m_displayMode;
+    Onyx::SocType m_socketType;
+    Onyx::SocStatus m_socketStatus;
+    Onyx::SocDisplayMode m_displayMode;
     Pedal m_pedal;
 
     QString m_socketName;

@@ -1,10 +1,10 @@
 #include "controlcenter.h"
-#include "socket.h"
+// #include "socket.h"
 #include "proghandle.h"
 
 // #include <algorithm>
 // #include <cmath>
-#include <map>
+// #include <map>
 
 #include <QQmlEngine>
 #include <QString>
@@ -96,10 +96,9 @@ void ControlCenter::makeHandleConnections()
     
     // Автосохранение при успешном изменении режима
     connect(m_editor, &SocketModeEditor::editingFinished, 
-            this, [this](bool success) {
-        if (success) {
+            this, [this] (bool success) {
+        if (success)
             m_progLoader->saveCurrentState();
-        }
     });
 
     connect(m_handle, &ProgHandle::signalScopeRequest,
@@ -107,9 +106,6 @@ void ControlCenter::makeHandleConnections()
         m_handle->setProgList(m_progLoader->getListOfPrograms(id));
     });
 
-    //     void signalCopyCurrent();
-
-    // void signalAddEmptyDefault(bool clearLoad);
     connect(m_handle, &ProgHandle::signalAddEmptyDefault,
             m_progLoader, &ProgLoader::defaultSocketInit);
 
@@ -244,7 +240,6 @@ void ControlCenter::setArgonFlowRate(quint8 rate)
     
     m_argonFlowRate = rate;
     emit argonFlowRateChanged(rate);
-    
     // TODO: Отправить команду установки расхода в LinkStm при необходимости
 }
 
@@ -345,7 +340,9 @@ void ControlCenter::setLinkStm(LinkStm* linkStm)
         // Подключаем сигнал обновления данных сокетов
         // чуть громоздко но без лишних сигналов, полностью нативно
         connect(m_socketModel.data(), &SocketModel::dataChanged,
-                this, [this] (const QModelIndex &topLeft, const QModelIndex &bottomRight, const QVector<int> &roles = QVector<int>()) {
+                this, [this] (const QModelIndex &topLeft,
+                                const QModelIndex &bottomRight,
+                                const QVector<int> &/*roles = QVector<int>()*/) {
             int idxStart = topLeft.row();
             int idxStop = bottomRight.row();
             for (int i = idxStart; i <= idxStop; ++i) {
@@ -360,8 +357,8 @@ void ControlCenter::setLinkStm(LinkStm* linkStm)
         });
         
         // Подключаем сигналы активации
-        connect(m_linkStm, &LinkStm::startActivation, this, &ControlCenter::onStartActivation);
-        connect(m_linkStm, &LinkStm::stopActivation, this, &ControlCenter::onStopActivation);
+        connect(m_linkStm, &LinkStm::startActivation, m_socketModel.data(), &SocketModel::startActivation);
+        connect(m_linkStm, &LinkStm::stopActivation, m_socketModel.data(), &SocketModel::stopActivation);
         
         // Инициализируем все сокеты текущими данными
         initializeAllSocketsInLinkStm();
@@ -372,97 +369,16 @@ void ControlCenter::setLinkStm(LinkStm* linkStm)
 
 void ControlCenter::initializeAllSocketsInLinkStm()
 {
-    if (m_linkStm.isNull() || !m_socketModel || !m_socketModel->itemsMap()) {
+    if (m_linkStm.isNull() || !m_socketModel) {
         qWarning() << "Cannot initialize sockets in LinkStm: missing dependencies";
         return;
     }
     
-    // Инициализируем все сокеты текущими данными
-    for (int i = 0; i < 4; i++) {
-        auto iter = m_socketModel->itemsMap()->find(i);
-        if (iter != m_socketModel->itemsMap()->end() && !iter->second.isNull()) {
-            auto socket = iter->second;
-            
-            // Получаем текущие данные сокета
-            quint16 cutModeNum = 1000;  // По умолчанию
-            quint16 coagModeNum = 1000; // По умолчанию
-            quint16 cutModePower = socket->cutModePower();
-            quint16 coagModePower = socket->coagModePower();
-            quint8 pedal = socket->pedal();
-            
-            // Получаем Num режимов (не ID!)
-            auto cutMode = socket->curCutMode();
-            if (!cutMode.isNull()) {
-                cutModeNum = cutMode->num();
-            }
-            
-            auto coagMode = socket->curCoagMode();
-            if (!coagMode.isNull()) {
-                coagModeNum = coagMode->num();
-            }
-            
-            // Обновляем данные в LinkStm
-            m_linkStm->updateSocketData(i, cutModeNum, coagModeNum, 
-                                      cutModePower, coagModePower, pedal);
-        }
+    for (int i = 0; i < m_socketModel->rowCount(QModelIndex()); ++i) {
+        m_linkStm->updateSocketData(i,
+                                    m_socketModel->index(i).data(
+                                        SocketModel::SocketUartInfo).value<Onyx::SocketState>());
     }
-    
-    qDebug() << "All sockets initialized in LinkStm";
-}
-
-void ControlCenter::onStartActivation(quint8 socketId, bool isCut)
-{
-    if (!m_socketModel || !m_socketModel->itemsMap()) {
-        qWarning() << "Cannot start activation: socket model not available";
-        return;
-    }
-    
-    auto iter = m_socketModel->itemsMap()->find(socketId);
-    if (iter == m_socketModel->itemsMap()->end() || iter->second.isNull()) {
-        qWarning() << "Cannot start activation: socket" << socketId << "not found";
-        return;
-    }
-    auto socket = iter->second;
-    // Получаем данные для активации
-    QString socketName = socket->socketName();
-    QString modeName = "Режим не выбран";
-    quint16 power = 0;
-    // bool isCoag = !isCut;
-    
-    // Получаем режим и мощность
-    if (isCut) {
-        auto cutMode = socket->curCutMode();
-        if (!cutMode.isNull()) {
-            modeName = cutMode->modeName();
-            power = socket->cutModePower();
-        }
-    } else {
-        auto coagMode = socket->curCoagMode();
-        if (!coagMode.isNull()) {
-            modeName = coagMode->modeName();
-            power = socket->coagModePower();
-        }
-    }
-    
-    
-    // Запускаем активацию с минимальной задержкой, чтобы сокет успел развернуться
-
-    QTimer::singleShot(0, this, [this, socketId, isCut]() {
-        if (m_socketModel) {
-            m_socketModel->expandSocket(socketId);
-            m_socketModel->qmlSetData(socketId, isCut ? SOCKET::S_ACTIVE_CUT : SOCKET::S_ACTIVE_COAG, "socketstatus");
-        }
-    });
-    
-    qDebug() << "Activation started: socket" << socketId << "mode:" << modeName << "power:" << power;
-}
-
-void ControlCenter::onStopActivation(quint8 stopReason)
-{
-    // Останавливаем активацию
-    m_socketModel->stopActivation();
-    
-    qDebug() << "Activation stopped, reason:" << stopReason;
 }
 
 void ControlCenter::uartChat(LinkStm::UartRx* rxData)

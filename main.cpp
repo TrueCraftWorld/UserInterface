@@ -51,7 +51,7 @@ int main(int argc, char *argv[])
 
     NetworkControl::registerNetworkControl();
     UpdateClient::registerUpdateClient();
-    ControlCenter::registerControl();
+    ControlCenter::registerHandles();
 
     QSharedPointer<ControlCenter> ctrl  = QSharedPointer<ControlCenter>::create(nullptr);
     ctrl->init();
@@ -60,6 +60,7 @@ int main(int argc, char *argv[])
     engine.rootContext()->setContextProperty("theModel", ctrl->getSocketModel());
     engine.rootContext()->setContextProperty("Editor", ctrl->editor());
     engine.rootContext()->setContextProperty("recomHandle", ctrl->getHandle());
+    engine.rootContext()->setContextProperty("periphHandle", ctrl->getPeripheryHandle());
 
     ///TODO remove direct god-object access
     // engine.rootContext()->setContextProperty("control", ctrl.data());

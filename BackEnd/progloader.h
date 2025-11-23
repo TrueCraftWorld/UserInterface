@@ -63,7 +63,7 @@ public:
 	 */
 	void loadCurrentState();
 
-	std::map<int, std::map<int, Onyx::InstrInfo>> getConstarints(const QList<int> &idList);
+	std::map<int, std::map<int, Onyx::InstrInfo>> getConstraints(const QList<int> &idList);
 
 	void setSocketModelPtr(QSharedPointer<SocketModel> newSocketModelPtr);
 

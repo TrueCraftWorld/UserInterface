@@ -22,6 +22,8 @@ void filterMapByKey(std::map<int, T>& map, const std::vector<int>& keys_to_keep)
     }
 }
 
+using namespace Onyx;
+
 std::vector<int> parseCommaSeparatedNumbers(const QString& input) {
     std::vector<int> result;
 
@@ -291,9 +293,9 @@ void ProgLoader::saveCurrentState()
 
         int pedalType = socket->pedal();
 
-        if (pedalType == Pedal::SINGLE_PED) {
+        if (pedalType == SINGLE_PED) {
             pedal1 = i;  // Номер сокета (0-3)
-        } else if (pedalType == Pedal::DOUBLE_PED) {
+        } else if (pedalType == DOUBLE_PED) {
             pedal2 = i;  // Номер сокета (0-3)
         }
         // INSTR_BUTTON_BI и INSTR_BUTTON_MONO игнорируем
@@ -401,7 +403,7 @@ void ProgLoader::defaultSocketInit(bool clear)
 
         //Шаг4---------------------------------------------------------
     QString queryConditionModes = "BI_MONO = %1 AND CUT_COAG = %2 AND id IN (%3)";
-    instrumConstraints = getConstarints(allowedModesId);
+    instrumConstraints = getConstraints(allowedModesId);
 
     //Шаг5---------------------------------------------------------
     //тут какой-то затуп с базой на каких-то прогах, разрешено всего несколько инструментов
@@ -553,7 +555,7 @@ void ProgLoader::programmLoadSocketInit(int progId, bool clear)
 
     //Шаг4---------------------------------------------------------
     QString queryConditionModes = "BI_MONO = %1 AND CUT_COAG = %2 AND id IN (%3)";
-    instrumConstraints = getConstarints(allowedModesId);
+    instrumConstraints = getConstraints(allowedModesId);
 
     //Шаг5---------------------------------------------------------
     //тут какой-то затуп с базой на каких-то прогах, разрешено всего несколько инструментов
@@ -701,7 +703,7 @@ QMap<int, QString> ProgLoader::getScopes ()
     return scopeList;
 }
 
-std::map<int, std::map<int, Onyx::InstrInfo> > ProgLoader::getConstarints(const QList<int>& idList)
+std::map<int, std::map<int, Onyx::InstrInfo> > ProgLoader::getConstraints(const QList<int>& idList)
 {
     std::map<int, std::map<int, Onyx::InstrInfo> > result;
     QString queryCondition = "Mode_ID = %1";

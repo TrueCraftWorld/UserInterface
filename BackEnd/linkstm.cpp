@@ -63,7 +63,7 @@ void LinkStm::unpackRxCommand(const QByteArray &rxPacket)
     m_rxCommand.data.clear();
 
 //    qDebug() << "Rx: " << getHexStr(rxPacket) << "ms: " << m_uart->transmitDelay();
-    emit reportRx(getHexStr(rxPacket), m_uart->transmitDelay());
+    emit sigReportRx(getHexStr(rxPacket), m_uart->transmitDelay());
 
     // Проверка длины посылки
     if (rxPacket.size() < 4) {
@@ -175,7 +175,7 @@ void LinkStm::sendCommand()
        m_state = STATE_NO_RX;
     //_____________ Проверяем ответ rx__________
     if (m_state != STATE_OK) {
-        emit error(m_state + 32);           // Ошибки ответа (первые 32 - то, что присылается по uart)
+        emit sigError(m_state + 32);           // Ошибки ответа (первые 32 - то, что присылается по uart)
     }
     else {
         readRxCommand();                    // Читаем ответ
@@ -203,7 +203,7 @@ void LinkStm::sendCommand()
                 }
                 if ((mode < 32) && (power > 0) && (power < 400)) {
                     activeSocket.autoMode = m_socketList[activeSocket.id].autoMode > 0 ? true : false;
-                    emit startActivation(activeSocket.id, activeSocket.isCut);
+                    emit sigStartActivation(activeSocket.id, activeSocket.isCut);
                     m_comState = ACTIVATION;
                 }
                 else
@@ -233,7 +233,7 @@ void LinkStm::sendCommand()
             if (m_unitState.pedalKnob != PRESS_NONE) {
                 activeSocket = determineSocket(m_unitState.pedalKnob);
                 if (activeSocket.is3rdKnob && activeSocket.id < 4) {
-                   emit pressed3rdKnob(activeSocket.id);    // Отправляем нажатие 3-й кнопки
+                   emit sigPressed3rdKnob(activeSocket.id);    // Отправляем нажатие 3-й кнопки
                 }
             }
             m_txCommand.com = Allright;
@@ -270,7 +270,7 @@ void LinkStm::sendCommand()
 //           qDebug() << "SoftSize: " << m_softSize << " trans: " << m_transferredSize << " progr: " << progress;
            if (progress > updateProgr) {
                updateProgr = progress;
-               emit updateProgress(progress);
+               emit sigUpdateProgress(progress);
            }
        }
        else {
@@ -342,7 +342,7 @@ void LinkStm::sendCommand()
     
     // Отладочный замер времени от таймера до reportTx удалён
     
-    emit reportTx(txStr);
+    emit sigReportTx(txStr);
     m_waitAnswer = true;
 }
 
@@ -467,8 +467,8 @@ void LinkStm::readRxCommand()
             if (m_rxCommand.data.size() > 1) {
                 quint8 otherByte = static_cast<quint8>(m_rxCommand.data.at(1));
                 unitState.pedalCharge = otherByte >> 5;
-                unitState.instrBi2 = static_cast<LinkStm::InstrumentConnected>((otherByte >> 3) & 0x03);
-                unitState.instrMono2 = static_cast<LinkStm::InstrumentConnected>((otherByte >> 1) & 0x03);
+                unitState.instrBi2 = static_cast<Onyx::InstrumentConnected>((otherByte >> 3) & 0x03);
+                unitState.instrMono2 = static_cast<Onyx::InstrumentConnected>((otherByte >> 1) & 0x03);
             }
         } else {
             qDebug() << "Посылка от stm отстой - нет нажатий кнопок";
@@ -477,7 +477,7 @@ void LinkStm::readRxCommand()
         
         if (m_unitState != unitState) {
             m_unitState = unitState;
-            emit unitStateChanged(m_unitState);
+            emit sigUnitStateChanged(m_unitState);
         }
         break;
     }
@@ -498,14 +498,14 @@ void LinkStm::readRxCommand()
 
         if (m_unitState != unitState) {
             m_unitState = unitState;
-            emit unitStateChanged(m_unitState);
+            emit sigUnitStateChanged(m_unitState);
         }
         
         m_comState = ACTIVATION;
         break;
     // Остановка
     case RxStop:
-        emit stopActivation(m_rxCommand.com & 0x03);
+        emit sigStopActivation(m_rxCommand.com & 0x03);
         break;
     // Ответ на спец.запросы
     case RxSpecial:
@@ -513,7 +513,7 @@ void LinkStm::readRxCommand()
         break;
     // Присылаемые ошибки
     case RxErrors:
-        emit error(m_rxCommand.com);
+        emit sigError(m_rxCommand.com);
         break;
     // Ответы на команды обновления ПО
     case RxUpdating:

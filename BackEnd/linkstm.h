@@ -11,6 +11,9 @@
 #include "loggingcategories.h"
 #include "Structures.h"
 
+
+using namespace Onyx;
+
 class LinkStm : public QObject
 {
     Q_OBJECT
@@ -124,77 +127,6 @@ public:
         bool autoMode;
     };
 
-    // Нажатие кнопок держателей и педалей
-    enum PedalKnobPressed : quint8 {
-        PRESS_MONO1_Y = 0x80,
-        PRESS_MONO1_B = 0x40,
-        PRESS_MONO1_YB = 0xC0,
-
-        PRESS_MONO2_Y = 0x20,
-        PRESS_MONO2_B = 0x10,
-        PRESS_MONO2_YB = 0x30,
-
-        PRESS_TERMO = 0x08,
-        PRESS_PED1 = 0x04,
-
-        PRESS_PED2_Y = 0x02,
-        PRESS_PED2_B = 0x01,
-        PRESS_PED2_YB = 0x03,
-
-        PRESS_NONE = 0,
-        PRESS_WRONG = 0xFF
-    };
-    Q_ENUM(PedalKnobPressed)
-
-    enum InstrumentConnected : quint8 {
-        INSTR_NOT_CONNECTED = 0,
-        INSTR_DETECTED = 1,
-        INSTR_READ = 2,
-        INSTR_IDENTIFIED = 3
-    };
-    Q_ENUM(InstrumentConnected)
-
-    // Состояние аппарата
-    struct UnitState {
-        bool argonCylinder1{false};             // Подключение баллонов
-        bool argonCylinder2{false};
-        quint8 argonRealRate{0};            // Реальный расход аргона во время активации
-        bool neutraElConnected{false};          // Подключение нейтрального электрода НЭ
-        bool tissueGrab{false};                 // Обнаружен захват ткани
-        PedalKnobPressed pedalKnob{PRESS_NONE};      // Состояние кнопок и педалей
-        quint8  pedalCharge{0};             // Заряд беспроводной педали
-        InstrumentConnected instrBi2{INSTR_NOT_CONNECTED};    // Подключение инструментов (держателей) с определителем
-        InstrumentConnected instrMono2{INSTR_NOT_CONNECTED};
-        quint8 activOutput{0};              // Активированный выход
-        quint8 activMode{0};                // Активированный режим
-        
-        bool operator==(const UnitState& other) const {
-            return argonCylinder1 == other.argonCylinder1
-                && argonCylinder2 == other.argonCylinder2
-                && argonRealRate == other.argonRealRate
-                && neutraElConnected == other.neutraElConnected
-                && tissueGrab == other.tissueGrab
-                && pedalKnob == other.pedalKnob
-                && pedalCharge == other.pedalCharge
-                && instrBi2 == other.instrBi2
-                && instrMono2 == other.instrMono2
-                && activOutput == other.activOutput;
-        }
-        
-        bool operator!=(const UnitState& other) const {
-            return !(*this == other);
-        }
-    };
-
-    // struct SocketState {
-    //     quint16 cutModeNum;
-    //     quint16 cutModePower;
-    //     quint16 coagModeNum;
-    //     quint16 coagModePower;
-    //     quint8 pedal;
-    //     quint8 autoMode;
-    // };
-
     enum CommunicationState : quint8 {      // Состояние обмена
         IDLE = 0,                           // По умолчанию - просто передача состояния
         START_ACTIVATION = 1,               // Запуск активации
@@ -240,18 +172,21 @@ public:
     void initializeAllSockets();
 
 signals:
-    void unitStateChanged(UnitState state);
+    //начинаем имена сигналов с sig или signal чтобы
+    //при их наборе и автоподстановке было намного проще
+    //их найти все, а не листать список полей и методов
+    void sigUnitStateChanged(UnitState state);
 //    void neutralElConnectedChanged(bool connected);
 //    void txError();
 //    void rxError();
-    void recieveData(UartRx* rxData);
-    void error(quint8 error);
-    void updateProgress(int progress);
-    void reportTx(QString txStr);
-    void reportRx(QString rxStr, int ms);
-    void pressed3rdKnob(quint8 socket);
-    void startActivation(quint8 socket, bool isCut);
-    void stopActivation(quint8 stopReason);
+    void sigRecieveData(UartRx* rxData);
+    void sigError(quint8 error);
+    void sigUpdateProgress(int progress);
+    void sigReportTx(QString txStr);
+    void sigReportRx(QString rxStr, int ms);
+    void sigPressed3rdKnob(quint8 socket);
+    void sigStartActivation(quint8 socket, bool isCut);
+    void sigStopActivation(quint8 stopReason);
 
 private slots:
     void sendCommand();

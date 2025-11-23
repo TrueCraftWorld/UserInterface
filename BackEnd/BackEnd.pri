@@ -14,6 +14,7 @@ HEADERS += \
     $$PWD/linkstm.h \
     $$PWD/loggingcategories.h \
     $$PWD/pedal.h \
+    $$PWD/periphhandler.h \
     $$PWD/proghandle.h \
     $$PWD/progloader.h \
     $$PWD/socket.h \
@@ -33,6 +34,7 @@ SOURCES += \
     $$PWD/linkstm.cpp \
     $$PWD/loggingcategories.cpp \
     $$PWD/pedal.cpp \
+    $$PWD/periphhandler.cpp \
     $$PWD/proghandle.cpp \
     $$PWD/progloader.cpp \
     $$PWD/socket.cpp \

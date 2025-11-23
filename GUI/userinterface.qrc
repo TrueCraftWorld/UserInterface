@@ -32,5 +32,6 @@
         <file>PedalRepeater.qml</file>
         <file>GradientBack.qml</file>
         <file>PedalDrawer.qml</file>
+        <file>ArgCylinder.qml</file>
     </qresource>
 </RCC>

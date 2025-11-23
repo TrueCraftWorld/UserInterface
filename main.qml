@@ -70,27 +70,14 @@ Window {
       onPanelExpandedChanged: {
          leftPanelExpanded = panelExpanded
       }
+      MouseArea {
+         anchors.fill: parent
+         visible: !parent.panelExpanded
+         onClicked: {
+            leftPanel.panelExpanded = true
+         }
+      }
    }
-
-   // Правая панель - перекрывает центральный контейнер
-   // PedalPanel {
-   //    id: rightPanel
-   //    panelExpanded: rightPanelExpanded
-   //    socketModel: theModel
-   //    expandedWidth: container.width / 2
-   //    collapsedWidth: 90
-   //    animationDuration: container.panelAnimationDuration
-   //    animationEasing: container.panelAnimationEasing
-   //    height: socketsDummy.height
-   //    anchors.bottom: socketsDummy.bottom
-   //    x: container.width - width
-   //    z: 15  // Поверх центрального контейнера
-
-   //    // Синхронизируем состояние панели с контейнером
-   //    onPanelExpandedChanged: {
-   //       rightPanelExpanded = panelExpanded
-   //    }
-   // }
 
    PedalContainer {
       id: pedalContainerrr
@@ -103,6 +90,7 @@ Window {
          top: statusDummy.bottom
       }
    }
+
    PedalDrawer {
       id: pedDrawer
       innerModel: theModel
@@ -110,6 +98,7 @@ Window {
       height: container.height
       edge: Qt.RightEdge
    }
+
    Connections {
       target: pedalContainerrr
       function onPedMenuRequest(socketId) {

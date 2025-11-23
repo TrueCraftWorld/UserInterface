@@ -70,23 +70,24 @@ Rectangle {
         
         // Передаем параметры из control
         showControls: panelExpanded
-        cylinder1Connected: control.argonCylinder1Connected
-        cylinder2Connected: control.argonCylinder2Connected
-        flowRate: control.argonFlowRate
-        realFlowRate: control.argonRealRate
-        isActivation: control.activation
-        activCylinderFirst: control.activCylinderFirst
+        //не передаём ибо у меня нет стм
+        // cylinder1Connected: periphHandle.argonCylinder1Connected
+        // cylinder2Connected: periphHandle.argonCylinder2Connected
+        // flowRate: periphHandle.argonFlowRate
+        // realFlowRate: periphHandle.argonRealRate
+        // isActivation: periphHandle.activation
+        // activCylinderFirst: periphHandle.activCylinderFirst
         
         // Обработчик изменения расхода
         onFlowRateUpdated: {
             // Обновляем значение в control
-            control.argonFlowRate = newRate
+            periphHandle.argonFlowRate = newRate
         }
         
         // Обработчик продувки аргона
         onArgonBlow: {
             // Вызываем метод продувки в control
-            control.argonBlow()
+            periphHandle.argonBlow()
         }
     }
 
@@ -104,7 +105,7 @@ Rectangle {
         z: 10  // Выше фонового MouseArea
 
         // Передаем параметры
-        neutralConnected: control.neutralElConnected
+        neutralConnected: periphHandle.neutralElConnected
         showControls: panelExpanded
 
         // Обработчики сигналов

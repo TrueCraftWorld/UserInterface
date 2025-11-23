@@ -16,6 +16,7 @@ ControlCenter::ControlCenter(QObject *parent)
     m_editor(new SocketModeEditor(m_socketModel,this)),
     m_handle(new ProgHandle(this)),
     m_progLoader(new ProgLoader(this)),
+    m_periphery(new PeriphHandler(this)),
     m_linkStm(nullptr),
     m_saveTimer(new QTimer(this))
 {

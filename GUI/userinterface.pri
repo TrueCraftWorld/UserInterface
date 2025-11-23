@@ -5,6 +5,7 @@ RESOURCES += $$PWD/userinterface.qrc
 
 DISTFILES += \
     $$PWD/Activation.qml \
+    $$PWD/ArgCylinder.qml \
     $$PWD/Argon.qml \
     $$PWD/GradientBack.qml \
     $$PWD/HalfSocket.qml \
@@ -23,6 +24,7 @@ DISTFILES += \
     $$PWD/PedalEditor.qml \
     $$PWD/PedalPanel.qml \
     $$PWD/PedalRepeater.qml \
+    $$PWD/PeripheryDrawer.qml \
     $$PWD/PowerRect.qml \
     $$PWD/ProgAdditionPop.qml \
     $$PWD/ProgItemList.qml \
@@ -30,3 +32,7 @@ DISTFILES += \
     $$PWD/StatesSocket.qml \
     $$PWD/SocketContainerV2.qml \
     $$PWD/StatusBar.qml
+
+HEADERS +=
+
+SOURCES +=

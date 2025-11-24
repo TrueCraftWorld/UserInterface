@@ -2,15 +2,12 @@
     <qresource prefix="/">
         <file>Collapsible.qml</file>
         <file>DummySocket.qml</file>
-        <file>SocketContainer.qml</file>
         <file>StatusBar.qml</file>
         <file>SocketEditor.qml</file>
         <file>SocketView.qml</file>
-        <file>EditorPopup.qml</file>
         <file>HalfSocket.qml</file>
         <file>InstrumRect.qml</file>
         <file>ModePowerRect.qml</file>
-        <file>LeftPanel.qml</file>
         <file>NeutralEl.qml</file>
         <file>Argon.qml</file>
         <file>SocketRepeater.qml</file>

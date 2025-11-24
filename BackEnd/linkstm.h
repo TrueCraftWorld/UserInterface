@@ -41,7 +41,9 @@ public:
 
     enum RxCommand : quint8 {           // Принимаемые команды
         Whatsup = 0x00,                 // Стандартный запрос
-        SpecAnswer = 0x60,              // Ответ на спец. команду
+        GenActivation = 0x20,           // Посылка во время активации
+        GenStop = 0x40,                 // Остановка активации
+        SpecAnswer = 0x60,              // Ответ на спец запрос
         ErrRecieve = 0x80,              // Модуль связи не принимает сигналы
         ErrCrc = 0x81,                  // Ошибка CRC
         ErrGenRx = 0x82,                // Генератор не отвечает

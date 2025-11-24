@@ -111,7 +111,10 @@ void LinkStm::unpackRxCommand(const QByteArray &rxPacket)
     m_rxCommand.mc = (McUnit) (destuffedBuffer.at(0) & UART_ADDR);
     // Выбираем команду
     m_rxCommand.com = static_cast<RxCommand>(destuffedBuffer.at(1));
-//    qDebug() << "rxCom: " << m_rxCommand.com << ": " << QString::number(destuffedBuffer.at(1), 16);
+    qDebug() << "rxCom: "
+             << ((m_rxCommand.com < ErrRecieve) ? static_cast<RxCommand>(m_rxCommand.com & 0xE0) : static_cast<RxCommand>(m_rxCommand.com))
+             << ": " << getHexStr(destuffedBuffer)
+             << " rx message: " << m_elapsedTimer.elapsed() << "ms";
     m_rxCommand.data.clear();
     for (int i = 2; i < destuffedBuffer.size() - 2; i++)
         m_rxCommand.data.append(destuffedBuffer.at(i));
@@ -125,9 +128,9 @@ void LinkStm::unpackRxCommand(const QByteArray &rxPacket)
         m_state = STATE_RX_ERR;
     }
     
-    // Отладочный замер времени от readyRead до m_waitAnswer=false
-    qDebug() << "rx message: " << m_elapsedTimer.elapsed() << "ms";
-
+    // Отладочный замер времени от начала sendCommand до завершения обработки ответа
+//    qDebug() << "rx message: " << m_elapsedTimer.elapsed() << "ms";
+    
     m_waitAnswer = false;
 //    qDebug() << QString("!!! ").append(getHexStr(destuffedBuffer));
 }
@@ -170,7 +173,7 @@ void LinkStm::sendCommand()
     static int updateCounter = 0;       // Счётчик обновления ПО
    static int updateProgr = 0;
 
-    m_comState = IDLE;
+//    m_comState = IDLE;
 
     // Не дождались адекватного ответа (unpackRxCommand)
     if (m_waitAnswer)
@@ -209,7 +212,13 @@ void LinkStm::sendCommand()
                 qDebug() << "Mode: " << mode << ", Power: " << power;
                 if ((mode < 32) && (power > 0) && (power < 400)) {
                     activeSocket.autoMode = m_socketList[activeSocket.id].autoMode > 0 ? true : false;
+                    qint64 beforeEmit = m_elapsedTimer.elapsed();
                     emit startActivation(activeSocket.id, activeSocket.isCut);
+                    qint64 afterEmit = m_elapsedTimer.elapsed();
+                    if (afterEmit - beforeEmit > 5) {
+                        qDebug() << "Activation emit took" << (afterEmit - beforeEmit) << "ms";
+                    }
+                    qDebug() << "Activation " << mode << power;
                     m_comState = ACTIVATION;
                 }
                 // Если условия не выполнены, состояние уже IDLE
@@ -261,44 +270,44 @@ void LinkStm::sendCommand()
             else if ((m_lastCommand.com == StartUpdate_1) ||
                     (m_lastCommand.com == StartUpdate_2) ||
                  (m_lastCommand.com == SoftData)) {
-       if (m_hexList.size() > updateCounter) {
-           m_txCommand.com = SoftData;
-           m_txCommand.data.clear();
-           // Формируем команду с данными прошивки по одной из строк hex-файла
-           for (int i = 0; i < 4; i++) {
-               m_txCommand.data.append((uint8_t)(m_hexList.at(updateCounter).addr >> 8*(3-i)));
-           }
-           m_txCommand.data.append(m_hexList.at(updateCounter++).data);
-           // Уведомляем о прогрессе обновления
-           m_transferredSize++;
-           int progress = static_cast<int>(100 * m_transferredSize / m_softSize);
-//           qDebug() << "SoftSize: " << m_softSize << " trans: " << m_transferredSize << " progr: " << progress;
-           if (progress > updateProgr) {
-               updateProgr = progress;
-               emit updateProgress(progress);
-           }
-       }
-       else {
-           m_txCommand.com = UpdateFinish;
-           m_txCommand.data.clear();
-                    updateCounter = 0;
-                    updateProgr = 0;
-           int version, subversion;
-           bool isOk;
-           // Строка содержит версию V.V или V (проверяется в MainWindow::on_listView_clicked)
-           if (m_versionStr.contains(".")) {
-              QStringList verList = m_versionStr.split('.');
-              version = verList.at(0).toInt(&isOk, 10);
-              subversion = verList.at(1).toInt(&isOk, 10);
-           }
-           else {
-              version = m_versionStr.toInt(&isOk, 10);
-              subversion = 0;
-           }
-           m_txCommand.data.append((uchar) version);
-           m_txCommand.data.append((uchar) subversion);
-           qDebug() << "new ver: " << getHexStr(m_txCommand.data);
-                    m_comState = IDLE;
+                   if (m_hexList.size() > updateCounter) {
+                       m_txCommand.com = SoftData;
+                       m_txCommand.data.clear();
+                       // Формируем команду с данными прошивки по одной из строк hex-файла
+                       for (int i = 0; i < 4; i++) {
+                           m_txCommand.data.append((uint8_t)(m_hexList.at(updateCounter).addr >> 8*(3-i)));
+                       }
+                       m_txCommand.data.append(m_hexList.at(updateCounter++).data);
+                       // Уведомляем о прогрессе обновления
+                       m_transferredSize++;
+                       int progress = static_cast<int>(100 * m_transferredSize / m_softSize);
+            //           qDebug() << "SoftSize: " << m_softSize << " trans: " << m_transferredSize << " progr: " << progress;
+                       if (progress > updateProgr) {
+                           updateProgr = progress;
+                           emit updateProgress(progress);
+                       }
+                   }
+                   else {
+                       m_txCommand.com = UpdateFinish;
+                       m_txCommand.data.clear();
+                                updateCounter = 0;
+                                updateProgr = 0;
+                       int version, subversion;
+                       bool isOk;
+                       // Строка содержит версию V.V или V (проверяется в MainWindow::on_listView_clicked)
+                       if (m_versionStr.contains(".")) {
+                          QStringList verList = m_versionStr.split('.');
+                          version = verList.at(0).toInt(&isOk, 10);
+                          subversion = verList.at(1).toInt(&isOk, 10);
+                       }
+                       else {
+                          version = m_versionStr.toInt(&isOk, 10);
+                          subversion = 0;
+                       }
+                       m_txCommand.data.append((uchar) version);
+                       m_txCommand.data.append((uchar) subversion);
+                       qDebug() << "new ver: " << getHexStr(m_txCommand.data);
+                       m_comState = IDLE;
                 }
             } // softData
         } // updating
@@ -338,17 +347,18 @@ void LinkStm::sendCommand()
     if (!m_uart->writeData(txPacket)) {
         m_state = STATE_TX_ERR;
         txStr = "!Tx ERROR";
-        // qDebug() << "Tx ERR!";
+         qDebug() << "Tx ERR!";
    }
    else {
         txStr = getHexStr(txPacket);
-        qDebug() << "Tx: " << getHexStr(txPacket);
+        // Отладочный замер времени от начала sendCommand до отправки
+        qDebug() << "txCom: " << static_cast<TxCommand>(m_txCommand.com & 0xE0) << ": " << txStr << " tx sending: " << m_elapsedTimer.elapsed() << "ms";
     }
     
-    // Отладочный замер времени от начала sendCommand до отправки
-    qDebug() << "tx sending: " << m_elapsedTimer.elapsed() << "ms";
+
+//    qDebug() << "tx sending: " << m_elapsedTimer.elapsed() << "ms";
     
-    emit reportTx(txStr);
+//    emit reportTx(txStr);
     m_waitAnswer = true;
 }
 
@@ -399,8 +409,6 @@ QString LinkStm::getHexStr(QByteArray byteArray)
     return outStr;
 }
 
-
-
 void LinkStm::readRxCommand()
 {
     enum RxType : quint8 {
@@ -416,7 +424,7 @@ void LinkStm::readRxCommand()
 
     // Если шлёт что-то не то во время активации, надо послать команду на стоп на всякий случай
     if (m_comState == ACTIVATION) {
-        if (rxType != RxActivation && rxType != RxStop) {
+        if (m_rxCommand.com >= SpecAnswer) {
             UartTx command;
             command.com = StopActivation;
             command.data.clear();
@@ -455,8 +463,8 @@ void LinkStm::readRxCommand()
             case PRESS_PED2_Y:
             case PRESS_PED2_B:
                 unitState.pedalKnob = static_cast<PedalKnobPressed>(pressValue);
-                qDebug() << "Pressed pedal: " << unitState.pedalKnob << " State " << m_comState;
                 if (m_comState != ACTIVATION) m_comState = START_ACTIVATION;
+                qDebug() << "Pressed pedal: " << unitState.pedalKnob;
                 break;
             case PRESS_MONO1_YB:
             case PRESS_MONO2_YB:
@@ -533,7 +541,15 @@ void LinkStm::readRxCommand()
         else if (m_rxCommand.com == BootAck) {
             m_comState = IDLE;
         }
-        m_comState = UPDATING;
+//        else if (m_rxCommand.com == Start) {
+//            UartTx commandStart;
+//            commandStart.com = GoBoot;
+//            commandStart.data.clear();
+//            commandStart.mc = MC_0;
+//            m_txCommandList.append(command);
+//        }
+        else
+            m_comState = UPDATING;
         break;
     default:
         // Что-то странное пришло

@@ -196,7 +196,8 @@ ProgLoader::ProgLoader(QObject *parent)
     : QObject{parent}
 {
     if (m_dbReaderPtr.isNull())
-            m_dbReaderPtr = new DataBaseReader("/home/kikorik/FOTEK/someShadyDB.db");
+            m_dbReaderPtr = new DataBaseReader("/home/kikorik/FOTEK/eshfDb.db");
+//    m_dbReaderPtr = new DataBaseReader("/home/kikorik/FOTEK/someShadyDB.db");
 }
 
 void ProgLoader::saveCurrentState()

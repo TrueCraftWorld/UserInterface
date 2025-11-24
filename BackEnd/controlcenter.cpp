@@ -12,6 +12,7 @@
 #include <QDebug>
 #include <QVector>
 #include <QVariant>
+#include <QElapsedTimer>
 
 
 ControlCenter::ControlCenter(QObject *parent)
@@ -359,9 +360,10 @@ void ControlCenter::setLinkStm(LinkStm* linkStm)
             }
         });
         
-        // Подключаем сигналы активации
-        connect(m_linkStm, &LinkStm::startActivation, this, &ControlCenter::onStartActivation);
-        connect(m_linkStm, &LinkStm::stopActivation, this, &ControlCenter::onStopActivation);
+        // Подключаем сигналы активации с асинхронной обработкой (QueuedConnection)
+        // чтобы не блокировать поток UART при обновлении QML модели
+        connect(m_linkStm, &LinkStm::startActivation, this, &ControlCenter::onStartActivation, Qt::QueuedConnection);
+        connect(m_linkStm, &LinkStm::stopActivation, this, &ControlCenter::onStopActivation, Qt::QueuedConnection);
         
         // Инициализируем все сокеты текущими данными
         initializeAllSocketsInLinkStm();
@@ -412,6 +414,9 @@ void ControlCenter::initializeAllSocketsInLinkStm()
 
 void ControlCenter::onStartActivation(quint8 socketId, bool isCut)
 {
+    QElapsedTimer timer;
+    timer.start();
+    
     if (!m_socketModel || !m_socketModel->itemsMap()) {
         qWarning() << "Cannot start activation: socket model not available";
         return;
@@ -444,17 +449,24 @@ void ControlCenter::onStartActivation(quint8 socketId, bool isCut)
         }
     }
     
-    
-    // Запускаем активацию с минимальной задержкой, чтобы сокет успел развернуться
-
-    QTimer::singleShot(0, this, [this, socketId, isCut]() {
-        if (m_socketModel) {
-            m_socketModel->expandSocket(socketId);
-            m_socketModel->qmlSetData(socketId, isCut ? SOCKET::S_ACTIVE_CUT : SOCKET::S_ACTIVE_COAG, "socketstatus");
+    if (m_socketModel) {
+        qint64 beforeExpand = timer.elapsed();
+        m_socketModel->expandSocket(socketId);
+        qint64 afterExpand = timer.elapsed();
+        if (afterExpand - beforeExpand > 5) {
+            qDebug() << "expandSocket took" << (afterExpand - beforeExpand) << "ms";
         }
-    });
+        
+        qint64 beforeSet = timer.elapsed();
+        m_socketModel->qmlSetData(socketId, isCut ? SOCKET::S_ACTIVE_CUT : SOCKET::S_ACTIVE_COAG, "socketstatus");
+        qint64 afterSet = timer.elapsed();
+        if (afterSet - beforeSet > 5) {
+            qDebug() << "qmlSetData took" << (afterSet - beforeSet) << "ms";
+        }
+    }
     
-    qDebug() << "Activation started: socket" << socketId << "mode:" << modeName << "power:" << power;
+    qDebug() << "Activation started: socket" << socketId << "mode:" << modeName << "power:" << power
+             << "total time:" << timer.elapsed() << "ms";
 }
 
 void ControlCenter::onStopActivation(quint8 stopReason)

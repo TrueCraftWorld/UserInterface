@@ -72,17 +72,16 @@ Rectangle {
                 color: "#2c2c2c"
             }
         }
-
     }
 
-    // MouseArea для перехвата всех событий в области компонента
-    MouseArea {
-        anchors.fill: parent
-        z: 0
-        onPressed: mouse.accepted = true
-        onReleased: mouse.accepted = true
-        onClicked: mouse.accepted = true
-    }
+    // // MouseArea для перехвата всех событий в области компонента
+    // MouseArea {
+    //     anchors.fill: parent
+    //     z: 0
+    //     onPressed: mouse.accepted = true
+    //     onReleased: mouse.accepted = true
+    //     onClicked: mouse.accepted = true
+    // }
 
     Rectangle {
         id: argonView
@@ -90,10 +89,11 @@ Rectangle {
         anchors.right: parent.right
         anchors.bottom: parent.bottom
         anchors.top: parent.top
-        color: "grey"
-        radius: 7
-        border.color: "orange"
-        z: 1
+        // color: "grey"
+        color: "transparent"
+        // radius: 7
+        // border.color: "orange"
+        // z: 1
 //        visible: !showControls
         
         // Иконка баллона
@@ -246,7 +246,7 @@ Rectangle {
             anchors.top: showControls ? arLabel.bottom : argonFlowRect.bottom
             anchors.topMargin: showControls ? 8 : 25
             x: showControls ? (parent.width - width - 100) : (parent.width - width) / 2
-            isFirst: true;
+            isFirst: false;
             cylConnected: cylinder2Connected
             cylSelected: !activCylinderFirst
         }

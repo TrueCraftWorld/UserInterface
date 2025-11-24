@@ -54,35 +54,50 @@ Window {
    }
 
    // Левая панель - перекрывает центральный контейнер
-   LeftPanel {
-      id: leftPanel
-      panelExpanded: leftPanelExpanded
-      expandedWidth: container.width / 2
-      collapsedWidth: 90
-      animationDuration: container.panelAnimationDuration
-      animationEasing: container.panelAnimationEasing
-      height: socketsDummy.height
-      anchors.bottom: socketsDummy.bottom
-      x: 0  // Всегда видима
-      z: 15
+   // LeftPanel {
+   //    id: leftPanel
+   //    panelExpanded: leftPanelExpanded
+   //    expandedWidth: container.width / 2
+   //    collapsedWidth: 90
+   //    animationDuration: container.panelAnimationDuration
+   //    animationEasing: container.panelAnimationEasing
+   //    height: socketsDummy.height
+   //    anchors.bottom: socketsDummy.bottom
+   //    x: 0  // Всегда видима
+   //    z: 15
 
-      // Синхронизируем состояние панели с контейнером
-      onPanelExpandedChanged: {
-         leftPanelExpanded = panelExpanded
+   //    // Синхронизируем состояние панели с контейнером
+   //    onPanelExpandedChanged: {
+   //       leftPanelExpanded = panelExpanded
+   //    }
+   //    MouseArea {
+   //       anchors.fill: parent
+   //       visible: !parent.panelExpanded
+   //       onClicked: {
+   //          leftPanel.panelExpanded = true
+   //       }
+   //    }
+   // }
+   PeripheryPanel {
+      id: argNeutralPanel
+      anchors {
+         left: parent.left
+         bottom: parent.bottom
+         top: statusDummy.bottom
+         right: socketsDummy.left
       }
-      MouseArea {
-         anchors.fill: parent
-         visible: !parent.panelExpanded
-         onClicked: {
-            leftPanel.panelExpanded = true
-         }
-      }
+   }
+   PeripheryDrawer {
+      id: argNeutDrawer
+      width: .5 * container.width
+      height: container.height
+      edge: Qt.LeftEdge
    }
 
    PedalContainer {
-      id: pedalContainerrr
+      id: pedalContainer
       innerModel: theModel
-      z: 30
+      // z: 30
       anchors {
          left: socketsDummy.right
          right: parent.right
@@ -99,27 +114,42 @@ Window {
       edge: Qt.RightEdge
    }
 
-   Connections {
-      target: pedalContainerrr
-      function onPedMenuRequest(socketId) {
-         pedDrawer.socketId = socketId
-         pedDrawer.open()
-      }
-   }
-
    Drawer {
       id: leftDrawer
       width: 0.8 * container.width
       height: container.height
       edge: Qt.LeftEdge
-      // Loader
-      // SettingsMain {
       MenuLoader {
          id: menuLoad
          anchors.fill: parent
       }
    }
 
+   Connections {
+      target: pedalContainer
+      function onPedMenuRequest(socketId) {
+         pedDrawer.socketId = socketId
+         pedDrawer.open()
+      }
+   }
+   Connections {
+      target: argNeutralPanel
+      function onOpenPeriphDrawer() {
+         argNeutDrawer.open()
+      }
+   }
+   Connections {
+      target: statusDummy
+      function onDrawerCalled() {
+         leftDrawer.open()
+      }
+   }
+   Connections {
+      target: menuLoad
+      function onCloseMe() {
+         leftDrawer.close()
+      }
+   }
    // Область для свайпов и закрытия панелей
    // MouseArea {
    //    id: swipeArea
@@ -248,16 +278,4 @@ Window {
 
    // }
 
-   Connections {
-      target: statusDummy
-      function onDrawerCalled() {
-         leftDrawer.open()
-      }
-   }
-   Connections {
-      target: menuLoad
-      function onCloseMe() {
-         leftDrawer.close()
-      }
-   }
 }

@@ -7,16 +7,17 @@ Rectangle {
 
     // Свойства компонента
     property int neutralSize: 0      // 0 = Small, 1 = Medium, 2 = Large
-    property bool neutralDivided: periphHandle.neutralElDivided  // НЭ разделённый или нет - привязка к ControlCenter
+    // property bool neutralDivided: periphHandle.neutralElDivided  // НЭ разделённый или нет - привязка к ControlCenter
+    property bool neutralDivided: true  // НЭ разделённый или нет - привязка к ControlCenter
     property bool neutralConnected: false  // Передается снаружи
     property bool showControls: false      // Показывать ли кнопки управления
 
     // Обновляем ControlCenter при изменении neutralDivided
-    onNeutralDividedChanged: {
-        if (control.neutralElDivided !== neutralDivided) {
-            control.neutralElDivided = neutralDivided
-        }
-    }
+    // onNeutralDividedChanged: {
+    //     if (control.neutralElDivided !== neutralDivided) {
+    //         control.neutralElDivided = neutralDivided
+    //     }
+    // }
 
     // Блок НЭ
     Rectangle {
@@ -26,18 +27,18 @@ Rectangle {
         anchors.left: parent.left
         anchors.bottom: parent.bottom
         height: parent.height
-        width: panelExpanded ? 160 : parent.width
+        width: showControls ? 160 : parent.width
         color: neutralConnected ? "gray" : "white"
-        radius: panelExpanded ? 14 : 7
+        radius: showControls ? 14 : 7
         border.color: "orange"
 
         Text {
             id: neutralLabel
             color: "black"
-            font.pixelSize: panelExpanded ? 20 : 15
+            font.pixelSize: showControls ? 20 : 15
             font.bold: false
             anchors.top: parent.top
-            anchors.topMargin: panelExpanded ? 5 : 3
+            anchors.topMargin: showControls ? 5 : 3
             anchors.horizontalCenter: parent.horizontalCenter
             text: {
                 if (neutralSize === 0)
@@ -55,11 +56,11 @@ Rectangle {
             id: notDividedNeutral
             anchors.horizontalCenter: parent.horizontalCenter
             anchors.bottom: parent.bottom
-            anchors.bottomMargin: panelExpanded ? 15 :7
+            anchors.bottomMargin: showControls ? 15 :7
             color: neutralImage.neColor
             width: parent.width * .7
             height: parent.height * .56
-            radius: panelExpanded ? 14 : 7
+            radius: showControls ? 14 : 7
             visible: !neutralDivided
         }
         Rectangle {
@@ -83,14 +84,14 @@ Rectangle {
                 id: leftDivided
             anchors {
                 left: parent.left
-                    leftMargin: panelExpanded ? 15 :7
+                    leftMargin: showControls ? 15 :7
                     bottom: parent.bottom
-                    bottomMargin: panelExpanded ? 15 :7
+                    bottomMargin: showControls ? 15 :7
                 }
                 color: neutralImage.neColor
                 width: parent.width * .35
                 height: parent.height * .55
-                radius: panelExpanded ? 14 : 7
+                radius: showControls ? 14 : 7
             }
             Rectangle {
                 id: leftDivided2
@@ -108,14 +109,14 @@ Rectangle {
                 id: rightDivided
             anchors {
                 right: parent.right
-                    rightMargin: panelExpanded ? 15 :7
+                    rightMargin: showControls ? 15 :7
                     bottom: parent.bottom
-                    bottomMargin: panelExpanded ? 15 :7
+                    bottomMargin: showControls ? 15 :7
                 }
                 color: neutralImage.neColor
                 width: parent.width * .35
                 height: parent.height * .55
-                radius: panelExpanded ? 14 : 7
+                radius: showControls ? 14 : 7
             }
             Rectangle {
                 id: rightDivided2

@@ -31,5 +31,6 @@
         <file>ArgCylinder.qml</file>
         <file>PeripheryDrawer.qml</file>
         <file>PeripheryPanel.qml</file>
+        <file>NeutralButton.qml</file>
     </qresource>
 </RCC>

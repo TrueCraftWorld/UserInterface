@@ -19,7 +19,6 @@ LinkStm::LinkStm(QObject *parent)
     m_state = STATE_OK;
     m_waitAnswer = false;
     m_comState = IDLE;
-    m_elapsedTimer.start();  // Запускаем таймер для измерения интервалов
     
     // Инициализация переменных состояния
     m_enableActivation = true;
@@ -73,7 +72,7 @@ void LinkStm::unpackRxCommand(const QByteArray &rxPacket)
 
     m_rxCommand.data.clear();
 
-    qDebug() << "Rx: " << getHexStr(rxPacket) << "ms: " << m_uart->transmitDelay();
+//    qDebug() << "Rx: " << getHexStr(rxPacket) << "ms: " << m_uart->transmitDelay();
     emit reportRx(getHexStr(rxPacket), m_uart->transmitDelay());
 
     // Проверка длины посылки
@@ -205,7 +204,7 @@ void LinkStm::sendCommand()
 //            qDebug() << "Processing START_ACTIVATION in sendCommand()";
             activeSocket = determineSocket(m_unitState.pedalKnob);
             if (activeSocket.id >= 4) {     // Например, педаль не привязана к выходам
-                // Состояние уже сброшено выше
+                m_comState = IDLE;
             }
             else {
                 if (activeSocket.isCut) {
@@ -217,7 +216,6 @@ void LinkStm::sendCommand()
                     power = m_socketList[activeSocket.id].coagModePower;
 
                 }
-                qDebug() << "Mode: " << mode << ", Power: " << power;
                 if ((mode < 32) && (power > 0) && (power < 400)) {
                     activeSocket.autoMode = m_socketList[activeSocket.id].autoMode > 0 ? true : false;
                     qint64 beforeEmit = m_elapsedTimer.elapsed();
@@ -229,7 +227,8 @@ void LinkStm::sendCommand()
                     qDebug() << "Activation " << mode << power;
                     m_comState = ACTIVATION;
                 }
-                // Если условия не выполнены, состояние уже IDLE
+                else
+                    m_comState = IDLE;
 
             }
         }
@@ -539,10 +538,7 @@ void LinkStm::readRxCommand()
         break;
     // Ответ на спец.запросы
     case RxSpecial:
-//        if (m_rxCommand.com == RxCommand::SpecAnswer &&
-//            m_rxCommand.mc == MC_0) {
-//            m_comState = PREPARE_ACTIVATION;
-//        }
+
         break;
     // Присылаемые ошибки
     case RxErrors:
@@ -627,7 +623,6 @@ LinkStm::ActiveSocket LinkStm::determineSocket(const PedalKnobPressed &pedalKnob
         for (int i = 0; i < 4; i++) {
             if (m_socketList[i].pedal == 2) {
                 socket.id = i;
-                qDebug() << "socket with doublePed: " << i;
                 if (pedalKnob == PRESS_PED2_B) {
                     socket.isCut = false;  // Коагуляция
                 } else if (pedalKnob == PRESS_PED2_YB) {
@@ -642,10 +637,7 @@ LinkStm::ActiveSocket LinkStm::determineSocket(const PedalKnobPressed &pedalKnob
     default:
         break;
     }
-    qDebug() << "determineSocket "
-             << "id:" << socket.id
-             << "isCut:" << socket.isCut;
-
+    
     return socket;
 }
 

@@ -205,22 +205,6 @@ Rectangle {
         }
     }
 
-    // Обновление координат Activation при изменении activeSocketId
-    Connections {
-        target: control
-        function onActiveSocketIdChanged(socketId) {
-            // Если этот сокет стал активным, обновляем координаты
-            // Используем двойную задержку, чтобы сокет успел раскрыться
-            if (socketId === socketRoot.socketId) {
-                Qt.callLater(function() {
-                    Qt.callLater(function() {
-                        activationPositionUpdateTimer.restart()
-                    })
-                })
-            }
-        }
-    }
-
     states: [
         // Свернутое состояние
         State {

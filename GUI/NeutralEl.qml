@@ -7,10 +7,10 @@ Rectangle {
 
     // Свойства компонента
     property int neutralSize: 0      // 0 = Small, 1 = Medium, 2 = Large
-    // property bool neutralDivided: periphHandle.neutralElDivided  // НЭ разделённый или нет - привязка к ControlCenter
     property bool neutralDivided: true  // НЭ разделённый или нет - привязка к ControlCenter
     property bool neutralConnected: false  // Передается снаружи
     property bool showControls: false      // Показывать ли кнопки управления
+    // property bool neutralDivided: periphHandle.neutralElDivided  // НЭ разделённый или нет - привязка к ControlCenter
 
     // Обновляем ControlCenter при изменении neutralDivided
     // onNeutralDividedChanged: {
@@ -20,6 +20,43 @@ Rectangle {
     // }
 
     // Блок НЭ
+
+    component MassSelectionBut: Button {
+        id: rootCustomBut
+        required property int type
+        property string iconText
+        autoRepeat: true
+        autoRepeatDelay: 200
+        autoRepeatInterval: 200
+        height: parent.height * .26
+        width: parent.width * .6
+
+        background: null
+        contentItem: Rectangle {
+            id: backGround
+            anchors.fill: parent
+            radius: 10
+            color: neutralSize === type
+                ? (rootCustomBut.pressed ? "darkcyan" : "cyan" )
+                : (rootCustomBut.pressed ? "gray" : "lightgray" )
+            border {
+                color: neutralSize === type ? "white" : "transparent"
+                width: neutralSize === type ? 3 : 0
+            }
+            Text {
+                anchors.centerIn: parent
+                text: iconText
+                font.pixelSize: buttonStep * 2
+                font.bold: true
+                color: "#2c2c2c"
+                horizontalAlignment: Text.AlignHCenter
+            }
+        }
+        onClicked: {
+            neutralSize = type
+        }
+    }
+
     Rectangle {
         id: neutralImage
         property string neColor: neutralConnected ? "lightgreen" : "red"
@@ -267,100 +304,36 @@ Rectangle {
         }
 
         // Кнопка выбора размера Small (< 5кг)
-        Rectangle {
+        MassSelectionBut {
             id: smallNeutralSize
-            height: parent.height * .26
-            width: parent.width * .6
-            color: neutralSize === 0 ? "cyan" : "lightgray"
-            radius: 10
-            border.color: neutralSize === 0 ? "white" : "transparent"
-            border.width: neutralSize === 0 ? 3 : 0
+            type: 0
+            iconText: qsTr("Младенец: < 5 кг\n Максимальная мощность 50")
             anchors {
                 top: parent.top
                 right: parent.right
                 rightMargin: 10
                 topMargin: 10
             }
-            
-            Label {
-                anchors.centerIn: parent
-                text: qsTr("Младенец: < 5 кг\n Максимальная мощность 50")
-                color: "black"
-                font.pixelSize: 16
-                horizontalAlignment: Text.AlignHCenter
-            }
-            
-            MouseArea {
-                anchors.fill: parent
-                onClicked: {
-                    neutralSize = 0
-                    mouse.accepted = true
-                }
-            }
         }
-
-        // Кнопка выбора размера Medium (5-15кг)
-        Rectangle {
+        MassSelectionBut {
             id: mediumNeutralSize
-            height: parent.height * .26
-            width: parent.width * .6
-            color: neutralSize === 1 ? "cyan" : "lightgray"
-            radius: 10
-            border.color: neutralSize === 1 ? "white" : "transparent"
-            border.width: neutralSize === 1 ? 3 : 0
+            type: 1
+            iconText: qsTr("Ребёнок: 5-15 кг\nМаксимальная мощность 75")
             anchors {
                 verticalCenter: parent.verticalCenter
                 right: parent.right
                 rightMargin: 10
             }
-            
-            Label {
-                anchors.centerIn: parent
-                text: qsTr("Ребёнок: 5-15 кг\nМаксимальная мощность 75")
-                color: "black"
-                font.pixelSize: 16
-                horizontalAlignment: Text.AlignHCenter
-            }
-            
-            MouseArea {
-                anchors.fill: parent
-                onClicked: {
-                    neutralSize = 1
-                    mouse.accepted = true
-                }
-            }
         }
-
-        // Кнопка выбора размера Large (> 15кг)
-        Rectangle {
+        MassSelectionBut {
             id: largeNeutralSize
-            height: parent.height * .26
-            width: parent.width * .6
-            color: neutralSize === 2 ? "cyan" : "lightgray"
-            radius: 10
-            border.color: neutralSize === 2 ? "white" : "transparent"
-            border.width: neutralSize === 2 ? 3 : 0
+            type: 2
+            iconText: qsTr("Взрослый: > 15 кг\nМаксимальная мощность 400")
             anchors {
                 bottom: parent.bottom
                 right: parent.right
                 rightMargin: 10
                 bottomMargin: 10
-            }
-            
-            Label {
-                anchors.centerIn: parent
-                text: qsTr("Взрослый: > 15 кг\nМаксимальная мощность 400")
-                color: "black"
-                font.pixelSize: 16
-                horizontalAlignment: Text.AlignHCenter
-            }
-            
-            MouseArea {
-                anchors.fill: parent
-                onClicked: {
-                    neutralSize = 2
-                    mouse.accepted = true
-                }
             }
         }
     }

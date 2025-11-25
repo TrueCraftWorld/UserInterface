@@ -334,13 +334,13 @@ void LinkStm::sendCommand()
     case Erase_1:
     case Erase_2:
     case GoBoot:
-        m_uartTimer->setInterval(8000);  // Стирание банка около 6 сек, перезагрузка 3-4 сек
+        m_uartTimer->setInterval(3000);  // Стирание банка около 6 сек, перезагрузка 3-4 сек
         break;
     case SoftData:
         m_uartTimer->setInterval(200);
         break;
     default:
-        m_uartTimer->setInterval(500);
+        m_uartTimer->setInterval(50);
     }
 
 //    qDebug() << "txCom: " << m_txCommand.com << ": " << QString::number(m_txCommand.com, 16);

@@ -41,6 +41,7 @@ Rectangle {
                 activationIndicator.close()
             }
             activationIndicator.isCoag = true
+            activationIndicator.isEndo = coagIsEndo
             activationIndicator.modeName = coagModeName
             activationIndicator.power = coagModePower
             // Используем Qt.callLater для гарантии, что закрытие произошло
@@ -53,6 +54,7 @@ Rectangle {
                 activationIndicator.close()
             }
             activationIndicator.isCoag = false
+            activationIndicator.isEndo = cutIsEndo
             activationIndicator.modeName = cutModeName
             activationIndicator.power = cutModePower
             // Используем Qt.callLater для гарантии, что закрытие произошло

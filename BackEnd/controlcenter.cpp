@@ -9,6 +9,7 @@
 #include <QQmlEngine>
 #include <QString>
 #include <QTimer>
+#include <QMetaObject>
 #include <QDebug>
 #include <QVector>
 #include <QVariant>
@@ -477,16 +478,11 @@ void ControlCenter::onStartActivation(quint8 socketId, bool isCut)
         // Это гарантирует, что onSocketStateChanged сработает даже при повторной активации
         m_socketModel->qmlSetData(socketId, SOCKET::S_ENABLED, "socketstatus");
         
-        // Используем QTimer для задержки, чтобы QML успел обработать сброс состояния
-        // и закрыть окно активации перед открытием нового
-        QTimer::singleShot(30, this, [this, socketId, newStatus, timer]() {
-//            qint64 beforeSet = timer.elapsed();
+        // Используем постановку в очередь событий вместо фиксированной задержки,
+        // чтобы QML успел обработать сброс состояния перед установкой нового
+        QMetaObject::invokeMethod(this, [this, socketId, newStatus]() {
             m_socketModel->qmlSetData(socketId, newStatus, "socketstatus");
-//            qint64 afterSet = timer.elapsed();
-//            if (afterSet - beforeSet > 5) {
-//                qDebug() << "qmlSetData took" << (afterSet - beforeSet) << "ms";
-//            }
-        });
+        }, Qt::QueuedConnection);
     }
     
 //    qDebug() << "Activation started: socket" << socketId << "mode:" << modeName << "power:" << power
@@ -500,8 +496,8 @@ void ControlCenter::onStopActivation(quint8 stopReason)
     // onSocketStateChanged гарантированно сработал
     if (m_socketModel) {
         m_socketModel->stopActivation();
-        // Даем QML время обработать изменения состояния
-        QTimer::singleShot(50, this, [this]() {
+        // Даем QML время обработать изменения состояния через очередь событий
+        QMetaObject::invokeMethod(this, [this]() {
             // Дополнительно убеждаемся, что все состояния сброшены
             if (m_socketModel && m_socketModel->itemsMap()) {
                 for (auto& item : *m_socketModel->itemsMap()) {
@@ -511,7 +507,7 @@ void ControlCenter::onStopActivation(quint8 stopReason)
                     }
                 }
             }
-        });
+        }, Qt::QueuedConnection);
     }
     
     qDebug() << "Activation stopped, reason:" << stopReason;

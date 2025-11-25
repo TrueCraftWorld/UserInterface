@@ -9,6 +9,7 @@ Popup {
     property string modeName /*control.activeModeName || "Режим не выбран"*/
     property int power /*control.activePower || 0*/
     property bool isCoag /*control.activeIsCoag || false*/
+    property bool isEndo: false
     
     // Настройки popup
     modal: true  // Модальный - блокируем касания
@@ -101,13 +102,74 @@ Popup {
             }
 
             // Мощность
-            Text {
+            Item {
                 anchors.horizontalCenter: parent.horizontalCenter
-                text: power
-                font.pixelSize: 80
-                color: isCoag ? "yellow" : "brown"
-                style: Text.Outline
-                styleColor: isCoag ? "black" : "white"
+                width: Math.max(360, powerText.implicitWidth)
+                height: endoRow.visible ? endoRow.implicitHeight : powerText.implicitHeight
+
+                Text {
+                    id: powerText
+                    anchors.centerIn: parent
+                    text: power
+                    visible: !isEndo
+                    font.pixelSize: 80
+                    color: isCoag ? "yellow" : "brown"
+                    style: Text.Outline
+                    styleColor: isCoag ? "black" : "white"
+                }
+
+                Row {
+                    id: endoRow
+                    anchors.centerIn: parent
+                    visible: isEndo
+                    spacing: 16
+
+                    Column {
+                        spacing: 4
+                        Text {
+                            id: effCutLabel
+                            text: qsTr("эффект резания")
+                            font.pixelSize: 28
+                            color: isCoag ? "white" : "black"
+                            horizontalAlignment: Text.AlignHCenter
+                            width: Math.max(effCutLabel.implicitWidth, effCutValue.implicitWidth)
+                        }
+                        Text {
+                            id: effCutValue
+                            text: Math.floor(power / 10)
+                            font.pixelSize: 70
+                            font.bold: true
+                            color: isCoag ? "yellow" : "brown"
+                            style: Text.Outline
+                            styleColor: isCoag ? "black" : "white"
+                            horizontalAlignment: Text.AlignHCenter
+                            width: effCutLabel.width
+                        }
+                    }
+
+                    Column {
+                        spacing: 4
+                        Text {
+                            id: effCoagLabel
+                            text: qsTr("эффект коагуляции")
+                            font.pixelSize: 28
+                            color: isCoag ? "white" : "black"
+                            horizontalAlignment: Text.AlignHCenter
+                            width: Math.max(effCoagLabel.implicitWidth, effCoagValue.implicitWidth)
+                        }
+                        Text {
+                            id: effCoagValue
+                            text: power % 10
+                            font.pixelSize: 70
+                            font.bold: true
+                            color: isCoag ? "white" : "black"
+                            style: Text.Outline
+                            styleColor: isCoag ? "black" : "white"
+                            horizontalAlignment: Text.AlignHCenter
+                            width: effCoagLabel.width
+                        }
+                    }
+                }
             }
         }
         

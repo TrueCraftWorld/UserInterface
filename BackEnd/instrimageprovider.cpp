@@ -22,7 +22,7 @@ void InstrImageProvider::scanFiles()
     QDir instrDir("/home/kikorik/FOTEK/Images/instruments");
     if (instrDir.exists()) {
         s_knownFiles = instrDir.entryInfoList(filters, QDir::Files | QDir::NoDotAndDotDot | QDir::Readable);
-        qDebug() << "InstrImageProvider: Found" << s_knownFiles.size() << "instrument files in" << instrDir.absolutePath();
+//        qDebug() << "InstrImageProvider: Found" << s_knownFiles.size() << "instrument files in" << instrDir.absolutePath();
     } else {
         qWarning() << "InstrImageProvider: Directory does not exist:" << instrDir.absolutePath();
     }
@@ -32,12 +32,12 @@ void InstrImageProvider::scanFiles()
     if (modesDir.exists()) {
         QFileInfoList modeFiles = modesDir.entryInfoList(filters, QDir::Files | QDir::NoDotAndDotDot | QDir::Readable);
         s_knownFiles.append(modeFiles);
-        qDebug() << "InstrImageProvider: Found" << modeFiles.size() << "mode files in" << modesDir.absolutePath();
+//        qDebug() << "InstrImageProvider: Found" << modeFiles.size() << "mode files in" << modesDir.absolutePath();
     } else {
         qWarning() << "InstrImageProvider: Directory does not exist:" << modesDir.absolutePath();
     }
     
-    qDebug() << "InstrImageProvider: Total" << s_knownFiles.size() << "image files loaded";
+//    qDebug() << "InstrImageProvider: Total" << s_knownFiles.size() << "image files loaded";
     
     s_filesScanned = true;
 }

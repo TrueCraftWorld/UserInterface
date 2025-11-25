@@ -176,7 +176,7 @@ void ControlCenter::unitStateHandler(LinkStm::UnitState state)
     // Обновляем реальный расход аргона
     if (m_argonRealRate != state.argonRealRate) {
         m_argonRealRate = state.argonRealRate;
-        qDebug() << "РЕАЛЬНЫЙ РАСХОД: " << m_argonRealRate;
+//        qDebug() << "РЕАЛЬНЫЙ РАСХОД: " << m_argonRealRate;
         emit argonRealRateChanged(m_argonRealRate);
     }
     

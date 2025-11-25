@@ -92,7 +92,7 @@ Rectangle {
         doublePed.visible = false;
         biHandle.visible = false;
         monoHandle.visible = false;
-        console.log("onShownPedalsArrayChanged", shownPedalsArray)
+//        console.log("onShownPedalsArrayChanged", shownPedalsArray)
         for (var idx = 0; idx < shownPedalsArray.length; ++idx) {
             if (shownPedalsArray[idx] === 1) {
                 singlePed.visible = true;

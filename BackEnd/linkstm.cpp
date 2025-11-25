@@ -1,8 +1,11 @@
 #include "linkstm.h"
+#include <QMetaType>
 
 LinkStm::LinkStm(QObject *parent)
     : QObject{parent}
 {
+    qRegisterMetaType<LinkStm::UnitState>("LinkStm::UnitState");
+    qRegisterMetaType<LinkStm::UnitState>("UnitState");
 
     // Инициализация uart
 //    m_uart = new UartConnect(this, "ttyS2", QSerialPort::Baud9600);

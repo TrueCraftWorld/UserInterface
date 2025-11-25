@@ -34,7 +34,7 @@ Rectangle {
     state: "expanded"
 
     onSocketStateChanged: {
-        console.log("socketState changed to", socketState, "for socket", socketId)
+//        console.log("socketState changed to", socketState, "for socket", socketId)
         if (socketState == 3) {
             // Принудительно закрываем перед открытием, чтобы гарантировать обновление
             if (activationIndicator.opened) {

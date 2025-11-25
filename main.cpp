@@ -1,5 +1,6 @@
 #include <QGuiApplication>
 #include <QQmlApplicationEngine>
+#include <QThread>
 
 #include "SettingsScreen/wifimodule/NetworkDiscover.h"
 #include "SettingsScreen/updatemodule/updateclient.h"
@@ -101,6 +102,14 @@ int main(int argc, char *argv[])
     m_linkStm = new LinkStm();
     // Откуда грузиться stm
     m_linkStm->setBoot(static_cast<LinkStm::BootChoice>(boot.toInt()));
+    
+    // Переносим LinkStm в отдельный поток
+    QThread* linkThread = new QThread(&app);
+    m_linkStm->moveToThread(linkThread);
+    QObject::connect(linkThread, &QThread::started, m_linkStm, &LinkStm::start);
+    QObject::connect(linkThread, &QThread::finished, m_linkStm, &QObject::deleteLater);
+    QObject::connect(&app, &QCoreApplication::aboutToQuit, linkThread, &QThread::quit);
+    linkThread->start();
     
     // Связываем LinkStm с ControlCenter для обработки UART-данных
     ctrl->setLinkStm(m_linkStm);

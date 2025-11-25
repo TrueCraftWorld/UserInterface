@@ -231,15 +231,14 @@ public:
 
     void setMc(const McUnit &newMc);
 
-    // Методы для установки состояния из ControlCenter
+public slots:
+    void start();
     void setEnableActivation(bool enable);
     void setNeutralElDivided(bool divided);
     void setAutoSSmode(quint8 mode);
     void setActivCylinderFirst(bool first);
-    
-    // Методы для обновления данных сокетов
-    void updateSocketData(int socketIndex, quint16 cutModeNum, quint16 coagModeNum, 
-                         quint16 cutModePower, quint16 coagModePower, quint8 pedal);
+    void updateSocketData(int socketIndex, quint16 cutModeNum, quint16 coagModeNum,
+                          quint16 cutModePower, quint16 coagModePower, quint8 pedal);
     void initializeAllSockets();
 
 signals:
@@ -311,6 +310,7 @@ private:
     bool m_enableActivation;
     bool m_neutralElDivided;
     quint8 m_argonFlowRate;
+    quint8 m_autoSSmode;
     bool m_activCylinderFirst;
 
     UnitState m_unitState;

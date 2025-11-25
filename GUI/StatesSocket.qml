@@ -34,17 +34,31 @@ Rectangle {
     state: "expanded"
 
     onSocketStateChanged: {
-        console.log("socketState", socketState)
+        console.log("socketState changed to", socketState, "for socket", socketId)
         if (socketState == 3) {
+            // Принудительно закрываем перед открытием, чтобы гарантировать обновление
+            if (activationIndicator.opened) {
+                activationIndicator.close()
+            }
             activationIndicator.isCoag = true
             activationIndicator.modeName = coagModeName
             activationIndicator.power = coagModePower
-            activationIndicator.open();
+            // Используем Qt.callLater для гарантии, что закрытие произошло
+            Qt.callLater(function() {
+                activationIndicator.open()
+            })
         } else if (socketState == 4) {
+            // Принудительно закрываем перед открытием, чтобы гарантировать обновление
+            if (activationIndicator.opened) {
+                activationIndicator.close()
+            }
             activationIndicator.isCoag = false
             activationIndicator.modeName = cutModeName
             activationIndicator.power = cutModePower
-            activationIndicator.open();
+            // Используем Qt.callLater для гарантии, что закрытие произошло
+            Qt.callLater(function() {
+                activationIndicator.open()
+            })
         } else {
             activationIndicator.close();
         }

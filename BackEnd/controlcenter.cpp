@@ -219,7 +219,8 @@ void ControlCenter::setNeutralElDivided(bool divided)
     
     // Обновляем состояние в LinkStm
     if (!m_linkStm.isNull()) {
-        m_linkStm->setNeutralElDivided(divided);
+        QMetaObject::invokeMethod(m_linkStm.data(), "setNeutralElDivided",
+                                  Qt::QueuedConnection, Q_ARG(bool, divided));
     }
 }
 
@@ -275,8 +276,9 @@ void ControlCenter::setActivCylinderFirst(bool first)
     emit activCylinderFirstChanged(first);
     
     // Передаём значение в LinkStm
-    if (m_linkStm) {
-        m_linkStm->setActivCylinderFirst(first);
+    if (!m_linkStm.isNull()) {
+        QMetaObject::invokeMethod(m_linkStm.data(), "setActivCylinderFirst",
+                                  Qt::QueuedConnection, Q_ARG(bool, first));
     }
 }
 
@@ -304,7 +306,8 @@ void ControlCenter::setEnableActivation(bool enable)
     
     // Обновляем состояние в LinkStm
     if (!m_linkStm.isNull()) {
-        m_linkStm->setEnableActivation(enable);
+        QMetaObject::invokeMethod(m_linkStm.data(), "setEnableActivation",
+                                  Qt::QueuedConnection, Q_ARG(bool, enable));
     }
 }
 
@@ -340,8 +343,10 @@ void ControlCenter::setLinkStm(LinkStm* linkStm)
         connect(m_linkStm, &LinkStm::unitStateChanged, this, &ControlCenter::unitStateHandler);
         
         // Инициализируем текущие значения состояния в LinkStm
-        m_linkStm->setEnableActivation(m_enableActivation);
-        m_linkStm->setNeutralElDivided(m_neutralElDivided);
+        QMetaObject::invokeMethod(m_linkStm.data(), "setEnableActivation",
+                                  Qt::QueuedConnection, Q_ARG(bool, m_enableActivation));
+        QMetaObject::invokeMethod(m_linkStm.data(), "setNeutralElDivided",
+                                  Qt::QueuedConnection, Q_ARG(bool, m_neutralElDivided));
         
         // Подключаем сигнал обновления данных сокетов
         // чуть громоздко но без лишних сигналов, полностью нативно
@@ -350,13 +355,20 @@ void ControlCenter::setLinkStm(LinkStm* linkStm)
             int idxStart = topLeft.row();
             int idxStop = bottomRight.row();
             for (int i = idxStart; i <= idxStop; ++i) {
-                m_linkStm->updateSocketData(i,
-                                            topLeft.siblingAtRow(i).data(SocketModel::CutModeNum).value<quint16>(),
-                                            topLeft.siblingAtRow(i).data(SocketModel::CoagModeNum).value<quint16>(),
-                                            topLeft.siblingAtRow(i).data(SocketModel::CutModePower).value<quint16>(),
-                                            topLeft.siblingAtRow(i).data(SocketModel::CoagModePower).value<quint16>(),
-                                            topLeft.siblingAtRow(i).data(SocketModel::SocketPedal).value<quint8>()
-                                            );
+                if (!m_linkStm.isNull()) {
+                    quint16 cutModeNum = topLeft.siblingAtRow(i).data(SocketModel::CutModeNum).value<quint16>();
+                    quint16 coagModeNum = topLeft.siblingAtRow(i).data(SocketModel::CoagModeNum).value<quint16>();
+                    quint16 cutPower = topLeft.siblingAtRow(i).data(SocketModel::CutModePower).value<quint16>();
+                    quint16 coagPower = topLeft.siblingAtRow(i).data(SocketModel::CoagModePower).value<quint16>();
+                    quint8 pedal = topLeft.siblingAtRow(i).data(SocketModel::SocketPedal).value<quint8>();
+                    QMetaObject::invokeMethod(m_linkStm.data(), "updateSocketData", Qt::QueuedConnection,
+                                              Q_ARG(int, i),
+                                              Q_ARG(quint16, cutModeNum),
+                                              Q_ARG(quint16, coagModeNum),
+                                              Q_ARG(quint16, cutPower),
+                                              Q_ARG(quint16, coagPower),
+                                              Q_ARG(quint8, pedal));
+                }
             }
         });
         
@@ -404,8 +416,13 @@ void ControlCenter::initializeAllSocketsInLinkStm()
             }
             
             // Обновляем данные в LinkStm
-            m_linkStm->updateSocketData(i, cutModeNum, coagModeNum, 
-                                      cutModePower, coagModePower, pedal);
+            QMetaObject::invokeMethod(m_linkStm.data(), "updateSocketData", Qt::QueuedConnection,
+                                      Q_ARG(int, i),
+                                      Q_ARG(quint16, cutModeNum),
+                                      Q_ARG(quint16, coagModeNum),
+                                      Q_ARG(quint16, cutModePower),
+                                      Q_ARG(quint16, coagModePower),
+                                      Q_ARG(quint8, pedal));
         }
     }
     
@@ -450,29 +467,52 @@ void ControlCenter::onStartActivation(quint8 socketId, bool isCut)
     }
     
     if (m_socketModel) {
-        qint64 beforeExpand = timer.elapsed();
         m_socketModel->expandSocket(socketId);
-        qint64 afterExpand = timer.elapsed();
-        if (afterExpand - beforeExpand > 5) {
-            qDebug() << "expandSocket took" << (afterExpand - beforeExpand) << "ms";
-        }
         
-        qint64 beforeSet = timer.elapsed();
-        m_socketModel->qmlSetData(socketId, isCut ? SOCKET::S_ACTIVE_CUT : SOCKET::S_ACTIVE_COAG, "socketstatus");
-        qint64 afterSet = timer.elapsed();
-        if (afterSet - beforeSet > 5) {
-            qDebug() << "qmlSetData took" << (afterSet - beforeSet) << "ms";
-        }
+        // Всегда сбрасываем состояние перед установкой нового, чтобы гарантировать срабатывание onSocketStateChanged
+        // Это важно для повторных активаций - QML обработчик сработает только при изменении значения
+        auto newStatus = isCut ? SOCKET::S_ACTIVE_CUT : SOCKET::S_ACTIVE_COAG;
+        
+        // Всегда сначала сбрасываем состояние, затем устанавливаем новое
+        // Это гарантирует, что onSocketStateChanged сработает даже при повторной активации
+        m_socketModel->qmlSetData(socketId, SOCKET::S_ENABLED, "socketstatus");
+        
+        // Используем QTimer для задержки, чтобы QML успел обработать сброс состояния
+        // и закрыть окно активации перед открытием нового
+        QTimer::singleShot(30, this, [this, socketId, newStatus, timer]() {
+//            qint64 beforeSet = timer.elapsed();
+            m_socketModel->qmlSetData(socketId, newStatus, "socketstatus");
+//            qint64 afterSet = timer.elapsed();
+//            if (afterSet - beforeSet > 5) {
+//                qDebug() << "qmlSetData took" << (afterSet - beforeSet) << "ms";
+//            }
+        });
     }
     
-    qDebug() << "Activation started: socket" << socketId << "mode:" << modeName << "power:" << power
-             << "total time:" << timer.elapsed() << "ms";
+//    qDebug() << "Activation started: socket" << socketId << "mode:" << modeName << "power:" << power
+//             << "total time:" << timer.elapsed() << "ms";
 }
 
 void ControlCenter::onStopActivation(quint8 stopReason)
 {
     // Останавливаем активацию
-    m_socketModel->stopActivation();
+    // Важно: сбрасываем состояние всех активных сокетов, чтобы при следующей активации
+    // onSocketStateChanged гарантированно сработал
+    if (m_socketModel) {
+        m_socketModel->stopActivation();
+        // Даем QML время обработать изменения состояния
+        QTimer::singleShot(50, this, [this]() {
+            // Дополнительно убеждаемся, что все состояния сброшены
+            if (m_socketModel && m_socketModel->itemsMap()) {
+                for (auto& item : *m_socketModel->itemsMap()) {
+                    auto status = item.second->socketStatus();
+                    if (status == SOCKET::S_ACTIVE_CUT || status == SOCKET::S_ACTIVE_COAG) {
+                        m_socketModel->qmlSetData(item.first, SOCKET::S_ENABLED, "socketstatus");
+                    }
+                }
+            }
+        });
+    }
     
     qDebug() << "Activation stopped, reason:" << stopReason;
 }

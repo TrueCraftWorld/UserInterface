@@ -22,6 +22,7 @@ LinkStm::LinkStm(QObject *parent)
     m_enableActivation = true;
     m_neutralElDivided = true;
     m_argonFlowRate = 0;
+    m_autoSSmode = 0;
 
     // Инициализация состояния аппарата
     m_unitState.argonCylinder1 = false;
@@ -45,11 +46,17 @@ LinkStm::LinkStm(QObject *parent)
     // Таймер обмена по uart
     m_uartTimer = new QTimer(this);
     connect(m_uartTimer, &QTimer::timeout, [this]() {sendCommand();});
-    m_uartTimer->start(100);
-    qDebug(logInfo()) << "start Uart Timer";
 
     connect(m_uart, &UartToQmlBridge::uartRecieve, this, &LinkStm::unpackRxCommand);
 
+}
+
+void LinkStm::start()
+{
+    if (m_uartTimer && !m_uartTimer->isActive()) {
+        m_uartTimer->start(100);
+        qDebug(logInfo()) << "start Uart Timer in thread" << QThread::currentThread();
+    }
 }
 
 void LinkStm::unpackRxCommand(const QByteArray &rxPacket)
@@ -111,10 +118,10 @@ void LinkStm::unpackRxCommand(const QByteArray &rxPacket)
     m_rxCommand.mc = (McUnit) (destuffedBuffer.at(0) & UART_ADDR);
     // Выбираем команду
     m_rxCommand.com = static_cast<RxCommand>(destuffedBuffer.at(1));
-    qDebug() << "rxCom: "
-             << ((m_rxCommand.com < ErrRecieve) ? static_cast<RxCommand>(m_rxCommand.com & 0xE0) : static_cast<RxCommand>(m_rxCommand.com))
-             << ": " << getHexStr(destuffedBuffer)
-             << " rx message: " << m_elapsedTimer.elapsed() << "ms";
+//    qDebug() << "rxCom: "
+//             << ((m_rxCommand.com < ErrRecieve) ? static_cast<RxCommand>(m_rxCommand.com & 0xE0) : static_cast<RxCommand>(m_rxCommand.com))
+//             << ": " << getHexStr(destuffedBuffer)
+//             << " rx message: " << m_elapsedTimer.elapsed() << "ms";
     m_rxCommand.data.clear();
     for (int i = 2; i < destuffedBuffer.size() - 2; i++)
         m_rxCommand.data.append(destuffedBuffer.at(i));
@@ -192,9 +199,7 @@ void LinkStm::sendCommand()
 
         //______________Подготовка активации________________
         if (m_comState == START_ACTIVATION) {
-            // Сбрасываем состояние сразу, чтобы избежать повторной обработки
-            m_comState = IDLE;
-            
+//            qDebug() << "Processing START_ACTIVATION in sendCommand()";
             activeSocket = determineSocket(m_unitState.pedalKnob);
             if (activeSocket.id >= 4) {     // Например, педаль не привязана к выходам
                 // Состояние уже сброшено выше
@@ -352,7 +357,7 @@ void LinkStm::sendCommand()
    else {
         txStr = getHexStr(txPacket);
         // Отладочный замер времени от начала sendCommand до отправки
-        qDebug() << "txCom: " << static_cast<TxCommand>(m_txCommand.com & 0xE0) << ": " << txStr << " tx sending: " << m_elapsedTimer.elapsed() << "ms";
+//        qDebug() << "txCom: " << static_cast<TxCommand>(m_txCommand.com & 0xE0) << ": " << txStr << " tx sending: " << m_elapsedTimer.elapsed() << "ms";
     }
     
 
@@ -463,8 +468,13 @@ void LinkStm::readRxCommand()
             case PRESS_PED2_Y:
             case PRESS_PED2_B:
                 unitState.pedalKnob = static_cast<PedalKnobPressed>(pressValue);
-                if (m_comState != ACTIVATION) m_comState = START_ACTIVATION;
-                qDebug() << "Pressed pedal: " << unitState.pedalKnob;
+//                qDebug() << "Pressed pedal: " << unitState.pedalKnob << "current m_comState:" << m_comState;
+                if (m_comState != ACTIVATION) {
+                    m_comState = START_ACTIVATION;
+//                    qDebug() << "Set m_comState to START_ACTIVATION";
+                } else {
+//                    qDebug() << "m_comState is ACTIVATION, not setting START_ACTIVATION";
+                }
                 break;
             case PRESS_MONO1_YB:
             case PRESS_MONO2_YB:
@@ -520,6 +530,9 @@ void LinkStm::readRxCommand()
     // Остановка
     case RxStop:
         emit stopActivation(m_rxCommand.com & 0x03);
+        // Сбрасываем состояние, чтобы следующая активация могла начаться
+//        qDebug() << "RxStop received, resetting m_comState from" << m_comState << "to IDLE";
+        m_comState = IDLE;
         break;
     // Ответ на спец.запросы
     case RxSpecial:
@@ -779,6 +792,11 @@ void LinkStm::setEnableActivation(bool enable)
 void LinkStm::setNeutralElDivided(bool divided)
 {
     m_neutralElDivided = divided;
+}
+
+void LinkStm::setAutoSSmode(quint8 mode)
+{
+    m_autoSSmode = mode;
 }
 
 void LinkStm::setActivCylinderFirst(bool first)

@@ -12,7 +12,6 @@ DISTFILES += \
     $$PWD/InstrumEditor.qml \
     $$PWD/InstrumRect.qml \
     $$PWD/ItemList.qml \
-    $$PWD/LeftPanel.qml \
     $$PWD/MainMenu.qml \
     $$PWD/MenuLoader.qml \
     $$PWD/ModeEditor.qml \

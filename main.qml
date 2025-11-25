@@ -53,31 +53,6 @@ Window {
 
    }
 
-   // Левая панель - перекрывает центральный контейнер
-   // LeftPanel {
-   //    id: leftPanel
-   //    panelExpanded: leftPanelExpanded
-   //    expandedWidth: container.width / 2
-   //    collapsedWidth: 90
-   //    animationDuration: container.panelAnimationDuration
-   //    animationEasing: container.panelAnimationEasing
-   //    height: socketsDummy.height
-   //    anchors.bottom: socketsDummy.bottom
-   //    x: 0  // Всегда видима
-   //    z: 15
-
-   //    // Синхронизируем состояние панели с контейнером
-   //    onPanelExpandedChanged: {
-   //       leftPanelExpanded = panelExpanded
-   //    }
-   //    MouseArea {
-   //       anchors.fill: parent
-   //       visible: !parent.panelExpanded
-   //       onClicked: {
-   //          leftPanel.panelExpanded = true
-   //       }
-   //    }
-   // }
    PeripheryPanel {
       id: argNeutralPanel
       anchors {

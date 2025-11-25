@@ -11,8 +11,8 @@ Rectangle {
     // property bool neutralDivided: periphHandle.neutralElDivided  // НЭ разделённый или нет - привязка к ControlCenter
 
     property bool neutralConnected: false  // Передается снаружи
+    // property bool neutralConnected: periphHandle.neutralElConnected  // Передается снаружи
     property bool showControls: false      // Показывать ли кнопки управления
-
 
     component MassSelectionBut: Button {
         id: rootCustomBut

@@ -124,6 +124,13 @@ Rectangle {
         modal: true
     }
 
+        // width: 900
+        // anchors.centerIn: parent
+        y: 0
+        modal: true
+    // y: - socketContainer.height/2
+    }
+
     Connections {
         target: progSelector
         function onTypeChosen (addType) {

@@ -33,7 +33,7 @@ Window {
       text: qsTr("В бою с шипящими змеями — эфой и гадюкой — маленький, цепкий, храбрый ёж съел их")
       width: parent.width
       height: 85
-      z: 30
+      // z: 30
       anchors {
          top: parent.top
       }
@@ -44,13 +44,12 @@ Window {
       objectName: "socketContainer"
       innerModel: theModel
       width: parent.width - 180
-      z: 5  // Ниже панелей, но выше фонового MouseArea
+      // z: 5  // Ниже панелей, но выше фонового MouseArea
       anchors {
          horizontalCenter: parent.horizontalCenter
          bottom: parent.bottom
          top: statusDummy.bottom
       }
-
    }
 
    PeripheryPanel {
@@ -123,6 +122,33 @@ Window {
       target: menuLoad
       function onCloseMe() {
          leftDrawer.close()
+      }
+   }
+   Connections {
+      target: socketsDummy
+      function onProgAddRequest(addType) {
+         switch (addType) {
+            case 0:
+            {
+               recomHandle.copyCurrent();
+               console.log("recomHandle.copyCurrent()")
+               break;
+            }
+            case 1:
+            {
+               menuLoad.shortcut = true;
+               menuLoad.source = "qrc:/ProgItemList.qml"
+               menuLoad.item.loadClear = false;
+               leftDrawer.open()
+               break;
+            }
+            case 2:
+            {
+               recomHandle.addEmptyDefault();
+               console.log("recomHandle.addEmptyDefault()")
+               break;
+            }
+         }
       }
    }
    // Область для свайпов и закрытия панелей

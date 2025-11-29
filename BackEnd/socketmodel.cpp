@@ -487,7 +487,7 @@ void SocketModel::copyCurrentList()
 
 void SocketModel::slotRemoveSubProg()
 {
-    if (m_subProgCount > 1)
+    if (m_itemsMapVect.size() > 1)
         removeSubProg(m_subProgIdx);
 }
 
@@ -659,7 +659,7 @@ void SocketModel::loadProgs(const std::vector<std::map<int, SockPtr> > &itemsMap
     beginResetModel();
 
     if (!add) {
-        m_subProgCount = 0;
+        // m_subProgCount = 0;
         m_subProgIdx = 0;
         m_instrMapVect.clear();
         m_itemsMapVect.clear();
@@ -671,7 +671,7 @@ void SocketModel::loadProgs(const std::vector<std::map<int, SockPtr> > &itemsMap
 
     for (size_t i = 0; i < size; ++i) {
         addList(itemsMapVect.at(i), instrMapVect.at(i));
-        if (m_subProgCount == 5)
+        if (m_itemsMapVect.size() == 5)
             return;
     }
 
@@ -704,8 +704,7 @@ void SocketModel::removeSubProg(int index)
     instrIter += index;
     m_instrMapVect.erase(instrIter);
 
-    m_subProgCount--;
-    size_t tmpIdx = m_subProgIdx;
+    size_t tmpIdx = m_itemsMapVect.size();
 
     while (tmpIdx >= m_itemsMapVect.size())
         --tmpIdx;
@@ -718,8 +717,7 @@ void SocketModel::addList(const std::map<int, SockPtr> &itemsMap,
 {
     m_itemsMapVect.push_back(itemsMap);
     m_instrMapVect.push_back(instrMap);
-    m_subProgCount = m_itemsMapVect.size();
-    m_subProgIdx = m_subProgCount - 1;
+    m_subProgIdx = m_itemsMapVect.size() - 1;
 }
 
 QHash<int, QByteArray> SocketModel::roleNames() const
@@ -734,7 +732,7 @@ int SocketModel::subProgIdx() const
 
 int SocketModel::subProgCount() const
 {
-    return m_subProgCount;
+    return m_itemsMapVect.size();
 }
 
 void SocketModel::setSubProgIdx(int newIndex)

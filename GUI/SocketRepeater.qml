@@ -46,7 +46,6 @@ Repeater {
         var totalFixedHeight = 0
         var expandedCount = 0
         var spacersHeight = (count) * repeatRoot.usedSpacing;
-        // console.log(count, "col")
         for (var i = 0; i < count; i++) {
             if (!(itemAt(i) instanceof StatesSocket)) {
                 continue
@@ -140,9 +139,6 @@ Repeater {
                     theModel.qmlSetData(index,
                                         pwrInt,
                                         (iscoag ? "coagmodepower" : "cutmodepower"))   
-                    // Запускаем отложенное сохранение (через 2 секунды)
-                    ///TODO: это должно в плюсах отрабатывать
-                    control.scheduleSave()
                 }
             }
 

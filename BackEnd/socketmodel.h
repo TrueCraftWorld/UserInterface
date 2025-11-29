@@ -72,7 +72,6 @@ public:
     virtual bool setData(const QModelIndex &index, const QVariant &value, int role) override;
     Q_INVOKABLE QVariantMap modeParam(int socketId, int modeIndeex, bool isCoag) const;
 
-
     Q_INVOKABLE void qmlSetData(int row, const QVariant &value, const QString& roleName);
 
     /**
@@ -90,7 +89,6 @@ public:
 
     InstrPtr getInstrumentById(int id) const;
     void copyCurrentList();
-
 
 public slots:
     void slotRemoveSubProg();

@@ -42,6 +42,7 @@ int main(int argc, char *argv[])
 
     QGuiApplication app(argc, argv);
 
+//в хоум версии комментирую - многовато спамит отсутствием файла нужного и связи с стм
     // Устанавливаем файл логирования,
     // m_logFile.reset(new QFile("/home/kikorik/OnyxLog/logFile.txt"));
     // Открываем файл логирования
@@ -54,17 +55,12 @@ int main(int argc, char *argv[])
     ControlCenter::registerHandles();
 
     QSharedPointer<ControlCenter> ctrl  = QSharedPointer<ControlCenter>::create(nullptr);
-    ctrl->init();
 
     QQmlApplicationEngine engine;
     engine.rootContext()->setContextProperty("theModel", ctrl->getSocketModel());
-    engine.rootContext()->setContextProperty("Editor", ctrl->editor());
+    engine.rootContext()->setContextProperty("Editor", ctrl->getModeEditor());
     engine.rootContext()->setContextProperty("recomHandle", ctrl->getHandle());
     engine.rootContext()->setContextProperty("periphHandle", ctrl->getPeripheryHandle());
-
-    ///TODO remove direct god-object access
-    // engine.rootContext()->setContextProperty("control", ctrl.data());
-
 
     engine.addImageProvider(QLatin1String("instrums"), new InstrImageProvider);
     engine.addImageProvider(QLatin1String("instruments"), new InstrImageProvider);

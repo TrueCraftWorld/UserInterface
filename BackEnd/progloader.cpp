@@ -201,7 +201,7 @@ ProgLoader::ProgLoader(QObject *parent)
             m_dbReaderPtr = new DataBaseReader("/home/kikorik/FOTEK/someShadyDB.db");
 }
 
-void ProgLoader::saveCurrentState()
+void ProgLoader::slotSaveCurrentState()
 {
     if (m_socketModelPtr == nullptr || m_socketModelPtr->itemsMap() == nullptr) {
         // qWarning() << "Cannot save state: socket model not initialized";
@@ -222,7 +222,9 @@ void ProgLoader::saveCurrentState()
         auto socket = m_socketModelPtr->itemsMap()->at(i);
 
         // Проверяем, что режимы не null
-        if (socket.isNull() || socket->curCutMode().isNull() || socket->curCoagMode().isNull()) {
+        if (socket.isNull()
+            || socket->curCutMode().isNull()
+            || socket->curCoagMode().isNull()) {
             // qWarning() << "Socket" << i << "has null mode, skipping";
             continue;
         }
@@ -350,13 +352,6 @@ bool ProgLoader::readPreviousSocketSettings()
     ///todo REALIZE
     return false;
 }
-
-// void ProgLoader::removeSubProg(int index)
-// {
-//     if (m_socketModelPtr.isNull())
-//         return;
-//     m_socketModelPtr->removeSubProg(index);
-// }
 
 void ProgLoader::defaultSocketInit(bool clear)
 {

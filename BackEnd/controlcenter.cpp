@@ -1,6 +1,9 @@
 #include "controlcenter.h"
 #include "proghandle.h"
 
+#include <algorithm>
+#include <vector>
+
 #include <QQmlEngine>
 #include <QString>
 #include <QTimer>
@@ -8,6 +11,15 @@
 #include <QVector>
 #include <QVariant>
 
+std::vector<int> m_rolesSaveTriggered = {
+    SocketModel::SocketRoles::CoagModeId,
+    SocketModel::SocketRoles::CutModeId,
+    SocketModel::SocketRoles::CoagModePower,
+    SocketModel::SocketRoles::CutModePower,
+    SocketModel::SocketRoles::CoagModeInstrNum,
+    SocketModel::SocketRoles::CutModeInstrNum,
+    SocketModel::SocketRoles::SocketPedal,
+};
 
 ControlCenter::ControlCenter(QObject *parent)
     : QObject{parent},
@@ -23,8 +35,9 @@ ControlCenter::ControlCenter(QObject *parent)
     QQmlEngine::setObjectOwnership(m_socketModel.data(), QQmlEngine::CppOwnership);
     QQmlEngine::setObjectOwnership(m_editor, QQmlEngine::CppOwnership);
     QQmlEngine::setObjectOwnership(m_handle, QQmlEngine::CppOwnership);
-    QQmlEngine::setObjectOwnership(m_progLoader, QQmlEngine::CppOwnership);
+    // QQmlEngine::setObjectOwnership(m_progLoader, QQmlEngine::CppOwnership);
     QQmlEngine::setObjectOwnership(m_periphery, QQmlEngine::CppOwnership);
+    std::sort(m_rolesSaveTriggered.begin(), m_rolesSaveTriggered.end());
     init();
 }
 
@@ -64,11 +77,6 @@ void ControlCenter::makeHandleConnections()
     connect(m_handle, &ProgHandle::signalRecomProgChosen, 
             m_progLoader, &ProgLoader::programmLoadSocketInit);
     
-    connect(m_handle, &ProgHandle::signalLoadEmpty, 
-            this, [this] () {
-            m_progLoader->defaultSocketInit(true);
-    });
-    
     connect(m_handle, &ProgHandle::signalScopeRequest,
             this, [this] (int id) {
         m_handle->setProgList(m_progLoader->getListOfPrograms(id));
@@ -82,7 +90,7 @@ void ControlCenter::makeHandleConnections()
 
 }
 
-QPointer<SocketModeEditor> ControlCenter::editor() const
+QPointer<SocketModeEditor> ControlCenter::getModeEditor() const
 {
     return m_editor;
 }
@@ -99,14 +107,44 @@ void ControlCenter::prepareConnectios()
     makeHandleConnections();
     if (m_progLoader && m_saveTimer)
         connect(m_saveTimer, &QTimer::timeout,
-                m_progLoader, &ProgLoader::saveCurrentState);
+                m_progLoader, &ProgLoader::slotSaveCurrentState);
 
     if (m_progLoader && m_editor)
         connect(m_editor, &SocketModeEditor::editingFinished,
                 this, [this] (bool success) {
-            if (success)
-                m_progLoader->saveCurrentState();
+            if (success) {
+                scheduleSave();
+            }
         });
+    connect(m_socketModel.data(), &SocketModel::dataChanged,
+            this, [this] (const QModelIndex&, const QModelIndex&, const QVector<int>& roles) {
+        if (roles.empty()) {
+            scheduleSave();
+            return;
+        }
+        size_t checkIdx = 0;
+        std::vector<int> rolesSrtd = std::vector(roles.begin(), roles.end());
+        std::sort(rolesSrtd.begin(), rolesSrtd.end());
+        //стд вектор, чтобы не переживать о shared-контейнерах и утечках
+        //сортировка для того, чтобы справиться за 1 проход;
+        for (const auto& item : rolesSrtd) {
+            for (size_t i = checkIdx; i < m_rolesSaveTriggered.size(); ++i) {
+                if (m_rolesSaveTriggered[i] < item) {
+                    checkIdx++;
+                    continue;
+                }
+                break;
+            }
+            //паранойная доп проверка на размер массива
+            if (checkIdx < m_rolesSaveTriggered.size()
+                    && item == m_rolesSaveTriggered[checkIdx]) {
+                    //нашли хоть одну нужную роль - тикаем, запустив сохранение
+                scheduleSave();
+                return;
+            }
+        }
+
+    });
 }
 
 QPointer<ProgHandle> ControlCenter::getHandle() const
@@ -117,7 +155,11 @@ QPointer<ProgHandle> ControlCenter::getHandle() const
 void ControlCenter::scheduleSave()
 {
     // Перезапускаем таймер (если он уже запущен, он сбросится)
-    m_saveTimer->start();
+
+    //переделал так - если уже бежит таймер, то пусть бежит. сохранится всё скопом
+    //если не бежит - запустим
+    if (!m_saveTimer->isActive())
+        m_saveTimer->start();
 }
 
 void ControlCenter::setLinkStm(LinkStm* linkStm)

@@ -19,10 +19,6 @@
 class ControlCenter : public QObject
 {
 	Q_OBJECT
-	Q_PROPERTY(QPointer<SocketModel> socketModel READ getSocketModel CONSTANT FINAL)
-	Q_PROPERTY(QPointer<ProgHandle> handle READ getHandle CONSTANT FINAL)
-	Q_PROPERTY(QPointer<PeriphHandler> periphery READ getPeripheryHandle CONSTANT FINAL)
-	// Q_PROPERTY(QPointer<ProgLoader> progLoader READ getLoader CONSTANT FINAL)
 
 public:
 	explicit ControlCenter(QObject *parent = nullptr);
@@ -38,27 +34,27 @@ public:
 	 * отображения и редактирования текущих режимов
 	 * @return
 	 */
-	Q_INVOKABLE QPointer<SocketModel> getSocketModel() const;
+	QPointer<SocketModel> getSocketModel() const;
 
 	/**
 	 * @brief возвращает указатель на класс-редактор
 	 * сокета для внемения изменений через QML
 	 * @return
 	 */
-	QPointer<SocketModeEditor> editor() const;
+	QPointer<SocketModeEditor> getModeEditor() const;
 
 	/**
 	 * @brief инициализация - чтение предыдущих настроек, загрузка режимов из БД и т.д.
 	 */
 	void init();
 
-	Q_INVOKABLE QPointer<ProgHandle> getHandle() const;
+	QPointer<ProgHandle> getHandle() const;
 
 	/**
 	 * @brief Запускает отложенное сохранение (с задержкой 2 секунды)
 	 * Используется для частых изменений (мощность) чтобы не перегружать БД
 	 */
-	Q_INVOKABLE void scheduleSave();
+	void scheduleSave();
 
 	/**
 	 * @brief Устанавливает указатель на объект LinkStm для UART-коммуникации

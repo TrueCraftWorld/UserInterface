@@ -122,6 +122,7 @@ bool PeriphHandler::enableActivation() const
 
 void PeriphHandler::setEnableActivation(bool enable)
 {
+	qDebug() << "setEnableActivation(bool enable)" << enable;
 	if (m_enableActivation == enable)
 		return;
 

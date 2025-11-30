@@ -26,6 +26,11 @@ Window {
    // Свойство для нейтрального электрода
    property bool neutralConnected: false
 
+   function activationEnable() {
+         periphHandle.enableActivation = !(pedDrawer.opened
+                                    | leftDrawer.opened
+                                    | argNeutDrawer.opened)
+   }
 
    StatusBar {
       id: statusDummy
@@ -97,6 +102,34 @@ Window {
          id: menuLoad
          anchors.fill: parent
       }
+   }
+
+   Connections {
+      target: leftDrawer
+      function onOpenedChanged() {
+         container.activationEnable()
+      }
+      // function onClosed() {
+      //    container.activationEnable()
+      // }
+   }
+   Connections {
+      target: pedDrawer
+      function onOpenedChanged() {
+         container.activationEnable()
+      }
+      // function onClosed() {
+      //    container.activationEnable()
+      // }
+   }
+   Connections {
+      target: argNeutDrawer
+      function onOpenedChanged() {
+         container.activationEnable()
+      }
+      // function onClosed() {
+      //    container.activationEnable()
+      // }
    }
 
    Connections {

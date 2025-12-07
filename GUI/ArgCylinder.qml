@@ -11,11 +11,6 @@ Rectangle {
     readonly property int step: 16
 
     id: cylinderRoot
-    // width: 85
-    // height: step * 12.5
-    // anchors.top: arLabel.bottom
-    // anchors.topMargin: 8
-    // x: showControls ? 100 : (parent.width - width) / 2
     color: "transparent"
 
     Rectangle {

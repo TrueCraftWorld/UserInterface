@@ -20,7 +20,6 @@ Item {
         function onRecommendButtonPressed() {
             if (menuLoader.item instanceof MainMenu) { // Проверяем, что загружен именно Text
                 menuLoader.source = "qrc:/ProgItemList.qml"
-                // menuLoader.item.innerModel = 55
             }
         }
         function onSettingsButtonPressed() {

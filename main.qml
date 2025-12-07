@@ -152,7 +152,6 @@ Window {
             case 0:
             {
                recomHandle.copyCurrent();
-               console.log("recomHandle.copyCurrent()")
                break;
             }
             case 1:
@@ -166,7 +165,6 @@ Window {
             case 2:
             {
                recomHandle.addEmptyDefault();
-               console.log("recomHandle.addEmptyDefault()")
                break;
             }
          }

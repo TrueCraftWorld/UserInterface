@@ -41,7 +41,6 @@ Rectangle {
             displayMarginBeginning: 15
             displayMarginEnd: 15
             spacing: 10
-            // ScrollBar.vertical
             clip: true
 
             delegate: Rectangle {

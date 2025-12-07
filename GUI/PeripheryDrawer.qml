@@ -35,12 +35,12 @@ Drawer {
         height: 350
         showControls: true
         //не передаём ибо у меня нет стм
-        // cylinder1Connected: periphHandle.argonCylinder1Connected
-        // cylinder2Connected: periphHandle.argonCylinder2Connected
-        // flowRate: periphHandle.argonFlowRate
-        // realFlowRate: periphHandle.argonRealRate
-        // isActivation: periphHandle.activation
-        // activCylinderFirst: periphHandle.activCylinderFirst
+        cylinder1Connected: periphHandle.argonCylinder1Connected
+        cylinder2Connected: periphHandle.argonCylinder2Connected
+        flowRate: periphHandle.argonFlowRate
+        realFlowRate: periphHandle.argonRealRate
+        isActivation: periphHandle.activation
+        activCylinderFirst: periphHandle.activCylinderFirst
     }
     NeutralEl {
         id: neutralView

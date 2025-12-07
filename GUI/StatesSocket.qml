@@ -39,11 +39,13 @@ Rectangle {
             activationIndicator.isCoag = true
             activationIndicator.modeName = coagModeName
             activationIndicator.power = coagModePower
+            activationIndicator.isEndo = coagIsEndo
             activationIndicator.open();
         } else if (socketState == 4) {
             activationIndicator.isCoag = false
             activationIndicator.modeName = cutModeName
             activationIndicator.power = cutModePower
+            activationIndicator.isEndo = cutIsEndo
             activationIndicator.open();
         } else {
             activationIndicator.close();

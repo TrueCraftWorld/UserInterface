@@ -42,7 +42,13 @@ int main(int argc, char *argv[])
 
     QGuiApplication app(argc, argv);
 
-//в хоум версии комментирую - многовато спамит отсутствием файла нужного и связи с стм
+    // Включаем QML debugger для удаленной отладки
+    // Использование: приложение -qmljsdebugger=port:3768,block
+    // Или через переменную окружения: QT_QML_DEBUG=1
+    // Для удаленной отладки: -qmljsdebugger=port:3768,host:IP_АДРЕС_ХОСТА
+    // Для локальной отладки: -qmljsdebugger=port:3768,block
+    // Для отладки без блокировки: -qmljsdebugger=port:3768
+
     // Устанавливаем файл логирования,
     // m_logFile.reset(new QFile("/home/kikorik/OnyxLog/logFile.txt"));
     // Открываем файл логирования
@@ -94,10 +100,6 @@ int main(int argc, char *argv[])
     
     // Связываем LinkStm с ControlCenter для обработки UART-данных
     ctrl->setLinkStm(m_linkStm);
-    
-    // Привязываем сигналы (закомментированы, т.к. теперь обработка в ControlCenter)
-//    QObject::connect(m_linkStm, &LinkStm::recieveData, this, &MainWindow::testDisplay);
-//    QObject::connect(m_linkStm, &LinkStm::error, this, &MainWindow::displayUartError);
 
     return app.exec();
 }
@@ -129,12 +131,14 @@ void messageHandler(QtMsgType type, const QMessageLogContext &context, const QSt
     if (type != QtDebugMsg) {
         out << context.category << ": "
             << msg << Qt::endl;
-        out.flush();    // Очищаем буферизированные данные
+        // out.flush();    // Очищаем буферизированные данные
     }
 
     // То же самое выводим в консоль
     QTextStream debugOut(stdout);
     debugOut << context.category << ": "
         << msg << Qt::endl;
-    debugOut.flush();    // Очищаем буферизированные данные
+    // debugOut.flush();    // Очищаем буферизированные данные
+    //вообще после endl и так чистится буфер
+    //как раз за этим енлдл и нужен
 }

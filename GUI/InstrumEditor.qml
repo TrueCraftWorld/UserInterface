@@ -379,12 +379,6 @@ Popup {
                         power: modeEditor.lowPowerBound
                         selected: (modeEditor.currentPower === power)
                         isEndo: modeEditor.isEndo
-                        // onPowerChosen: {
-                        //     if (modeEditor.midPowerBound === 0) {
-                        //         modeEditor.updateParameter("currentpower", but1.power)
-                        //     }
-                        //     console.log("1 midPower = ", modeEditor.midPowerBound)
-                        // }
                     }
                     PowerRect {
                         id: but2
@@ -396,13 +390,6 @@ Popup {
                         power: modeEditor.midPowerBound
                         selected: (modeEditor.currentPower === power)
                         isEndo: modeEditor.isEndo
-                        //сам PowerRect становится невидимый, если мощность ноль, на него нельзя нажать и получить 0
-                        // onPowerChosen: {
-                        //     if (modeEditor.midPowerBound !== 0) {
-                        //         modeEditor.updateParameter("currentpower", but2.power)
-                        //     }
-                        //     console.log("2 midPower = ", modeEditor.midPowerBound)
-                        // }
                     }
                     PowerRect {
                         id: but3

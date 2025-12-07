@@ -54,7 +54,6 @@ Item {
             Layout.alignment: Qt.AlignHCenter | Qt.AlignTop
             Layout.preferredWidth: 320
             Layout.preferredHeight: 320
-            // verticalPadding: 10
 
             text: qsTr("Рекомендованные")
             onClicked: recommendButtonPressed()
@@ -66,8 +65,6 @@ Item {
             Layout.alignment: Qt.AlignHCenter | Qt.AlignTop
             Layout.preferredWidth: 320
             Layout.preferredHeight: 320
-            // span: 10
-            // verticalPadding: 10
 
             onClicked: settingsButtonPressed()
             text: qsTr("Настройки ...")

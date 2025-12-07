@@ -9,32 +9,113 @@ Popup {
     property string modeName /*control.activeModeName || "Режим не выбран"*/
     property int power /*control.activePower || 0*/
     property bool isCoag /*control.activeIsCoag || false*/
+    property bool isEndo: false
     
     // Настройки popup
     modal: true  // Модальный - блокируем касания
     closePolicy: Popup.NoAutoClose  // Закрывается только программно
-    // parent: Overlay.overlay
     anchors.centerIn: parent
     width: parent.width
     height: parent.height
-    
-    // Привязка к координатам и размерам активного сокета
-    // x: control.activeSocketX || 0
-    // y: control.activeSocketY || 0
-    // width: control.activeSocketWidth || 350
-    // height: control.activeSocketHeight || 400
-    
+
+    component PowerInfo: Rectangle {
+        id: powerInfo
+
+        property bool isEndo: false
+        property bool isCoag: false
+        property int power: 0
+        Rectangle {
+            id: normalPwr
+            anchors.fill: parent
+            color: "transparent"
+            visible: !isEndo
+            Label {
+                anchors.top: parent.top
+                anchors.bottom: parent.verticalCenter
+                anchors.left: parent.left
+                anchors.right: parent.right
+                font.pixelSize: 28
+                font.bold: true
+                color: isCoag ? "white" : "black"
+                style: Text.Outline
+                styleColor: isCoag ? "black" : "white"
+                text: qsTr("Мощность")
+            }
+            Label {
+                anchors.bottom: parent.bottom
+                anchors.top: parent.verticalCenter
+                anchors.left: parent.left
+                anchors.right: parent.right
+                font.pixelSize: 70
+                font.bold: true
+                color: isCoag ? "white" : "black"
+                style: Text.Outline
+                styleColor: isCoag ? "black" : "white"
+                text: power
+            }
+        }
+        Rectangle {
+            id: endoPower
+            anchors.fill: parent
+            color: "transparent"
+            visible: isEndo
+            Label {
+                anchors.top: parent.top
+                anchors.bottom: parent.verticalCenter
+                anchors.left: parent.left
+                anchors.right: parent.horizontalCenter
+                font.pixelSize: 28
+                font.bold: true
+                color: isCoag ? "white" : "black"
+                style: Text.Outline
+                styleColor: isCoag ? "black" : "white"
+                text: qsTr("Эфф. резания")
+            }
+            Label {
+                anchors.top: parent.verticalCenter
+                anchors.bottom: parent.bottom
+                anchors.left: parent.left
+                anchors.right: parent.horizontalCenter
+                font.pixelSize: 70
+                font.bold: true
+                color: isCoag ? "white" : "black"
+                style: Text.Outline
+                styleColor: isCoag ? "black" : "white"
+                text: (power / 10)
+            }
+            Label {
+                anchors.top: parent.top
+                anchors.bottom: parent.verticalCenter
+                anchors.left: parent.horizontalCenter
+                anchors.right: parent.right
+                font.pixelSize: 28
+                font.bold: true
+                color: isCoag ? "white" : "black"
+                style: Text.Outline
+                styleColor: isCoag ? "black" : "white"
+                text: qsTr("Эфф. коагуляции")
+            }
+            Label {
+                anchors.bottom: parent.bottom
+                anchors.top: parent.verticalCenter
+                anchors.left: parent.horizontalCenter
+                anchors.right: parent.right
+                font.pixelSize: 70
+                font.bold: true
+                color: isCoag ? "white" : "black"
+                style: Text.Outline
+                styleColor: isCoag ? "black" : "white"
+                text: (power % 10)
+            }
+        }
+
+    }
+
     // Перехватываем все события мыши
     MouseArea {
         anchors.fill: parent
         propagateComposedEvents: false
         preventStealing: true
-        
-        // onPressed: mouse.accepted = true
-        // onReleased: mouse.accepted = true
-        // onClicked: mouse.accepted = true
-        // onDoubleClicked: mouse.accepted = true
-        // onWheel: wheel.accepted = true
     }
     
     // Фон в зависимости от режима
@@ -72,7 +153,7 @@ Popup {
             spacing: 20
             
             // Заголовок "АКТИВАЦИЯ"
-            Text {
+            Label {
                 anchors.horizontalCenter: parent.horizontalCenter
                 text: qsTr("АКТИВАЦИЯ ") + socketName
                 font.pixelSize: 32
@@ -91,7 +172,8 @@ Popup {
             }
             
             // Название режима
-            Text {
+            Label {
+                id: modeNameLabel
                 anchors.horizontalCenter: parent.horizontalCenter
                 text: modeName
                 font.pixelSize: 48
@@ -101,13 +183,13 @@ Popup {
             }
 
             // Мощность
-            Text {
-                anchors.horizontalCenter: parent.horizontalCenter
-                text: power
-                font.pixelSize: 80
-                color: isCoag ? "yellow" : "brown"
-                style: Text.Outline
-                styleColor: isCoag ? "black" : "white"
+            PowerInfo {
+                isEndo: isEndo
+                power: power
+                isCoag: isCoag
+                anchors {
+                    horizontalCenter: parent.horizontalCenter
+                }
             }
         }
         
@@ -173,18 +255,5 @@ Popup {
             easing.type: Easing.InQuad
         }
     }
-    
-    // Синхронизация с control.activation
-    // Connections {
-    //     target: control
-        
-    //     function onActivationChanged(active) {
-    //         if (active) {
-    //             activationPopup.open()
-    //         } else {
-    //             activationPopup.close()
-    //         }
-    //     }
-    // }
 }
 

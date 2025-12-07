@@ -43,6 +43,9 @@ public:
 
     enum RxCommand : quint8 {           // Принимаемые команды
         Whatsup = 0x00,                 // Стандартный запрос
+        GenActivation = 0x20,           // Посылка во время активации
+        GenStop = 0x40,                 // Остановка активации
+        SpecAnswer = 0x60,
         ErrRecieve = 0x80,              // Модуль связи не принимает сигналы
         ErrCrc = 0x81,                  // Ошибка CRC
         ErrGenRx = 0x82,                // Генератор не отвечает
@@ -159,13 +162,13 @@ public:
 
     void setMc(const McUnit &newMc);
 
-    // Методы для установки состояния из ControlCenter
+    // Методы для установки состояния из PeriphHandler
+public slots:
+    void start();
     void setEnableActivation(bool enable);
     void setNeutralElDivided(bool divided);
     void setAutoSSmode(quint8 mode);
     void setActivCylinderFirst(bool first);
-    
-    // Методы для обновления данных сокетов
     void updateSocketData(int socketIndex, quint16 cutModeNum, quint16 coagModeNum, 
                          quint16 cutModePower, quint16 coagModePower, quint8 pedal);
     void updateSocketData(int socketIndex, const Onyx::SocketState& info);
@@ -236,9 +239,10 @@ private:
     QQueue<UartTx> m_txCommandQueue;
     QList<UartTx> m_txCommandList;
     bool m_waitAnswer;
+    quint8 m_autoSSmode;
     BootChoice m_boot;
     McUnit m_mc;
-    
+
     // Переменные состояния из ControlCenter
     bool m_enableActivation;
     bool m_neutralElDivided;

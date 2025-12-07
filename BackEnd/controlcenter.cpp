@@ -10,6 +10,7 @@
 #include <QDebug>
 #include <QVector>
 #include <QVariant>
+#include <QElapsedTimer>
 
 std::vector<int> m_rolesSaveTriggered = {
     SocketModel::SocketRoles::CoagModeId,
@@ -35,7 +36,6 @@ ControlCenter::ControlCenter(QObject *parent)
     QQmlEngine::setObjectOwnership(m_socketModel.data(), QQmlEngine::CppOwnership);
     QQmlEngine::setObjectOwnership(m_editor, QQmlEngine::CppOwnership);
     QQmlEngine::setObjectOwnership(m_handle, QQmlEngine::CppOwnership);
-    // QQmlEngine::setObjectOwnership(m_progLoader, QQmlEngine::CppOwnership);
     QQmlEngine::setObjectOwnership(m_periphery, QQmlEngine::CppOwnership);
     std::sort(m_rolesSaveTriggered.begin(), m_rolesSaveTriggered.end());
     init();
@@ -154,8 +154,6 @@ QPointer<ProgHandle> ControlCenter::getHandle() const
 
 void ControlCenter::scheduleSave()
 {
-    // Перезапускаем таймер (если он уже запущен, он сбросится)
-
     //переделал так - если уже бежит таймер, то пусть бежит. сохранится всё скопом
     //если не бежит - запустим
     if (!m_saveTimer->isActive())
@@ -179,7 +177,8 @@ void ControlCenter::setLinkStm(LinkStm* linkStm)
     // Подключаем обработчик входящих данных
     if (!m_linkStm.isNull()) {
         connect(m_linkStm, &LinkStm::sigUnitStateChanged,
-                m_periphery, &PeriphHandler::unitStateHandler);
+                m_periphery, &PeriphHandler::unitStateHandler,
+                Qt::QueuedConnection);
         
         // Инициализируем текущие значения состояния в LinkStm
         m_linkStm->setEnableActivation(m_periphery->enableActivation());
@@ -194,33 +193,41 @@ void ControlCenter::setLinkStm(LinkStm* linkStm)
             int idxStart = topLeft.row();
             int idxStop = bottomRight.row();
             for (int i = idxStart; i <= idxStop; ++i) {
-                m_linkStm->updateSocketData(i,
-                    topLeft.siblingAtRow(i).data(SocketModel::CutModeNum).value<quint16>(),
-                    topLeft.siblingAtRow(i).data(SocketModel::CoagModeNum).value<quint16>(),
-                    topLeft.siblingAtRow(i).data(SocketModel::CutModePower).value<quint16>(),
-                    topLeft.siblingAtRow(i).data(SocketModel::CoagModePower).value<quint16>(),
-                    topLeft.siblingAtRow(i).data(SocketModel::SocketPedal).value<quint8>()
-                    );
+            //вызовы data по доке reenterant так что мы можем предать в арги прям вызовы
+                QMetaObject::invokeMethod(  m_linkStm.data(),
+                                        "updateSocketData",
+                                        Qt::QueuedConnection,
+                                        Q_ARG(quint16, topLeft.siblingAtRow(i).data(SocketModel::CutModeNum).value<quint16>()),
+                                        Q_ARG(quint16, topLeft.siblingAtRow(i).data(SocketModel::CoagModeNum).value<quint16>()),
+                                        Q_ARG(quint16, topLeft.siblingAtRow(i).data(SocketModel::CutModePower).value<quint16>()),
+                                        Q_ARG(quint16, topLeft.siblingAtRow(i).data(SocketModel::CoagModePower).value<quint16>()),
+                                        Q_ARG(quint8, topLeft.siblingAtRow(i).data(SocketModel::SocketPedal).value<quint8>()));
             }
-        });
+        }, Qt::QueuedConnection);
         
         // Подключаем сигналы активации
         connect(m_linkStm, &LinkStm::sigStartActivation,
-                m_socketModel.data(), &SocketModel::startActivation);
+                m_socketModel.data(), &SocketModel::startActivation,
+                Qt::QueuedConnection);
         connect(m_linkStm, &LinkStm::sigStopActivation,
-                m_socketModel.data(), &SocketModel::stopActivation);
+                m_socketModel.data(), &SocketModel::stopActivation,
+                Qt::QueuedConnection);
         
 //-----------Коннекты получения перифейрийной информации
         connect(m_linkStm, &LinkStm::sigUnitStateChanged,
-                m_periphery, &PeriphHandler::unitStateHandler);
+                m_periphery, &PeriphHandler::unitStateHandler,
+                Qt::QueuedConnection);
 
 //-----------Коннекты передачи пользовательских действий
         connect(m_periphery, &PeriphHandler::activCylinderFirstChanged,
-                m_linkStm, &LinkStm::setActivCylinderFirst);
+                m_linkStm, &LinkStm::setActivCylinderFirst,
+                Qt::QueuedConnection);
         connect(m_periphery, &PeriphHandler::neutralElDividedChanged,
-                m_linkStm, &LinkStm::setNeutralElDivided);
+                m_linkStm, &LinkStm::setNeutralElDivided,
+                Qt::QueuedConnection);
         connect(m_periphery, &PeriphHandler::enableActivationChanged,
-                m_linkStm,  &LinkStm::setEnableActivation);
+                m_linkStm,  &LinkStm::setEnableActivation,
+                Qt::QueuedConnection);
         ///TODO реализовать метод приёма данных в linkStm
         // connect(m_periphery, &PeriphHandler::argonFlowRateChanged,
         //         m_linkStm, &LinkStm::set);
@@ -238,14 +245,13 @@ void ControlCenter::initSocketsForPeriphery()
         qWarning() << "Cannot initialize sockets in LinkStm: missing dependencies";
         return;
     }
-    
+    //тут можем прерывать сколько угодно - это одноразовый вызов в начале работы
     for (int i = 0; i < m_socketModel->rowCount(QModelIndex()); ++i) {
         m_linkStm->updateSocketData(i,
                                     m_socketModel->index(i).data(
-                                        SocketModel::SocketUartInfo).value<Onyx::SocketState>());
+                                    SocketModel::SocketUartInfo).value<Onyx::SocketState>());
     }
 }
-
 
 QPointer<PeriphHandler> ControlCenter::getPeripheryHandle() const
 {

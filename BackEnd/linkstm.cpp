@@ -1,37 +1,21 @@
 #include "linkstm.h"
-
+//перенёс инициализатор в конструктор - так не происходит инициализация по умолчанию,
+// а затем присваивание новых значени1
 LinkStm::LinkStm(QObject *parent)
-    : QObject{parent}
+    : QObject{parent},
+    m_lastCommand({NoTxCommand, {}, MC_0}),
+    m_uartTimer(new QTimer(this)),
+    m_uart(new UartToQmlBridge(this, "ttyS3", QSerialPort::Baud57600)),
+    m_state(STATE_OK),
+    m_txCommand({Allright, {}, MC_0}),
+    m_waitAnswer(false),
+    m_autoSSmode(0),
+    m_enableActivation(true),
+    m_neutralElDivided(true),
+    m_argonFlowRate(0),
+    m_comState(IDLE)
 {
-
-    // Инициализация uart
-//    m_uart = new UartConnect(this, "ttyS2", QSerialPort::Baud9600);
-//    m_uart = new UartConnect(this, "ttyS3", QSerialPort::Baud9600);
-    m_uart = new UartToQmlBridge(this, "ttyS3", QSerialPort::Baud57600);
-
-    m_txCommand.com = Allright;
-    m_txCommand.mc = MC_0;              // По умолчанию общаемся с модулем связи
-    m_lastCommand.com = NoTxCommand;
-    m_lastCommand.mc = MC_0;
-    m_state = STATE_OK;
-    m_waitAnswer = false;
-    m_comState = IDLE;
-    
-    // Инициализация переменных состояния
-    m_enableActivation = true;
-    m_neutralElDivided = true;
-    m_argonFlowRate = 0;
-
-    // Инициализация состояния аппарата
-    m_unitState.argonCylinder1 = false;
-    m_unitState.argonCylinder2 = false;
-    m_unitState.neutraElConnected = false;
-    m_unitState.tissueGrab = false;
-    m_unitState.pedalKnob = PRESS_NONE;
-    m_unitState.pedalCharge = 0;
-    m_unitState.instrBi2 = INSTR_NOT_CONNECTED;
-    m_unitState.instrMono2 = INSTR_NOT_CONNECTED;
-
+    // m_unitState и так с инициализатором по умолчанию
     for (int i = 0; i < 4; i++) {
         m_socketList[i].cutModeNum = 1000;  // Режим не выбран
         m_socketList[i].coagModeNum = 1000; // Режим не выбран
@@ -42,13 +26,21 @@ LinkStm::LinkStm(QObject *parent)
     }
 
     // Таймер обмена по uart
-    m_uartTimer = new QTimer(this);
+    m_uartTimer->setTimerType(Qt::PreciseTimer);
     connect(m_uartTimer, &QTimer::timeout, [this]() {sendCommand();});
     m_uartTimer->start(100);
     qDebug(logInfo()) << "start Uart Timer";
 
     connect(m_uart, &UartToQmlBridge::uartRecieve, this, &LinkStm::unpackRxCommand);
 
+}
+
+void LinkStm::start()
+{
+    if (m_uartTimer && !m_uartTimer->isActive()) {
+        m_uartTimer->start(100);
+        qDebug(logInfo()) << "start Uart Timer in thread" << QThread::currentThread();
+    }
 }
 
 void LinkStm::unpackRxCommand(const QByteArray &rxPacket)
@@ -110,6 +102,7 @@ void LinkStm::unpackRxCommand(const QByteArray &rxPacket)
     m_rxCommand.mc = (McUnit) (destuffedBuffer.at(0) & UART_ADDR);
     // Выбираем команду
     m_rxCommand.com = static_cast<RxCommand>(destuffedBuffer.at(1));
+
 //    qDebug() << "rxCom: " << m_rxCommand.com << ": " << QString::number(destuffedBuffer.at(1), 16);
     m_rxCommand.data.clear();
     for (int i = 2; i < destuffedBuffer.size() - 2; i++)
@@ -187,28 +180,29 @@ void LinkStm::sendCommand()
 
         //______________Подготовка активации________________
         if (m_comState == START_ACTIVATION) {
+            m_comState = IDLE;
             activeSocket = determineSocket(m_unitState.pedalKnob);
-            if (activeSocket.id >= 4) {     // Например, педаль не привязана к выходам
-                m_comState = IDLE;
+
+            if (activeSocket.isCut) {
+                mode = m_socketList[activeSocket.id].cutModeNum;
+                power = m_socketList[activeSocket.id].cutModePower;
             }
             else {
-                if (activeSocket.isCut) {
-                    mode = m_socketList[activeSocket.id].cutModeNum;
-                    power = m_socketList[activeSocket.id].cutModePower;
-                }
-                else {
-                    mode = m_socketList[activeSocket.id].coagModeNum;
-                    power = m_socketList[activeSocket.id].coagModePower;
+                mode = m_socketList[activeSocket.id].coagModeNum;
+                power = m_socketList[activeSocket.id].coagModePower;
 
-                }
-                if ((mode < 32) && (power > 0) && (power < 400)) {
+            }
+            if ((mode < 32) && (power > 0) && (power < 400)) {
                     activeSocket.autoMode = m_socketList[activeSocket.id].autoMode > 0 ? true : false;
+                    QElapsedTimer m_elapsedTimer;
+                    m_elapsedTimer.start();
                     emit sigStartActivation(activeSocket.id, activeSocket.isCut);
+                    qint64 afterEmit = m_elapsedTimer.elapsed();
+                    if (afterEmit > 5) {
+                        qDebug() << "Activation emit took" << (afterEmit) << "ms";
+                    }
+                    qDebug() << "Activation " << mode << power;
                     m_comState = ACTIVATION;
-                }
-                else
-                    m_comState = IDLE;
-
             }
         }
         //__________________Команда активации_________________
@@ -315,13 +309,13 @@ void LinkStm::sendCommand()
     case Erase_1:
     case Erase_2:
     case GoBoot:
-        m_uartTimer->setInterval(8000);  // Стирание банка около 6 сек, перезагрузка 3-4 сек
+        m_uartTimer->setInterval(3000);  // Стирание банка около 6 сек, перезагрузка 3-4 сек
         break;
     case SoftData:
         m_uartTimer->setInterval(200);
         break;
     default:
-        m_uartTimer->setInterval(500);
+        m_uartTimer->setInterval(50);
     }
 
 //    qDebug() << "txCom: " << m_txCommand.com << ": " << QString::number(m_txCommand.com, 16);
@@ -448,9 +442,13 @@ void LinkStm::readRxCommand()
             case PRESS_PED1:
             case PRESS_PED2_Y:
             case PRESS_PED2_B:
-                unitState.pedalKnob = static_cast<PedalKnobPressed>(pressValue);
-                m_comState = START_ACTIVATION;
-                qDebug() << "Pressed pedal: " << unitState.pedalKnob;
+//                qDebug() << "Pressed pedal: " << unitState.pedalKnob << "current m_comState:" << m_comState;
+                if (m_comState != ACTIVATION) {
+                    m_comState = START_ACTIVATION;
+//                    qDebug() << "Set m_comState to START_ACTIVATION";
+                } else {
+//                    qDebug() << "m_comState is ACTIVATION, not setting START_ACTIVATION";
+                }
                 break;
             case PRESS_MONO1_YB:
             case PRESS_MONO2_YB:
@@ -506,6 +504,7 @@ void LinkStm::readRxCommand()
     // Остановка
     case RxStop:
         emit sigStopActivation(m_rxCommand.com & 0x03);
+        m_comState = IDLE;
         break;
     // Ответ на спец.запросы
     case RxSpecial:
@@ -750,6 +749,11 @@ void LinkStm::setEnableActivation(bool enable)
 void LinkStm::setNeutralElDivided(bool divided)
 {
     m_neutralElDivided = divided;
+}
+
+void LinkStm::setAutoSSmode(quint8 mode)
+{
+    m_autoSSmode = mode;
 }
 
 void LinkStm::setActivCylinderFirst(bool first)

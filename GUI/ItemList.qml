@@ -10,7 +10,6 @@ Rectangle {
     property alias curIndex: theView.currentIndex
     property bool noImage: false
     property int initialIndex: -1
-    // property int selectedIndex: -1  // Индекс реально выбранного элемента (при клике)
     signal newIndexSelected(int newIndex)
 
     color: "transparent"
@@ -46,8 +45,6 @@ Rectangle {
             clip: true
 
             delegate: Rectangle {
-                // property bool isCurrent: (index === theView.currentIndex)
-                // property bool isSelected: (index === itemList.selectedIndex)
                 property bool isSelected: (index === curIndex)
                 property bool isInitial: (index === initialIndex)
                 height: 100

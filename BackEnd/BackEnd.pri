@@ -4,6 +4,7 @@ QT += serialport multimedia sql concurrent
 CONFIG += c++17
 
 HEADERS += \
+    $$PWD/Structures.h \
     $$PWD/controlcenter.h \
     $$PWD/databasereader.h \
     $$PWD/halfsocket.h \
@@ -13,6 +14,7 @@ HEADERS += \
     $$PWD/linkstm.h \
     $$PWD/loggingcategories.h \
     $$PWD/pedal.h \
+    $$PWD/periphhandler.h \
     $$PWD/proghandle.h \
     $$PWD/progloader.h \
     $$PWD/socket.h \
@@ -32,6 +34,7 @@ SOURCES += \
     $$PWD/linkstm.cpp \
     $$PWD/loggingcategories.cpp \
     $$PWD/pedal.cpp \
+    $$PWD/periphhandler.cpp \
     $$PWD/proghandle.cpp \
     $$PWD/progloader.cpp \
     $$PWD/socket.cpp \

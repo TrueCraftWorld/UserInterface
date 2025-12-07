@@ -46,7 +46,6 @@ Repeater {
         var totalFixedHeight = 0
         var expandedCount = 0
         var spacersHeight = (count) * repeatRoot.usedSpacing;
-        // console.log(count, "col")
         for (var i = 0; i < count; i++) {
             if (!(itemAt(i) instanceof StatesSocket)) {
                 continue
@@ -125,24 +124,15 @@ Repeater {
 
             function onNewPower(socketid, pwr, iscoag) {
                 //current power это всегда инт, модель их отдаёт интами
-                // var currentPower = iscoag ? model.coagmodepower : model.cutmodepower
                 var currentPowerInt = iscoag ? model.coagmodepower : model.cutmodepower
                 //если мы не ошиблись нигде, то передаём в сигнал инт,
-                //да и записываться будет только инт поэтому, пусть лучше ничего не запишеться если мы флоат отдали
-                // var pwrInt = parseInt(pwr)
                 var pwrInt = (pwr)
-                // var currentPowerInt = parseInt(currentPower)
                 //не нужна нам здесь строгая проверка - во первых в сокет не встанет больше допустимого в плюсах
                 //во-вторых у нас слайдер ограничен только валидными значениями, третий уровнь проверок - перебор
-                // Строгая проверка: значение действительно изменилось и валидно
-                if (currentPowerInt !== pwrInt) {
-                    
+                if (currentPowerInt !== pwrInt) {                    
                     theModel.qmlSetData(index,
                                         pwrInt,
                                         (iscoag ? "coagmodepower" : "cutmodepower"))   
-                    // Запускаем отложенное сохранение (через 2 секунды)
-                    ///TODO: это должно в плюсах отрабатывать
-                    control.scheduleSave()
                 }
             }
 

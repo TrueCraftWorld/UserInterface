@@ -26,6 +26,11 @@ Window {
    // Свойство для нейтрального электрода
    property bool neutralConnected: false
 
+   function activationEnable() {
+         periphHandle.enableActivation = !(pedDrawer.opened
+                                    | leftDrawer.opened
+                                    | argNeutDrawer.opened)
+   }
 
    StatusBar {
       id: statusDummy
@@ -33,7 +38,6 @@ Window {
       text: qsTr("В бою с шипящими змеями — эфой и гадюкой — маленький, цепкий, храбрый ёж съел их")
       width: parent.width
       height: 85
-      z: 30
       anchors {
          top: parent.top
       }
@@ -44,58 +48,32 @@ Window {
       objectName: "socketContainer"
       innerModel: theModel
       width: parent.width - 180
-      z: 5  // Ниже панелей, но выше фонового MouseArea
       anchors {
          horizontalCenter: parent.horizontalCenter
          bottom: parent.bottom
          top: statusDummy.bottom
       }
-
    }
 
-   // Левая панель - перекрывает центральный контейнер
-   LeftPanel {
-      id: leftPanel
-      panelExpanded: leftPanelExpanded
-      expandedWidth: container.width / 2
-      collapsedWidth: 90
-      animationDuration: container.panelAnimationDuration
-      animationEasing: container.panelAnimationEasing
-      height: socketsDummy.height
-      anchors.bottom: socketsDummy.bottom
-      x: 0  // Всегда видима
-      z: 15
-
-      // Синхронизируем состояние панели с контейнером
-      onPanelExpandedChanged: {
-         leftPanelExpanded = panelExpanded
+   PeripheryPanel {
+      id: argNeutralPanel
+      anchors {
+         left: parent.left
+         bottom: parent.bottom
+         top: statusDummy.bottom
+         right: socketsDummy.left
       }
    }
-
-   // Правая панель - перекрывает центральный контейнер
-   // PedalPanel {
-   //    id: rightPanel
-   //    panelExpanded: rightPanelExpanded
-   //    socketModel: theModel
-   //    expandedWidth: container.width / 2
-   //    collapsedWidth: 90
-   //    animationDuration: container.panelAnimationDuration
-   //    animationEasing: container.panelAnimationEasing
-   //    height: socketsDummy.height
-   //    anchors.bottom: socketsDummy.bottom
-   //    x: container.width - width
-   //    z: 15  // Поверх центрального контейнера
-
-   //    // Синхронизируем состояние панели с контейнером
-   //    onPanelExpandedChanged: {
-   //       rightPanelExpanded = panelExpanded
-   //    }
-   // }
+   PeripheryDrawer {
+      id: argNeutDrawer
+      width: .5 * container.width
+      height: container.height
+      edge: Qt.LeftEdge
+   }
 
    PedalContainer {
-      id: pedalContainerrr
+      id: pedalContainer
       innerModel: theModel
-      z: 30
       anchors {
          left: socketsDummy.right
          right: parent.right
@@ -103,6 +81,7 @@ Window {
          top: statusDummy.bottom
       }
    }
+
    PedalDrawer {
       id: pedDrawer
       innerModel: theModel
@@ -110,27 +89,89 @@ Window {
       height: container.height
       edge: Qt.RightEdge
    }
-   Connections {
-      target: pedalContainerrr
-      function onPedMenuRequest(socketId) {
-         pedDrawer.socketId = socketId
-         pedDrawer.open()
-      }
-   }
 
    Drawer {
       id: leftDrawer
       width: 0.8 * container.width
       height: container.height
       edge: Qt.LeftEdge
-      // Loader
-      // SettingsMain {
       MenuLoader {
          id: menuLoad
          anchors.fill: parent
       }
    }
 
+   Connections {
+      target: leftDrawer
+      function onOpenedChanged() {
+         container.activationEnable()
+      }
+   }
+   Connections {
+      target: pedDrawer
+      function onOpenedChanged() {
+         container.activationEnable()
+      }
+   }
+   Connections {
+      target: argNeutDrawer
+      function onOpenedChanged() {
+         container.activationEnable()
+      }
+   }
+
+   Connections {
+      target: pedalContainer
+      function onPedMenuRequest(socketId) {
+         pedDrawer.socketId = socketId
+         pedDrawer.open()
+      }
+   }
+   Connections {
+      target: argNeutralPanel
+      function onOpenPeriphDrawer() {
+         argNeutDrawer.open()
+      }
+   }
+   Connections {
+      target: statusDummy
+      function onDrawerCalled() {
+         leftDrawer.open()
+      }
+   }
+   Connections {
+      target: menuLoad
+      function onCloseMe() {
+         leftDrawer.close()
+      }
+   }
+   Connections {
+      target: socketsDummy
+      function onProgAddRequest(addType) {
+         switch (addType) {
+            case 0:
+            {
+               recomHandle.copyCurrent();
+               console.log("recomHandle.copyCurrent()")
+               break;
+            }
+            case 1:
+            {
+               menuLoad.shortcut = true;
+               menuLoad.source = "qrc:/ProgItemList.qml"
+               menuLoad.item.loadClear = false;
+               leftDrawer.open()
+               break;
+            }
+            case 2:
+            {
+               recomHandle.addEmptyDefault();
+               console.log("recomHandle.addEmptyDefault()")
+               break;
+            }
+         }
+      }
+   }
    // Область для свайпов и закрытия панелей
    // MouseArea {
    //    id: swipeArea
@@ -259,16 +300,4 @@ Window {
 
    // }
 
-   Connections {
-      target: statusDummy
-      function onDrawerCalled() {
-         leftDrawer.open()
-      }
-   }
-   Connections {
-      target: menuLoad
-      function onCloseMe() {
-         leftDrawer.close()
-      }
-   }
 }

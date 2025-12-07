@@ -6,7 +6,6 @@
 #include <map>
 
 #include "instrument.h"
-#include "surgicalmode.h"
 #include "databasereader.h"
 #include "socketmodel.h"
 
@@ -19,7 +18,9 @@ public:
 	    /**
 	 * @brief Сохраняет текущее состояние всех сокетов в БД (таблица Lists, id=1000)
 	 */
-	void saveCurrentState();
+
+public slots:
+	void slotSaveCurrentState();
 
 signals:
 
@@ -64,18 +65,14 @@ public:
 	 */
 	void loadCurrentState();
 
-	std::map<int, std::map<int, InstrInfo>> getConstarints(const QList<int> &idList);
+	std::map<int, std::map<int, Onyx::InstrInfo>> getConstraints(const QList<int> &idList);
 
 	void setSocketModelPtr(QSharedPointer<SocketModel> newSocketModelPtr);
-
-
 
 private:
 	std::map<int, InstrPtr> getInstrums();
 	QPointer<DataBaseReader> m_dbReaderPtr;
 	QSharedPointer<SocketModel> m_socketModelPtr;
-
-
 };
 
 #endif // PROGLOADER_H

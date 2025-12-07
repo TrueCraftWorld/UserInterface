@@ -7,6 +7,8 @@
 #include <QList>
 #include <QObject>
 
+#include "Structures.h"
+
 #include <map>
 #include <optional>
 
@@ -39,16 +41,6 @@ const QStringList modesNames = { /*QObject::tr("РЕЖИМ РЕЗ НЕ ВЫБР�
                                  QObject::tr("ФУЛЬГУР ПУЛЬС АРГОН"), QObject::tr("СПРЕЙ ПУЛЬС АРГОН"),
                                  QObject::tr("РЕЖИМ НЕ ВЫБРАН")
                                 };
-// const QStringList modesNames = { "NO CUT MODE", "NO COAG MODE", "BI BLEND",
-//                                  "BI TUR", "BI ARTRO", "BI GISTERO",
-//                                  "BI COAG", "BI COAG DISSECT", "TERMOSHOV",
-//                                  "CUT", "BLEND", "BLEND1", "TUR", "VAP",
-//                                  "ENDO KNIFE1", "ENDO KNIFE2", "ENDO KNIFE3",
-//                                  "ENDO LOOP1", "ENDO LOOP2", "ENDO LOOP3",
-//                                  "FORCE", "FULGUR", "SOFT", "SPRAY",
-//                                  "FULGUR ARGON", "SPRAY ARGON",
-//                                  "FULGUR PULSE ARGON", "SPRAY PULSE ARGON",
-//                                };
 
 const QList<int> modesMaxPowers	{ /*1,*/ /*1,*/ 75,
                                 8, 8, 8,
@@ -63,17 +55,17 @@ const QList<int> modesMaxPowers	{ /*1,*/ /*1,*/ 75,
                                 };
 }
 
-struct InstrInfo {
-    int id;
-    int miniPower;
-    int midiPower;
-    int maxiPower;
-    // int legacyNumber;
-    InstrInfo() = default;
-    InstrInfo(int _id, int min, int mid, int max/*, int _legacyNumber*/)
-        : id(_id), miniPower(min), midiPower(mid), maxiPower(max)/*, legacyNumber(_legacyNumber)*/
-        {;}
-};
+// struct InstrInfo {
+//     int id;
+//     int miniPower;
+//     int midiPower;
+//     int maxiPower;
+//     // int legacyNumber;
+//     InstrInfo() = default;
+//     InstrInfo(int _id, int min, int mid, int max/*, int _legacyNumber*/)
+//         : id(_id), miniPower(min), midiPower(mid), maxiPower(max)/*, legacyNumber(_legacyNumber)*/
+//         {;}
+// };
 
 class SurgicalMode {
 public:
@@ -83,7 +75,7 @@ public:
                  int maximum = 1,
                  int minimum = 1,
                  int id = 0,
-                 const std::map<int, InstrInfo>& _instrs = {},
+                 const std::map<int, Onyx::InstrInfo>& _instrs = {},
                  int num = 0,
                  const QString& brief = "",
                  const QString& descript = "",
@@ -106,11 +98,11 @@ public:
 
     bool isCoag() const;
 
-    void setInstrConstraints(const std::map<int, InstrInfo> &newInstrConstraints);
+    void setInstrConstraints(const std::map<int, Onyx::InstrInfo> &newInstrConstraints);
 
-    std::map<int, InstrInfo> InstrConstraints() const;
+    std::map<int, Onyx::InstrInfo> InstrConstraints() const;
 
-    std::optional<InstrInfo> getConstraints(int index) const;
+    std::optional<Onyx::InstrInfo> getConstraints(int index) const;
 
     // QString curInstrName() const;
 
@@ -146,7 +138,7 @@ private:
     QString m_brief;  // Краткое описание режима
     QString m_descript;  // Полное описание режима
     bool m_isEndo;  // Флаг эндоскопического режима
-    std::map<int, InstrInfo> m_InstrConstraints;
+    std::map<int, Onyx::InstrInfo> m_InstrConstraints;
 };
 
 using SurgModePtr=QSharedPointer<SurgicalMode>;

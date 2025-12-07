@@ -7,7 +7,7 @@ Popup {
     property int socId: -1
     property int modeIndex: -1
     property bool isCoag: false
-    property var modeEditor: Editor
+    readonly property var modeEditor: Editor
     property string imageNameTemplate
     
     id: root
@@ -64,11 +64,6 @@ Popup {
         //запоминаем тот индекс, что был изначально, чтобы отметить элемент
         initiallySelectedItem = modeEditor.currentInstrIndex
     }
-    
-    // onClosed: {
-    //     // Разрешаем активацию при закрытии popup
-    //     control.enableActivation = true
-    // }
     
     Rectangle {
         id: back

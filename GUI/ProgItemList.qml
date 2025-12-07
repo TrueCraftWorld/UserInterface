@@ -39,13 +39,11 @@ Rectangle {
                 rowIndex: i
             })
         }
-        // console.log(itemNameArr)
         progList.innerModel = progsModel
         progList.curIndex = -1
     }
 
-    // onOpened: {
-    // }
+
     Component.onCompleted: {
 
         itemNameArr = recomHandle.scopeNameList
@@ -61,10 +59,7 @@ Rectangle {
                 rowIndex: i
             })
         }
-        // console.log(itemIdArr.length)
-        // console.log(itemNameArr)
         scopeList.innerModel = scopeModel
-        // updateModel()
         recomHandle.scopeIdx = 0
     }
 

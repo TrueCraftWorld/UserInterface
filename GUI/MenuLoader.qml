@@ -19,13 +19,13 @@ Item {
 
         function onRecommendButtonPressed() {
             if (menuLoader.item instanceof MainMenu) { // Проверяем, что загружен именно Text
-                menuLoader.source = "ProgItemList.qml"
+                menuLoader.source = "qrc:/ProgItemList.qml"
                 // menuLoader.item.innerModel = 55
             }
         }
         function onSettingsButtonPressed() {
             if (menuLoader.item instanceof MainMenu) { // Проверяем, что загружен именно Text
-                menuLoader.source = "SettingsMain.qml"
+                menuLoader.source = "qrc:/SettingsMain.qml"
             }
         }
         function onReturnButtonPressed() {
@@ -35,16 +35,16 @@ Item {
                 if (shortcut) {
                     shortcut = false
                     closeMe()
-                    menuLoader.source = "MainMenu.qml"
+                    menuLoader.item.loadClear = true;
+                    menuLoader.source = "qrc:/MainMenu.qml"
                 } else {
-                    menuLoader.source = "MainMenu.qml"
+                    menuLoader.source = "qrc:/MainMenu.qml"
                 }
             }
         }
         function onClickedButton(progId) {
-            // ProgHandle.loadRecommendedProg(progId + 1)
             closeMe()
-            menuLoader.source = "MainMenu.qml"
+            menuLoader.source = "qrc:/MainMenu.qml"
         }
     }
 

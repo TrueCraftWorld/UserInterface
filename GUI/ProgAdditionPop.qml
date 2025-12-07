@@ -54,7 +54,6 @@ Dialog {
             horizontalAlignment: Qt.AlignHCenter
             verticalAlignment: Qt.AlignVCenter
         }
-
     }
 
     contentItem: Rectangle {
@@ -63,7 +62,6 @@ Dialog {
         color: "transparent"
         width: parent.width
         height: 200
-        // anchors.fill: parent
         Rectangle {
             id: upper
             anchors.top: parent.top
@@ -72,7 +70,6 @@ Dialog {
             height: 200
             color: "transparent"
             RowLayout {
-                // color: "transparent"
                 id: buttonRow
                 anchors.top: parent.top
                 anchors.left: parent.left
@@ -85,38 +82,18 @@ Dialog {
                     title: qsTr("ДУБЛИРОВАТЬ ТЕКУЩИЙ")
                     buttonType: 0
                     Layout.alignment: Qt.AlignCenter
-                    // anchors {
-                    //     left: parent.left
-                    //     right: parent.right
-                    //     top: parent.top
-                    //     bottom: parent.bottom
-                    // }
                 }
                 VariantRect{
                     title: qsTr("ЗАГРУЗИТЬ РЕКОМЕНДОВАННЫЙ")
                     buttonType: 1
                     Layout.alignment: Qt.AlignCenter
-                    // anchors {
-                    //     left: parent.left
-                    //     right: parent.right
-                    //     top: parent.top
-                    //     bottom: parent.bottom
-                    // }
                 }
                 VariantRect{
                     title: qsTr("ДОБАВИТЬ ПУСТОЙ")
                     buttonType: 2
                     Layout.alignment: Qt.AlignCenter
-                    // anchors {
-                    //     left: parent.left
-                    //     right: parent.right
-                    //     top: parent.top
-                    //     bottom: parent.bottom
-                    // }
                 }
             }
         }
-
     }
-
 }

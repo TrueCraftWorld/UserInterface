@@ -31,11 +31,6 @@ void ProgHandle::loadUserProg(int recomProgId)
     emit signalUserProgChosen(recomProgId);
 }
 
-void ProgHandle::loadEmptyProg()
-{
-    emit signalLoadEmpty();
-}
-
 void ProgHandle::saveProg(int id, const QString &name)
 {
     emit signalSave(id, name);

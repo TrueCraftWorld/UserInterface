@@ -38,7 +38,6 @@ Window {
       text: qsTr("В бою с шипящими змеями — эфой и гадюкой — маленький, цепкий, храбрый ёж съел их")
       width: parent.width
       height: 85
-      // z: 30
       anchors {
          top: parent.top
       }
@@ -49,7 +48,6 @@ Window {
       objectName: "socketContainer"
       innerModel: theModel
       width: parent.width - 180
-      // z: 5  // Ниже панелей, но выше фонового MouseArea
       anchors {
          horizontalCenter: parent.horizontalCenter
          bottom: parent.bottom
@@ -76,7 +74,6 @@ Window {
    PedalContainer {
       id: pedalContainer
       innerModel: theModel
-      // z: 30
       anchors {
          left: socketsDummy.right
          right: parent.right
@@ -109,27 +106,18 @@ Window {
       function onOpenedChanged() {
          container.activationEnable()
       }
-      // function onClosed() {
-      //    container.activationEnable()
-      // }
    }
    Connections {
       target: pedDrawer
       function onOpenedChanged() {
          container.activationEnable()
       }
-      // function onClosed() {
-      //    container.activationEnable()
-      // }
    }
    Connections {
       target: argNeutDrawer
       function onOpenedChanged() {
          container.activationEnable()
       }
-      // function onClosed() {
-      //    container.activationEnable()
-      // }
    }
 
    Connections {

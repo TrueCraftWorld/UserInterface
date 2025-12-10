@@ -28,6 +28,16 @@ Rectangle {
     
     // Отслеживание изменения showControls для отправки сигнала при сворачивании
     property int lastSentFlowRate: flowRate
+    property bool isUserChange: false  // Флаг для отслеживания изменений пользователем
+    
+    onFlowRateChanged: {
+        // Отправляем сигнал при изменении расхода пользователем (через кнопки)
+        if (isUserChange && lastSentFlowRate !== flowRate) {
+            flowRateUpdated(flowRate)
+            lastSentFlowRate = flowRate
+            isUserChange = false  // Сбрасываем флаг после отправки
+        }
+    }
     
     onShowControlsChanged: {
         // Когда панель сворачивается (showControls становится false)
@@ -147,8 +157,10 @@ Rectangle {
                 onClicked: {
                     var newRate = flowRate + delta
                     if (newRate <= maxFlowRate) {
+                        isUserChange = true  // Устанавливаем флаг перед изменением
                         flowRate = newRate
                     }
+                    console.log("Argon flowrate: ", flowRate, " ▲ 10");
                 }
             }
             CustomButton {
@@ -160,8 +172,10 @@ Rectangle {
                 onClicked: {
                     var newRate = flowRate + delta
                     if (newRate <= maxFlowRate) {
+                        isUserChange = true  // Устанавливаем флаг перед изменением
                         flowRate = newRate
                     }
+                    console.log("Argon flowrate: ", flowRate, " ▲ 1");
                 }
             }
         }
@@ -220,8 +234,10 @@ Rectangle {
                 onClicked: {
                     var newRate = flowRate + delta
                     if (newRate >= 0) {
+                        isUserChange = true  // Устанавливаем флаг перед изменением
                         flowRate = newRate
                     }
+                    console.log("Argon flowrate: ", flowRate, " ▼ 10");
                 }
             }
             CustomButton {
@@ -233,8 +249,10 @@ Rectangle {
                 onClicked: {
                     var newRate = flowRate + delta
                     if (newRate >= 0) {
+                        isUserChange = true  // Устанавливаем флаг перед изменением
                         flowRate = newRate
                     }
+                    console.log("Argon flowrate: ", flowRate, " ▼ 1");
                 }
             }
         }

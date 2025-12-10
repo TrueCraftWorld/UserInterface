@@ -76,7 +76,7 @@ Drawer {
     Connections {
         target: argonView
         function onFlowRateUpdated(newRate) {
-            periphHandle.argonFlowRate = newRate
+            periphHandle.setArgonFlowRate(newRate)
         }
         function onArgonBlow() {
             periphHandle.argonBlow()

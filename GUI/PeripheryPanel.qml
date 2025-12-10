@@ -29,6 +29,15 @@ Rectangle {
         isActivation: periphHandle.activation
         activCylinderFirst: periphHandle.activCylinderFirst
     }
+    Connections {
+        target: argonView
+        function onFlowRateUpdated(newRate) {
+            periphHandle.setArgonFlowRate(newRate)
+        }
+        function onArgonBlow() {
+            periphHandle.argonBlow()
+        }
+    }
     NeutralEl {
         id: neutralView
         height: 165

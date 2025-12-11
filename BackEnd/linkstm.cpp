@@ -503,6 +503,12 @@ void LinkStm::readRxCommand()
         break;
     // Остановка
     case RxStop:
+        unitState.activOutput = 0;  // Сбрасываем активированный выход
+        unitState.activMode = 0;    // Сбрасываем активированный режим
+        if (m_unitState != unitState) {
+            m_unitState = unitState;
+            emit sigUnitStateChanged(m_unitState);
+        }
         emit sigStopActivation(m_rxCommand.com & 0x03);
         m_comState = IDLE;
         break;

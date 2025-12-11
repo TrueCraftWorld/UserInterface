@@ -160,7 +160,7 @@ Rectangle {
                         isUserChange = true  // Устанавливаем флаг перед изменением
                         flowRate = newRate
                     }
-                    console.log("Argon flowrate: ", flowRate, " ▲ 10");
+//                    console.log("Argon flowrate: ", flowRate, " ▲ 10");
                 }
             }
             CustomButton {
@@ -175,7 +175,7 @@ Rectangle {
                         isUserChange = true  // Устанавливаем флаг перед изменением
                         flowRate = newRate
                     }
-                    console.log("Argon flowrate: ", flowRate, " ▲ 1");
+//                    console.log("Argon flowrate: ", flowRate, " ▲ 1");
                 }
             }
         }
@@ -237,7 +237,7 @@ Rectangle {
                         isUserChange = true  // Устанавливаем флаг перед изменением
                         flowRate = newRate
                     }
-                    console.log("Argon flowrate: ", flowRate, " ▼ 10");
+//                    console.log("Argon flowrate: ", flowRate, " ▼ 10");
                 }
             }
             CustomButton {
@@ -252,7 +252,7 @@ Rectangle {
                         isUserChange = true  // Устанавливаем флаг перед изменением
                         flowRate = newRate
                     }
-                    console.log("Argon flowrate: ", flowRate, " ▼ 1");
+//                    console.log("Argon flowrate: ", flowRate, " ▼ 1");
                 }
             }
         }

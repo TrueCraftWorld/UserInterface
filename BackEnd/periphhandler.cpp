@@ -13,7 +13,9 @@ PeriphHandler::PeriphHandler(QObject *parent)
     m_argonFlowRate(80),
     m_argonRealRate(0),
     m_activCylinderFirst(true),  // По умолчанию активен первый баллон
-    m_wirelessPedalCharge(0)
+    m_wirelessPedalCharge(0),
+    m_enableActivation(true),
+    m_activation(false)
 {
 
 }
@@ -45,6 +47,13 @@ void PeriphHandler::unitStateHandler(Onyx::UnitState state)
 		m_argonRealRate = state.argonRealRate;
 		// qDebug() << "РЕАЛЬНЫЙ РАСХОД: " << m_argonRealRate;
 		emit argonRealRateChanged(m_argonRealRate);
+	}
+
+	// Обновляем состояние активации на основе activOutput
+	bool isActivating = (state.activOutput != 0);
+	if (m_activation != isActivating) {
+		m_activation = isActivating;
+		emit activationChanged(m_activation);
 	}
 
 	// Автоматическое переключение активного баллона

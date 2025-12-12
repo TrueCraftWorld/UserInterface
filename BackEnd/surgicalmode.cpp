@@ -77,7 +77,7 @@ int SurgicalMode::selectedInstrIndex() const
 
 bool SurgicalMode::setSelectedInstrIndex(int newSelectedInstrIndex)
 {
-    if (newSelectedInstrIndex >= m_InstrConstraints.size())
+    if (newSelectedInstrIndex < 0 || static_cast<size_t>(newSelectedInstrIndex) >= m_InstrConstraints.size())
         return false;
     m_selectedInstrIndex = newSelectedInstrIndex;
     //элементы map отсортированы по возрастанию ключа

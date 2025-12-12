@@ -13,37 +13,71 @@ Item {
         id: menuLoader
         anchors.fill: parent
         source: "qrc:/MainMenu.qml"
-    }
-    Connections {
-        target: menuLoader.item // Подключаемся к сигналам загруженного компонента
-
-        function onRecommendButtonPressed() {
-            if (menuLoader.item instanceof MainMenu) { // Проверяем, что загружен именно Text
-                menuLoader.source = "qrc:/ProgItemList.qml"
-            }
-        }
-        function onSettingsButtonPressed() {
-            if (menuLoader.item instanceof MainMenu) { // Проверяем, что загружен именно Text
-                menuLoader.source = "qrc:/SettingsMain.qml"
-            }
-        }
-        function onReturnButtonPressed() {
-            if (menuLoader.item instanceof MainMenu)
-                ;
-            else {
-                if (shortcut) {
-                    shortcut = false
-                    closeMe()
-                    menuLoader.item.loadClear = true;
-                    menuLoader.source = "qrc:/MainMenu.qml"
-                } else {
-                    menuLoader.source = "qrc:/MainMenu.qml"
+        
+        onItemChanged: {
+            // Отключаем все предыдущие подключения
+            if (menuLoader.item) {
+                try {
+                    if (menuLoader.item.recommendButtonPressed) {
+                        menuLoader.item.recommendButtonPressed.disconnect()
+                    }
+                    if (menuLoader.item.settingsButtonPressed) {
+                        menuLoader.item.settingsButtonPressed.disconnect()
+                    }
+                    if (menuLoader.item.returnButtonPressed) {
+                        menuLoader.item.returnButtonPressed.disconnect()
+                    }
+                    if (menuLoader.item.clickedButton) {
+                        menuLoader.item.clickedButton.disconnect()
+                    }
+                } catch(e) {
+                    // Игнорируем ошибки отключения
+                }
+                
+                // Подключаемся к сигналам, которые есть во всех компонентах
+                try {
+                    if (menuLoader.item.recommendButtonPressed) {
+                        menuLoader.item.recommendButtonPressed.connect(function() {
+                            menuLoader.source = "qrc:/ProgItemList.qml"
+                        })
+                    }
+                    if (menuLoader.item.settingsButtonPressed) {
+                        menuLoader.item.settingsButtonPressed.connect(function() {
+                            menuLoader.source = "qrc:/SettingsMain.qml"
+                        })
+                    }
+                } catch(e) {
+                    // Игнорируем ошибки подключения
+                }
+                
+                // Подключаемся к сигналам, которых нет в MainMenu
+                if (menuLoader.source !== "qrc:/MainMenu.qml") {
+                    try {
+                        if (menuLoader.item.returnButtonPressed) {
+                            menuLoader.item.returnButtonPressed.connect(function() {
+                                if (shortcut) {
+                                    shortcut = false
+                                    closeMe()
+                                    if (menuLoader.item && menuLoader.item.loadClear !== undefined) {
+                                        menuLoader.item.loadClear = true;
+                                    }
+                                    menuLoader.source = "qrc:/MainMenu.qml"
+                                } else {
+                                    menuLoader.source = "qrc:/MainMenu.qml"
+                                }
+                            })
+                        }
+                        if (menuLoader.item.clickedButton) {
+                            menuLoader.item.clickedButton.connect(function(progId) {
+                                closeMe()
+                                menuLoader.source = "qrc:/MainMenu.qml"
+                            })
+                        }
+                    } catch(e) {
+                        // Игнорируем ошибки подключения
+                    }
                 }
             }
-        }
-        function onClickedButton(progId) {
-            closeMe()
-            menuLoader.source = "qrc:/MainMenu.qml"
         }
     }
 

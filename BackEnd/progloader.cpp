@@ -1,7 +1,7 @@
 #include "progloader.h"
 #include "socket.h"
 #include <unordered_set>
-#include <cmath>
+#include <cstdlib>  // для abs()
 
 
 namespace {
@@ -147,8 +147,14 @@ bool hasNonZeroDigit(int number, int digitPosition) {
     // Приводим число к положительному виду для упрощения
     number = abs(number);
 
+    // Вычисляем 10^digitPosition целочисленным способом (без pow)
+    int powerOf10 = 1;
+    for (int i = 0; i < digitPosition; ++i) {
+        powerOf10 *= 10;
+    }
+
     // Делим число на 10^digitPosition, чтобы перенести нужный разряд в конец
-    int shiftedNumber = number / static_cast<int>(std::pow(10, digitPosition));
+    int shiftedNumber = number / powerOf10;
 
     // Если после сдвига число стало нулём, значит разряд отсутствует
     if (shiftedNumber == 0) {
@@ -483,7 +489,7 @@ void ProgLoader::defaultSocketInit(bool clear)
                 // Проверка для эндоскопических режимов: если мощность = 1, устанавливаем 11
                 auto mode = isCoag ? socket->curCoagMode() : socket->curCutMode();
                 if (!mode.isNull() && mode->isEndo()) {
-                    int endoCut = static_cast<int>(std::floor(defaultPower / 10.0));
+                    int endoCut = defaultPower / 10;  // Целочисленное деление вместо floor
                     int endoCoag = defaultPower % 10;
                     if (endoCut < 1) endoCut = 1;
                     else if (endoCut > ENDO_MAX) endoCut = ENDO_MAX;
@@ -635,7 +641,7 @@ void ProgLoader::programmLoadSocketInit(int progId, bool clear)
                 // Проверка для эндоскопических режимов: если мощность = 1, устанавливаем 11
                 auto mode = isCoag ? socket->curCoagMode() : socket->curCutMode();
                 if (!mode.isNull() && mode->isEndo()) {
-                    int endoCut = static_cast<int>(std::floor(defaultPower / 10.0));
+                    int endoCut = defaultPower / 10;  // Целочисленное деление вместо floor
                     int endoCoag = defaultPower % 10;
                     if (endoCut < 1) endoCut = 1;
                     else if (endoCut > ENDO_MAX) endoCut = ENDO_MAX;

@@ -9,6 +9,7 @@
 
 #include <QFile>
 #include <QDir>
+#include <QFileInfo>
 #include <QLoggingCategory>
 #include <QScopedPointer>
 #include <QDateTime>
@@ -41,6 +42,9 @@ int main(int argc, char *argv[])
     qputenv("QT_QPA_EGLFS_HIDECURSOR", "1");
 
     QGuiApplication app(argc, argv);
+
+    // Устанавливаем кастомный обработчик для вывода только имени файла (без пути)
+    qInstallMessageHandler(messageHandler);
 
     // Включаем QML debugger для удаленной отладки
     // Использование: приложение -qmljsdebugger=port:3768,block
@@ -84,6 +88,9 @@ int main(int argc, char *argv[])
         Qt::QueuedConnection);
     //этот вызов для загрузки элемента pullToRefresshHandler
     engine.addImportPath("qrc:/");
+    // Добавляем пути для поиска QML модулей на удалённой машине
+    engine.addImportPath("/usr/lib/aarch64-linux-gnu/qt5/qml");
+    engine.addImportPath("/usr/lib/qt5/qml");
     engine.load(url);
 
     // Сохраняемые значения лежат в json-файле
@@ -114,31 +121,36 @@ void messageHandler(QtMsgType type, const QMessageLogContext &context, const QSt
             msg.startsWith("Could not queue DRM")) return;    // фильтруем ворнинги, чтобы не забивать лог
     }
 
-    // Открываем поток записи в файл
-    QTextStream out(m_logFile.data());
-    // Записываем дату записи
-    out << QDateTime::currentDateTime().toString("dd-MM-yyyy hh:mm:ss.zzz ");
-    // По типу определяем, к какому уровню относится сообщение
+    // Извлекаем только имя файла из полного пути
+    QFileInfo fileInfo(context.file);
+    QString fileName = fileInfo.fileName();
+    
+    // Определяем префикс уровня сообщения
+    QString levelPrefix;
     switch (type) {
-    case QtInfoMsg:     out << "INF "; break;
-    case QtDebugMsg:    out << "DBG "; break;
-    case QtWarningMsg:  out << "WRN "; break;
-    case QtCriticalMsg: out << "CRT "; break;
-    case QtFatalMsg:    out << "FTL "; break;
+    case QtInfoMsg:     levelPrefix = "INFO"; break;
+    case QtDebugMsg:    levelPrefix = "DEBUG"; break;
+    case QtWarningMsg:  levelPrefix = "WARNING"; break;
+    case QtCriticalMsg:  levelPrefix = "CRITICAL"; break;
+    case QtFatalMsg:    levelPrefix = "FATAL"; break;
     default: break;
     }
-    // Записываем в вывод категорию сообщения и само сообщение
-    if (type != QtDebugMsg) {
-        out << context.category << ": "
-            << msg << Qt::endl;
-        // out.flush();    // Очищаем буферизированные данные
+
+    // Формируем строку с информацией о файле и строке
+    QString logLine = QString("%1 [%2:%3] %4")
+                          .arg(levelPrefix)
+                          .arg(fileName)
+                          .arg(context.line)
+                          .arg(msg);
+
+    // Записываем в файл (если файл открыт)
+    if (m_logFile && m_logFile->isOpen()) {
+        QTextStream out(m_logFile.data());
+        out << QDateTime::currentDateTime().toString("dd-MM-yyyy hh:mm:ss.zzz ") 
+            << logLine << Qt::endl;
     }
 
-    // То же самое выводим в консоль
+    // Выводим в консоль
     QTextStream debugOut(stdout);
-    debugOut << context.category << ": "
-        << msg << Qt::endl;
-    // debugOut.flush();    // Очищаем буферизированные данные
-    //вообще после endl и так чистится буфер
-    //как раз за этим енлдл и нужен
+    debugOut << logLine << Qt::endl;
 }

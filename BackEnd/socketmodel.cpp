@@ -496,17 +496,35 @@ void SocketModel::startActivation(int socketId, bool isCut)
 {
     QTimer::singleShot(0, this, [this, socketId, isCut]() {
         expandSocket(socketId);
-        qmlSetData(socketId, isCut ? Onyx::S_ACTIVE_CUT : Onyx::S_ACTIVE_COAG, "socketstatus");
+        // Сначала сбрасываем статус, чтобы QML увидел изменение при повторной активации
+        Onyx::SocStatus newStatus = isCut ? Onyx::S_ACTIVE_CUT : Onyx::S_ACTIVE_COAG;
+        if (m_itemsMapPtr && socketId < static_cast<int>(m_itemsMapPtr->size())) {
+            auto iter = m_itemsMapPtr->find(socketId);
+            if (iter != m_itemsMapPtr->end() && !iter->second.isNull()) {
+                // Если статус уже установлен, сначала сбрасываем его
+                if (iter->second->socketStatus() == newStatus) {
+                    qmlSetData(socketId, Onyx::S_ENABLED, "socketstatus");
+                    // Даём время QML обработать изменение
+                    QTimer::singleShot(10, this, [this, socketId, newStatus]() {
+                        qmlSetData(socketId, newStatus, "socketstatus");
+                    });
+                } else {
+                    qmlSetData(socketId, newStatus, "socketstatus");
+                }
+            }
+        }
     });
 }
 
 void SocketModel::stopActivation()
 {
+//    qDebug() << "SocketModel::stopActivation() called";
     if (m_itemsMapPtr == nullptr)
         return ;
     for (auto& item : *m_itemsMapPtr) {
         if (item.second->socketStatus() == Onyx::S_ACTIVE_CUT
             || item.second->socketStatus() == Onyx::S_ACTIVE_COAG) {
+            qDebug() << "Stopping activation for socket" << item.first;
             qmlSetData(item.first, Onyx::S_ENABLED, "socketstatus");
         }
     }

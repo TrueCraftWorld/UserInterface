@@ -104,15 +104,19 @@ QPixmap InstrImageProvider::requestPixmap(const QString &id,
     }
     
     // Проверка на нулевой индекс (например, monomode0, minstr0, bimode0)
+    // или на 1000 (NO_MODE - режим не выбран)
     // Извлекаем число из конца строки
     QString numPart;
     for (int i = id.length() - 1; i >= 0 && id[i].isDigit(); --i) {
         numPart.prepend(id[i]);
     }
-    if (!numPart.isEmpty() && numPart.toInt() == 0) {
-        if (size)
-            *size = mySize;
-        return emptyPixmap.scaled(mySize, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+    if (!numPart.isEmpty()) {
+        int numValue = numPart.toInt();
+        if (numValue == 0 || numValue == 1000) {
+            if (size)
+                *size = mySize;
+            return emptyPixmap.scaled(mySize, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+        }
     }
     
     // Проверяем кэш
@@ -172,7 +176,9 @@ QPixmap InstrImageProvider::requestPixmap(const QString &id,
         }
     }
     
-    // Если не найдено, возвращаем пустой pixmap с предупреждением
+    // Если не найдено, возвращаем прозрачный pixmap с предупреждением
     // qWarning() << "InstrImageProvider: Image not found for id:" << id << "(searched among" << s_knownFiles.size() << "files)";
-    return QPixmap().scaled(mySize, Qt::KeepAspectRatio);
+    if (size)
+        *size = mySize;
+    return emptyPixmap.scaled(mySize, Qt::KeepAspectRatio, Qt::SmoothTransformation);
 }

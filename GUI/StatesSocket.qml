@@ -5,6 +5,14 @@ Rectangle {
     id: socketRoot
     color: "transparent"
 
+    // Константы состояний сокета (соответствуют Onyx::SocStatus)
+    readonly property int socketStateOff: 0          // S_OFF - Отключен
+    readonly property int socketStateDisabled: 1    // S_DISABLED - Выключен, активация запрещена
+    readonly property int socketStateEnabled: 2     // S_ENABLED - Включен, активация разрешена
+    readonly property int socketStateActiveCoag: 3  // S_ACTIVE_COAG - Активирован, коагуляция
+    readonly property int socketStateActiveCut: 4   // S_ACTIVE_CUT - Активирован, резание
+    readonly property int socketStateError: 5        // S_ERROR - Ошибка, активация запрещена
+
     property string title
     property int socketId
     property int socketState
@@ -34,18 +42,22 @@ Rectangle {
     state: "expanded"
 
     onSocketStateChanged: {
-        console.log("socketState", socketState)
-        if (socketState == 3) {
+//        console.log("socketState", socketState)
+        if (socketState === socketStateActiveCoag) {
+            activationIndicator.socketName = title
             activationIndicator.isCoag = true
             activationIndicator.modeName = coagModeName
             activationIndicator.power = coagModePower
             activationIndicator.isEndo = coagIsEndo
+            console.log("Activation: socketName=", title, "modeName=", coagModeName, "power=", coagModePower, "isEndo=", coagIsEndo)
             activationIndicator.open();
-        } else if (socketState == 4) {
+        } else if (socketState === socketStateActiveCut) {
+            activationIndicator.socketName = title
             activationIndicator.isCoag = false
             activationIndicator.modeName = cutModeName
             activationIndicator.power = cutModePower
             activationIndicator.isEndo = cutIsEndo
+            console.log("Activation: socketName=", title, "modeName=", cutModeName, "power=", cutModePower, "isEndo=", cutIsEndo)
             activationIndicator.open();
         } else {
             activationIndicator.close();

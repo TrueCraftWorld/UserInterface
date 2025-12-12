@@ -176,9 +176,9 @@ void ControlCenter::setLinkStm(LinkStm* linkStm)
     
     // Подключаем обработчик входящих данных
     if (!m_linkStm.isNull()) {
-        connect(m_linkStm, &LinkStm::sigUnitStateChanged,
-                m_periphery, &PeriphHandler::unitStateHandler,
-                Qt::QueuedConnection);
+//        connect(m_linkStm, &LinkStm::sigUnitStateChanged,
+//                m_periphery, &PeriphHandler::unitStateHandler,
+//                Qt::QueuedConnection);
         
         // Инициализируем текущие значения состояния в LinkStm
         m_linkStm->setEnableActivation(m_periphery->enableActivation());
@@ -197,6 +197,7 @@ void ControlCenter::setLinkStm(LinkStm* linkStm)
                 QMetaObject::invokeMethod(  m_linkStm.data(),
                                         "updateSocketData",
                                         Qt::QueuedConnection,
+                                        Q_ARG(int, i),  // socketIndex
                                         Q_ARG(quint16, topLeft.siblingAtRow(i).data(SocketModel::CutModeNum).value<quint16>()),
                                         Q_ARG(quint16, topLeft.siblingAtRow(i).data(SocketModel::CoagModeNum).value<quint16>()),
                                         Q_ARG(quint16, topLeft.siblingAtRow(i).data(SocketModel::CutModePower).value<quint16>()),
@@ -235,7 +236,7 @@ void ControlCenter::setLinkStm(LinkStm* linkStm)
         // Инициализируем все сокеты текущими данными
         initSocketsForPeriphery();
         
-        qDebug() << "LinkStm connected to ControlCenter";
+//        qDebug() << "LinkStm connected to ControlCenter";
     }
 }
 

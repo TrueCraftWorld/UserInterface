@@ -1,5 +1,6 @@
 #include "linkstm.h"
 #include <QMetaType>
+#include <QElapsedTimer>
 //перенёс инициализатор в конструктор - так не происходит инициализация по умолчанию,
 // а затем присваивание новых значени1
 LinkStm::LinkStm(QObject *parent)
@@ -32,8 +33,6 @@ LinkStm::LinkStm(QObject *parent)
     // Таймер обмена по uart
     m_uartTimer->setTimerType(Qt::PreciseTimer);
     connect(m_uartTimer, &QTimer::timeout, [this]() {sendCommand();});
-    m_uartTimer->start(100);
-    qDebug(logInfo()) << "start Uart Timer";
 
     connect(m_uart, &UartToQmlBridge::uartRecieve, this, &LinkStm::unpackRxCommand);
 
@@ -49,9 +48,15 @@ void LinkStm::start()
 
 void LinkStm::unpackRxCommand(const QByteArray &rxPacket)
 {
-    // Засекаем время начала приёма (отладка была удалена)
-    // QTime rxStartTime = QTime::currentTime();
-    
+    // Замеряем задержку от момента readyRead (readData) до входа в unpackRxCommand
+    QTime now = QTime::currentTime();
+    int delayFromReadyRead = m_uart->lastReadTime().msecsTo(now);
+//    qDebug() << "Delay readyRead -> unpackRxCommand:" << delayFromReadyRead << "ms";
+
+    // Засекаем время обработки unpackRxCommand + checkRxCommand
+    QElapsedTimer processTimer;
+    processTimer.start();
+
     quint8 xorValue = 0;
     quint8 rxByte = 0;
     QByteArray destuffedBuffer;         // Для отработки байт-стаффинга
@@ -121,11 +126,11 @@ void LinkStm::unpackRxCommand(const QByteArray &rxPacket)
         m_state = STATE_RX_ERR;
         qDebug() << "не тот ответ от stm";
     }
-    
-    // Отладочный замер времени от readyRead до m_waitAnswer=false удалён
-    
+
     m_waitAnswer = false;
-//    qDebug() << QString("!!! ").append(getHexStr(destuffedBuffer));
+
+    // Логируем время обработки входящего пакета
+//    qDebug() << "unpackRxCommand+checkRxCommand took" << processTimer.elapsed() << "ms";
 }
 
 // Первичная проверка, то пришло, или нет

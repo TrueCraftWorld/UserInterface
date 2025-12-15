@@ -14,6 +14,7 @@
 #include <QScopedPointer>
 #include <QDateTime>
 #include <QTextStream>
+#include <QThread>
 #include "BackEnd/loggingcategories.h"
 #include "BackEnd/linkstm.h"
 #include "BackEnd/jsonstorage.h"
@@ -104,7 +105,24 @@ int main(int argc, char *argv[])
     m_linkStm = new LinkStm();
     // Откуда грузиться stm
     m_linkStm->setBoot(static_cast<LinkStm::BootChoice>(boot.toInt()));
-    
+
+    // Переносим LinkStm в отдельный поток для работы с UART
+    QThread *linkStmThread = new QThread();
+    m_linkStm->moveToThread(linkStmThread);
+
+    QObject::connect(linkStmThread, &QThread::started,
+                     m_linkStm, &LinkStm::start);
+    QObject::connect(linkStmThread, &QThread::finished,
+                     m_linkStm, &QObject::deleteLater);
+
+    // Корректное завершение потока при выходе из приложения
+    QObject::connect(&app, &QCoreApplication::aboutToQuit,
+                     linkStmThread, &QThread::quit);
+    QObject::connect(linkStmThread, &QThread::finished,
+                     linkStmThread, &QObject::deleteLater);
+
+    linkStmThread->start();
+
     // Связываем LinkStm с ControlCenter для обработки UART-данных
     ctrl->setLinkStm(m_linkStm);
 

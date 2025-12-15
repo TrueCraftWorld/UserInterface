@@ -133,8 +133,8 @@ QPixmap InstrImageProvider::requestPixmap(const QString &id,
                 return pixmap.scaled(mySize, Qt::KeepAspectRatio);
             } else {
                 // qWarning() << "InstrImageProvider: Failed to load pixmap from" << item.absoluteFilePath();
-            }
         }
+    }
     }
     
     // Если не найдено, пробуем с ведущими нулями (для файлов типа instr001.png)

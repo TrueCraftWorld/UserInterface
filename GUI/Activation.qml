@@ -25,8 +25,8 @@ Popup {
     anchors.centerIn: parent
     width: parent.width
     height: parent.height
-
-
+    
+    
     // Перехватываем все события мыши
     MouseArea {
         anchors.fill: parent
@@ -199,7 +199,7 @@ Popup {
                         font.pixelSize: 70
                         font.bold: true
                         color: activationPopup.isCoag ? "white" : "black"
-                        style: Text.Outline
+                style: Text.Outline
                         styleColor: activationPopup.isCoag ? "black" : "white"
                         text: {
                             var coagValue = activationPopup.power % 10

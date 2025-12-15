@@ -246,11 +246,17 @@ void ControlCenter::initSocketsForPeriphery()
         qWarning() << "Cannot initialize sockets in LinkStm: missing dependencies";
         return;
     }
-    //тут можем прерывать сколько угодно - это одноразовый вызов в начале работы
+    // Используем queued-вызовы, так как LinkStm работает в отдельном потоке
     for (int i = 0; i < m_socketModel->rowCount(QModelIndex()); ++i) {
-        m_linkStm->updateSocketData(i,
-                                    m_socketModel->index(i).data(
-                                    SocketModel::SocketUartInfo).value<Onyx::SocketState>());
+        Onyx::SocketState info =
+                m_socketModel->index(i).data(SocketModel::SocketUartInfo).value<Onyx::SocketState>();
+
+        QMetaObject::invokeMethod(
+            m_linkStm.data(),
+            "updateSocketData",
+            Qt::QueuedConnection,
+            Q_ARG(int, i),
+            Q_ARG(Onyx::SocketState, info));
     }
 }
 

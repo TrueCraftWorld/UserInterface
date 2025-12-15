@@ -38,14 +38,14 @@ Item {
                 try {
                     if (menuLoader.item.recommendButtonPressed) {
                         menuLoader.item.recommendButtonPressed.connect(function() {
-                            menuLoader.source = "qrc:/ProgItemList.qml"
+                menuLoader.source = "qrc:/ProgItemList.qml"
                         })
-                    }
+            }
                     if (menuLoader.item.settingsButtonPressed) {
                         menuLoader.item.settingsButtonPressed.connect(function() {
-                            menuLoader.source = "qrc:/SettingsMain.qml"
+                menuLoader.source = "qrc:/SettingsMain.qml"
                         })
-                    }
+            }
                 } catch(e) {
                     // Игнорируем ошибки подключения
                 }
@@ -55,22 +55,22 @@ Item {
                     try {
                         if (menuLoader.item.returnButtonPressed) {
                             menuLoader.item.returnButtonPressed.connect(function() {
-                                if (shortcut) {
-                                    shortcut = false
-                                    closeMe()
+                if (shortcut) {
+                    shortcut = false
+                    closeMe()
                                     if (menuLoader.item && menuLoader.item.loadClear !== undefined) {
-                                        menuLoader.item.loadClear = true;
+                    menuLoader.item.loadClear = true;
                                     }
-                                    menuLoader.source = "qrc:/MainMenu.qml"
-                                } else {
-                                    menuLoader.source = "qrc:/MainMenu.qml"
-                                }
+                    menuLoader.source = "qrc:/MainMenu.qml"
+                } else {
+                    menuLoader.source = "qrc:/MainMenu.qml"
+                }
                             })
-                        }
+        }
                         if (menuLoader.item.clickedButton) {
                             menuLoader.item.clickedButton.connect(function(progId) {
-                                closeMe()
-                                menuLoader.source = "qrc:/MainMenu.qml"
+            closeMe()
+            menuLoader.source = "qrc:/MainMenu.qml"
                             })
                         }
                     } catch(e) {

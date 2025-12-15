@@ -52,6 +52,10 @@ private:
     void handleError(QSerialPort::SerialPortError error);
     QByteArray readData();
 
+    // Время последнего приёма данных (для измерения задержки доставки сигнала)
+public:
+    QTime lastReadTime() const { return m_lastReadTime; }
+
 public slots:
     bool writeData(const QByteArray &txData);
 //    void readData();
@@ -63,6 +67,7 @@ private:
     QString m_portName;
     QSerialPort::BaudRate m_baudRate;
     QTime m_writeTime;
+    QTime m_lastReadTime;
     int m_transmitDelay;
     bool m_waitForAnswer;
 //    QByteArray m_command;

@@ -6,13 +6,18 @@ Rectangle {
     color: "transparent"
 
     // Свойства компонента
-    property int neutralSize: 0      // 0 = Small, 1 = Medium, 2 = Large
+    property int neutralSize: periphHandle ? periphHandle.neutralSize : 0      // 0 = Small, 1 = Medium, 2 = Large
     // property bool neutralDivided: true  // НЭ разделённый или нет
-    property bool neutralDivided: periphHandle.neutralElDivided  // НЭ разделённый или нет - привязка к ControlCenter
+    property bool neutralDivided: periphHandle ? periphHandle.neutralElDivided : true  // НЭ разделённый или нет - привязка к ControlCenter
 
     // property bool neutralConnected: false  // Передается снаружи
     property bool neutralConnected: periphHandle.neutralElConnected  // Передается снаружи
     property bool showControls: false      // Показывать ли кнопки управления
+
+    // Сигналы для синхронизации с PeriphHandler
+    // Используем другие имена, чтобы не конфликтовать с автоматическими сигналами свойств
+    signal neutralDividedToggled(bool divided)
+    signal neutralSizeSelected(int size)
 
     component MassSelectionBut: Button {
         id: rootCustomBut
@@ -22,7 +27,7 @@ Rectangle {
         autoRepeatDelay: 200
         autoRepeatInterval: 200
         height: parent.height * .26
-        width: parent.width * .6
+        width: parent.width * .55  // Уменьшена ширина, чтобы не перекрывать кнопки типа слева
 
         background: null
         contentItem: Rectangle {
@@ -44,32 +49,41 @@ Rectangle {
                 radius: backGround.radius
             }
             Text {
-                anchors.centerIn: parent
+                anchors.fill: parent
+                anchors.margins: 5
                 text: iconText
                 font.bold: true
+                font.pixelSize: Math.min(parent.height / 4, parent.width / 12)  // Адаптивный размер шрифта
                 color: "#2c2c2c"
                 horizontalAlignment: Text.AlignHCenter
+                verticalAlignment: Text.AlignVCenter
+                wrapMode: Text.WordWrap  // Перенос текста
             }
         }
         onClicked: {
-            neutralSize = type
+            if (neutralSize !== type) {
+                neutralSize = type
+                neutralSizeSelected(type)
+            }
         }
     }
 
     Connections {
         target: buttonDivided
         function onClicked() {
-            ///TODO перекомментировать в реальном использовании
-            neutralDivided = true
-            // periphHandle.neutralDivided = true
+            if (neutralDivided !== true) {
+                neutralDivided = true
+                neutralDividedToggled(true)
+            }
         }
     }
     Connections {
         target: buttonNotDivided
         function onClicked() {
-            ///TODO перекомментировать в реальном использовании
-            neutralDivided = false
-            // periphHandle.neutralDivided = false
+            if (neutralDivided !== false) {
+                neutralDivided = false
+                neutralDividedToggled(false)
+            }
         }
     }
 
@@ -88,6 +102,7 @@ Rectangle {
         width: showControls ? 160 : parent.width
         neutRadius: showControls ? 12 : 8
         button: false
+        innerTextFontSize: showControls ? 18 : 14  // Меньший шрифт в компактном режиме (PeripheryPanel)
         innerText: {
             if (neutralSize === 0)
                 qsTr("< 5кг\nМакс.50")

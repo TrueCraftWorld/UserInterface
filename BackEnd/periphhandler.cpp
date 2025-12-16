@@ -9,6 +9,7 @@ PeriphHandler::PeriphHandler(QObject *parent)
     m_autoStStopTissue(false),
     m_neutralElConnected(false),
     m_neutralElDivided(true),
+    m_neutralSize(0),  // По умолчанию Small
     m_autoSSmode(0),
     m_argonFlowRate(80),
     m_argonRealRate(0),
@@ -131,7 +132,7 @@ bool PeriphHandler::enableActivation() const
 
 void PeriphHandler::setEnableActivation(bool enable)
 {
-	qDebug() << "setEnableActivation(bool enable)" << enable;
+//	qDebug() << "setEnableActivation(bool enable)" << enable;
 	if (m_enableActivation == enable)
 		return;
 
@@ -161,6 +162,20 @@ void PeriphHandler::setNeutralElDivided(bool divided)
 bool PeriphHandler::neutralElConnected() const
 {
 	return m_neutralElConnected;
+}
+
+int PeriphHandler::neutralSize() const
+{
+	return m_neutralSize;
+}
+
+void PeriphHandler::setNeutralSize(int size)
+{
+	if (m_neutralSize == size)
+		return;
+
+	m_neutralSize = size;
+	emit neutralSizeChanged(size);
 }
 
 void PeriphHandler::setArgonRealRate(quint8 rate)

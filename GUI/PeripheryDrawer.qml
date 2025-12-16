@@ -81,14 +81,20 @@ Drawer {
         function onArgonBlow() {
             periphHandle.argonBlow()
         }
+        function onActivCylinderToggled(first) {
+            console.log("PeripheryDrawer.qml: onActivCylinderToggled", first)
+            periphHandle.activCylinderFirst = first
+        }
     }
     Connections {
         target: neutralView
-        function onNeutralDividedChanged() {
-            // Можно добавить обработку изменения типа
+        function onNeutralDividedToggled(divided) {
+            console.log("PeripheryDrawer.qml: onNeutralDividedToggled", divided)
+            periphHandle.neutralElDivided = divided
         }
-        function onNeutralSizeChanged() {
-            // Можно добавить обработку изменения размера
+        function onNeutralSizeSelected(size) {
+            console.log("PeripheryDrawer.qml: onNeutralSizeSelected", size)
+            periphHandle.neutralSize = size
         }
     }
 }

@@ -37,6 +37,10 @@ Rectangle {
         function onArgonBlow() {
             periphHandle.argonBlow()
         }
+        function onActivCylinderToggled(first) {
+            console.log("PeripheryPanel.qml: onActivCylinderToggled", first)
+            periphHandle.activCylinderFirst = first
+        }
     }
     NeutralEl {
         id: neutralView
@@ -49,6 +53,8 @@ Rectangle {
         }
         // Передаем параметры
         neutralConnected: periphHandle.neutralElConnected
+        neutralDivided: periphHandle.neutralElDivided
+        neutralSize: periphHandle.neutralSize
         showControls: false
     }
     MouseArea {

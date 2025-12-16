@@ -25,6 +25,7 @@ Rectangle {
     // Сигналы
     signal flowRateUpdated(int newRate)
     signal argonBlow()
+    signal activCylinderToggled(bool first)
     
     // Отслеживание изменения showControls для отправки сигнала при сворачивании
     property int lastSentFlowRate: flowRate
@@ -132,8 +133,11 @@ Rectangle {
         Connections {
             target: firstCylinder
             function onCylClicked() {
-                if (cylinder1Connected && !activCylinderFirst)
+                if (cylinder1Connected && !activCylinderFirst) {
                     activCylinderFirst = true;
+                    console.log("Argon.qml: first cylinder selected");
+                    activCylinderToggled(true);
+                }
             }
         }
 
@@ -201,7 +205,10 @@ Rectangle {
                 text: Math.floor(displayRate / 10) + "." + (displayRate % 10)
                 font.pixelSize: step * 3
                 font.bold: true
-                color: isActivation ? "#000000" : "#2c2c2c"  // чёрный во время активации
+                // В развернутом виде — тёмный текст, в свернутом (PeripheryPanel) — светлый для тёмного фона
+                color: isActivation
+                       ? "#000000"
+                       : (argonRoot.showControls ? "#2c2c2c" : "white")
             }
             Text {
                 id: litrPerMin
@@ -210,7 +217,7 @@ Rectangle {
                 text: qsTr("л/мин")
                 font.pixelSize: 20
                 font.bold: true
-                color: "#2c2c2c"
+                color: argonRoot.showControls ? "#2c2c2c" : "white"
             }
         }
         
@@ -272,8 +279,11 @@ Rectangle {
         Connections {
             target: secondCylinder
             function onCylClicked() {
-                if (cylinder2Connected && activCylinderFirst)
+                if (cylinder2Connected && activCylinderFirst) {
                     activCylinderFirst = false;
+                    console.log("Argon.qml: second cylinder selected");
+                    activCylinderToggled(false);
+                }
             }
         }
         

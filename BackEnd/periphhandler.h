@@ -11,6 +11,7 @@ class PeriphHandler : public QObject
 
 	Q_PROPERTY(bool neutralElConnected READ neutralElConnected NOTIFY neutralElConnectedChanged)
 	Q_PROPERTY(bool neutralElDivided READ neutralElDivided WRITE setNeutralElDivided NOTIFY neutralElDividedChanged)
+	Q_PROPERTY(int neutralSize READ neutralSize WRITE setNeutralSize NOTIFY neutralSizeChanged)
 	Q_PROPERTY(bool argonCylinder1Connected READ argonCylinder1Connected NOTIFY argonCylinder1ConnectedChanged)
 	Q_PROPERTY(bool argonCylinder2Connected READ argonCylinder2Connected NOTIFY argonCylinder2ConnectedChanged)
 	Q_PROPERTY(quint8 argonFlowRate READ argonFlowRate WRITE setArgonFlowRate NOTIFY argonFlowRateChanged)
@@ -38,6 +39,18 @@ public:
 	 * @param divided true если разделённый, false если единый
 	 */
 	void setNeutralElDivided(bool divided);
+
+	/**
+	 * @brief Возвращает размер нейтрального электрода
+	 * @return 0 = Small (< 5кг), 1 = Medium (5-15кг), 2 = Large (> 15кг)
+	 */
+	int neutralSize() const;
+
+	/**
+	 * @brief Устанавливает размер нейтрального электрода
+	 * @param size 0 = Small, 1 = Medium, 2 = Large
+	 */
+	void setNeutralSize(int size);
 
 	/**
 	 * @brief Возвращает статус подключения баллона аргона №1
@@ -115,6 +128,7 @@ private:
 	bool m_autoStStopTissue;                // Захвачена ткань в режиме АСС
 	bool m_neutralElConnected;              // НЭ подключён
 	bool m_neutralElDivided;                // НЭ разделённый
+	int m_neutralSize;                      // Размер НЭ: 0 = Small, 1 = Medium, 2 = Large
 	quint8 m_autoSSmode;                    // Режим AutoStop
 	quint8 m_argonFlowRate;                 // Скорость потока аргона (установленная)
 	quint8 m_argonRealRate;                 // Реальная скорость потока аргона
@@ -126,6 +140,7 @@ private:
 signals:
 	void neutralElConnectedChanged(bool connected);
 	void neutralElDividedChanged(bool divided);
+	void neutralSizeChanged(int size);
 	void argonCylinder1ConnectedChanged(bool connected);
 	void argonCylinder2ConnectedChanged(bool connected);
 	void argonFlowRateChanged(quint8 rate);

@@ -9,6 +9,7 @@ Button {
     property color theColor
     property color innerTextColor
     property alias innerText: optionalText.text
+    property int innerTextFontSize: 14  // Размер шрифта для innerText
     property int neutRadius: 12
     property alias radius : backRect.radius
     property bool divided
@@ -91,6 +92,7 @@ Button {
             anchors.right: parent.right
             anchors.top: parent.top
             color: innerTextColor
+            font.pixelSize: innerTextFontSize
         }
         Rectangle {
             id: nonDividedRoot

@@ -14,8 +14,12 @@ Drawer {
     property var innerModel
     property int usedSpacing: 10
 
-    property int containerMargins: layout.anchors.margins
-    property int containerHeight:  layout.height - layout.spacing - titleItem.height
+    background: Rectangle {
+        color: "darkgray"
+    }
+
+    property int containerMargins: mainLayout.anchors.margins
+    property int containerHeight:  leftColumn.height - leftColumn.spacing - titleItem.height
     // required property int usedSpacing
 
     property int collapsedFixedHeight: 85
@@ -65,65 +69,169 @@ Drawer {
         }
     }
 
-    ColumnLayout {
-        id: layout
+    Rectangle {
         anchors.fill: parent
-        anchors.topMargin: 10
-        anchors.bottomMargin: 0
-        anchors.leftMargin: 0
-        anchors.rightMargin: 0
-        spacing: 10
-        Rectangle {
-            id: titleItem
-            height: 100
-            Layout.fillWidth: true
-            color: "transparent"
-            Label {
-                anchors.fill: parent
-                text: "Выбор источника активации"
-                horizontalAlignment: Qt.AlignHCenter
-                verticalAlignment: Qt.AlignVCenter
-                wrapMode: Text.WordWrap
-                font.bold: true
-                font.pixelSize: 18
-                color: "white"
-            }
-        }
-        Repeater {
-            id: localRepeater
-            model: innerModel
-            clip: true
-            delegate: Rectangle {
-                id: rect
-                Layout.fillWidth: true
-                Layout.alignment: Qt.AlignTop
-                Layout.preferredHeight: state === "expanded" ?
-                                        repeatRoot.calculateExpandedHeight() :
-                                        repeatRoot.calculateCollapsedHeight()
-
-                property string state: model.socketdisplaymode
-                color: "transparent"
-                // property int socketId: index
-                PedalEditor {
-                    id: pedEditor
-                    visible: rect.state === "expanded"
-                    shownPedalsArray: model.socketallowedpedal
-                    selectedPed: model.socketpedal
-                    anchors.left: parent.left
-                    anchors.leftMargin: 20
+        color: "darkgray"
+    }
+    
+    Rectangle {
+        id: titleItem
+        height: 120
+        anchors.top: parent.top
+        anchors.left: parent.left
+        anchors.right: parent.right
+        color: "transparent"
+        Label {
+            anchors.fill: parent
+            text: {
+                var socketName = "";
+                if (innerModel && socketId >= 0) {
+                    var socketIndex = innerModel.index(socketId, 0);
+                    if (socketIndex.valid) {
+                        socketName = innerModel.data(socketIndex, SocketModel.SocketName) || "";
+                    }
+                    return qsTr("ВЫБОР ИСТОЧНИКА АКТИВАЦИИ\nДЛЯ ВЫХОДА %1").arg(socketName || "X");
                 }
+                else {
+                    return qsTr("ВЫБОР ИСТОЧНИКА АКТИВАЦИИ")
+                }
+            }
+            horizontalAlignment: Qt.AlignHCenter
+            verticalAlignment: Qt.AlignVCenter
+            wrapMode: Text.WordWrap
+            font.bold: true
+            font.pixelSize: 24
+            color: "white"
+        }
+    }
+    RowLayout {
+        id: mainLayout
+        anchors.right: parent.right
+        anchors.left: parent.left
+        anchors.top: titleItem.bottom
+        anchors.bottom: parent.bottom
+        anchors.margins: 10
+        spacing: 20
 
-                Connections {
-                    target: pedEditor
-                    function onPedSelected (pedal) {
-                        theModel.qmlSetData(socketId, pedal, "socketpedal");
-                        repeatRoot.close()
+        // Левая часть - PedalEditor для выбранного сокета
+        ColumnLayout {
+            id: leftColumn
+            Layout.fillWidth: true
+            Layout.preferredWidth: parent.width * 0.6
+            spacing: 10
+
+            Repeater {
+                id: localRepeater
+                model: innerModel
+                clip: true
+                delegate: Rectangle {
+                    id: rect
+                    Layout.fillWidth: true
+                    Layout.alignment: Qt.AlignTop
+                    Layout.preferredHeight: state === "expanded" ?
+                                            repeatRoot.calculateExpandedHeight() :
+                                            repeatRoot.calculateCollapsedHeight()
+
+                    property string state: model.socketdisplaymode
+                    color: "transparent"
+                    // property int socketId: index
+                    PedalEditor {
+                        id: pedEditor
+                        visible: rect.state === "expanded"
+                        shownPedalsArray: model.socketallowedpedal
+                        selectedPed: model.socketpedal
+                        anchors.left: parent.left
+                        anchors.leftMargin: 20
+                    }
+
+                    Connections {
+                        target: pedEditor
+                        function onPedSelected (pedal) {
+                            theModel.qmlSetData(socketId, pedal, "socketpedal");
+                            repeatRoot.close()
+                        }
                     }
                 }
             }
+            Item {
+                Layout.fillHeight: true
+            }
         }
-        Item {
+
+        // Правая часть - список всех сокетов с их педалями
+        Rectangle {
+            id: rightPanel
+            Layout.preferredWidth: parent.width * 0.25
             Layout.fillHeight: true
+            color: "transparent"
+
+            ColumnLayout {
+                id: rightLayout
+                anchors.fill: parent
+                anchors.topMargin: 10
+                anchors.bottomMargin: 0
+                anchors.leftMargin: 0
+                anchors.rightMargin: 0
+                spacing: leftColumn.spacing
+
+//                // Невидимый элемент для выравнивания с titleItem в leftColumn
+//                Rectangle {
+//                    height: titleItem.height
+//                    Layout.fillWidth: true
+//                    color: "transparent"
+//                }
+
+                Repeater {
+                    id: allPedalsRepeater
+                    model: innerModel
+                    delegate: Rectangle {
+                        id: pedalRect
+                        Layout.fillWidth: true
+                        Layout.alignment: Qt.AlignTop
+                        Layout.preferredHeight: {
+                            var leftRect = localRepeater.itemAt(index);
+                            if (leftRect) {
+                                return leftRect.Layout.preferredHeight;
+                            }
+                            return state === "expanded" ?
+                                   repeatRoot.calculateExpandedHeight() :
+                                   repeatRoot.calculateCollapsedHeight();
+                        }
+                        color: "transparent"
+                        state: model.socketdisplaymode
+
+                        Pedal {
+                            id: pedIcon
+                            anchors.right: parent.right
+                            anchors.top: parent.top
+                            anchors.rightMargin: 2
+                            anchors.margins: 0
+                            pedalStateIdx: model.socketpedal
+                            socketId: index
+                        }
+                        
+                        Connections {
+                            target: pedIcon
+                            function onPedalMenuRequest() {
+                                // Устанавливаем socketId для открытия соответствующего PedalEditor
+                                repeatRoot.socketId = index;
+                                // Разворачиваем выбранный сокет и сворачиваем остальные
+                                theModel.qmlSetData(index, 1, "socketdisplaymode");
+                                // Сворачиваем все остальные сокеты
+                                for (var i = 0; i < innerModel.rowCount(); i++) {
+                                    if (i !== index) {
+                                        theModel.qmlSetData(i, 0, "socketdisplaymode");
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                Item {
+                    Layout.fillHeight: true
+                }
+            }
         }
     }
 }

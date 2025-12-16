@@ -38,7 +38,7 @@ Rectangle {
                 ? ( "cyan" )
                 : ("lightgray" )
             border {
-                color: neutralSize === type ? "white" : "transparent"
+                color: neutralSize === type ? "orange" : "transparent"
                 width: neutralSize === type ? 3 : 0
             }
             Rectangle {
@@ -127,14 +127,14 @@ Rectangle {
         height: parent.height
         color: "transparent"
         radius: 10
-        border.color: "white"
+        border.color: "orange"
         visible: showControls
 
         NeutralButton {
             id: buttonDivided
             height: parent.height * .43
             width: parent.width * .33
-            borderColor: neutralDivided ? "white" : "transparent"
+            borderColor: neutralDivided ? "orange" : "transparent"
             borderWidth: neutralDivided ? 3 : 0
             divided: true
             neutColor: "green"
@@ -150,7 +150,7 @@ Rectangle {
             id: buttonNotDivided
             height: parent.height * .43
             width: parent.width * .33
-            borderColor: !neutralDivided ? "white" : "transparent"
+            borderColor: !neutralDivided ? "orange" : "transparent"
             borderWidth: !neutralDivided ? 3 : 0
             divided: false
             neutColor: "green"

@@ -16,19 +16,20 @@ Drawer {
         id: argonChoice
         anchors {
             top: parent.top
-            topMargin: 5
+            topMargin: 25
             horizontalCenter: parent.horizontalCenter
         }
         horizontalAlignment: Qt.AlignHCenter
         text: qsTr("НАСТРОЙКА ГАЗОВОГО ТРАКТА")
         color: "white"
-        font.pixelSize: 16
+        font.pixelSize: 24
         font.bold: true
     }
     Argon {
         id: argonView
         anchors {
             top: argonChoice.bottom
+            topMargin: 20
             left: parent.left
             right: parent.right
         }
@@ -63,14 +64,14 @@ Drawer {
             bottom: neutralView.top
             left: parent.left
             right: parent.right
-            bottomMargin: 5
-            topMargin: 15
+            bottomMargin: 10
+            topMargin: 25
             // horizontalCenter: parent.horizontalCenter
         }
         horizontalAlignment: Qt.AlignHCenter
         text: qsTr("ВЫБОР НЕЙТРАЛЬНОГО ЭЛЕКТРОДА")
         color: "white"
-        font.pixelSize: 16
+        font.pixelSize: 24
         font.bold: true
     }
     Connections {

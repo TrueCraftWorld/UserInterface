@@ -133,6 +133,132 @@ Window {
          argNeutDrawer.open()
       }
    }
+
+   // MouseArea для обработки свайпов в области PeripheryPanel
+   MouseArea {
+      id: peripherySwipeArea
+      anchors {
+         left: parent.left
+         top: statusDummy.bottom
+         bottom: parent.bottom
+      }
+      width: 200
+      z: 10  // Выше других элементов
+      propagateComposedEvents: true
+      
+      property real startX: 0
+      property real startY: 0
+      property bool isSwipeGesture: false
+      property real minSwipeDistance: 50
+      
+      onPressed: {
+         startX = mouse.x
+         startY = mouse.y
+         isSwipeGesture = false
+      }
+      
+      onPositionChanged: {
+         if (pressed) {
+            var deltaX = mouse.x - startX
+            var deltaY = Math.abs(mouse.y - startY)
+            // Если горизонтальное движение больше вертикального и больше 30px вправо
+            if (deltaX > 30 && deltaX > deltaY) {
+               isSwipeGesture = true
+            }
+         }
+      }
+      
+      onReleased: {
+         if (isSwipeGesture) {
+            var deltaX = mouse.x - startX
+            // Если свайп вправо больше порога, открываем drawer
+            if (deltaX > minSwipeDistance) {
+               argNeutDrawer.open()
+               mouse.accepted = true
+               return
+            }
+         }
+         // Если не было свайпа, пропускаем событие для клика
+         mouse.accepted = false
+         isSwipeGesture = false
+      }
+      
+      onClicked: {
+          // Если это не было частью свайпа, пропускаем событие
+          mouse.accepted = false
+      }
+   }
+
+   // MouseArea для обработки свайпов в области PedalContainer
+   MouseArea {
+      id: pedalSwipeArea
+      anchors {
+         right: parent.right
+         top: statusDummy.bottom
+         bottom: parent.bottom
+      }
+      width: 200
+      z: 10  // Выше других элементов
+      propagateComposedEvents: true
+      
+      property real startX: 0
+      property real startY: 0
+      property bool isSwipeGesture: false
+      property real minSwipeDistance: 50
+      
+      onPressed: {
+         startX = mouse.x
+         startY = mouse.y
+         isSwipeGesture = false
+      }
+      
+      onPositionChanged: {
+         if (pressed) {
+            var deltaX = mouse.x - startX
+            var deltaY = Math.abs(mouse.y - startY)
+            // Если горизонтальное движение больше вертикального и больше 30px влево
+            if (deltaX < -30 && Math.abs(deltaX) > deltaY) {
+               isSwipeGesture = true
+            }
+         }
+      }
+      
+      onReleased: {
+         if (isSwipeGesture) {
+            var deltaX = mouse.x - startX
+            // Если свайп влево больше порога, открываем drawer
+            if (deltaX < -minSwipeDistance) {
+               // Ищем expanded сокет
+               var expandedSocketId = -1
+               if (theModel) {
+                  for (var i = 0; i < theModel.rowCount(); i++) {
+                     var socketIndex = theModel.index(i, 0)
+                     if (socketIndex.valid) {
+                        var displayMode = theModel.data(socketIndex, SocketModel.SocketDisplayMode)
+                        if (displayMode === "expanded") {
+                           expandedSocketId = i
+                           break
+                        }
+                     }
+                  }
+               }
+               pedDrawer.socketId = expandedSocketId
+               pedDrawer.open()
+               mouse.accepted = true
+               return
+            }
+         }
+         // Если не было свайпа, пропускаем событие для клика
+         mouse.accepted = false
+         isSwipeGesture = false
+      }
+      
+      onClicked: {
+         // Если это не было частью свайпа, пропускаем событие для клика по педалям
+         mouse.accepted = false
+      }
+   }
+
    Connections {
       target: statusDummy
       function onDrawerCalled() {

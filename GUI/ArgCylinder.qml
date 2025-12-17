@@ -6,6 +6,7 @@ Rectangle {
     property bool cylConnected
     property bool cylSelected
     property bool isFirst: true
+    property bool interactive: true  // Разрешить клики по баллону
     signal cylClicked()
 
     readonly property int step: 16
@@ -68,6 +69,7 @@ Rectangle {
     MouseArea {
         id: cylinder1MA
         anchors.fill: parent
+        enabled: cylinderRoot.interactive
         onClicked: cylinderRoot.cylClicked()
     }
 }

@@ -19,51 +19,53 @@ Rectangle {
     signal neutralDividedToggled(bool divided)
     signal neutralSizeSelected(int size)
 
-    component MassSelectionBut: Button {
+    component MassSelectionBut: Rectangle {
         id: rootCustomBut
         required property int type
         property string iconText
-        autoRepeat: true
-        autoRepeatDelay: 200
-        autoRepeatInterval: 200
+        property bool pressed: mouseArea.pressed
+        
+        signal clicked()
+        
         height: parent.height * .26
         width: parent.width * .55  // Уменьшена ширина, чтобы не перекрывать кнопки типа слева
-
-        background: null
-        contentItem: Rectangle {
-            id: backGround
-            anchors.fill: parent
-            radius: 10
-            color: neutralSize === type
-                ? ( "cyan" )
-                : ("lightgray" )
-            border {
-                color: neutralSize === type ? "orange" : "transparent"
-                width: neutralSize === type ? 3 : 0
-            }
-            Rectangle {
-                id: darker
-                anchors.fill: parent
-                color: "black"
-                opacity: rootCustomBut.pressed ? 0.2 : 0
-                radius: backGround.radius
-            }
-            Text {
-                anchors.fill: parent
-                anchors.margins: 5
-                text: iconText
-                font.bold: true
-                font.pixelSize: Math.min(parent.height / 4, parent.width / 12)  // Адаптивный размер шрифта
-                color: "#2c2c2c"
-                horizontalAlignment: Text.AlignHCenter
-                verticalAlignment: Text.AlignVCenter
-                wrapMode: Text.WordWrap  // Перенос текста
-            }
+        radius: 10
+        
+        color: neutralSize === type ? "cyan" : "lightgray"
+        border {
+            color: neutralSize === type ? "orange" : "transparent"
+            width: neutralSize === type ? 3 : 0
         }
-        onClicked: {
-            if (neutralSize !== type) {
-                neutralSize = type
-                neutralSizeSelected(type)
+        
+        Rectangle {
+            id: darker
+            anchors.fill: parent
+            color: "black"
+            opacity: rootCustomBut.pressed ? 0.2 : 0
+            radius: rootCustomBut.radius
+        }
+        
+        Text {
+            anchors.fill: parent
+            anchors.margins: 5
+            text: iconText
+            font.bold: true
+            font.pixelSize: Math.min(parent.height / 4, parent.width / 12)  // Адаптивный размер шрифта
+            color: "#2c2c2c"
+            horizontalAlignment: Text.AlignHCenter
+            verticalAlignment: Text.AlignVCenter
+            wrapMode: Text.WordWrap  // Перенос текста
+        }
+        
+        MouseArea {
+            id: mouseArea
+            anchors.fill: parent
+            onClicked: {
+                rootCustomBut.clicked()
+                if (neutralSize !== type) {
+                    neutralSize = type
+                    neutralSizeSelected(type)
+                }
             }
         }
     }

@@ -50,37 +50,56 @@ Rectangle {
     
     color: "transparent"
     
-    component CustomButton: Button {
+    // Пришлось переделать с Button на Rectangle, а то без MouseArea не работал кастомный свайп
+    component CustomButton: Rectangle {
         id: rootCustomBut
         property int delta
         property string iconText
-        property alias color : backGround.color
-        property alias borderColor : backGround.border.color
-        property alias borderWidth : backGround.border.width
+        property bool pressed: mouseArea.pressed
+        
+        signal clicked()
 
-        autoRepeat: true
-        autoRepeatDelay: 200
-        autoRepeatInterval: 200
-        // auto
-        background: null
-
-        contentItem: Rectangle {
-            id: backGround
+        radius: 6
+        color: pressed ? "#9EFE9E" : "#BDBDBD"
+        border {
+            color: "#757575"
+            width: 2
+        }
+        
+        Text {
+            anchors.centerIn: parent
+            text: iconText
+            font.pixelSize: buttonStep * 2
+            font.bold: true
+            color: "#2c2c2c"
+        }
+        
+        MouseArea {
+            id: mouseArea
             anchors.fill: parent
-            radius: 6
-
-            color: rootCustomBut.pressed ? "#9EFE9E" : "#BDBDBD"
-            border {
-                color: "#757575"
-                width: 2
+            onClicked: rootCustomBut.clicked()
+            
+            // Эмуляция autoRepeat для зажатия кнопки
+            property bool isPressed: false
+            onPressed: {
+                isPressed = true
+                rootCustomBut.clicked()
+                repeatTimer.start()
             }
-            Text {
-                anchors.centerIn: parent
-                // text: "▲"
-                text: iconText
-                font.pixelSize: buttonStep * 2
-                font.bold: true
-                color: "#2c2c2c"
+            onReleased: {
+                isPressed = false
+                repeatTimer.stop()
+            }
+            
+            Timer {
+                id: repeatTimer
+                interval: mouseArea.isPressed ? 200 : 200  // autoRepeatInterval
+                repeat: true
+                onTriggered: {
+                    if (mouseArea.isPressed) {
+                        rootCustomBut.clicked()
+                    }
+                }
             }
         }
     }
@@ -129,6 +148,7 @@ Rectangle {
             x: showControls ? 100 : (parent.width - width) / 2
             cylConnected: cylinder1Connected
             cylSelected: activCylinderFirst
+            interactive: showControls  // Баллоны кликабельны только в развернутом состоянии
         }
         Connections {
             target: firstCylinder
@@ -274,6 +294,7 @@ Rectangle {
             isFirst: false;
             cylConnected: cylinder2Connected
             cylSelected: !activCylinderFirst
+            interactive: showControls  // Баллоны кликабельны только в развернутом состоянии
         }
 
         Connections {

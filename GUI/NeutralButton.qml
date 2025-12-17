@@ -1,7 +1,7 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 
-Button {
+Rectangle {
     id: neutButRoot
     property color borderColor
     property int borderWidth
@@ -14,6 +14,9 @@ Button {
     property alias radius : backRect.radius
     property bool divided
     property bool button: true
+    property bool pressed: mouseArea.pressed  // Для совместимости с Button API
+    
+    signal clicked()
 
     component DevHalf: Rectangle {
         id: divHalfRoot
@@ -51,19 +54,22 @@ Button {
         }
     }
 
-    background: Rectangle {
+    color: theColor
+    radius: 10
+    border {
+        color: borderColor
+        width: borderWidth
+    }
+
+    Rectangle {
         id: backRect
         anchors.fill: parent
         anchors.margins: 0
-        color: theColor
-        radius: 10
-        border {
-            color: borderColor
-            width: borderWidth
-        }
+        color: "transparent"
     }
 
-    contentItem: Rectangle {
+    Rectangle {
+        id: contentRect
         color: "transparent"
         anchors {
             fill: parent
@@ -76,11 +82,11 @@ Button {
             id: darker
             visible: button
             anchors.centerIn: parent
-            width: backRect.width
-            height: backRect.height
+            width: neutButRoot.width
+            height: neutButRoot.height
             color: "black"
             opacity: neutButRoot.pressed ? 0.2 : 0
-            radius: backRect.radius
+            radius: neutButRoot.radius
         }
 
         Label {
@@ -174,6 +180,10 @@ Button {
             }
         }
     }
-
-
+    
+    MouseArea {
+        id: mouseArea
+        anchors.fill: parent
+        onClicked: neutButRoot.clicked()
+    }
 }

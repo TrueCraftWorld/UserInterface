@@ -18,6 +18,9 @@ Drawer {
         color: "darkgray"
     }
 
+    // Отключаем встроенную интерактивность Drawer, чтобы использовать свой MouseArea
+    interactive: false
+
     property int containerMargins: mainLayout.anchors.margins
     property int containerHeight:  leftColumn.height - leftColumn.spacing - titleItem.height
     // required property int usedSpacing
@@ -69,9 +72,21 @@ Drawer {
         }
     }
 
+    // Фоновый Rectangle с MouseArea для блокировки событий от прохождения ЗА drawer
     Rectangle {
         anchors.fill: parent
         color: "darkgray"
+        z: -1  // Ниже всех элементов внутри drawer
+        
+        // MouseArea блокирует события от прохождения к элементам ЗА drawer
+        MouseArea {
+            anchors.fill: parent
+            onPressed: mouse.accepted = true
+            onReleased: mouse.accepted = true
+            onClicked: mouse.accepted = true
+            onPositionChanged: mouse.accepted = true
+            onDoubleClicked: mouse.accepted = true
+        }
     }
     
     Rectangle {
@@ -174,13 +189,6 @@ Drawer {
                 anchors.rightMargin: 0
                 spacing: leftColumn.spacing
 
-//                // Невидимый элемент для выравнивания с titleItem в leftColumn
-//                Rectangle {
-//                    height: titleItem.height
-//                    Layout.fillWidth: true
-//                    color: "transparent"
-//                }
-
                 Repeater {
                     id: allPedalsRepeater
                     model: innerModel
@@ -227,11 +235,77 @@ Drawer {
                         }
                     }
                 }
-
                 Item {
                     Layout.fillHeight: true
                 }
             }
+        }
+    }
+    
+    // MouseArea для обработки свайпов закрытия (свайп вправо)
+    // Размещаем в конце, чтобы он был последним в z-order и получал события первым
+    MouseArea {
+        anchors.fill: parent
+        z: 1000  // Выше всех элементов внутри drawer
+        enabled: repeatRoot.opened
+        propagateComposedEvents: true  // Позволяем событиям проходить к элементам внутри
+        
+        property real startX: 0
+        property real startY: 0
+        property bool isSwipeGesture: false
+        property real minSwipeDistance: 50
+        
+        onPressed: {
+            startX = mouse.x
+            startY = mouse.y
+            isSwipeGesture = false
+            // Принимаем событие, чтобы получать onPositionChanged для отслеживания свайпов
+            mouse.accepted = true
+        }
+        
+        onPositionChanged: {
+            if (pressed) {
+                var deltaX = mouse.x - startX
+                var deltaY = Math.abs(mouse.y - startY)
+                
+                // Определяем свайп: горизонтальное движение > 50px и в 2 раза больше вертикального
+                if (deltaX > 50 && deltaX > deltaY * 2 && !isSwipeGesture) {
+                    isSwipeGesture = true
+                }
+            }
+        }
+        
+        onReleased: {
+            var deltaX = mouse.x - startX
+            var deltaY = Math.abs(mouse.y - startY)
+            var totalMovement = Math.sqrt(deltaX * deltaX + deltaY * deltaY)
+            
+            if (isSwipeGesture && deltaX > minSwipeDistance) {
+                // Свайп вправо достиг порога - закрываем drawer
+                repeatRoot.close()
+            } else if (totalMovement < 20) {
+                // Минимальное движение (<20px) - считаем кликом
+                // Эмулируем клик: ищем MouseArea под курсором и вызываем его clicked signal
+                var item = mainLayout.childAt(mouse.x - mainLayout.x, mouse.y - mainLayout.y - titleItem.height)
+                if (item) {
+                    // Ищем MouseArea в найденном элементе или его родителях (до 10 уровней)
+                    for (var i = 0; i < 10; i++) {
+                        if (item && item.children) {
+                            for (var j = 0; j < item.children.length; j++) {
+                                var child = item.children[j]
+                                if (child.toString().indexOf("MouseArea") >= 0 && child.clicked) {
+                                    // Найден MouseArea - эмулируем клик
+                                    child.clicked({accepted: false, x: 0, y: 0})
+                                    isSwipeGesture = false
+                                    return
+                                }
+                            }
+                        }
+                        item = item.parent
+                    }
+                }
+            }
+            isSwipeGesture = false
         }
     }
 }

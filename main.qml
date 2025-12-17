@@ -64,6 +64,13 @@ Window {
          right: socketsDummy.left
       }
    }
+   Connections {
+      target: argNeutralPanel
+      function onOpenPeriphDrawer() {
+         console.log("main.qml: Opening PeripheryDrawer")
+         argNeutDrawer.open()
+      }
+   }
    PeripheryDrawer {
       id: argNeutDrawer
       width: .5 * container.width
@@ -134,60 +141,77 @@ Window {
       }
    }
 
-   // MouseArea для обработки свайпов в области PeripheryPanel
-   MouseArea {
-      id: peripherySwipeArea
-      anchors {
-         left: parent.left
-         top: statusDummy.bottom
-         bottom: parent.bottom
-      }
-      width: 200
-      z: 10  // Выше других элементов
-      propagateComposedEvents: true
-      
-      property real startX: 0
-      property real startY: 0
-      property bool isSwipeGesture: false
-      property real minSwipeDistance: 50
-      
-      onPressed: {
-         startX = mouse.x
-         startY = mouse.y
-         isSwipeGesture = false
-      }
-      
-      onPositionChanged: {
-         if (pressed) {
-            var deltaX = mouse.x - startX
-            var deltaY = Math.abs(mouse.y - startY)
-            // Если горизонтальное движение больше вертикального и больше 30px вправо
-            if (deltaX > 30 && deltaX > deltaY) {
-               isSwipeGesture = true
-            }
-         }
-      }
-      
-      onReleased: {
-         if (isSwipeGesture) {
-            var deltaX = mouse.x - startX
-            // Если свайп вправо больше порога, открываем drawer
-            if (deltaX > minSwipeDistance) {
-               argNeutDrawer.open()
-               mouse.accepted = true
-               return
-            }
-         }
-         // Если не было свайпа, пропускаем событие для клика
-         mouse.accepted = false
-         isSwipeGesture = false
-      }
-      
-      onClicked: {
-          // Если это не было частью свайпа, пропускаем событие
-          mouse.accepted = false
-      }
-   }
+    // MouseArea для обработки свайпов в области PeripheryPanel
+    MouseArea {
+       id: peripherySwipeArea
+       anchors {
+          left: parent.left
+          top: statusDummy.bottom
+          bottom: parent.bottom
+       }
+       width: 200
+       z: 10  // Выше других элементов
+       propagateComposedEvents: true  // Ключевое свойство для пропуска событий
+       
+       property real startX: 0
+       property real startY: 0
+       property bool isSwipeGesture: false
+       property bool hadSwipeGesture: false
+       property real minSwipeDistance: 50
+       
+       onPressed: {
+          startX = mouse.x
+          startY = mouse.y
+          isSwipeGesture = false
+          hadSwipeGesture = false
+       }
+       
+       onPositionChanged: {
+          if (pressed) {
+             var deltaX = mouse.x - startX
+             var deltaY = Math.abs(mouse.y - startY)
+             // Если горизонтальное движение больше вертикального и больше 30px вправо
+             if (deltaX > 30 && Math.abs(deltaX) > deltaY) {
+                isSwipeGesture = true
+                hadSwipeGesture = true
+                mouse.accepted = true
+             } else if (isSwipeGesture) {
+                mouse.accepted = true
+             } else {
+                mouse.accepted = false
+             }
+          }
+       }
+       
+       onReleased: {
+          if (isSwipeGesture) {
+             var deltaX = mouse.x - startX
+             // Если свайп вправо больше порога, открываем drawer
+             if (deltaX > minSwipeDistance) {
+                argNeutDrawer.open()
+                mouse.accepted = true
+                isSwipeGesture = false
+                hadSwipeGesture = false
+                return
+             }
+          }
+          // Если был свайп, но не достиг порога, блокируем событие
+          if (hadSwipeGesture) {
+             mouse.accepted = true
+          } else {
+             // Если не было свайпа, пропускаем событие для клика
+             mouse.accepted = false
+          }
+          isSwipeGesture = false
+       }
+       
+       onClicked: {
+          // Если это был свайп (даже не завершенный), принимаем событие, чтобы оно не проходило дальше
+          // Если это обычный клик, пропускаем событие (propagateComposedEvents сработает)
+          mouse.accepted = hadSwipeGesture
+          hadSwipeGesture = false
+       }
+    }
 
    // MouseArea для обработки свайпов в области PedalContainer
    MouseArea {
@@ -204,12 +228,14 @@ Window {
       property real startX: 0
       property real startY: 0
       property bool isSwipeGesture: false
+      property bool hadSwipeGesture: false  // Сохраняем информацию о свайпе для onClicked
       property real minSwipeDistance: 50
       
       onPressed: {
          startX = mouse.x
          startY = mouse.y
          isSwipeGesture = false
+         hadSwipeGesture = false
       }
       
       onPositionChanged: {
@@ -219,6 +245,14 @@ Window {
             // Если горизонтальное движение больше вертикального и больше 30px влево
             if (deltaX < -30 && Math.abs(deltaX) > deltaY) {
                isSwipeGesture = true
+               hadSwipeGesture = true
+               // Принимаем событие, чтобы оно не проходило дальше
+               mouse.accepted = true
+            } else if (isSwipeGesture) {
+               // Если уже был свайп, продолжаем принимать события
+               mouse.accepted = true
+            } else {
+               mouse.accepted = false
             }
          }
       }
@@ -244,18 +278,28 @@ Window {
                }
                pedDrawer.socketId = expandedSocketId
                pedDrawer.open()
-               mouse.accepted = true
+               mouse.accepted = true  // Блокируем событие при успешном свайпе
+               isSwipeGesture = false
+               hadSwipeGesture = false
                return
             }
          }
-         // Если не было свайпа, пропускаем событие для клика
-         mouse.accepted = false
+         // Если был свайп, но не достиг порога, все равно блокируем событие
+         if (hadSwipeGesture) {
+            mouse.accepted = true
+         } else {
+            // Если не было свайпа, пропускаем событие для клика
+            mouse.accepted = false
+         }
          isSwipeGesture = false
+         // hadSwipeGesture сохраняем для onClicked
       }
       
       onClicked: {
-         // Если это не было частью свайпа, пропускаем событие для клика по педалям
-         mouse.accepted = false
+         // Если это был свайп (даже не завершенный), принимаем событие, чтобы оно не проходило дальше
+         // Если это обычный клик, пропускаем событие для клика по педалям
+         mouse.accepted = hadSwipeGesture
+         hadSwipeGesture = false
       }
    }
 

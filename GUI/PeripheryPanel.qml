@@ -57,8 +57,20 @@ Rectangle {
         neutralSize: periphHandle.neutralSize
         showControls: false
     }
+    
+    // MouseArea для открытия drawer - размещаем в конце для наивысшего z-order
     MouseArea {
         anchors.fill: parent
-        onClicked: peripheryPanelRoot.openPeriphDrawer();
+        z: 1000  // Очень высокий z
+        onPressed: {
+            console.log("PeripheryPanel PRESSED at", mouse.x, mouse.y)
+        }
+        onReleased: {
+            console.log("PeripheryPanel RELEASED")
+        }
+        onClicked: {
+            console.log("PeripheryPanel CLICKED - opening drawer")
+            peripheryPanelRoot.openPeriphDrawer()
+        }
     }
 }

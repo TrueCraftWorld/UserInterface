@@ -170,6 +170,8 @@ void LinkStm::sendCommand()
     static int power = 0;               // Активированная мощность
     static int updateCounter = 0;       // Счётчик обновления ПО
     static int updateProgr = 0;
+    static UartState preState = STATE_OK;   // Предыдущее состояние
+    static int errCounter = 0;
 
     m_comState = IDLE;
 
@@ -178,9 +180,22 @@ void LinkStm::sendCommand()
        m_state = STATE_NO_RX;
     //_____________ Проверяем ответ rx__________
     if (m_state != STATE_OK) {
-        emit sigError(m_state + 32);           // Ошибки ответа (первые 32 - то, что присылается по uart)
+        if (m_state != preState) {
+            qDebug() << "UART-ошибки: " << m_state;
+            emit sigError(m_state + 32);        // Ошибки ответа (первые 32 - то, что присылается по uart)
+            preState = m_state;                 // Запоминаем предыдущее состояние
+            errCounter = 0;                     // Сбрасываем счётчик ошибок
+        }
+        else if (errCounter++ > 100) {
+            m_state = STATE_OK;                 // Делаем попытку выйти на нормальную работу
+            errCounter = 0;
+        }
     }
     else {
+        errCounter = 0;
+    }
+
+    if (m_state == STATE_OK) {
         readRxCommand();                    // Читаем ответ
 
         if (!m_txCommandList.isEmpty()) {   // Какую-то спец команду надо передать

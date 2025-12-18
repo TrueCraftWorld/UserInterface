@@ -13,6 +13,10 @@ Drawer {
     property int socketId: 0
     property var innerModel
     property int usedSpacing: 10
+    
+    // Отключаем встроенную модальность, используем свой overlay для тачскрина
+    modal: false
+    closePolicy: Popup.NoAutoClose
 
     background: Rectangle {
         color: "darkgray"

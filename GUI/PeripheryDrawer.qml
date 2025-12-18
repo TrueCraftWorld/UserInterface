@@ -10,6 +10,10 @@ Drawer {
     
     // Отключаем встроенную интерактивность Drawer, чтобы использовать свой MouseArea
     interactive: false
+    
+    // Отключаем встроенную модальность, используем свой overlay для тачскрина
+    modal: false
+    closePolicy: Popup.NoAutoClose
 
     background: Rectangle {
         color: "darkgray"

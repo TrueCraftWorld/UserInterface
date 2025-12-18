@@ -67,7 +67,6 @@ Window {
    Connections {
       target: argNeutralPanel
       function onOpenPeriphDrawer() {
-         console.log("main.qml: Opening PeripheryDrawer")
          argNeutDrawer.open()
       }
    }
@@ -102,9 +101,41 @@ Window {
       width: 0.8 * container.width
       height: container.height
       edge: Qt.LeftEdge
+      
+      // Отключаем встроенную модальность, используем свою
+      modal: false
+      closePolicy: Popup.NoAutoClose
+      
       MenuLoader {
          id: menuLoad
          anchors.fill: parent
+      }
+   }
+
+   // Overlay для закрытия drawer'ов при касании вне их
+   Item {
+      id: drawerOverlay
+      anchors.fill: parent
+      z: 1  // Выше основного контента, но drawer'ы будут иметь z намного выше (по умолчанию 10000)
+      visible: argNeutDrawer.opened || pedDrawer.opened || leftDrawer.opened
+      
+      Rectangle {
+         anchors.fill: parent
+         color: "black"
+         opacity: 0.5
+         
+         MouseArea {
+            anchors.fill: parent
+            onPressed: {
+               mouse.accepted = true
+            }
+            onReleased: {
+               if (argNeutDrawer.opened) argNeutDrawer.close()
+               if (pedDrawer.opened) pedDrawer.close()
+               if (leftDrawer.opened) leftDrawer.close()
+               mouse.accepted = true
+            }
+         }
       }
    }
 

@@ -140,8 +140,13 @@ QVariant SocketModel::data(const QModelIndex &index, int role) const
     {
         if (socketItem.curCoagMode().isNull())
             return -1;
-        auto iter = m_instrMapPtr->find(socketItem.curCoagMode()->selectedInstrId());
-
+        
+        int instrId = socketItem.curCoagMode()->selectedInstrId();
+        // Если выбран "Инструмент не выбран" (ID = 1000), возвращаем 1000
+        if (instrId == 1000)
+            return 1000;
+        
+        auto iter = m_instrMapPtr->find(instrId);
         if (iter != m_instrMapPtr->end())
             return iter->second->legacyNumber();
         else
@@ -205,8 +210,13 @@ QVariant SocketModel::data(const QModelIndex &index, int role) const
     {
         if (socketItem.curCutMode().isNull())
             return -1;
-        auto iter = m_instrMapPtr->find(socketItem.curCutMode()->selectedInstrId());
-
+        
+        int instrId = socketItem.curCutMode()->selectedInstrId();
+        // Если выбран "Инструмент не выбран" (ID = 1000), возвращаем 1000
+        if (instrId == 1000)
+            return 1000;
+        
+        auto iter = m_instrMapPtr->find(instrId);
         if (iter != m_instrMapPtr->end())
             return iter->second->legacyNumber();
         else
@@ -368,6 +378,8 @@ QStringList SocketModel::instrumNames(int socketId, int modeIndex, bool isCoag) 
         if (instIter != m_instrMapPtr->end())
             names.append(instIter->second->name());
     }
+    // Добавляем "Инструмент не выбран" в конец списка
+    names.append(QObject::tr("Инструмент не выбран"));
     return names;
 }
 
@@ -401,6 +413,8 @@ QStringList SocketModel::instrumNamesIds(int socketId, int modeIndex, bool isCoa
         if (instIter != m_instrMapPtr->end())
             names.append(QString("%1").arg(instIter->second->id()));
     }
+    // Добавляем ID для "Инструмент не выбран"
+    names.append("1000");
     return names;
 }
 
@@ -423,6 +437,8 @@ QStringList SocketModel::instrumNamesNums(int socketId, int modeIndex, bool isCo
         if (instIter != m_instrMapPtr->end())
             nums.append(QString("%1").arg(instIter->second->legacyNumber()));
     }
+    // Добавляем Num для "Инструмент не выбран"
+    nums.append("1000");
     return nums;
 }
 
@@ -582,6 +598,7 @@ bool SocketModel::commitModeChange(int socketId, int modeIndex, const QVariantMa
             roles.append(CoagModeInstrName);
             roles.append(CoagModeInstrIndex);
             roles.append(CoagModeInstrID);
+            roles.append(CoagModeInstrNum);  // Добавляем Num для обновления изображения
             res = true;
         }
         if (res)
@@ -623,6 +640,7 @@ bool SocketModel::commitModeChange(int socketId, int modeIndex, const QVariantMa
             roles.append(CutModeInstrName);
             roles.append(CutModeInstrIndex);
             roles.append(CutModeInstrID);
+            roles.append(CutModeInstrNum);  // Добавляем Num для обновления изображения
             res = true;
         }
         if (res)

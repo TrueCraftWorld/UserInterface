@@ -29,7 +29,9 @@ Window {
    function activationEnable() {
          periphHandle.enableActivation = !(pedDrawer.opened
                                     | leftDrawer.opened
-                                    | argNeutDrawer.opened)
+                                    | argNeutDrawer.opened
+                                    | socketsDummy.modeDialogOpened
+                                    | socketsDummy.instrDialogOpened)
    }
 
    StatusBar {
@@ -154,6 +156,18 @@ Window {
    Connections {
       target: argNeutDrawer
       function onOpenedChanged() {
+         container.activationEnable()
+      }
+   }
+   Connections {
+      target: socketsDummy
+      function onModeDialogOpenedChanged() {
+         container.activationEnable()
+      }
+   }
+   Connections {
+      target: socketsDummy
+      function onInstrDialogOpenedChanged() {
          container.activationEnable()
       }
    }

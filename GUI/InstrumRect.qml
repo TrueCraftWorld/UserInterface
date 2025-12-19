@@ -8,6 +8,7 @@ Rectangle {
     property bool isCoag
     property string instrumName
     property int instrumNum
+    property int modeId
     property bool isEndo: false
 
     signal instrumEditDialogRequest()
@@ -62,7 +63,7 @@ Rectangle {
             height: 120
             fillMode: Image.PreserveAspectFit
             source: "image://instruments/minstr" + instrumNum
-            visible: (modeId != 1000)
+            visible: (instrumNum != 1000)
             anchors {
                 top: parent.top
                 topMargin: 10
@@ -75,16 +76,25 @@ Rectangle {
         }
 
         Label {
-            text: instrumName
+            text: (instrumNum != 1000) ? instrumName : qsTr("инструмент не выбран")
             font.pixelSize: 20
             font.bold: true
             wrapMode: Text.Wrap
-            color: "white"
-            visible: (modeId != 1000)
+            color: (instrumNum != 1000) ? "white" : "grey"
             horizontalAlignment: Qt.AlignHCenter
             verticalAlignment: Qt.AlignVCenter
-            anchors.left: isCoag ? parent.left : instrImage.right
-            anchors.right: isCoag ? instrImage.left : parent.right
+            anchors.left: {
+                if (isCoag || instrumNum === 1000)
+                    return parent.left
+                else
+                    return instrImage.right
+            }
+            anchors.right: {
+                if (!isCoag || instrumNum === 1000)
+                    return parent.right
+                else
+                    return instrImage.left
+            }
 //            anchors.bottom: parent.bottom
             anchors.verticalCenter: parent.verticalCenter
             anchors.margins: 10
@@ -92,6 +102,11 @@ Rectangle {
 
         MouseArea {
             anchors.fill: parent
+            anchors.leftMargin: 40
+            anchors.rightMargin: 40
+            anchors.topMargin: 20
+            anchors.bottomMargin: 20
+            enabled: modeId !== 1000  // Игнорируем клики, если режим не выбран
             onClicked: instrumRoot.instrumEditDialogRequest()
         }
     }

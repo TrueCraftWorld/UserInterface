@@ -6,6 +6,8 @@ Rectangle {
 
     signal progAddRequest(int type)
     property var innerModel
+    property alias modeDialogOpened: modeDialog.opened
+    property alias instrDialogOpened: instrDialog.opened
     color: "gray"
     
     ColumnLayout {

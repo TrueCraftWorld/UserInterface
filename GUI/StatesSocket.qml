@@ -131,15 +131,17 @@ Rectangle {
 
     Rectangle {
         id: middleRect
-        color: "black"
+        color: "green"
         width: fontMetrics.advanceWidth("MONO 22")
+        height: 60
 
         Label {
             id: socketNameLabel
             anchors.fill: parent
             anchors.margins: 10
             text: title
-            color: "white"
+            color: "magenta"
+//            color: "white"
             font.pixelSize: 24
             font.bold: true
             horizontalAlignment: Qt.AlignHCenter
@@ -217,7 +219,7 @@ Rectangle {
             }
             PropertyChanges {
                 target: middleRect
-                color: "black"
+                color: "green"
                 width: fontMetrics.advanceWidth("MONO 22")
             }
             AnchorChanges {
@@ -249,7 +251,7 @@ Rectangle {
             }
             PropertyChanges {
                 target: middleRect
-                color: "transparent"
+                color: "orange"
                 height: fontMetrics.height + socketNameLabel.anchors.margins
             }
 

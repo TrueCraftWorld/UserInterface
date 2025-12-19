@@ -75,8 +75,7 @@ Popup {
     }
     
     onClosed: {
-        // Разрешаем активацию при закрытии popup
-        progHandler.enableActivation = true
+        // Активация управляется централизованно через main.qml
     }
 
     Rectangle {

@@ -260,7 +260,34 @@ Canvas {
             }
             MouseArea {
                 anchors.fill: parent
-                onClicked: modePowerRect.newPower(changePower("up"));
+                onPressed: {
+                    modePowerRect.newPower(changePower("up"));
+                    delayPlusTimer.start();
+                }
+                onReleased: {
+                    delayPlusTimer.stop();
+                    autoRepeatPlusTimer.stop();
+                }
+                onCanceled: {
+                    delayPlusTimer.stop();
+                    autoRepeatPlusTimer.stop();
+                }
+            }
+
+            // Таймер задержки перед началом автоповтора
+            Timer {
+                id: delayPlusTimer
+                interval: 500  // Задержка перед началом автоповтора (мс)
+                repeat: false
+                onTriggered: autoRepeatPlusTimer.start();
+            }
+
+            // Таймер автоповтора
+            Timer {
+                id: autoRepeatPlusTimer
+                interval: 150  // Интервал повторения в миллисекундах
+                repeat: true
+                onTriggered: modePowerRect.newPower(changePower("up"));
             }
         }
 
@@ -291,7 +318,34 @@ Canvas {
             }
             MouseArea {
                 anchors.fill: parent
-                onClicked: modePowerRect.newPower(changePower("down"));
+                onPressed: {
+                    modePowerRect.newPower(changePower("down"));
+                    delayMinusTimer.start();
+                }
+                onReleased: {
+                    delayMinusTimer.stop();
+                    autoRepeatMinusTimer.stop();
+                }
+                onCanceled: {
+                    delayMinusTimer.stop();
+                    autoRepeatMinusTimer.stop();
+                }
+            }
+
+            // Таймер задержки перед началом автоповтора
+            Timer {
+                id: delayMinusTimer
+                interval: 500  // Задержка перед началом автоповтора (мс)
+                repeat: false
+                onTriggered: autoRepeatMinusTimer.start();
+            }
+
+            // Таймер автоповтора
+            Timer {
+                id: autoRepeatMinusTimer
+                interval: 150  // Интервал повторения в миллисекундах
+                repeat: true
+                onTriggered: modePowerRect.newPower(changePower("down"));
             }
         }
 

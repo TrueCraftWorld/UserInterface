@@ -140,8 +140,7 @@ Rectangle {
             anchors.fill: parent
             anchors.margins: 10
             text: title
-            color: "magenta"
-//            color: "white"
+            color: "white"
             font.pixelSize: 24
             font.bold: true
             horizontalAlignment: Qt.AlignHCenter
@@ -159,6 +158,30 @@ Rectangle {
                 } else {
                     socketRoot.socketCollapseRequest()
                 }
+            }
+        }
+
+        // Треугольник, указывающий вверх (для сворачивания)
+        Canvas {
+            id: collapseTriangle
+            width: 60
+            height: 30
+            anchors.bottom: parent.bottom
+            anchors.horizontalCenter: parent.horizontalCenter
+            anchors.bottomMargin: 20
+            visible: socketRoot.state === "expanded"
+
+            onPaint: {
+                var ctx = getContext("2d")
+                ctx.reset()
+                ctx.fillStyle = "lightgray"
+                ctx.beginPath()
+                // Треугольник, направленный вверх
+                ctx.moveTo(width / 2, 0)           // Верхняя точка (середина)
+                ctx.lineTo(width, height)           // Правая нижняя точка
+                ctx.lineTo(0, height)               // Левая нижняя точка
+                ctx.closePath()
+                ctx.fill()
             }
         }
     }
@@ -219,7 +242,7 @@ Rectangle {
             }
             PropertyChanges {
                 target: middleRect
-                color: "green"
+                color: "black"
                 width: fontMetrics.advanceWidth("MONO 22")
             }
             AnchorChanges {
@@ -244,15 +267,18 @@ Rectangle {
             AnchorChanges {
                 target: middleRect
                 anchors.horizontalCenter: undefined
-                anchors.left: parent.left
-                anchors.right: parent.right
+                anchors.left: undefined
+                anchors.right: undefined
+//                anchors.left: parent.left
+//                anchors.right: parent.right
                 anchors.top: parent.top
                 anchors.bottom: undefined
             }
             PropertyChanges {
                 target: middleRect
-                color: "orange"
-                height: fontMetrics.height + socketNameLabel.anchors.margins
+                color: "transparent"
+                height: rightRect.height * .4
+//                height: fontMetrics.height + socketNameLabel.anchors.margins
             }
 
             AnchorChanges {

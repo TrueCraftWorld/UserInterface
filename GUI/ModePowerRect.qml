@@ -177,11 +177,20 @@ Canvas {
                 }
             }
         }
+
+
         MouseArea {
             id: modeSelectButton
-            anchors.fill: parent
+            anchors {
+                fill: parent
+                topMargin: 10
+                leftMargin: 60
+                rightMargin: 60
+                bottomMargin: 90
+            }
             onClicked: modePowerRect.modeEditDialogRequest()
         }
+
     }
 
     Item {

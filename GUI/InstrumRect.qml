@@ -97,7 +97,7 @@ Rectangle {
             }
 //            anchors.bottom: parent.bottom
             anchors.verticalCenter: parent.verticalCenter
-            anchors.margins: 10
+            anchors.margins: 20
         }
 
         MouseArea {

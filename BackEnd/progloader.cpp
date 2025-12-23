@@ -207,7 +207,7 @@ void ProgLoader::slotSaveCurrentState()
         // qWarning() << "Cannot save state: socket model not initialized";
         return;
     }
-
+///TODO - структурка с инициализатором для значений, просто для удобства
     // Собираем данные из всех сокетов (инициализируем значениями по умолчанию)
     QString bi1CutInstr = "0", bi1CutMode = "1000", bi1CutPower = "1";
     QString bi1CoagInstr = "0", bi1CoagMode = "1000", bi1CoagPower = "1";
@@ -218,6 +218,10 @@ void ProgLoader::slotSaveCurrentState()
     QString mono2CutInstr = "0", mono2CutMode = "1000", mono2CutPower = "1";
     QString mono2CoagInstr = "0", mono2CoagMode = "1000", mono2CoagPower = "1";
 
+
+///TODO - сохранялка всех текщуих листов, а не 1
+/// надо хранить до 5 листов с прог айди 1000 и номерами по порядку - также нужно удалять неиспользуемые
+/// листы
     for (int i = 0; i < 4; i++) {
         auto socket = m_socketModelPtr->itemsMap()->at(i);
 
@@ -400,14 +404,6 @@ void ProgLoader::defaultSocketInit(bool clear)
     QString queryConditionModes = "BI_MONO = %1 AND CUT_COAG = %2 AND id IN (%3)";
     instrumConstraints = getConstraints(allowedModesId);
 
-    //Шаг5---------------------------------------------------------
-    //тут какой-то затуп с базой на каких-то прогах, разрешено всего несколько инструментов
-    //при этом для выбранных режимов эти инструменты не разрешены
-    // for (auto iterItem = instrumConstraints.begin(); iterItem != instrumConstraints.end(); ++iterItem) {
-    //     std::map<int, InstrInfo>& item = iterItem->second;
-    //     filterMapByKey<InstrInfo>(item, allowedInstrId);
-    // }
-
     //Шаг 6--------------------------------------------------------
     QList<QVariantList> modeNamesListV = m_dbReaderPtr->slotSendSelectQuery(QStringList{"Modes"},
                                                                         QStringList{"Name_RU","id"},
@@ -503,11 +499,7 @@ void ProgLoader::defaultSocketInit(bool clear)
         }
         instrMapVector.push_back(getInstrums());
     }
-    // if (clear) {
-        m_socketModelPtr->loadProgs(socketMapVector, instrMapVector, !clear);
-    // } else {
-        // m_socketModelPtr->
-    // }
+    m_socketModelPtr->loadProgs(socketMapVector, instrMapVector, !clear);
 }
 
 void ProgLoader::programmLoadSocketInit(int progId, bool clear)
@@ -528,29 +520,6 @@ void ProgLoader::programmLoadSocketInit(int progId, bool clear)
                                                       queryCondition.arg(progId));
     if (progListVariant.size() == 0)
         return;
-    //--------------------------------------------------------------
-
-    QList<int> allowedModesId;
-    std::vector<int> allowedInstrId;
-
-    //Шаг2---------------------------------------------------------
-    QList<QVariantList> allowedModes = m_dbReaderPtr->slotSendSelectQuery(QStringList{"EnableModes"},
-                                                                      QStringList{"Mode_ID"},
-                                                                      QString("Prog_ID = %1").arg(progId));
-    for (const auto& item : allowedModes)
-        allowedModesId.append(item.at(0).toInt());
-
-    //Шаг3---------------------------------------------------------
-    QList<QVariantList> allowedInstr = m_dbReaderPtr->slotSendSelectQuery(QStringList{"EnableInstr"},
-                                                                       QStringList{"Instr_ID"},
-                                                                       QString("Prog_ID = %1").arg(progId));
-
-    for (const auto& item : allowedInstr)
-        allowedInstrId.push_back(item.at(0).toInt());
-
-    //Шаг4---------------------------------------------------------
-    QString queryConditionModes = "BI_MONO = %1 AND CUT_COAG = %2 AND id IN (%3)";
-    instrumConstraints = getConstraints(allowedModesId);
 
     //Шаг5---------------------------------------------------------
     //тут какой-то затуп с базой на каких-то прогах, разрешено всего несколько инструментов
@@ -569,6 +538,33 @@ void ProgLoader::programmLoadSocketInit(int progId, bool clear)
         modeNamesList.append(iter.at(0).toString());
 
     for (const auto& progItem : progListVariant) {
+    //ограничения для каждого листа
+        QList<int> allowedModesId;
+        std::vector<int> allowedInstrId;
+
+        //Шаг2---------------------------------------------------------
+        QList<QVariantList> allowedModes
+                = m_dbReaderPtr->slotSendSelectQuery(QStringList{"EnableModes"},
+                                                     QStringList{"Mode_ID"},
+                                                     QString("List_ID = %1").arg(progItem.at(0).toUInt()));
+        for (const auto& item : allowedModes)
+            allowedModesId.append(item.at(0).toInt());
+
+        //Шаг3---------------------------------------------------------
+        QList<QVariantList> allowedInstr
+                = m_dbReaderPtr->slotSendSelectQuery(QStringList{"EnableInstr"},
+                                                       QStringList{"Instr_ID"},
+                                                       QString("List_ID = %1").arg(progItem.at(0).toUInt()));
+
+        for (const auto& item : allowedInstr)
+            allowedInstrId.push_back(item.at(0).toInt());
+
+        //Шаг4---------------------------------------------------------
+        QString queryConditionModes = "BI_MONO = %1 AND CUT_COAG = %2 AND id IN (%3)";
+        instrumConstraints = getConstraints(allowedModesId);
+//--------------------------------------------------------------------------------------------------------------
+
+
         socketMapVector.push_back(std::map<int, SockPtr>());
         std::map<int, SockPtr>& socketMap = socketMapVector[socketMapVector.size() - 1];
         for (int i = 0; i < 4; ++i) {
@@ -636,10 +632,14 @@ void ProgLoader::programmLoadSocketInit(int progId, bool clear)
                 if (!mode.isNull() && mode->isEndo()) {
                     int endoCut = static_cast<int>(std::floor(defaultPower / 10.0));
                     int endoCoag = defaultPower % 10;
-                    if (endoCut < 1) endoCut = 1;
-                    else if (endoCut > ENDO_MAX) endoCut = ENDO_MAX;
-                    if (endoCoag < 1) endoCoag = 1;
-                    else if (endoCoag > ENDO_MAX) endoCoag = ENDO_MAX;
+                    if (endoCut < 1)
+                        endoCut = 1;
+                    else if (endoCut > ENDO_MAX)
+                        endoCut = ENDO_MAX;
+                    if (endoCoag < 1)
+                        endoCoag = 1;
+                    else if (endoCoag > ENDO_MAX)
+                        endoCoag = ENDO_MAX;
                     defaultPower = endoCut * 10 + endoCoag;
                 }
 
@@ -696,6 +696,30 @@ QMap<int, QString> ProgLoader::getScopes ()
         scopeList.insert(id, name);
     }
     return scopeList;
+}
+
+QMap<int, QString> ProgLoader::getUserProgList()
+{
+    QMap<int, QString> res;
+    ///TODO
+    /// нужна новая таблица в БД, с именами и айдишниками юзверских программ, откуда мы сможем читать
+    return res;
+}
+
+void ProgLoader::saveUserProg(const QString &name)
+{
+    ///TODO
+    /// по сути тут должен быть сэйв кар стэйт но с указнием другого id
+    /// и добавление записив таблицу имён юзверских программ
+
+}
+
+void ProgLoader::deleteUserProg(int id)
+{
+    ///TODO
+    /// надо удалить запись в таблице листов и в таблице имён программ
+    /// может быть для удаления сделать коммит по закрытию базы???
+    ///
 }
 
 std::map<int, std::map<int, Onyx::InstrInfo> > ProgLoader::getConstraints(const QList<int>& idList)

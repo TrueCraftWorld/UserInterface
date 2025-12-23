@@ -27,6 +27,7 @@ signals:
 public:
 
 	bool readPreviousSocketSettings();
+
 	void defaultSocketInit(bool clear = true);
 	// void removeSubProg(int index);
 	/**
@@ -59,6 +60,12 @@ public:
 	QMap<int, QString> getListOfPrograms(int scopeID);
 
 	QMap<int, QString> getScopes();
+
+	QMap<int, QString> getUserProgList();
+
+	void saveUserProg(const QString& name);
+
+	void deleteUserProg(int id);
 
 	 /**
 	 * @brief Загружает последнее сохранённое состояние из БД

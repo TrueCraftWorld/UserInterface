@@ -51,7 +51,7 @@ Drawer {
             horizontalAlignment: Qt.AlignHCenter
             text: qsTr("НАСТРОЙКА ГАЗОВОГО ТРАКТА")
             color: "white"
-            font.pixelSize: 16
+            font.pixelSize: 20
             font.bold: true
         }
         Argon {
@@ -99,7 +99,7 @@ Drawer {
             horizontalAlignment: Qt.AlignHCenter
             text: qsTr("ВЫБОР НЕЙТРАЛЬНОГО ЭЛЕКТРОДА")
             color: "white"
-            font.pixelSize: 16
+            font.pixelSize: 20
             font.bold: true
         }
     }
@@ -121,6 +121,16 @@ Drawer {
             startX = mouse.x
             startY = mouse.y
             isSwipeGesture = false
+            
+            // Проверяем, попали ли мы на элемент с интерактивным контентом
+            var item = wrapRect.childAt(mouse.x - wrapRect.x, mouse.y - wrapRect.y)
+            
+            // Если элемент имеет свойство hasInteractiveContent = true, пропускаем событие к нему
+            if (item && item.hasInteractiveContent === true) {
+                mouse.accepted = false
+                return
+            }
+            
             // Принимаем событие, чтобы получать onPositionChanged для отслеживания свайпов
             mouse.accepted = true
         }
@@ -140,32 +150,10 @@ Drawer {
         onReleased: {
             var deltaX = mouse.x - startX
             var deltaY = Math.abs(mouse.y - startY)
-            var totalMovement = Math.sqrt(deltaX * deltaX + deltaY * deltaY)
             
             if (isSwipeGesture && deltaX < -minSwipeDistance) {
                 // Свайп влево достиг порога - закрываем drawer
                 peripheryRoot.close()
-            } else if (totalMovement < 20) {
-                // Минимальное движение (<20px) - считаем кликом
-                // Эмулируем клик: ищем MouseArea под курсором и вызываем его clicked signal
-                var item = wrapRect.childAt(mouse.x - wrapRect.x, mouse.y - wrapRect.y)
-                if (item) {
-                    // Ищем MouseArea в найденном элементе или его родителях (до 10 уровней)
-                    for (var i = 0; i < 10; i++) {
-                        if (item && item.children) {
-                            for (var j = 0; j < item.children.length; j++) {
-                                var child = item.children[j]
-                                if (child.toString().indexOf("MouseArea") >= 0 && child.clicked) {
-                                    // Найден MouseArea - эмулируем клик
-                                    child.clicked({accepted: false, x: 0, y: 0})
-                                    isSwipeGesture = false
-                                    return
-                                }
-                            }
-                        }
-                        item = item.parent
-                    }
-                }
             }
             isSwipeGesture = false
         }

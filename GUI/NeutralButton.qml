@@ -47,7 +47,7 @@ Rectangle {
 
                 // Вычисляем смещения для центрирования по горизонтали и привязки к низу
                 var offsetX = (width - 70 * scale) / 2
-                var margin = 5  // Отступ снизу
+                var margin = 10  // Отступ снизу
                 var offsetY = height - 110 * scale - margin
 
                 // Начинаем с левой стороны
@@ -107,7 +107,7 @@ Rectangle {
 
                 // Вычисляем смещения для центрирования по горизонтали и привязки к низу
                 var offsetX = (width - 70 * scale) / 2
-                var margin = 5  // Отступ снизу
+                var margin = 10  // Отступ снизу
                 var offsetY = height - 110 * scale - margin
                 
                 // Создаём градиент, имитирующий серебро (вертикальный)

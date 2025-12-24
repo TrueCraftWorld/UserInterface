@@ -5,6 +5,9 @@ Rectangle {
     id: neutralEl
     color: "transparent"
 
+    // Маркер для PeripheryDrawer: этот компонент имеет интерактивные элементы и должен получать события напрямую
+    property bool hasInteractiveContent: true
+
     // Свойства компонента
     property int neutralSize: periphHandle ? periphHandle.neutralSize : 0      // 0 = Small, 1 = Medium, 2 = Large
     // property bool neutralDivided: true  // НЭ разделённый или нет
@@ -28,7 +31,7 @@ Rectangle {
         signal clicked()
         
         height: parent.height * .27
-        width: parent.width * .55  // Уменьшена ширина, чтобы не перекрывать кнопки типа слева
+        width: parent.width * .7  // Уменьшена ширина, чтобы не перекрывать кнопки типа слева
         radius: 10
         
         color: neutralSize === type ? "cyan" : "lightgray"
@@ -49,12 +52,13 @@ Rectangle {
             anchors.fill: parent
             anchors.margins: 5
             text: iconText
-            font.bold: true
+            textFormat: Text.StyledText  // Поддержка HTML-разметки
             font.pixelSize: Math.min(parent.height / 4, parent.width / 12)  // Адаптивный размер шрифта
             color: "#2c2c2c"
             horizontalAlignment: Text.AlignHCenter
             verticalAlignment: Text.AlignVCenter
             wrapMode: Text.WordWrap  // Перенос текста
+            lineHeight: 1.3  // Увеличенный межстрочный интервал (1.0 = нормальный, 1.3 = +30%)
         }
         
         MouseArea {
@@ -135,8 +139,8 @@ Rectangle {
 
         NeutralButton {
             id: buttonDivided
-            height: parent.height * .43
-            width: parent.width * .33
+            height: parent.height * .45
+            width: parent.width * .22
             borderColor: neutralDivided ? "purple" : "transparent"
             borderWidth: neutralDivided ? 3 : 0
             divided: true
@@ -151,8 +155,8 @@ Rectangle {
         }
         NeutralButton {
             id: buttonNotDivided
-            height: parent.height * .43
-            width: parent.width * .33
+            height: parent.height * .45
+            width: parent.width * .22
             borderColor: !neutralDivided ? "purple" : "transparent"
             borderWidth: !neutralDivided ? 3 : 0
             divided: false
@@ -169,7 +173,7 @@ Rectangle {
         MassSelectionBut {
             id: smallNeutralSize
             type: 0
-            iconText: qsTr("Младенец: < 5 кг\n Максимальная мощность 50")
+            iconText: qsTr("Младенец: &lt; <b>5</b> кг<br>Макс. мощность <b>50</b>")
             anchors {
                 top: parent.top
                 right: parent.right
@@ -180,7 +184,7 @@ Rectangle {
         MassSelectionBut {
             id: mediumNeutralSize
             type: 1
-            iconText: qsTr("Ребёнок: 5-15 кг\nМаксимальная мощность 75")
+            iconText: qsTr("Ребёнок: <b>5-15</b> кг<br>Макс. мощность <b>75</b>")
             anchors {
                 verticalCenter: parent.verticalCenter
                 right: parent.right
@@ -190,7 +194,7 @@ Rectangle {
         MassSelectionBut {
             id: largeNeutralSize
             type: 2
-            iconText: qsTr("Взрослый: > 15 кг\nМаксимальная мощность 400")
+            iconText: qsTr("Взрослый: &gt; <b>15</b> кг<br>Макс. мощность <b>400</b>")
             anchors {
                 bottom: parent.bottom
                 right: parent.right

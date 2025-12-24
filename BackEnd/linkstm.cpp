@@ -42,7 +42,6 @@ void LinkStm::start()
 {
     if (m_uartTimer && !m_uartTimer->isActive()) {
         m_uartTimer->start(100);
-        qDebug(logInfo()) << "start Uart Timer in thread" << QThread::currentThread();
     }
 }
 
@@ -657,7 +656,7 @@ const LinkStm::BootChoice &LinkStm::boot() const
 void LinkStm::setBoot(const BootChoice &newBoot)
 {
     m_boot = newBoot;
-    qDebug() << m_boot;
+//    qDebug() << m_boot;
 }
 
 const LinkStm::UartRx &LinkStm::rxCommand() const

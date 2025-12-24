@@ -5,6 +5,9 @@ import QtQuick.Layouts 1.15
 Rectangle {
     id: argonRoot
     
+    // Маркер для PeripheryDrawer: этот компонент имеет интерактивные элементы и должен получать события напрямую
+    property bool hasInteractiveContent: true
+    
     // Публичные свойства
     property bool cylinder1Connected: true      // Баллон 1 наполнен
     property bool cylinder2Connected: false     // Баллон 2 наполнен
@@ -50,7 +53,6 @@ Rectangle {
     
     color: "transparent"
     
-    // Пришлось переделать с Button на Rectangle, а то без MouseArea не работал кастомный свайп
     component CustomButton: Rectangle {
         id: rootCustomBut
         property int delta
@@ -77,41 +79,41 @@ Rectangle {
         MouseArea {
             id: mouseArea
             anchors.fill: parent
-            onClicked: rootCustomBut.clicked()
             
-            // Эмуляция autoRepeat для зажатия кнопки
-            property bool isPressed: false
             onPressed: {
-                isPressed = true
+                // Первое срабатывание СРАЗУ при нажатии (как в ModePowerRect)
                 rootCustomBut.clicked()
-                repeatTimer.start()
-            }
-            onReleased: {
-                isPressed = false
-                repeatTimer.stop()
+                // Запускаем таймер задержки перед автоповтором
+                delayTimer.start()
             }
             
-            Timer {
-                id: repeatTimer
-                interval: mouseArea.isPressed ? 200 : 200  // autoRepeatInterval
-                repeat: true
-                onTriggered: {
-                    if (mouseArea.isPressed) {
-                        rootCustomBut.clicked()
-                    }
-                }
+            onReleased: {
+                delayTimer.stop()
+                autoRepeatTimer.stop()
+            }
+            
+            onCanceled: {
+                delayTimer.stop()
+                autoRepeatTimer.stop()
             }
         }
+        
+        // Таймер задержки перед началом автоповтора
+        Timer {
+            id: delayTimer
+            interval: 500  // Задержка перед началом автоповтора (мс)
+            repeat: false
+            onTriggered: autoRepeatTimer.start()
+        }
+        
+        // Таймер автоповтора
+        Timer {
+            id: autoRepeatTimer
+            interval: 150  // Интервал повторения в миллисекундах
+            repeat: true
+            onTriggered: rootCustomBut.clicked()
+        }
     }
-
-    // // MouseArea для перехвата всех событий в области компонента
-    // MouseArea {
-    //     anchors.fill: parent
-    //     z: 0
-    //     onPressed: mouse.accepted = true
-    //     onReleased: mouse.accepted = true
-    //     onClicked: mouse.accepted = true
-    // }
 
     Rectangle {
         id: argonView
@@ -184,7 +186,6 @@ Rectangle {
                         isUserChange = true  // Устанавливаем флаг перед изменением
                         flowRate = newRate
                     }
-//                    console.log("Argon flowrate: ", flowRate, " ▲ 10");
                 }
             }
             CustomButton {

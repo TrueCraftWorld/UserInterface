@@ -540,7 +540,7 @@ void SocketModel::stopActivation()
     for (auto& item : *m_itemsMapPtr) {
         if (item.second->socketStatus() == Onyx::S_ACTIVE_CUT
             || item.second->socketStatus() == Onyx::S_ACTIVE_COAG) {
-            qDebug() << "Stopping activation for socket" << item.first;
+//            qDebug() << "Stopping activation for socket" << item.first;
             qmlSetData(item.first, Onyx::S_ENABLED, "socketstatus");
         }
     }

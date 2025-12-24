@@ -302,7 +302,7 @@ Rectangle {
             function onCylClicked() {
                 if (cylinder2Connected && activCylinderFirst) {
                     activCylinderFirst = false;
-                    console.log("Argon.qml: second cylinder selected");
+//                    console.log("Argon.qml: second cylinder selected");
                     activCylinderToggled(false);
                 }
             }

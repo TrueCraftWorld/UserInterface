@@ -49,7 +49,7 @@ Rectangle {
             activationIndicator.modeName = coagModeName
             activationIndicator.power = coagModePower
             activationIndicator.isEndo = coagIsEndo
-            console.log("Activation: socketName=", title, "modeName=", coagModeName, "power=", coagModePower, "isEndo=", coagIsEndo)
+//            console.log("Activation: socketName=", title, "modeName=", coagModeName, "power=", coagModePower, "isEndo=", coagIsEndo)
             activationIndicator.open();
         } else if (socketState === socketStateActiveCut) {
             activationIndicator.socketName = title
@@ -57,7 +57,7 @@ Rectangle {
             activationIndicator.modeName = cutModeName
             activationIndicator.power = cutModePower
             activationIndicator.isEndo = cutIsEndo
-            console.log("Activation: socketName=", title, "modeName=", cutModeName, "power=", cutModePower, "isEndo=", cutIsEndo)
+//            console.log("Activation: socketName=", title, "modeName=", cutModeName, "power=", cutModePower, "isEndo=", cutIsEndo)
             activationIndicator.open();
         } else {
             activationIndicator.close();

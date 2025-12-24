@@ -466,12 +466,12 @@ void LinkStm::readRxCommand()
             case PRESS_PED2_Y:
             case PRESS_PED2_B:
                 unitState.pedalKnob = static_cast<PedalKnobPressed>(pressValue);
-                qDebug() << "Pressed pedal: " << unitState.pedalKnob << "current m_comState:" << m_comState;
+//                qDebug() << "Pressed pedal: " << unitState.pedalKnob << "current m_comState:" << m_comState;
                 if (m_comState != ACTIVATION) {
                     m_comState = START_ACTIVATION;
-                    qDebug() << "Set m_comState to START_ACTIVATION";
+//                    qDebug() << "Set m_comState to START_ACTIVATION";
                 } else {
-                    qDebug() << "m_comState is ACTIVATION, not setting START_ACTIVATION";
+//                    qDebug() << "m_comState is ACTIVATION, not setting START_ACTIVATION";
                 }
                 break;
             case PRESS_MONO1_YB:
@@ -523,7 +523,7 @@ void LinkStm::readRxCommand()
 //            emit sigUnitStateChanged(m_unitState);
 //        }
         emit sigStopActivation(m_rxCommand.com & 0x03);
-        qDebug() << "Stop! m_rxCommand: " << m_rxCommand.com << m_rxCommand.data;
+//        qDebug() << "Stop! m_rxCommand: " << m_rxCommand.com << m_rxCommand.data;
         m_comState = IDLE;
         break;
     // Ответ на спец.запросы

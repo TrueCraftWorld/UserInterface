@@ -45,7 +45,7 @@ Drawer {
             id: argonChoice
             anchors {
                 top: parent.top
-                topMargin: 5
+                topMargin: 15
                 horizontalCenter: parent.horizontalCenter
             }
             horizontalAlignment: Qt.AlignHCenter
@@ -60,6 +60,7 @@ Drawer {
                 top: argonChoice.bottom
                 left: parent.left
                 right: parent.right
+                topMargin: 10
             }
             height: 350
             showControls: true
@@ -73,12 +74,12 @@ Drawer {
         }
         NeutralEl {
             id: neutralView
-            height: 260
+            height: 300
             anchors {
                 left: parent.left
                 right: parent.right
                 bottom: parent.bottom
-                margins: 5
+                leftMargin: 5
             }
             // neutralConnected: periphHandle.neutralElConnected
             showControls: true
@@ -91,7 +92,7 @@ Drawer {
                 bottom: neutralView.top
                 left: parent.left
                 right: parent.right
-                bottomMargin: 5
+                bottomMargin: 20
                 topMargin: 15
                 // horizontalCenter: parent.horizontalCenter
             }

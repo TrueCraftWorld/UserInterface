@@ -27,13 +27,13 @@ Rectangle {
         
         signal clicked()
         
-        height: parent.height * .26
+        height: parent.height * .27
         width: parent.width * .55  // Уменьшена ширина, чтобы не перекрывать кнопки типа слева
         radius: 10
         
         color: neutralSize === type ? "cyan" : "lightgray"
         border {
-            color: neutralSize === type ? "orange" : "transparent"
+            color: neutralSize === type ? "purple" : "transparent"
             width: neutralSize === type ? 3 : 0
         }
         
@@ -92,17 +92,17 @@ Rectangle {
     NeutralButton {
         id: neutralImage
 
-        borderColor: "orange"
+        borderColor: "purple"
         borderWidth: 3
         divided: neutralDivided
-        neutColor: neutralConnected ? "lightgreen" : "red"
-        theColor: neutralConnected ? "gray" : "white"
+        neutColor: neutralConnected ? "green" : "red"
+        theColor: neutralConnected ? "lightgray" : "white"
 
         anchors.left: parent.left
         anchors.bottom: parent.bottom
+        anchors.bottomMargin: showControls ? 10 : 0  // Отступ только в режиме с контролами
         height: parent.height
         width: showControls ? 160 : parent.width
-        neutRadius: showControls ? 12 : 8
         button: false
         innerTextFontSize: showControls ? 18 : 14  // Меньший шрифт в компактном режиме (PeripheryPanel)
         innerText: {
@@ -129,14 +129,15 @@ Rectangle {
         height: parent.height
         color: "transparent"
         radius: 10
-        border.color: "orange"
+        border.color: "purple"
+        border.width: 2
         visible: showControls
 
         NeutralButton {
             id: buttonDivided
             height: parent.height * .43
             width: parent.width * .33
-            borderColor: neutralDivided ? "orange" : "transparent"
+            borderColor: neutralDivided ? "purple" : "transparent"
             borderWidth: neutralDivided ? 3 : 0
             divided: true
             neutColor: "green"
@@ -152,7 +153,7 @@ Rectangle {
             id: buttonNotDivided
             height: parent.height * .43
             width: parent.width * .33
-            borderColor: !neutralDivided ? "orange" : "transparent"
+            borderColor: !neutralDivided ? "purple" : "transparent"
             borderWidth: !neutralDivided ? 3 : 0
             divided: false
             neutColor: "green"

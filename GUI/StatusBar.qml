@@ -32,6 +32,25 @@ Rectangle {
         height: parent.height
         anchors.left: drawerButton.right
         anchors.right: saveButton.left
+        horizontalAlignment: SText.AlignHCenter
+        font.capitalization: Font.AllUppercase
+        font.bold: true
+        font.pixelSize: 32
+
+//        elide: SText.ElideRight  // Добавит "..." в конце
+        wrapMode: SText.WordWrap // Или перенесёт на новую строку
+
+        // Плавная смена цвета через новогодние оттенки
+        SequentialAnimation on color {
+            loops: Animation.Infinite
+            running: true
+            ColorAnimation { to: "#AA0000"; duration: 2000; easing.type: Easing.InOutQuad }  // Красный
+            ColorAnimation { to: "#AA9000"; duration: 2000; easing.type: Easing.InOutQuad }  // Золотой
+            ColorAnimation { to: "#00AA00"; duration: 2000; easing.type: Easing.InOutQuad }  // Зеленый
+            ColorAnimation { to: "#008080"; duration: 2000; easing.type: Easing.InOutQuad }  // Синий
+            ColorAnimation { to: "#AA00AA"; duration: 2000; easing.type: Easing.InOutQuad }  // Фиолетовый
+            ColorAnimation { to: "#004000"; duration: 2000; easing.type: Easing.InOutQuad }  // Белый
+        }
     }
     SButton {
         id: saveButton

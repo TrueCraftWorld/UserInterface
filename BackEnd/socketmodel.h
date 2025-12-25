@@ -109,6 +109,9 @@ public:
                     const std::vector<std::map<int, InstrPtr >> &instrMapVect,
                     bool add = false);
 
+    int subProgIdx() const;
+    int subProgCount() const;
+    void setSubProgIdx(int newIndex);
 signals:
     void subProgIdxChanged();
     void subProgCountChanged();
@@ -120,10 +123,7 @@ private:
                  const std::map<int, InstrPtr > &newInstrumMap);
 
     virtual QHash<int, QByteArray> roleNames() const override final;
-    int subProgIdx() const;
-    int subProgCount() const;
 
-    void setSubProgIdx(int newIndex);
     int roleIntByName(const QString& name);
 
     void socketCollapser(int expandedSocket);

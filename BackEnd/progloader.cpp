@@ -2,6 +2,7 @@
 #include "socket.h"
 #include <unordered_set>
 #include <cmath>
+#include <vector>
 
 
 namespace {
@@ -191,128 +192,7 @@ void filterModeMap(QMap<int, SurgModePtr>& container, const std::vector<int>& al
                           "Mono2Cut_INSTR", "Mono2Cut_MODE", "Mono2Cut_POWER", /* 21 22 23*/
                           "Mono2Coag_INSTR", "Mono2Coag_MODE", "Mono2Coag_POWER", /* 24 25 26*/
                           "Pedal_1", "Pedal_2", "OutEnabled_MASK"};/* 27 28 29*/
-
-}
-
-ProgLoader::ProgLoader(QObject *parent)
-    : QObject{parent}
-{
-    if (m_dbReaderPtr.isNull())
-            m_dbReaderPtr = new DataBaseReader("/home/kikorik/FOTEK/someShadyDB.db");
-}
-
-void ProgLoader::slotSaveCurrentState()
-{
-    if (m_socketModelPtr == nullptr || m_socketModelPtr->itemsMap() == nullptr) {
-        // qWarning() << "Cannot save state: socket model not initialized";
-        return;
-    }
-///TODO - структурка с инициализатором для значений, просто для удобства
-    // Собираем данные из всех сокетов (инициализируем значениями по умолчанию)
-    QString bi1CutInstr = "0", bi1CutMode = "1000", bi1CutPower = "1";
-    QString bi1CoagInstr = "0", bi1CoagMode = "1000", bi1CoagPower = "1";
-    QString bi2CutInstr = "0", bi2CutMode = "1000", bi2CutPower = "1";
-    QString bi2CoagInstr = "0", bi2CoagMode = "1000", bi2CoagPower = "1";
-    QString mono1CutInstr = "0", mono1CutMode = "1000", mono1CutPower = "1";
-    QString mono1CoagInstr = "0", mono1CoagMode = "1000", mono1CoagPower = "1";
-    QString mono2CutInstr = "0", mono2CutMode = "1000", mono2CutPower = "1";
-    QString mono2CoagInstr = "0", mono2CoagMode = "1000", mono2CoagPower = "1";
-
-
-///TODO - сохранялка всех текщуих листов, а не 1
-/// надо хранить до 5 листов с прог айди 1000 и номерами по порядку - также нужно удалять неиспользуемые
-/// листы
-    for (int i = 0; i < 4; i++) {
-        auto socket = m_socketModelPtr->itemsMap()->at(i);
-
-        // Проверяем, что режимы не null
-        if (socket.isNull()
-            || socket->curCutMode().isNull()
-            || socket->curCoagMode().isNull()) {
-            // qWarning() << "Socket" << i << "has null mode, skipping";
-            continue;
-        }
-
-        int cutInstrId = socket->curCutMode()->selectedInstrId();
-        int cutModeId = socket->cutModeId();
-        int cutPower = socket->cutModePower();
-
-        int coagInstrId = socket->curCoagMode()->selectedInstrId();
-        int coagModeId = socket->coagModeId();
-        int coagPower = socket->coagModePower();
-
-        QString cutInstrStr = QString::number(cutInstrId);
-        QString cutModeStr = QString::number(cutModeId);
-        QString cutPowerStr = QString::number(cutPower);
-        QString coagInstrStr = QString::number(coagInstrId);
-        QString coagModeStr = QString::number(coagModeId);
-        QString coagPowerStr = QString::number(coagPower);
-
-        switch(i) {
-            case 0: // БИ1
-                bi1CutInstr = cutInstrStr;
-                bi1CutMode = cutModeStr;
-                bi1CutPower = cutPowerStr;
-                bi1CoagInstr = coagInstrStr;
-                bi1CoagMode = coagModeStr;
-                bi1CoagPower = coagPowerStr;
-                break;
-            case 1: // БИ2
-                bi2CutInstr = cutInstrStr;
-                bi2CutMode = cutModeStr;
-                bi2CutPower = cutPowerStr;
-                bi2CoagInstr = coagInstrStr;
-                bi2CoagMode = coagModeStr;
-                bi2CoagPower = coagPowerStr;
-                break;
-            case 2: // МОНО1
-                mono1CutInstr = cutInstrStr;
-                mono1CutMode = cutModeStr;
-                mono1CutPower = cutPowerStr;
-                mono1CoagInstr = coagInstrStr;
-                mono1CoagMode = coagModeStr;
-                mono1CoagPower = coagPowerStr;
-                break;
-            case 3: // МОНО2
-                mono2CutInstr = cutInstrStr;
-                mono2CutMode = cutModeStr;
-                mono2CutPower = cutPowerStr;
-                mono2CoagInstr = coagInstrStr;
-                mono2CoagMode = coagModeStr;
-                mono2CoagPower = coagPowerStr;
-                break;
-            default:
-                // qWarning() << "Invalid socket index:" << i;
-                continue;
-        }
-    }
-
-    // Получаем текущие педали
-    int pedal1 = -1;  // Сокет с single педалью
-    int pedal2 = -1;  // Сокет с double педалью
-
-    // Ищем сокеты с привязанными педалями
-    for (int i = 0; i < 4; i++) {
-        auto socket = m_socketModelPtr->itemsMap()->at(i);
-        if (socket.isNull())
-            continue;
-
-        int pedalType = socket->pedal();
-
-        if (pedalType == SINGLE_PED) {
-            pedal1 = i;  // Номер сокета (0-3)
-        } else if (pedalType == DOUBLE_PED) {
-            pedal2 = i;  // Номер сокета (0-3)
-        }
-        // INSTR_BUTTON_BI и INSTR_BUTTON_MONO игнорируем
-    }
-
-    // OutEnabled_MASK - битовая маска доступности полусокетов
-    // TODO: если нужно сохранять доступность, добавить логику
-    int outEnabledMask = 255;  // По умолчанию все включены (11111111)
-
-    // Формируем SQL запрос для REPLACE (INSERT OR UPDATE)
-    QString query = QString(
+    const   QString saveCurQuery = QString(
         "REPLACE INTO Lists ("
         "id, Num, Prog_ID, "
         "Bi1Cut_INSTR, Bi1Cut_MODE, Bi1Cut_POWER, "
@@ -325,7 +205,7 @@ void ProgLoader::slotSaveCurrentState()
         "Mono2Coag_INSTR, Mono2Coag_MODE, Mono2Coag_POWER, "
         "Pedal_1, Pedal_2, OutEnabled_MASK"
         ") VALUES ("
-        "1000, 1, 1000, "
+        "1000, %28, 1000, "
         "'%1', '%2', %3, "
         "'%4', '%5', %6, "
         "'%7', '%8', %9, "
@@ -335,19 +215,104 @@ void ProgLoader::slotSaveCurrentState()
         "'%19', '%20', %21, "
         "'%22', '%23', %24, "
         "%25, %26, %27"
-        ")")
-        .arg(bi1CutInstr).arg(bi1CutMode).arg(bi1CutPower)
-        .arg(bi1CoagInstr).arg(bi1CoagMode).arg(bi1CoagPower)
-        .arg(bi2CutInstr).arg(bi2CutMode).arg(bi2CutPower)
-        .arg(bi2CoagInstr).arg(bi2CoagMode).arg(bi2CoagPower)
-        .arg(mono1CutInstr).arg(mono1CutMode).arg(mono1CutPower)
-        .arg(mono1CoagInstr).arg(mono1CoagMode).arg(mono1CoagPower)
-        .arg(mono2CutInstr).arg(mono2CutMode).arg(mono2CutPower)
-        .arg(mono2CoagInstr).arg(mono2CoagMode).arg(mono2CoagPower)
-        .arg(pedal1).arg(pedal2).arg(outEnabledMask);
+        ")");
 
-    if (!m_dbReaderPtr->executeUpdateQuery(query)) {
-        // qWarning() << "Failed to save current state";
+}
+
+ProgLoader::ProgLoader(QObject *parent)
+    : QObject{parent}
+{
+    if (m_dbReaderPtr.isNull())
+        m_dbReaderPtr = new DataBaseReader("/home/kikorik/FOTEK/eshfDb.db");
+    // m_dbReaderPtr = new DataBaseReader("/home/kikorik/FOTEK/someShadyDB.db");
+}
+
+void ProgLoader::slotSaveCurrentState()
+{
+    if (m_socketModelPtr == nullptr || m_socketModelPtr->itemsMap() == nullptr) {
+        // qWarning() << "Cannot save state: socket model not initialized";
+        return;
+    }
+///TODO - структурка с инициализатором для значений, просто для удобства
+    // Собираем данные из всех сокетов (инициализируем значениями по умолчанию)
+    // QString bi1CutInstr = "0", bi1CutMode = "1000", bi1CutPower = "1";
+    // QString bi1CoagInstr = "0", bi1CoagMode = "1000", bi1CoagPower = "1";
+    // QString bi2CutInstr = "0", bi2CutMode = "1000", bi2CutPower = "1";
+    // QString bi2CoagInstr = "0", bi2CoagMode = "1000", bi2CoagPower = "1";
+    // QString mono1CutInstr = "0", mono1CutMode = "1000", mono1CutPower = "1";
+    // QString mono1CoagInstr = "0", mono1CoagMode = "1000", mono1CoagPower = "1";
+    // QString mono2CutInstr = "0", mono2CutMode = "1000", mono2CutPower = "1";
+    // QString mono2CoagInstr = "0", mono2CoagMode = "1000", mono2CoagPower = "1";
+
+///TODO - сохранялка всех текщуих листов, а не 1
+/// надо хранить до 5 листов с прог айди 1000 и номерами по порядку - также нужно удалять неиспользуемые
+/// листы
+
+    auto fillState = [this] (std::array<QString, 3>& cut,
+                            std::array<QString, 3>& coag,
+                            std::pair<int, int>& pedals,
+                            int _idx) {
+        QModelIndex idx = m_socketModelPtr->index(_idx);
+        if (idx.data(SocketModel::SocketStatus) == QVariant()
+            || idx.data(SocketModel::CutModeNum).toInt() == 0
+            || idx.data(SocketModel::CoagModeNum).toInt() == 0) {
+            return;
+        } else {
+            cut[0] = QString::number(idx.data(SocketModel::CutModeInstrID).toInt());
+            cut[1] = QString::number(idx.data(SocketModel::CutModeNum).toInt());
+            cut[2] = QString::number(idx.data(SocketModel::CutModePower).toInt());
+            coag[0] = QString::number(idx.data(SocketModel::CoagModeInstrID).toInt());
+            coag[1] = QString::number(idx.data(SocketModel::CoagModeNum).toInt());
+            coag[2] = QString::number(idx.data(SocketModel::CoagModePower).toInt());
+            int ped = idx.data(SocketModel::SocketPedal).toInt();
+            if (ped == SINGLE_PED)
+                pedals.first = _idx;
+            if (ped == DOUBLE_PED)
+                pedals.second = _idx;
+        }
+    };
+
+    std::vector<SocketStrings> allStates;
+    std::vector<std::pair<int, int>> allPedals;
+    int subCount = m_socketModelPtr->subProgCount();
+    int curSubIndex = m_socketModelPtr->subProgIdx();
+    allStates.resize(subCount);
+    allPedals.resize(subCount, {-1, -1});
+    m_socketModelPtr->blockSignals(true);
+    for (int list = 0; list < subCount; ++list) {
+        m_socketModelPtr->setSubProgIdx(list);
+        SocketStrings & state = allStates[list];
+        std::pair<int, int> & pedalState = allPedals[list];
+        fillState(state.bi1Cut, state.bi1Coag, pedalState, 0);
+        fillState(state.bi2Cut, state.bi2Coag, pedalState, 1);
+        fillState(state.mono1Cut, state.mono1Coag, pedalState, 2);
+        fillState(state.mono2Cut, state.mono2Coag, pedalState, 3);
+    }
+    m_socketModelPtr->setSubProgIdx(curSubIndex);
+    m_socketModelPtr->blockSignals(false);
+
+    // OutEnabled_MASK - битовая маска доступности полусокетов
+    // TODO: если нужно сохранять доступность, добавить логику
+    int outEnabledMask = 255;  // По умолчанию все включены (11111111)
+
+    // Формируем SQL запрос для REPLACE (INSERT OR UPDATE)
+    for (int i = 0; i < subCount; ++i) {
+        const SocketStrings & state = allStates.at(i);
+        const std::pair<int, int> & pedalState = allPedals.at(i);
+        QString query = saveCurQuery
+        .arg(state.bi1Cut[0]).arg(state.bi1Cut[1]).arg(state.bi1Cut[2])
+        .arg(state.bi1Coag[0]).arg(state.bi1Coag[1]).arg(state.bi1Coag[2])
+        .arg(state.bi2Cut[0]).arg(state.bi2Cut[1]).arg(state.bi2Cut[2])
+        .arg(state.bi2Coag[0]).arg(state.bi2Coag[1]).arg(state.bi2Coag[2])
+        .arg(state.mono1Cut[0]).arg(state.mono1Cut[1]).arg(state.mono1Cut[2])
+        .arg(state.mono1Coag[0]).arg(state.mono1Coag[1]).arg(state.mono1Coag[2])
+        .arg(state.mono2Cut[0]).arg(state.mono2Cut[1]).arg(state.mono2Cut[2])
+        .arg(state.mono2Coag[0]).arg(state.mono2Coag[1]).arg(state.mono2Coag[2])
+        .arg(pedalState.first).arg(pedalState.second).arg(outEnabledMask).arg(i);
+
+        if (!m_dbReaderPtr->executeUpdateQuery(query)) {
+            // qWarning() << "Failed to save current state";
+        }
     }
 }
 

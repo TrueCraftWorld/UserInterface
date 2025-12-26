@@ -37,6 +37,22 @@ int main(int argc, char *argv[])
     QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
 #endif
     QCoreApplication::setAttribute(Qt::AA_UseOpenGLES);
+    
+    // Настройки для Qt Multimedia
+    qputenv("QT_GSTREAMER_USE_PLAYBIN_VOLUME", "1");
+    qputenv("GST_DEBUG", "0");  // Отключаем отладку GStreamer
+    qputenv("QT_MULTIMEDIA_PREFERRED_PLUGINS", "gstreamer");
+    
+    // Отключаем проблемный аппаратный декодер v4l2, используем программный avdec_h264
+    qputenv("GST_PLUGIN_FEATURE_RANK", "v4l2slh264dec:NONE,avdec_h264:PRIMARY");
+    
+    // Используем ximagesink для вывода видео (X11 без аппаратного ускорения, но стабильно)
+    qputenv("QT_GSTREAMER_VIDEOSINK", "ximagesink");
+    
+    // Настройки буферизации для быстрого старта воспроизведения
+    // Используем минимальную буферизацию для быстрого старта
+    qputenv("GST_BUFFER_DURATION", "500000000");  // 0.5 секунды буферизации (в наносекундах)
+    
     ///Добавляем модуль клавиатуры
     qputenv("QT_IM_MODULE", QByteArray("cutekeyboard"));
     ///Отключаем курсор мыши на embedded-системе

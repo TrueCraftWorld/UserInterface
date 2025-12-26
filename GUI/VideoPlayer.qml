@@ -1,0 +1,528 @@
+import QtQuick 2.15
+import QtQuick.Controls 2.15
+import QtMultimedia 5.15
+import StratifyLabs.UI 2.0
+
+Rectangle {
+    id: videoPlayerRoot
+    anchors.fill: parent
+    color: "black"
+    
+    signal closeRequested()
+    
+    property string videoFolder: "/home/kikorik/FOTEK/Video"
+    property var videoFiles: []
+    property int currentVideoIndex: -1
+    property bool showLoadingOnPlay: false  // Показывать индикатор при нажатии Play
+    
+    Component.onCompleted: {
+        loadVideoFiles()
+    }
+    
+    function loadVideoFiles() {
+        videoFiles = recomHandle.scanVideoFiles(videoFolder)
+        if (videoFiles.length > 0) {
+            currentVideoIndex = 0
+            // НЕ запускаем автоматически, только загружаем
+            loadVideo(0)
+        }
+    }
+    
+    function loadVideo(index) {
+        if (index >= 0 && index < videoFiles.length) {
+            currentVideoIndex = index
+            var filePath = videoFolder + "/" + videoFiles[index].trim()
+            var fileUrl = "file://" + filePath
+            
+            // НЕ показываем индикатор при загрузке - он покажется автоматически через isBuffering
+            // при реальной загрузке/буферизации
+            
+            mediaPlayer.stop()
+            mediaPlayer.source = ""
+            mediaPlayer.source = fileUrl
+            // НЕ вызываем play() автоматически
+        }
+    }
+    
+    function playVideo(index) {
+        if (index >= 0 && index < videoFiles.length) {
+            if (currentVideoIndex !== index) {
+                // Если меняем видео - загружаем новое
+                loadVideo(index)
+            }
+            // Показываем индикатор при нажатии Play
+            showLoadingOnPlay = true
+            // Запускаем воспроизведение сразу
+            mediaPlayer.play()
+            // Скрываем индикатор через небольшую задержку после начала воспроизведения
+            hideLoadingTimer.restart()
+        }
+    }
+    
+    // Таймер для скрытия индикатора после начала воспроизведения
+    Timer {
+        id: hideLoadingTimer
+        interval: 300  // 300ms после начала воспроизведения
+        repeat: false
+        onTriggered: {
+            if (mediaPlayer.playbackState === MediaPlayer.PlayingState) {
+                showLoadingOnPlay = false
+            }
+        }
+    }
+    
+    
+    function formatTime(milliseconds) {
+        var seconds = Math.floor(milliseconds / 1000)
+        var minutes = Math.floor(seconds / 60)
+        seconds = seconds % 60
+        return minutes + ":" + (seconds < 10 ? "0" : "") + seconds
+    }
+    
+    MediaPlayer {
+        id: mediaPlayer
+        autoPlay: false
+        volume: 0.5  // Начальная громкость 50%
+        
+        property bool isBuffering: {
+            // Показываем индикатор при:
+            // 1. Загрузке (Loading)
+            // 2. Буферизации (Buffering)
+            // 3. Явном запросе показа при нажатии Play
+            var result = status === MediaPlayer.Loading || 
+                        status === MediaPlayer.Buffering ||
+                        videoPlayerRoot.showLoadingOnPlay
+            return result
+        }
+        
+        onPositionChanged: {
+            // Когда position начинает изменяться - видео реально играет
+            if (playbackState === MediaPlayer.PlayingState && position > 0) {
+                videoPlayerRoot.showLoadingOnPlay = false
+            }
+        }
+        
+        onStatusChanged: {
+            if (status === MediaPlayer.EndOfMedia) {
+                // Автоматически переходим к следующему видео
+                if (currentVideoIndex < videoFiles.length - 1) {
+                    playVideo(currentVideoIndex + 1)
+                }
+            } else if (status === MediaPlayer.InvalidMedia) {
+                errorText.text = qsTr("Ошибка: Неподдерживаемый формат видео")
+                errorText.visible = true
+                videoPlayerRoot.showLoadingOnPlay = false
+            } else {
+                errorText.visible = false
+            }
+        }
+        
+        onPlaybackStateChanged: {
+            if (playbackState === MediaPlayer.StoppedState || playbackState === MediaPlayer.PausedState) {
+                // Видео остановлено/на паузе - скрываем индикатор
+                videoPlayerRoot.showLoadingOnPlay = false
+                hideLoadingTimer.stop()
+            }
+        }
+        onError: {
+            errorText.text = qsTr("Ошибка воспроизведения: ") + errorString
+            errorText.visible = true
+        }
+    }
+    
+    VideoOutput {
+        id: videoOutput
+        anchors {
+            top: parent.top
+            left: parent.left
+            right: parent.right
+            bottom: controlsArea.top
+        }
+        source: mediaPlayer
+        fillMode: VideoOutput.PreserveAspectFit
+        
+        MouseArea {
+            anchors.fill: parent
+            onClicked: {
+                if (mediaPlayer.playbackState === MediaPlayer.PlayingState) {
+                    mediaPlayer.pause()
+                } else {
+                    mediaPlayer.play()
+                }
+            }
+        }
+        
+        // Текст ошибки
+        Text {
+            id: errorText
+            anchors.centerIn: parent
+            text: ""
+            color: "red"
+            font.pixelSize: 24
+            font.bold: true
+            visible: false
+            horizontalAlignment: Text.AlignHCenter
+            width: parent.width - 40
+            wrapMode: Text.WordWrap
+        }
+        
+        // Индикатор загрузки/буферизации
+        Rectangle {
+            id: loadingIndicator
+            anchors.centerIn: parent
+            width: 200
+            height: 150
+            color: "#CC000000"
+            radius: 10
+            visible: mediaPlayer.isBuffering && !errorText.visible
+            
+            
+            Column {
+                anchors.centerIn: parent
+                spacing: 15
+                
+                // Вращающийся индикатор загрузки
+                BusyIndicator {
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    width: 60
+                    height: 60
+                    running: loadingIndicator.visible
+                }
+                
+                Text {
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    text: qsTr("Загрузка...")
+                    color: "white"
+                    font.pixelSize: 18
+                    horizontalAlignment: Text.AlignHCenter
+                }
+            }
+        }
+        
+        // Подсказка для пользователя
+        Rectangle {
+            anchors.centerIn: parent
+            width: 300
+            height: 150
+            color: "#CC000000"
+            radius: 10
+            visible: videoFiles.length > 0 && 
+                     mediaPlayer.playbackState !== MediaPlayer.PlayingState &&
+                     !errorText.visible &&
+                     !loadingIndicator.visible
+            
+            Column {
+                anchors.centerIn: parent
+                spacing: 20
+                
+                Text {
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    text: "▶"
+                    color: "white"
+                    font.pixelSize: 60
+                }
+                
+                Text {
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    text: qsTr("Нажмите ▶ для воспроизведения")
+                    color: "white"
+                    font.pixelSize: 18
+                    horizontalAlignment: Text.AlignHCenter
+                }
+            }
+        }
+        
+        // Информация о видео (для отладки)
+        Text {
+            id: debugInfo
+            anchors.top: parent.top
+            anchors.left: parent.left
+            anchors.margins: 10
+            color: "white"
+            font.pixelSize: 12
+            text: "Files: " + videoFiles.length + " | Current: " + currentVideoIndex +
+                  "\nSource: " + mediaPlayer.source +
+                  "\nStatus: " + mediaPlayer.status +
+                  "\nState: " + mediaPlayer.playbackState
+            style: Text.Outline
+            styleColor: "black"
+            visible: false  // Отключаем отладочную информацию
+        }
+    }
+    
+    // Область управления
+    Rectangle {
+        id: controlsArea
+        anchors {
+            left: parent.left
+            right: parent.right
+            bottom: parent.bottom
+        }
+        height: 200
+        color: "#CC000000"
+        z: 100  // Поднимаем над видео
+        
+        Column {
+            anchors.fill: parent
+            anchors.margins: 10
+            spacing: 10
+            
+            // Информация о текущем видео
+            Text {
+                id: videoTitle
+                width: parent.width
+                text: {
+                    if (videoFiles.length === 0) {
+                        return qsTr("Нет видеофайлов в папке ") + videoFolder
+                    } else if (currentVideoIndex >= 0 && currentVideoIndex < videoFiles.length) {
+                        return videoFiles[currentVideoIndex]
+                    } else {
+                        return qsTr("Нет видео")
+                    }
+                }
+                color: "white"
+                font.pixelSize: 18
+                font.bold: true
+                elide: Text.ElideRight
+                horizontalAlignment: Text.AlignHCenter
+                wrapMode: Text.WordWrap
+                maximumLineCount: 2
+            }
+            
+            // Прогресс-бар
+            Row {
+                width: parent.width
+                spacing: 10
+                
+                Text {
+                    text: formatTime(mediaPlayer.position)
+                    color: "white"
+                    font.pixelSize: 14
+                    width: 50
+                }
+                
+                Slider {
+                    id: progressSlider
+                    width: parent.width - 120
+                    from: 0
+                    to: mediaPlayer.duration
+                    value: mediaPlayer.position
+                    onMoved: mediaPlayer.seek(value)
+                }
+                
+                Text {
+                    text: formatTime(mediaPlayer.duration)
+                    color: "white"
+                    font.pixelSize: 14
+                    width: 50
+                }
+            }
+            
+            // Кнопки управления
+            Item {
+                width: parent.width
+                height: 60
+                
+                Row {
+                    anchors.centerIn: parent
+                    spacing: 20
+                    
+                    // Предыдущее видео
+                    SButton {
+                        width: 80
+                        height: 60
+                        text: "⏮"
+                        style: "btn-outline-light"
+                        enabled: currentVideoIndex > 0
+                        onClicked: playVideo(currentVideoIndex - 1)
+                    }
+                    
+                    // Play/Pause
+                    SButton {
+                        width: 80
+                        height: 60
+                        text: mediaPlayer.playbackState === MediaPlayer.PlayingState ? "⏸" : "▶"
+                        style: "btn-outline-light"
+                        enabled: videoFiles.length > 0
+                        onClicked: {
+                            if (mediaPlayer.playbackState === MediaPlayer.PlayingState) {
+                                mediaPlayer.pause()
+                            } else {
+                                mediaPlayer.play()
+                            }
+                        }
+                    }
+                    
+                    // Stop
+                    SButton {
+                        width: 80
+                        height: 60
+                        text: "⏹"
+                        style: "btn-outline-light"
+                        enabled: videoFiles.length > 0
+                        onClicked: {
+                            mediaPlayer.stop()
+                            mediaPlayer.seek(0)
+                        }
+                    }
+                    
+                    // Следующее видео
+                    SButton {
+                        width: 80
+                        height: 60
+                        text: "⏭"
+                        style: "btn-outline-light"
+                        enabled: currentVideoIndex < videoFiles.length - 1
+                        onClicked: playVideo(currentVideoIndex + 1)
+                    }
+                }
+            }
+            
+            // Регулировка громкости
+            Row {
+                anchors.horizontalCenter: parent.horizontalCenter
+                spacing: 10
+                width: Math.min(parent.width - 40, 400)
+                
+                // Кнопка уменьшения громкости
+                SButton {
+                    width: 50
+                    height: 50
+                    text: "🔉"
+                    style: "btn-outline-light"
+                    onClicked: {
+                        var newVolume = Math.max(0, mediaPlayer.volume - 0.1)
+                        mediaPlayer.volume = newVolume
+                    }
+                }
+                
+                // Слайдер громкости
+                Item {
+                    width: parent.width - 120
+                    height: 50
+                    
+                    Text {
+                        id: volumeLabel
+                        anchors.left: parent.left
+                        anchors.verticalCenter: parent.verticalCenter
+                        text: "🔊"
+                        color: "white"
+                        font.pixelSize: 20
+                        width: 30
+                    }
+                    
+                    Slider {
+                        id: volumeSlider
+                        anchors.left: volumeLabel.right
+                        anchors.right: parent.right
+                        anchors.verticalCenter: parent.verticalCenter
+                        anchors.leftMargin: 10
+                        from: 0.0
+                        to: 1.0
+                        value: mediaPlayer.volume
+                        stepSize: 0.01
+                        onValueChanged: {
+                            if (Math.abs(mediaPlayer.volume - value) > 0.01) {
+                                mediaPlayer.volume = value
+                            }
+                        }
+                    }
+                }
+                
+                // Кнопка увеличения громкости
+                SButton {
+                    width: 50
+                    height: 50
+                    text: "🔊"
+                    style: "btn-outline-light"
+                    onClicked: {
+                        var newVolume = Math.min(1.0, mediaPlayer.volume + 0.1)
+                        mediaPlayer.volume = newVolume
+                    }
+                }
+            }
+        }
+    }
+    
+    // Кнопка закрытия
+    SButton {
+        anchors {
+            top: parent.top
+            right: parent.right
+            margins: 10
+        }
+        width: 80
+        height: 60
+        text: "✕"
+        style: "btn-danger"
+        z: 200  // Поверх всего
+        onClicked: {
+            mediaPlayer.stop()
+            videoPlayerRoot.closeRequested()
+        }
+    }
+    
+    // Список видео (боковая панель)
+    Rectangle {
+        id: playlistPanel
+        anchors {
+            top: parent.top
+            left: parent.left
+            bottom: controlsArea.top
+        }
+        width: 300
+        color: "#EE000000"
+        visible: playlistButton.checked
+        z: 150  // Поверх видео
+        
+        ListView {
+            anchors.fill: parent
+            anchors.margins: 10
+            model: videoFiles
+            spacing: 5
+            clip: true
+            
+            delegate: Rectangle {
+                width: parent.width - 20
+                height: 50
+                color: index === currentVideoIndex ? "#4CAF50" : "#424242"
+                radius: 5
+                border.color: "white"
+                border.width: 1
+                
+                Text {
+                    anchors.fill: parent
+                    anchors.margins: 5
+                    text: modelData
+                    color: "white"
+                    font.pixelSize: 14
+                    elide: Text.ElideRight
+                    verticalAlignment: Text.AlignVCenter
+                }
+                
+                MouseArea {
+                    anchors.fill: parent
+                    onClicked: playVideo(index)
+                }
+            }
+        }
+    }
+    
+    // Кнопка переключения плейлиста
+    SButton {
+        id: playlistButton
+        anchors {
+            top: parent.top
+            left: parent.left
+            margins: 10
+        }
+        width: 80
+        height: 60
+        text: "☰"
+        style: "btn-outline-light"
+        checkable: true
+        checked: false
+        z: 200  // Поверх всего
+    }
+}
+

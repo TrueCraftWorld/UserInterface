@@ -40,22 +40,15 @@ Window {
 
    // Функция загрузки поздравлений из файла
    function loadCongrats() {
-      var xhr = new XMLHttpRequest()
-      xhr.open("GET", "file:///home/kikorik/FOTEK/congrat.txt")
-      xhr.onreadystatechange = function() {
-         if (xhr.readyState === XMLHttpRequest.DONE) {
-            if (xhr.status === 0 || xhr.status === 200) {
-               var text = xhr.responseText
-               congratsArray = text.split('\n').filter(function(line) {
-                  return line.trim().length > 0  // Убираем пустые строки
-               })
-               if (congratsArray.length > 0) {
-                  showRandomCongrat()
-               }
-            }
+      var text = recomHandle.readTextFile("/home/kikorik/FOTEK/congrat.txt")
+      if (text.length > 0) {
+         congratsArray = text.split('\n').filter(function(line) {
+            return line.trim().length > 0  // Убираем пустые строки
+         })
+         if (congratsArray.length > 0) {
+            showRandomCongrat()
          }
       }
-      xhr.send()
    }
 
    // Функция выбора случайной строки
@@ -144,7 +137,8 @@ Window {
 
    Drawer {
       id: leftDrawer
-      width: 0.8 * container.width
+      width: container.width
+//      width: 0.8 * container.width
       height: container.height
       edge: Qt.LeftEdge
       

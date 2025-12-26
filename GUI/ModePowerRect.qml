@@ -156,6 +156,14 @@ Canvas {
     Rectangle {
         id: mode
         color: "transparent"
+        z: 10  // Поднимаем над powerControls для обработки кликов
+        // Явно задаём анкоры по умолчанию для expanded state
+        anchors {
+            left: parent.left
+            right: parent.right
+            top: parent.top
+        }
+        height: 90  // Базовая высота для области выбора режима
         Label {
             id: modeLabel
             text: modeName
@@ -183,11 +191,12 @@ Canvas {
             id: modeSelectButton
             anchors {
                 fill: parent
-                topMargin: 10
+                topMargin: 5
                 leftMargin: 60
                 rightMargin: 60
-                bottomMargin: 90
+                bottomMargin: 5  // ИСПРАВЛЕНО: было 90, что давало отрицательную высоту
             }
+            z: 10  // Поднимаем над другими элементами
             onClicked: modePowerRect.modeEditDialogRequest()
         }
 
@@ -683,6 +692,10 @@ Canvas {
 //                anchors.top: powerControls.top
 //                anchors.bottom: powerControls.bottom
             }
+            PropertyChanges {
+                target: mode;
+                height: undefined  // В collapsed высота определяется анкорами
+            }
             AnchorChanges {
                 target: mode
                 anchors.left: {modePowerRect.isCoag ? powerControls.right : modePowerRect.left}
@@ -749,6 +762,10 @@ Canvas {
 //                target: powerSlider
 //                anchors.bottom: parent.bottom
 //            }
+            PropertyChanges {
+                target: mode;
+                height: 90  // Достаточная высота для клика
+            }
             AnchorChanges {
                 target: mode
                 anchors.left: modePowerRect.left

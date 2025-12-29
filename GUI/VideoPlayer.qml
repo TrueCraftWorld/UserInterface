@@ -220,6 +220,7 @@ Rectangle {
                     text: "▶"
                     color: "white"
                     font.pixelSize: 60
+                    font.family: "Noto Color Emoji, Apple Color Emoji, Segoe UI Emoji, Symbola, DejaVu Sans, sans-serif"
                 }
                 
                 Text {
@@ -258,7 +259,7 @@ Rectangle {
             right: parent.right
             bottom: parent.bottom
         }
-        height: 200
+        height: 160
         color: "#CC000000"
         z: 100  // Поднимаем над видео
         
@@ -318,126 +319,145 @@ Rectangle {
                 }
             }
             
-            // Кнопки управления
-            Item {
+            // Кнопки управления и громкость в одной строке
+            Row {
                 width: parent.width
                 height: 60
+                spacing: 20
                 
-                Row {
-                    anchors.centerIn: parent
-                    spacing: 20
+                // Кнопки управления (слева)
+                Item {
+                    width: parent.width - 300 - parent.spacing
+                    height: parent.height
                     
-                    // Предыдущее видео
-                    SButton {
-                        width: 80
-                        height: 60
-                        text: "⏮"
-                        style: "btn-outline-light"
-                        enabled: currentVideoIndex > 0
-                        onClicked: playVideo(currentVideoIndex - 1)
-                    }
-                    
-                    // Play/Pause
-                    SButton {
-                        width: 80
-                        height: 60
-                        text: mediaPlayer.playbackState === MediaPlayer.PlayingState ? "⏸" : "▶"
-                        style: "btn-outline-light"
-                        enabled: videoFiles.length > 0
-                        onClicked: {
-                            if (mediaPlayer.playbackState === MediaPlayer.PlayingState) {
-                                mediaPlayer.pause()
-                            } else {
-                                mediaPlayer.play()
+                    Row {
+                        anchors.centerIn: parent
+                        spacing: 20
+                        
+                        // Предыдущее видео
+                        SButton {
+                            width: 80
+                            height: 60
+                            text: "⏮"
+                            style: "btn-outline-light"
+                            font.family: "Noto Color Emoji, Apple Color Emoji, Segoe UI Emoji, Symbola, DejaVu Sans, sans-serif"
+                            enabled: currentVideoIndex > 0
+                            onClicked: playVideo(currentVideoIndex - 1)
+                        }
+                        
+                        // Play/Pause
+                        SButton {
+                            width: 80
+                            height: 60
+                            text: mediaPlayer.playbackState === MediaPlayer.PlayingState ? "⏸" : "▶"
+                            style: "btn-outline-light"
+                            font.family: "Noto Color Emoji, Apple Color Emoji, Segoe UI Emoji, Symbola, DejaVu Sans, sans-serif"
+                            enabled: videoFiles.length > 0
+                            onClicked: {
+                                if (mediaPlayer.playbackState === MediaPlayer.PlayingState) {
+                                    mediaPlayer.pause()
+                                } else {
+                                    mediaPlayer.play()
+                                }
                             }
                         }
-                    }
-                    
-                    // Stop
-                    SButton {
-                        width: 80
-                        height: 60
-                        text: "⏹"
-                        style: "btn-outline-light"
-                        enabled: videoFiles.length > 0
-                        onClicked: {
-                            mediaPlayer.stop()
-                            mediaPlayer.seek(0)
+                        
+                        // Stop
+                        SButton {
+                            width: 80
+                            height: 60
+                            text: "⏹"
+                            style: "btn-outline-light"
+                            font.family: "Noto Color Emoji, Apple Color Emoji, Segoe UI Emoji, Symbola, DejaVu Sans, sans-serif"
+                            enabled: videoFiles.length > 0
+                            onClicked: {
+                                mediaPlayer.stop()
+                                mediaPlayer.seek(0)
+                            }
+                        }
+                        
+                        // Следующее видео
+                        SButton {
+                            width: 80
+                            height: 60
+                            text: "⏭"
+                            style: "btn-outline-light"
+                            font.family: "Noto Color Emoji, Apple Color Emoji, Segoe UI Emoji, Symbola, DejaVu Sans, sans-serif"
+                            enabled: currentVideoIndex < videoFiles.length - 1
+                            onClicked: playVideo(currentVideoIndex + 1)
                         }
                     }
-                    
-                    // Следующее видео
-                    SButton {
-                        width: 80
-                        height: 60
-                        text: "⏭"
-                        style: "btn-outline-light"
-                        enabled: currentVideoIndex < videoFiles.length - 1
-                        onClicked: playVideo(currentVideoIndex + 1)
-                    }
-                }
-            }
-            
-            // Регулировка громкости
-            Row {
-                anchors.horizontalCenter: parent.horizontalCenter
-                spacing: 10
-                width: Math.min(parent.width - 40, 400)
-                
-                // Кнопка уменьшения громкости
-                SButton {
-                    width: 50
-                    height: 50
-                    text: "🔉"
-                    style: "btn-outline-light"
-                    onClicked: {
-                        var newVolume = Math.max(0, mediaPlayer.volume - 0.1)
-                        mediaPlayer.volume = newVolume
-                    }
                 }
                 
-                // Слайдер громкости
+                // Регулировка громкости (справа)
                 Item {
-                    width: parent.width - 120
-                    height: 50
+                    width: 300
+                    height: parent.height
                     
-                    Text {
-                        id: volumeLabel
-                        anchors.left: parent.left
-                        anchors.verticalCenter: parent.verticalCenter
-                        text: "🔊"
-                        color: "white"
-                        font.pixelSize: 20
-                        width: 30
-                    }
-                    
-                    Slider {
-                        id: volumeSlider
-                        anchors.left: volumeLabel.right
+                    Row {
                         anchors.right: parent.right
                         anchors.verticalCenter: parent.verticalCenter
-                        anchors.leftMargin: 10
-                        from: 0.0
-                        to: 1.0
-                        value: mediaPlayer.volume
-                        stepSize: 0.01
-                        onValueChanged: {
-                            if (Math.abs(mediaPlayer.volume - value) > 0.01) {
-                                mediaPlayer.volume = value
+                        spacing: 10
+                        
+                        // Кнопка уменьшения громкости
+                        SButton {
+                            width: 50
+                            height: 50
+                            text: "🔉"
+                            style: "btn-outline-light"
+                            font.family: "Noto Color Emoji, Apple Color Emoji, Segoe UI Emoji, Symbola, DejaVu Sans, sans-serif"
+                            onClicked: {
+                                var newVolume = Math.max(0, mediaPlayer.volume - 0.1)
+                                mediaPlayer.volume = newVolume
                             }
                         }
-                    }
-                }
-                
-                // Кнопка увеличения громкости
-                SButton {
-                    width: 50
-                    height: 50
-                    text: "🔊"
-                    style: "btn-outline-light"
-                    onClicked: {
-                        var newVolume = Math.min(1.0, mediaPlayer.volume + 0.1)
-                        mediaPlayer.volume = newVolume
+                        
+                        // Слайдер громкости
+                        Item {
+                            width: 180
+                            height: 50
+                            
+                            Text {
+                                id: volumeLabel
+                                anchors.left: parent.left
+                                anchors.verticalCenter: parent.verticalCenter
+                                text: "🔊"
+                                color: "white"
+                                font.pixelSize: 20
+                                font.family: "Noto Color Emoji, Apple Color Emoji, Segoe UI Emoji, Symbola, DejaVu Sans, sans-serif"
+                                width: 30
+                            }
+                            
+                            Slider {
+                                id: volumeSlider
+                                anchors.left: volumeLabel.right
+                                anchors.right: parent.right
+                                anchors.verticalCenter: parent.verticalCenter
+                                anchors.leftMargin: 10
+                                from: 0.0
+                                to: 1.0
+                                value: mediaPlayer.volume
+                                stepSize: 0.01
+                                onValueChanged: {
+                                    if (Math.abs(mediaPlayer.volume - value) > 0.01) {
+                                        mediaPlayer.volume = value
+                                    }
+                                }
+                            }
+                        }
+                        
+                        // Кнопка увеличения громкости
+                        SButton {
+                            width: 50
+                            height: 50
+                            text: "🔊"
+                            style: "btn-outline-light"
+                            font.family: "Noto Color Emoji, Apple Color Emoji, Segoe UI Emoji, Symbola, DejaVu Sans, sans-serif"
+                            onClicked: {
+                                var newVolume = Math.min(1.0, mediaPlayer.volume + 0.1)
+                                mediaPlayer.volume = newVolume
+                            }
+                        }
                     }
                 }
             }
@@ -455,6 +475,7 @@ Rectangle {
         height: 60
         text: "✕"
         style: "btn-danger"
+        font.family: "Noto Color Emoji, Apple Color Emoji, Segoe UI Emoji, Symbola, DejaVu Sans, sans-serif"
         z: 200  // Поверх всего
         onClicked: {
             mediaPlayer.stop()
@@ -520,6 +541,7 @@ Rectangle {
         height: 60
         text: "☰"
         style: "btn-outline-light"
+        font.family: "Noto Color Emoji, Apple Color Emoji, Segoe UI Emoji, Symbola, DejaVu Sans, sans-serif"
         checkable: true
         checked: false
         z: 200  // Поверх всего

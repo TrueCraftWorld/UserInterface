@@ -62,7 +62,7 @@ public:
 	 *         6.3 инициализация сокета полученным списком допустимыз режимов и инструментов
 	 *         6.4 установка режима, мощностии и инструмента по умолчанию
 	 */
-	void programmLoadSocketInit(int progId, bool clear = true);
+	bool programmLoadSocketInit(int progId, bool clear = true);
 
 	/**
 	 * @brief getListOfPrograms получение списка доспуных программ в категории
@@ -82,7 +82,7 @@ public:
 	 /**
 	 * @brief Загружает последнее сохранённое состояние из БД
 	 */
-	void loadCurrentState();
+	bool loadCurrentState();
 
 	std::map<int, std::map<int, Onyx::InstrInfo>> getConstraints(const QList<int> &idList);
 

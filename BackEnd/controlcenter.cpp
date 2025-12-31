@@ -97,8 +97,9 @@ QPointer<SocketModeEditor> ControlCenter::getModeEditor() const
 
 void ControlCenter::initSockets()
 {
-    m_progLoader->defaultSocketInit();
-    m_progLoader->loadCurrentState();
+    if (!m_progLoader->loadCurrentState()) {
+        m_progLoader->defaultSocketInit();
+    }
     m_handle->setScopeNameList(m_progLoader->getScopes());
 }
 
@@ -143,7 +144,6 @@ void ControlCenter::prepareConnectios()
                 return;
             }
         }
-
     });
 }
 
@@ -197,11 +197,13 @@ void ControlCenter::setLinkStm(LinkStm* linkStm)
                 QMetaObject::invokeMethod(  m_linkStm.data(),
                                         "updateSocketData",
                                         Qt::QueuedConnection,
-                                        Q_ARG(quint16, topLeft.siblingAtRow(i).data(SocketModel::CutModeNum).value<quint16>()),
-                                        Q_ARG(quint16, topLeft.siblingAtRow(i).data(SocketModel::CoagModeNum).value<quint16>()),
-                                        Q_ARG(quint16, topLeft.siblingAtRow(i).data(SocketModel::CutModePower).value<quint16>()),
-                                        Q_ARG(quint16, topLeft.siblingAtRow(i).data(SocketModel::CoagModePower).value<quint16>()),
-                                        Q_ARG(quint8, topLeft.siblingAtRow(i).data(SocketModel::SocketPedal).value<quint8>()));
+                                        Q_ARG(int, i),
+                                        Q_ARG(Onyx::SocketState, topLeft.siblingAtRow(i).data(SocketModel::SocketUartInfo).value<Onyx::SocketState>()));
+                                        // Q_ARG(quint16, topLeft.siblingAtRow(i).data(SocketModel::CutModeNum).value<quint16>()),
+                                        // Q_ARG(quint16, topLeft.siblingAtRow(i).data(SocketModel::CoagModeNum).value<quint16>()),
+                                        // Q_ARG(quint16, topLeft.siblingAtRow(i).data(SocketModel::CutModePower).value<quint16>()),
+                                        // Q_ARG(quint16, topLeft.siblingAtRow(i).data(SocketModel::CoagModePower).value<quint16>()),
+                                        // Q_ARG(quint8, topLeft.siblingAtRow(i).data(SocketModel::SocketPedal).value<quint8>()));
             }
         }, Qt::QueuedConnection);
         

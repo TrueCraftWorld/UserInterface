@@ -3,6 +3,7 @@
 #include <unordered_set>
 #include <cmath>
 #include <vector>
+#include <QDebug>
 
 
 namespace {
@@ -229,24 +230,11 @@ ProgLoader::ProgLoader(QObject *parent)
 
 void ProgLoader::slotSaveCurrentState()
 {
-    if (m_socketModelPtr == nullptr || m_socketModelPtr->itemsMap() == nullptr) {
+    if (m_socketModelPtr == nullptr
+        || m_socketModelPtr->itemsMap() == nullptr) {
         // qWarning() << "Cannot save state: socket model not initialized";
         return;
     }
-///TODO - структурка с инициализатором для значений, просто для удобства
-    // Собираем данные из всех сокетов (инициализируем значениями по умолчанию)
-    // QString bi1CutInstr = "0", bi1CutMode = "1000", bi1CutPower = "1";
-    // QString bi1CoagInstr = "0", bi1CoagMode = "1000", bi1CoagPower = "1";
-    // QString bi2CutInstr = "0", bi2CutMode = "1000", bi2CutPower = "1";
-    // QString bi2CoagInstr = "0", bi2CoagMode = "1000", bi2CoagPower = "1";
-    // QString mono1CutInstr = "0", mono1CutMode = "1000", mono1CutPower = "1";
-    // QString mono1CoagInstr = "0", mono1CoagMode = "1000", mono1CoagPower = "1";
-    // QString mono2CutInstr = "0", mono2CutMode = "1000", mono2CutPower = "1";
-    // QString mono2CoagInstr = "0", mono2CoagMode = "1000", mono2CoagPower = "1";
-
-///TODO - сохранялка всех текщуих листов, а не 1
-/// надо хранить до 5 листов с прог айди 1000 и номерами по порядку - также нужно удалять неиспользуемые
-/// листы
 
     auto fillState = [this] (std::array<QString, 3>& cut,
                             std::array<QString, 3>& coag,
@@ -309,6 +297,25 @@ void ProgLoader::slotSaveCurrentState()
         .arg(state.mono2Cut[0]).arg(state.mono2Cut[1]).arg(state.mono2Cut[2])
         .arg(state.mono2Coag[0]).arg(state.mono2Coag[1]).arg(state.mono2Coag[2])
         .arg(pedalState.first).arg(pedalState.second).arg(outEnabledMask).arg(i);
+
+        if (!m_dbReaderPtr->executeUpdateQuery(query)) {
+            qDebug() << "Failed to save current state";
+        }
+    }
+    //проблема в запросе - меняем каждый раз одну и ту же строку - надо инкрементить id
+    for (int i = subCount; i < 4; ++i) {
+        const SocketStrings state;
+        const std::pair<int, int> pedalState = {-1, -1};
+        QString query = saveCurQuery
+                        .arg(state.bi1Cut[0]).arg(state.bi1Cut[1]).arg(state.bi1Cut[2])
+                        .arg(state.bi1Coag[0]).arg(state.bi1Coag[1]).arg(state.bi1Coag[2])
+                        .arg(state.bi2Cut[0]).arg(state.bi2Cut[1]).arg(state.bi2Cut[2])
+                        .arg(state.bi2Coag[0]).arg(state.bi2Coag[1]).arg(state.bi2Coag[2])
+                        .arg(state.mono1Cut[0]).arg(state.mono1Cut[1]).arg(state.mono1Cut[2])
+                        .arg(state.mono1Coag[0]).arg(state.mono1Coag[1]).arg(state.mono1Coag[2])
+                        .arg(state.mono2Cut[0]).arg(state.mono2Cut[1]).arg(state.mono2Cut[2])
+                        .arg(state.mono2Coag[0]).arg(state.mono2Coag[1]).arg(state.mono2Coag[2])
+                        .arg(pedalState.first).arg(pedalState.second).arg(outEnabledMask).arg(-1);
 
         if (!m_dbReaderPtr->executeUpdateQuery(query)) {
             // qWarning() << "Failed to save current state";
@@ -467,7 +474,7 @@ void ProgLoader::defaultSocketInit(bool clear)
     m_socketModelPtr->loadProgs(socketMapVector, instrMapVector, !clear);
 }
 
-void ProgLoader::programmLoadSocketInit(int progId, bool clear)
+bool ProgLoader::programmLoadSocketInit(int progId, bool clear)
 {
     //начинаем прорабатывать прогрузку несекольких экранов
     std::vector<std::map<int, SockPtr>> socketMapVector;
@@ -484,7 +491,7 @@ void ProgLoader::programmLoadSocketInit(int progId, bool clear)
                                                       fields,
                                                       queryCondition.arg(progId));
     if (progListVariant.size() == 0)
-        return;
+        return false;
 
     //Шаг5---------------------------------------------------------
     //тут какой-то затуп с базой на каких-то прогах, разрешено всего несколько инструментов
@@ -504,6 +511,9 @@ void ProgLoader::programmLoadSocketInit(int progId, bool clear)
 
     for (const auto& progItem : progListVariant) {
     //ограничения для каждого листа
+        if (progItem.at(1).toInt() < 0
+            || progItem.at(1).toInt() >= 4)
+            continue;
         QList<int> allowedModesId;
         std::vector<int> allowedInstrId;
 
@@ -620,7 +630,12 @@ void ProgLoader::programmLoadSocketInit(int progId, bool clear)
         instrMapVector.push_back(getInstrums());
     }
 
+    if (socketMapVector.empty())
+        return false;
+
     m_socketModelPtr->loadProgs(socketMapVector, instrMapVector, !clear);
+    slotSaveCurrentState();
+    return (true);
 }
 
 QMap<int, QString> ProgLoader::getListOfPrograms(int scopeID)
@@ -735,8 +750,12 @@ void ProgLoader::setSocketModelPtr(QSharedPointer<SocketModel> newSocketModelPtr
     m_socketModelPtr = newSocketModelPtr;
 }
 
-void ProgLoader::loadCurrentState()
+bool ProgLoader::loadCurrentState()
 {
+     return programmLoadSocketInit(1000, true);
+    // return ;
+    /*
+
     // Проверяем, есть ли запись с id=1000
     QList<QVariantList> stateList = m_dbReaderPtr->slotSendSelectQuery(
         QStringList{"Lists"},
@@ -748,14 +767,18 @@ void ProgLoader::loadCurrentState()
                     "Mono1Coag_INSTR", "Mono1Coag_MODE", "Mono1Coag_POWER",
                     "Mono2Cut_INSTR", "Mono2Cut_MODE", "Mono2Cut_POWER",
                     "Mono2Coag_INSTR", "Mono2Coag_MODE", "Mono2Coag_POWER",
-                    "Pedal_1", "Pedal_2", "OutEnabled_MASK"},
+                    "Pedal_1", "Pedal_2", "OutEnabled_MASK", "Num"},
         "id = 1000"
     );
-
-    if (stateList.isEmpty()) {
+//последнее состояние - всегда 5 листов, просто не все заняты
+    if (stateList.isEmpty() || stateList.size() != 5) {
         // qDebug() << "No saved state found (id=1000), using defaults";
         return;
     }
+    // m_socketModelPtr->bl
+    // for (int i = 0; i < 5; ++i) {
+    //     const QVariantList& state = stateList.at(i);
+    // }
 
     const QVariantList& state = stateList.at(0);
 
@@ -861,4 +884,5 @@ void ProgLoader::loadCurrentState()
     }
     //поменяли напрочь всё
     emit m_socketModelPtr->dataChanged(QModelIndex(), QModelIndex(), {});
+    */
 }

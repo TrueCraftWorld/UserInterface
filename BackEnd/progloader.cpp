@@ -192,7 +192,7 @@ void filterModeMap(QMap<int, SurgModePtr>& container, const std::vector<int>& al
                           "Mono1Coag_INSTR", "Mono1Coag_MODE", "Mono1Coag_POWER", /* 18 19 20*/
                           "Mono2Cut_INSTR", "Mono2Cut_MODE", "Mono2Cut_POWER", /* 21 22 23*/
                           "Mono2Coag_INSTR", "Mono2Coag_MODE", "Mono2Coag_POWER", /* 24 25 26*/
-                          "Pedal_1", "Pedal_2", "OutEnabled_MASK"};/* 27 28 29*/
+                          "Pedal_1", "Pedal_2", "OutEnabled_MASK", "User_ID"};/* 27 28 29*/
     const   QString saveCurQuery = QString(
         "REPLACE INTO Lists ("
         "id, Num, Prog_ID, "
@@ -217,6 +217,30 @@ void filterModeMap(QMap<int, SurgModePtr>& container, const std::vector<int>& al
         "'%22', '%23', %24, "
         "%25, %26, %27"
         ")");
+    const   QString insertCurQuery = QString(
+                                       "INSERT INTO Lists ("
+                                       "Num, Prog_ID, "
+                                       "Bi1Cut_INSTR, Bi1Cut_MODE, Bi1Cut_POWER, "
+                                       "Bi1Coag_INSTR, Bi1Coag_MODE, Bi1Coag_POWER, "
+                                       "Bi2Cut_INSTR, Bi2Cut_MODE, Bi2Cut_POWER, "
+                                       "Bi2Coag_INSTR, Bi2Coag_MODE, Bi2Coag_POWER, "
+                                       "Mono1Cut_INSTR, Mono1Cut_MODE, Mono1Cut_POWER, "
+                                       "Mono1Coag_INSTR, Mono1Coag_MODE, Mono1Coag_POWER, "
+                                       "Mono2Cut_INSTR, Mono2Cut_MODE, Mono2Cut_POWER, "
+                                       "Mono2Coag_INSTR, Mono2Coag_MODE, Mono2Coag_POWER, "
+                                       "Pedal_1, Pedal_2, OutEnabled_MASK"
+                                       ") VALUES ("
+                                       "%28, 1000, "
+                                       "'%1', '%2', %3, "
+                                       "'%4', '%5', %6, "
+                                       "'%7', '%8', %9, "
+                                       "'%10', '%11', %12, "
+                                       "'%13', '%14', %15, "
+                                       "'%16', '%17', %18, "
+                                       "'%19', '%20', %21, "
+                                       "'%22', '%23', %24, "
+                                       "%25, %26, %27"
+                                       ")");
 
 }
 
@@ -247,16 +271,18 @@ void ProgLoader::slotSaveCurrentState()
             return;
         } else {
             cut[0] = QString::number(idx.data(SocketModel::CutModeInstrID).toInt());
-            cut[1] = QString::number(idx.data(SocketModel::CutModeNum).toInt());
+            // cut[1] = QString::number(idx.data(SocketModel::CutModeNum).toInt());
+            cut[1] = QString::number(idx.data(SocketModel::CutModeId).toInt());
             cut[2] = QString::number(idx.data(SocketModel::CutModePower).toInt());
             coag[0] = QString::number(idx.data(SocketModel::CoagModeInstrID).toInt());
-            coag[1] = QString::number(idx.data(SocketModel::CoagModeNum).toInt());
+            // coag[1] = QString::number(idx.data(SocketModel::CoagModeNum).toInt());
+            coag[1] = QString::number(idx.data(SocketModel::CoagModeId).toInt());
             coag[2] = QString::number(idx.data(SocketModel::CoagModePower).toInt());
             int ped = idx.data(SocketModel::SocketPedal).toInt();
             if (ped == SINGLE_PED)
-                pedals.first = _idx;
+                pedals.first = _idx + 1;
             if (ped == DOUBLE_PED)
-                pedals.second = _idx;
+                pedals.second = _idx + 1;
         }
     };
 
@@ -265,62 +291,66 @@ void ProgLoader::slotSaveCurrentState()
     int subCount = m_socketModelPtr->subProgCount();
     int curSubIndex = m_socketModelPtr->subProgIdx();
     allStates.resize(subCount);
-    allPedals.resize(subCount, {-1, -1});
+    allPedals.resize(subCount, {0, 0});
     m_socketModelPtr->blockSignals(true);
     for (int list = 0; list < subCount; ++list) {
         m_socketModelPtr->setSubProgIdx(list);
         SocketStrings & state = allStates[list];
         std::pair<int, int> & pedalState = allPedals[list];
-        fillState(state.bi1Cut, state.bi1Coag, pedalState, 0);
-        fillState(state.bi2Cut, state.bi2Coag, pedalState, 1);
-        fillState(state.mono1Cut, state.mono1Coag, pedalState, 2);
-        fillState(state.mono2Cut, state.mono2Coag, pedalState, 3);
+        //bi1cut bi1coag
+        fillState(state[0], state[1], pedalState, 0);
+        fillState(state[2], state[3], pedalState, 1);
+        fillState(state[4], state[5], pedalState, 2);
+        fillState(state[6], state[7], pedalState, 3);
     }
     m_socketModelPtr->setSubProgIdx(curSubIndex);
     m_socketModelPtr->blockSignals(false);
 
     // OutEnabled_MASK - битовая маска доступности полусокетов
     // TODO: если нужно сохранять доступность, добавить логику
-    int outEnabledMask = 255;  // По умолчанию все включены (11111111)
+    int outEnabledMask = 11111111;  // По умолчанию все включены (11111111)
 
     // Формируем SQL запрос для REPLACE (INSERT OR UPDATE)
+    QString removeQuerry = "DELETE FROM Lists WHERE Prog_ID = 1000";
+    m_dbReaderPtr->executeUpdateQuery(removeQuerry);
     for (int i = 0; i < subCount; ++i) {
         const SocketStrings & state = allStates.at(i);
         const std::pair<int, int> & pedalState = allPedals.at(i);
-        QString query = saveCurQuery
-        .arg(state.bi1Cut[0]).arg(state.bi1Cut[1]).arg(state.bi1Cut[2])
-        .arg(state.bi1Coag[0]).arg(state.bi1Coag[1]).arg(state.bi1Coag[2])
-        .arg(state.bi2Cut[0]).arg(state.bi2Cut[1]).arg(state.bi2Cut[2])
-        .arg(state.bi2Coag[0]).arg(state.bi2Coag[1]).arg(state.bi2Coag[2])
-        .arg(state.mono1Cut[0]).arg(state.mono1Cut[1]).arg(state.mono1Cut[2])
-        .arg(state.mono1Coag[0]).arg(state.mono1Coag[1]).arg(state.mono1Coag[2])
-        .arg(state.mono2Cut[0]).arg(state.mono2Cut[1]).arg(state.mono2Cut[2])
-        .arg(state.mono2Coag[0]).arg(state.mono2Coag[1]).arg(state.mono2Coag[2])
-        .arg(pedalState.first).arg(pedalState.second).arg(outEnabledMask).arg(i);
+        QString query = insertCurQuery
+        // QString query = saveCurQuery
+        .arg(state.at(0).at(0) == "-1" ? "" : state.at(0).at(0)).arg(state.at(0).at(1) == "1000" ? "" : state.at(0).at(1)).arg(state.at(0).at(2))
+        .arg(state.at(1).at(0) == "-1" ? "" : state.at(1).at(0)).arg(state.at(1).at(1) == "1000" ? "" : state.at(1).at(1)).arg(state.at(1).at(2))
+        .arg(state.at(2).at(0) == "-1" ? "" : state.at(2).at(0)).arg(state.at(2).at(1) == "1000" ? "" : state.at(2).at(1)).arg(state.at(2).at(2))
+        .arg(state.at(3).at(0) == "-1" ? "" : state.at(3).at(0)).arg(state.at(3).at(1) == "1000" ? "" : state.at(3).at(1)).arg(state.at(3).at(2))
+        .arg(state.at(4).at(0) == "-1" ? "" : state.at(4).at(0)).arg(state.at(4).at(1) == "1000" ? "" : state.at(4).at(1)).arg(state.at(4).at(2))
+        .arg(state.at(5).at(0) == "-1" ? "" : state.at(5).at(0)).arg(state.at(5).at(1) == "1000" ? "" : state.at(5).at(1)).arg(state.at(5).at(2))
+        .arg(state.at(6).at(0) == "-1" ? "" : state.at(6).at(0)).arg(state.at(6).at(1) == "1000" ? "" : state.at(6).at(1)).arg(state.at(6).at(2))
+        .arg(state.at(7).at(0) == "-1" ? "" : state.at(7).at(0)).arg(state.at(7).at(1) == "1000" ? "" : state.at(7).at(1)).arg(state.at(7).at(2))
+        .arg(pedalState.first).arg(pedalState.second).arg(outEnabledMask).arg(i+1);
 
         if (!m_dbReaderPtr->executeUpdateQuery(query)) {
             qDebug() << "Failed to save current state";
         }
     }
-    //проблема в запросе - меняем каждый раз одну и ту же строку - надо инкрементить id
-    for (int i = subCount; i < 4; ++i) {
-        const SocketStrings state;
-        const std::pair<int, int> pedalState = {-1, -1};
-        QString query = saveCurQuery
-                        .arg(state.bi1Cut[0]).arg(state.bi1Cut[1]).arg(state.bi1Cut[2])
-                        .arg(state.bi1Coag[0]).arg(state.bi1Coag[1]).arg(state.bi1Coag[2])
-                        .arg(state.bi2Cut[0]).arg(state.bi2Cut[1]).arg(state.bi2Cut[2])
-                        .arg(state.bi2Coag[0]).arg(state.bi2Coag[1]).arg(state.bi2Coag[2])
-                        .arg(state.mono1Cut[0]).arg(state.mono1Cut[1]).arg(state.mono1Cut[2])
-                        .arg(state.mono1Coag[0]).arg(state.mono1Coag[1]).arg(state.mono1Coag[2])
-                        .arg(state.mono2Cut[0]).arg(state.mono2Cut[1]).arg(state.mono2Cut[2])
-                        .arg(state.mono2Coag[0]).arg(state.mono2Coag[1]).arg(state.mono2Coag[2])
-                        .arg(pedalState.first).arg(pedalState.second).arg(outEnabledMask).arg(-1);
+    // //проблема в запросе - меняем каждый раз одну и ту же строку - надо инкрементить id
+    // for (int i = subCount; i < 4; ++i) {
+    //     const SocketStrings state;
+    //     const std::pair<int, int> pedalState = {-1, -1};
+    //     QString query = saveCurQuery
+    //                     .arg(state.at(0)[0]).arg(state.at(0)[1]).arg(state.at(0)[2])
+    //                     .arg(state.at(1)[0]).arg(state.at(1)[1]).arg(state.at(1)[2])
+    //                     .arg(state.at(2)[0]).arg(state.at(2)[1]).arg(state.at(2)[2])
+    //                     .arg(state.at(3)[0]).arg(state.at(3)[1]).arg(state.at(3)[2])
+    //                     .arg(state.at(4)[0]).arg(state.at(4)[1]).arg(state.at(4)[2])
+    //                     .arg(state.at(5)[0]).arg(state.at(5)[1]).arg(state.at(5)[2])
+    //                     .arg(state.at(6)[0]).arg(state.at(6)[1]).arg(state.at(6)[2])
+    //                     .arg(state.at(7)[0]).arg(state.at(7)[1]).arg(state.at(7)[2])
+    //                     .arg(pedalState.first).arg(pedalState.second).arg(outEnabledMask).arg(-1);
 
-        if (!m_dbReaderPtr->executeUpdateQuery(query)) {
-            // qWarning() << "Failed to save current state";
-        }
-    }
+    //     if (!m_dbReaderPtr->executeUpdateQuery(query)) {
+    //         // qWarning() << "Failed to save current state";
+    //     }
+    // }
 }
 
 bool ProgLoader::readPreviousSocketSettings()
@@ -525,6 +555,22 @@ bool ProgLoader::programmLoadSocketInit(int progId, bool clear)
         for (const auto& item : allowedModes)
             allowedModesId.append(item.at(0).toInt());
 
+        std::vector<int> allowedModesId__;
+        if (progId == 1000) {
+            for (int i = 0; i < 8; ++i)
+                allowedModesId__.push_back(progItem.at(4 + 3*i).toInt());
+            std::sort(allowedModesId__.begin(), allowedModesId__.end());
+            if (allowedModesId__.size() >1) {
+                for (auto iter = allowedModesId__.begin()+1; iter < allowedModesId__.end(); ++iter) {
+                    if ( *(iter-1) == *(iter) ) {
+                        iter = allowedModesId__.erase(iter);
+                    }
+                }
+            }
+            allowedModesId = QList<int>::fromVector(QVector<int>::fromStdVector(allowedModesId__));
+        }
+        // allowedModes
+
         //Шаг3---------------------------------------------------------
         QList<QVariantList> allowedInstr
                 = m_dbReaderPtr->slotSendSelectQuery(QStringList{"EnableInstr"},
@@ -533,6 +579,23 @@ bool ProgLoader::programmLoadSocketInit(int progId, bool clear)
 
         for (const auto& item : allowedInstr)
             allowedInstrId.push_back(item.at(0).toInt());
+
+
+        std::vector<int> allowedInstrId__;
+        if (progId == 1000) {
+            for (int i = 0; i < 8; ++i)
+                allowedInstrId__.push_back(progItem.at(3 + 3*i).toInt());
+            std::sort(allowedInstrId__.begin(), allowedInstrId__.end());
+            if (allowedInstrId__.size() > 1) {
+                for (auto iter = allowedInstrId__.begin()+1; iter < allowedInstrId__.end(); ++iter) {
+                    if ( *(iter - 1) == *(iter) ) {
+                        iter = allowedInstrId__.erase(iter);
+                    }
+                }
+            }
+            allowedInstrId = allowedInstrId__;
+        }
+
 
         //Шаг4---------------------------------------------------------
         QString queryConditionModes = "BI_MONO = %1 AND CUT_COAG = %2 AND id IN (%3)";
@@ -552,8 +615,10 @@ bool ProgLoader::programmLoadSocketInit(int progId, bool clear)
             for (int halfSocket = 0; halfSocket < 2; ++halfSocket ) {
                 bool isCoag = (halfSocket == 0);
                 QMap<int, SurgModePtr> modes;
-                QList<QVariantList> modesList = m_dbReaderPtr->slotSendSelectQuery(QStringList{"Modes"},
-                            QStringList{"MaxPower","Name_RU", "id", "Num", "Brief_RU", "Descript_RU", "ENDO_REG"},
+                QList<QVariantList> modesList = m_dbReaderPtr->slotSendSelectQuery(
+                            QStringList{"Modes"},
+                            QStringList{"MaxPower","Name_RU", "id", "Num",
+                                        "Brief_RU", "Descript_RU", "ENDO_REG"},
                             queryConditionModes
                                         .arg(socket->socketType() <= Onyx::BIPOLAR_2 ? 0 : 1)
                                         .arg(halfSocket)
@@ -634,7 +699,8 @@ bool ProgLoader::programmLoadSocketInit(int progId, bool clear)
         return false;
 
     m_socketModelPtr->loadProgs(socketMapVector, instrMapVector, !clear);
-    slotSaveCurrentState();
+    if (progId != 1000)
+        slotSaveCurrentState();
     return (true);
 }
 
@@ -752,7 +818,7 @@ void ProgLoader::setSocketModelPtr(QSharedPointer<SocketModel> newSocketModelPtr
 
 bool ProgLoader::loadCurrentState()
 {
-     return programmLoadSocketInit(1000, true);
+    return programmLoadSocketInit(1000, true);
     // return ;
     /*
 

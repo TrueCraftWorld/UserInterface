@@ -11,6 +11,18 @@
 
 constexpr int ENDO_MAX = 3;
 
+// struct SocketStrings {
+//     std::array<QString, 3> bi1Cut  = {"0","1000","1"};
+//     std::array<QString, 3> bi1Coag = {"0","1000","1"};
+//     std::array<QString, 3> bi2Cut  = {"0","1000","1"};
+//     std::array<QString, 3> bi2Coag = {"0","1000","1"};
+//     std::array<QString, 3> mono1Cut  = {"0","1000","1"};
+//     std::array<QString, 3> mono1Coag = {"0","1000","1"};
+//     std::array<QString, 3> mono2Cut  = {"0","1000","1"};
+//     std::array<QString, 3> mono2Coag = {"0","1000","1"};
+// };
+using SocketStrings = std::array<std::array<QString, 3>, 8>; //instrNum, modeNum, power
+
 class SocketModel : public QAbstractListModel
 {
     Q_OBJECT
@@ -138,6 +150,8 @@ private:
      * @brief populateRoles - метамагическая запонялка имён ролей по именам енума ролей
      */
     void populateRoles();
+
+    std::vector<SocketStrings> getDatabaseText();
 
 //поля
 private:

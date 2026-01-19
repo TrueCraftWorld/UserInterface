@@ -805,3 +805,42 @@ void SocketModel::populateRoles()
         m_roles.insert(roleKey, roleName.toUtf8());
     }
 }
+
+std::vector<SocketStrings> SocketModel::getDatabaseText()
+{
+    std::vector<SocketStrings> progDesc;
+    progDesc.resize(m_subProgCount);
+    for (int i = 0; i < m_itemsMapVect.size(); ++i) {
+        SocketStrings& listDesc = progDesc[i];
+        const auto& list = m_itemsMapVect.at(i);
+        const auto& instrList = m_instrMapVect.at(i);
+        for (int j = 0; j < list.size(); ++j) {
+            const auto& socket = list.at(j);
+            auto& socketDescCut = listDesc.at(2*j);
+            auto& socketDescCoag = listDesc.at(2*j + 1);
+            //instrNum, modeNum, power
+            socketDescCut.at(0) = QString::number(socket->curCutMode()
+                                                    ? socket->curCutMode()->selectedInstrId()
+                                                    : 0);
+            QStringList сutModes = socket->cutModeNamesIds();
+            QStringList cutInstrums;
+            for (int i = 0; i < сutModes.size(); ++i) {
+                cutInstrums.append(instrumNamesIds(j, i, false));
+            }
+            cutInstrums.removeDuplicates();
+            int curCutId = socket->cutModeId();
+            cutInstrums.removeOne(QString::number(curCutId));
+            cutInstrums.prepend(QString::number(curCutId));
+
+            socketDescCut.at(1) = cutInstrums.join(',');
+            socketDescCut.at(2) = QString::number(socket->cutModePower());
+
+            socketDescCoag.at(0) = QString::number(socket->curCoagMode()
+                                                    ? socket->curCoagMode()->selectedInstrId()
+                                                    : 0);
+            socketDescCoag.at(1) = QString::number(socket->coagModeNum());
+            socketDescCoag.at(2) = QString::number(socket->coagModePower());
+
+        }
+    }
+}

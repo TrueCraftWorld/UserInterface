@@ -10,16 +10,7 @@
 #include "databasereader.h"
 #include "socketmodel.h"
 // bi1CutInstr = "0", bi1CutMode = "1000", bi1CutPower = "1";
-struct SocketStrings {
-	 std::array<QString, 3> bi1Cut  = {"0","1000","1"};
-	 std::array<QString, 3> bi1Coag = {"0","1000","1"};
-	 std::array<QString, 3> bi2Cut  = {"0","1000","1"};
-	 std::array<QString, 3> bi2Coag = {"0","1000","1"};
-	 std::array<QString, 3> mono1Cut  = {"0","1000","1"};
-	 std::array<QString, 3> mono1Coag = {"0","1000","1"};
-	 std::array<QString, 3> mono2Cut  = {"0","1000","1"};
-	 std::array<QString, 3> mono2Coag = {"0","1000","1"};
-};
+
 
 
 class ProgLoader : public QObject

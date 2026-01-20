@@ -90,18 +90,18 @@ Rectangle {
         instrumName:socketRoot.cutInstrumName
         isEndo:     socketRoot.cutIsEndo
 
-        // Перехватываем события от HalfSocket только для разворачивания
-        MouseArea {
-            anchors.fill: parent
-            onClicked: {
-                if (socketRoot.state === "collapsed") {
-                    socketRoot.socketExpandRequest()
-                }
-                mouse.accepted = true // Останавливаем распространение события
-            }
-            // Не перехватываем события, если сокет уже развернут
-            enabled: socketRoot.state === "collapsed"
-        }
+//        // Перехватываем события от HalfSocket только для разворачивания
+//        MouseArea {
+//            anchors.fill: parent
+//            onClicked: {
+//                if (socketRoot.state === "collapsed") {
+//                    socketRoot.socketExpandRequest()
+//                    mouse.accepted = true // Останавливаем распространение события
+//                }
+//            }
+//            // Не перехватываем события, если сокет уже развернут
+//            enabled: socketRoot.state === "collapsed"
+//        }
     }
     HalfSocket {
         id:         rightRect
@@ -115,18 +115,18 @@ Rectangle {
         instrumName:socketRoot.coagInstrumName
         isEndo:     socketRoot.coagIsEndo
 
-        // Перехватываем события от HalfSocket только для разворачивания
-        MouseArea {
-            anchors.fill: parent
-            onClicked: {
-                if (socketRoot.state === "collapsed") {
-                    socketRoot.socketExpandRequest()
-                }
-                mouse.accepted = true // Останавливаем распространение события
-            }
-            // Не перехватываем события, если сокет уже развернут
-            enabled: socketRoot.state === "collapsed"
-        }
+//        // Перехватываем события от HalfSocket только для разворачивания
+//        MouseArea {
+//            anchors.fill: parent
+//            onClicked: {
+//                if (socketRoot.state === "collapsed") {
+//                    socketRoot.socketExpandRequest()
+//                    mouse.accepted = true // Останавливаем распространение события
+//                }
+//            }
+//            // Не перехватываем события, если сокет уже развернут
+//            enabled: socketRoot.state === "collapsed"
+//        }
     }
 
     Rectangle {

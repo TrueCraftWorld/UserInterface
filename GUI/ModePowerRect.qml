@@ -156,6 +156,8 @@ Canvas {
     Rectangle {
         id: mode
         color: "transparent"
+        z: 10
+        
         Label {
             id: modeLabel
             text: modeName
@@ -179,16 +181,34 @@ Canvas {
         }
 
 
+//        // Визуальная подсветка границ MouseArea
+//        Rectangle {
+//            anchors {
+//                fill: parent
+//                topMargin: 5
+//                leftMargin: 10
+//                rightMargin: 10
+//                bottomMargin: 30
+//            }
+//            color: "red"
+//            opacity: 0.2
+//            border.color: "yellow"
+//            border.width: 2
+//            z: 9999
+//        }
+        
         MouseArea {
             id: modeSelectButton
             anchors {
                 fill: parent
-                topMargin: 10
-                leftMargin: 60
-                rightMargin: 60
-                bottomMargin: 90
+                topMargin: 5
+                leftMargin: 10
+                rightMargin: 10
+                bottomMargin: 30
             }
-            onClicked: modePowerRect.modeEditDialogRequest()
+            onClicked: {
+                modePowerRect.modeEditDialogRequest()
+            }
         }
 
     }
@@ -734,6 +754,10 @@ Canvas {
             PropertyChanges {
                 target: modeSelectButton;
                 enabled: true
+            }
+            PropertyChanges {
+                target: mode;
+                height: 100
             }
 //            AnchorChanges {
 //                target: powerPlusButton

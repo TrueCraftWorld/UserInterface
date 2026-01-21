@@ -17,6 +17,13 @@ Rectangle {
     
     Component.onCompleted: {
         loadVideoFiles()
+        // Запускаем мониторинг системы
+        sysMonitor.start()
+    }
+    
+    Component.onDestruction: {
+        // Останавливаем мониторинг при закрытии
+        sysMonitor.stop()
     }
     
     function loadVideoFiles() {
@@ -82,7 +89,23 @@ Rectangle {
     MediaPlayer {
         id: mediaPlayer
         autoPlay: false
-        volume: 0.5  // Начальная громкость 50%
+        autoLoad: true  // Предзагрузка для уменьшения буферизации
+        volume: 0.8  // Начальная громкость 80%
+        muted: false  // Убеждаемся что звук не заглушен
+        
+        // Настройки для уменьшения сбрасывания буферов
+        notifyInterval: 100  // Обновление позиции каждые 100мс вместо дефолтных 1000мс
+        
+        // Логирование для отладки аудио
+        Component.onCompleted: {
+            console.log("MediaPlayer - hasAudio:", mediaPlayer.hasAudio)
+            console.log("MediaPlayer - volume:", mediaPlayer.volume)
+            console.log("MediaPlayer - muted:", mediaPlayer.muted)
+        }
+        
+        onHasAudioChanged: {
+            console.log("Audio track detected:", hasAudio)
+        }
         
         property bool isBuffering: {
             // Показываем индикатор при:
@@ -103,6 +126,12 @@ Rectangle {
         }
         
         onStatusChanged: {
+            // Логирование загрузки медиа
+            if (status === MediaPlayer.Loaded) {
+                console.log("Media loaded - hasAudio:", hasAudio, "hasVideo:", hasVideo)
+            }
+            
+            // Обработка окончания воспроизведения
             if (status === MediaPlayer.EndOfMedia) {
                 // Автоматически переходим к следующему видео
                 if (currentVideoIndex < videoFiles.length - 1) {
@@ -140,6 +169,10 @@ Rectangle {
         }
         source: mediaPlayer
         fillMode: VideoOutput.PreserveAspectFit
+        
+        // Оптимизация для уменьшения нагрузки
+        orientation: 0
+        flushMode: VideoOutput.EmptyFrame  // Очищаем при остановке
         
         MouseArea {
             anchors.fill: parent
@@ -248,6 +281,111 @@ Rectangle {
             style: Text.Outline
             styleColor: "black"
             visible: false  // Отключаем отладочную информацию
+        }
+        
+        // Информация о системе (CPU и температура)
+        Rectangle {
+            id: systemInfoPanel
+            anchors {
+                left: parent.left
+                bottom: parent.bottom
+                margins: 10
+            }
+            width: 200
+            height: 80
+            color: "#DD000000"
+            radius: 8
+            border.color: "#4CAF50"
+            border.width: 2
+            
+            Column {
+                anchors.fill: parent
+                anchors.margins: 10
+                spacing: 5
+                
+                // Загрузка CPU
+                Row {
+                    width: parent.width
+                    spacing: 8
+                    
+                    Text {
+                        text: "CPU:"
+                        color: "#4CAF50"
+                        font.pixelSize: 16
+                        font.bold: true
+                        width: 50
+                    }
+                    
+                    Text {
+                        text: sysMonitor.cpuUsage.toFixed(1) + "%"
+                        color: "white"
+                        font.pixelSize: 18
+                        font.bold: true
+                    }
+                    
+                    // Индикатор загрузки
+                    Rectangle {
+                        width: 60
+                        height: 10
+                        anchors.verticalCenter: parent.verticalCenter
+                        color: "#333333"
+                        radius: 5
+                        border.color: "#666666"
+                        border.width: 1
+                        
+                        Rectangle {
+                            anchors.left: parent.left
+                            anchors.top: parent.top
+                            anchors.bottom: parent.bottom
+                            width: parent.width * Math.min(sysMonitor.cpuUsage / 100, 1.0)
+                            radius: 5
+                            color: {
+                                if (sysMonitor.cpuUsage < 50) return "#4CAF50"
+                                else if (sysMonitor.cpuUsage < 80) return "#FFC107"
+                                else return "#F44336"
+                            }
+                        }
+                    }
+                }
+                
+                // Температура
+                Row {
+                    width: parent.width
+                    spacing: 8
+                    
+                    Text {
+                        text: "Temp:"
+                        color: "#2196F3"
+                        font.pixelSize: 16
+                        font.bold: true
+                        width: 50
+                    }
+                    
+                    Text {
+                        text: sysMonitor.temperature.toFixed(1) + "°C"
+                        color: {
+                            if (sysMonitor.temperature < 60) return "white"
+                            else if (sysMonitor.temperature < 80) return "#FFC107"
+                            else return "#F44336"
+                        }
+                        font.pixelSize: 18
+                        font.bold: true
+                    }
+                    
+                    // Температурный индикатор
+                    Text {
+                        text: {
+                            if (sysMonitor.temperature < 60) return "❄"
+                            else if (sysMonitor.temperature < 80) return "☀"
+                            else return "🔥"
+                        }
+                        color: "white"
+                        font.pixelSize: 16
+                        font.family: "Noto Color Emoji, Apple Color Emoji, Segoe UI Emoji, Symbola, DejaVu Sans, sans-serif"
+                        anchors.verticalCenter: parent.verticalCenter
+                    }
+                }
+            }
         }
     }
     
@@ -436,11 +574,24 @@ Rectangle {
                                 anchors.leftMargin: 10
                                 from: 0.0
                                 to: 1.0
-                                value: mediaPlayer.volume
                                 stepSize: 0.01
+                                
+                                Component.onCompleted: {
+                                    value = mediaPlayer.volume
+                                }
+                                
                                 onValueChanged: {
                                     if (Math.abs(mediaPlayer.volume - value) > 0.01) {
                                         mediaPlayer.volume = value
+                                    }
+                                }
+                                
+                                Connections {
+                                    target: mediaPlayer
+                                    function onVolumeChanged() {
+                                        if (Math.abs(volumeSlider.value - mediaPlayer.volume) > 0.01) {
+                                            volumeSlider.value = mediaPlayer.volume
+                                        }
                                     }
                                 }
                             }

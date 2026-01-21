@@ -5,6 +5,7 @@
 #include "SettingsScreen/updatemodule/updateclient.h"
 #include "BackEnd/controlcenter.h"
 #include "BackEnd/instrimageprovider.h"
+#include "BackEnd/systemmonitor.h"
 #include "qqmlcontext.h"
 
 #include <QFile>
@@ -15,6 +16,7 @@
 #include <QDateTime>
 #include <QTextStream>
 #include <QThread>
+#include <QProcess>
 #include "BackEnd/loggingcategories.h"
 #include "BackEnd/linkstm.h"
 #include "BackEnd/jsonstorage.h"
@@ -40,18 +42,38 @@ int main(int argc, char *argv[])
     
     // Настройки для Qt Multimedia
     qputenv("QT_GSTREAMER_USE_PLAYBIN_VOLUME", "1");
-    qputenv("GST_DEBUG", "0");  // Отключаем отладку GStreamer
+    qputenv("GST_DEBUG", "1");  // Минимальная отладка (1=ERROR, 2=WARNING, 3=INFO)
     qputenv("QT_MULTIMEDIA_PREFERRED_PLUGINS", "gstreamer");
     
-    // Отключаем проблемный аппаратный декодер v4l2, используем программный avdec_h264
-    qputenv("GST_PLUGIN_FEATURE_RANK", "v4l2slh264dec:NONE,avdec_h264:PRIMARY");
+    // Настройка приоритетов декодеров H.264
+    // В системе доступен только openh264dec (avdec_h264 отсутствует)
+    // Для установки avdec_h264: sudo apt install gstreamer1.0-libav
+    // v4l2slh264dec - аппаратный (не работает стабильно)
+    qputenv("GST_PLUGIN_FEATURE_RANK", "v4l2slh264dec:NONE");
     
-    // Используем ximagesink для вывода видео (X11 без аппаратного ускорения, но стабильно)
+    // Используем ximagesink для вывода видео с отключенной синхронизацией
+    // sync=false позволяет не сбрасывать буферы при отставании
     qputenv("QT_GSTREAMER_VIDEOSINK", "ximagesink");
+    qputenv("QT_GSTREAMER_CAMERABIN_VIDEOSINK", "ximagesink");
     
-    // Настройки буферизации для быстрого старта воспроизведения
-    // Используем минимальную буферизацию для быстрого старта
-    qputenv("GST_BUFFER_DURATION", "500000000");  // 0.5 секунды буферизации (в наносекундах)
+    // Настройки буферизации и обработки кадров
+    qputenv("GST_BUFFER_DURATION", "1000000000");  // 1 секунда буферизации (в наносекундах)
+    
+    // Настройки аудио - используем PulseAudio с явным указанием устройства
+    // Доступные устройства (pactl list sinks):
+    // - alsa_output.platform-hdmi-sound.stereo-fallback (HDMI)
+    // - alsa_output.platform-rk809-sound.stereo-fallback (Analog/наушники) ✓
+    qputenv("QT_GSTREAMER_PLAYBIN_AUDIOSINK", "pulsesink");
+    
+    // Указываем использовать аналоговый выход (RK809) вместо HDMI
+    qputenv("PULSE_SINK", "alsa_output.platform-rk809-sound.stereo-fallback");
+    
+    // Переключаем RK809 на динамик (SPK) вместо наушников (HP)
+    // Playback Mux: 0=HP (наушники), 1=SPK (динамик через GPIO)
+    QProcess::execute("amixer", QStringList() << "-c" << "0" << "cset" << "numid=4" << "1");
+    
+    // Включаем аудио в playbin
+    qputenv("QT_GSTREAMER_PLAYBIN_FLAGS", "audio+video+soft-colorbalance+soft-volume");
     
     ///Добавляем модуль клавиатуры
     qputenv("QT_IM_MODULE", QByteArray("cutekeyboard"));
@@ -83,11 +105,15 @@ int main(int argc, char *argv[])
 
     QSharedPointer<ControlCenter> ctrl  = QSharedPointer<ControlCenter>::create(nullptr);
 
+    // Создаём монитор системы
+    SystemMonitor *sysMonitor = new SystemMonitor();
+
     QQmlApplicationEngine engine;
     engine.rootContext()->setContextProperty("theModel", ctrl->getSocketModel());
     engine.rootContext()->setContextProperty("Editor", ctrl->getModeEditor());
     engine.rootContext()->setContextProperty("recomHandle", ctrl->getHandle());
     engine.rootContext()->setContextProperty("periphHandle", ctrl->getPeripheryHandle());
+    engine.rootContext()->setContextProperty("sysMonitor", sysMonitor);
 
     engine.addImageProvider(QLatin1String("instrums"), new InstrImageProvider);
     engine.addImageProvider(QLatin1String("instruments"), new InstrImageProvider);

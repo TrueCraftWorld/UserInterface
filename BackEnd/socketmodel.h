@@ -54,6 +54,7 @@ public:
         CoagModeInstrID,
         CoagModeInstrNum,
         CoagModeIsEndo,
+        CoagModesNames,
         CutModeIndex,
         CutModeId,
         CutModeNum,
@@ -70,7 +71,6 @@ public:
         CutModeInstrNum,
         CutModeIsEndo,
         CutModesNames,
-        CoagModesNames,
     };
     Q_ENUM(SocketRoles)
 
@@ -139,6 +139,7 @@ private:
     int roleIntByName(const QString& name);
 
     void socketCollapser(int expandedSocket);
+
     /**
      * @brief pedalRemover удалятор педалей из сокетов
      * @param socketToSkip - айди сокета, который не участвует в удалении ( в него мы педаль добавили)
@@ -150,7 +151,6 @@ private:
      * @brief populateRoles - метамагическая запонялка имён ролей по именам енума ролей
      */
     void populateRoles();
-
     std::vector<SocketStrings> getDatabaseText();
 
 //поля

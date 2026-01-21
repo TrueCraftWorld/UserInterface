@@ -271,14 +271,14 @@ void ProgLoader::slotSaveCurrentState()
             return;
         } else {
             cut[0] = QString::number(idx.data(SocketModel::CutModeInstrID).toInt());
-            // cut[1] = QString::number(idx.data(SocketModel::CutModeNum).toInt());
             cut[1] = QString::number(idx.data(SocketModel::CutModeId).toInt());
             cut[2] = QString::number(idx.data(SocketModel::CutModePower).toInt());
             coag[0] = QString::number(idx.data(SocketModel::CoagModeInstrID).toInt());
-            // coag[1] = QString::number(idx.data(SocketModel::CoagModeNum).toInt());
             coag[1] = QString::number(idx.data(SocketModel::CoagModeId).toInt());
             coag[2] = QString::number(idx.data(SocketModel::CoagModePower).toInt());
+
             int ped = idx.data(SocketModel::SocketPedal).toInt();
+
             if (ped == SINGLE_PED)
                 pedals.first = _idx + 1;
             if (ped == DOUBLE_PED)
@@ -313,6 +313,7 @@ void ProgLoader::slotSaveCurrentState()
     // Формируем SQL запрос для REPLACE (INSERT OR UPDATE)
     QString removeQuerry = "DELETE FROM Lists WHERE Prog_ID = 1000";
     m_dbReaderPtr->executeUpdateQuery(removeQuerry);
+    qDebug() << "saving N pages - " << subCount;
     for (int i = 0; i < subCount; ++i) {
         const SocketStrings & state = allStates.at(i);
         const std::pair<int, int> & pedalState = allPedals.at(i);
@@ -542,7 +543,7 @@ bool ProgLoader::programmLoadSocketInit(int progId, bool clear)
     for (const auto& progItem : progListVariant) {
     //ограничения для каждого листа
         if (progItem.at(1).toInt() < 0
-            || progItem.at(1).toInt() >= 4)
+            || progItem.at(1).toInt() >= 5)
             continue;
         QList<int> allowedModesId;
         std::vector<int> allowedInstrId;
@@ -818,7 +819,10 @@ void ProgLoader::setSocketModelPtr(QSharedPointer<SocketModel> newSocketModelPtr
 
 bool ProgLoader::loadCurrentState()
 {
-    return programmLoadSocketInit(1000, true);
+    if (m_socketModelPtr.isNull())
+        return false;
+    bool res = programmLoadSocketInit(1000, true);
+    return res;
     // return ;
     /*
 

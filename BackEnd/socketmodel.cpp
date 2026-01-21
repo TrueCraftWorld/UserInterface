@@ -203,8 +203,10 @@ QVariant SocketModel::data(const QModelIndex &index, int role) const
         return socketItem.curCutMode()->selectedInstrId();
     case CutModeInstrNum:
     {
-        if (socketItem.curCutMode().isNull())
+        if (socketItem.curCutMode().isNull()
+                && m_instrMapPtr == nullptr)
             return -1;
+
         auto iter = m_instrMapPtr->find(socketItem.curCutMode()->selectedInstrId());
 
         if (iter != m_instrMapPtr->end())

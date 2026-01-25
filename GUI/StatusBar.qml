@@ -4,7 +4,7 @@ import StratifyLabs.UI 2.0
 Rectangle {
     id: statusRoot
     signal drawerCalled()
-    signal savePressed()
+    signal saveCalled()
     property alias text: mainText.text
 
     border {
@@ -42,7 +42,7 @@ Rectangle {
         style: "btn-naked"
 
             onClicked: {
-                statusRoot.savePressed()
+                statusRoot.saveCalled()
             }
     }
 

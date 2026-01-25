@@ -1,5 +1,6 @@
-#include "proghandle.h"
+#include <QDebug>
 
+#include "proghandle.h"
 
 ProgHandle::ProgHandle(QObject *parent)
     : QObject{parent}
@@ -34,6 +35,12 @@ void ProgHandle::loadUserProg(int recomProgId)
 void ProgHandle::saveProg(int id, const QString &name)
 {
     emit signalSave(id, name);
+}
+
+void ProgHandle::saveProg(const QString &name)
+{
+    // emit signalSave(id, name);
+    qDebug() << "saving" << name;
 }
 
 void ProgHandle::addEmptyDefault()

@@ -101,6 +101,30 @@ Window {
       }
    }
 
+   Dialog {
+      readonly property string progName: progNameInput.text
+      id: saveDialog
+      width: 0.8 * parent.width
+      title: qsTr("Укажите название программы")
+      // footer: ""
+      standardButtons: Dialog.Ok | Dialog.Cancel
+      contentItem: TextInput {
+         id: progNameInput
+         width: 0.7 * parent.width
+         anchors.centerIn: parent
+      }
+      anchors.centerIn: parent
+
+      // onAccepted: console.log("Ok clicked")
+      // onRejected: console.log("Cancel clicked")
+   }
+   Connections {
+      target: saveDialog
+      function onAccepted() {
+         recomHandle.saveProg(saveDialog.progName)
+      }
+   }
+
    Connections {
       target: leftDrawer
       function onOpenedChanged() {
@@ -137,6 +161,9 @@ Window {
       target: statusDummy
       function onDrawerCalled() {
          leftDrawer.open()
+      }
+      function onSaveCalled() {
+         saveDialog.open()
       }
    }
    Connections {

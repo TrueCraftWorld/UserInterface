@@ -25,6 +25,7 @@ public:
     Q_INVOKABLE void loadUserProg(int recomProgId);
     Q_INVOKABLE void permitAll();
     Q_INVOKABLE void saveProg(int id, const QString& name);
+    Q_INVOKABLE void saveProg(const QString& name);
     Q_INVOKABLE void addEmptyDefault();
     Q_INVOKABLE void copyCurrent();
 

@@ -39,7 +39,7 @@ void ProgHandle::saveProg(int id, const QString &name)
 
 void ProgHandle::saveProg(const QString &name)
 {
-    // emit signalSave(id, name);
+    emit signalSaveName(name);
     qDebug() << "saving" << name;
 }
 

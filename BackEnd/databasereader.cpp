@@ -125,3 +125,13 @@ bool DataBaseReader::executeUpdateQuery(const QString &queryStr)
 
     return true;
 }
+
+void DataBaseReader::commit()
+{
+    QSqlDatabase db = QSqlDatabase::database("etoBasa");
+    if (!db.open()) {
+        qWarning() << "commit fail";
+        return;
+    }
+    db.commit();
+}

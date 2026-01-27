@@ -87,9 +87,11 @@ void ControlCenter::makeHandleConnections()
     connect(m_handle, &ProgHandle::signalAddEmptyDefault,
             m_progLoader, &ProgLoader::defaultSocketInit);
 
+    connect(m_handle, &ProgHandle::signalSaveName,
+            m_progLoader, &ProgLoader::saveUserProg);
+
     connect(m_handle, &ProgHandle::signalCopyCurrent,
             m_socketModel.data(), &SocketModel::copyCurrentList);
-
 }
 
 QPointer<SocketModeEditor> ControlCenter::getModeEditor() const

@@ -59,6 +59,7 @@ signals:
 
     void signalLoadEmpty();
     void signalSave(int id, const QString& name);
+    void signalSaveName(const QString& name);
     void signalUnlockProg();
 
     void signalScopeRequest(int scopeId);

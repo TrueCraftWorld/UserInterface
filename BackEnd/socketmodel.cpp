@@ -97,6 +97,8 @@ QVariant SocketModel::data(const QModelIndex &index, int role) const
         return socketItem.coagModeIndex();
     case CoagModeId:
         return socketItem.coagModeId();
+    case CoagModeIdList:
+        return socketItem.coagModeNamesIds();
     case CoagModeNum:
         if (socketItem.curCoagMode().isNull())
             return 0;
@@ -136,9 +138,19 @@ QVariant SocketModel::data(const QModelIndex &index, int role) const
         if (socketItem.curCoagMode().isNull())
             return -1;
         return socketItem.curCoagMode()->selectedInstrId();
+    case CoagModeInstrIdList:
+    {
+        QStringList res;
+        const auto& instrs = socketItem.curCoagMode()->InstrConstraints();
+        for (const auto& [key, item] : instrs) {
+            res.append(QString::number(item.id));
+        }
+        return res;
+    }
     case CoagModeInstrNum:
     {
-        if (socketItem.curCoagMode().isNull())
+        if (socketItem.curCoagMode().isNull()
+            || m_instrMapPtr == nullptr)
             return -1;
         auto iter = m_instrMapPtr->find(socketItem.curCoagMode()->selectedInstrId());
 
@@ -159,6 +171,8 @@ QVariant SocketModel::data(const QModelIndex &index, int role) const
         return socketItem.cutModeIndex();
     case CutModeId:
         return socketItem.cutModeId();
+    case CutModeIdList:
+        return socketItem.cutModeNamesIds();
     case CutModeNum:
         if (socketItem.curCutMode().isNull())
             return 0;
@@ -201,10 +215,19 @@ QVariant SocketModel::data(const QModelIndex &index, int role) const
         if (socketItem.curCutMode().isNull())
             return -1;
         return socketItem.curCutMode()->selectedInstrId();
+    case CutModeInstrIdList:
+    {
+        QStringList res;
+        const auto& instrs = socketItem.curCutMode()->InstrConstraints();
+        for (const auto& [key, item] : instrs) {
+            res.append(QString::number(item.id));
+        }
+        return res;
+    }
     case CutModeInstrNum:
     {
         if (socketItem.curCutMode().isNull()
-                && m_instrMapPtr == nullptr)
+                || m_instrMapPtr == nullptr)
             return -1;
 
         auto iter = m_instrMapPtr->find(socketItem.curCutMode()->selectedInstrId());

@@ -28,6 +28,8 @@ public:
      */
     bool executeUpdateQuery(const QString& queryStr);
 
+    void commit();
+
 signals:
 
     void signalResultReady(const QString& query, const QList<QVariantList> res);

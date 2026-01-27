@@ -182,6 +182,16 @@ void filterModeMap(QMap<int, SurgModePtr>& container, const std::vector<int>& al
     }
 }
 
+QString makeDbString( const QModelIndex& idx,
+                                int listRole,
+                                int firstItemRole) {
+    QStringList list = idx.data(listRole).toStringList();
+    int firstItem = idx.data(firstItemRole).toInt();
+    list.removeOne(QString::number(firstItem));
+    list.prepend(QString::number(firstItem));
+    return list.join(',');
+}
+
     const QString queryCondition = "Prog_ID = %1";
     const QStringList fields = {"id", "Num", "Prog_ID", /* 0 1 2*/
                           "Bi1Cut_INSTR", "Bi1Cut_MODE", "Bi1Cut_POWER", /* 3 4 5*/
@@ -230,7 +240,7 @@ void filterModeMap(QMap<int, SurgModePtr>& container, const std::vector<int>& al
                                        "Mono2Coag_INSTR, Mono2Coag_MODE, Mono2Coag_POWER, "
                                        "Pedal_1, Pedal_2, OutEnabled_MASK"
                                        ") VALUES ("
-                                       "%28, 1000, "
+                                       "%28, 1000"
                                        "'%1', '%2', %3, "
                                        "'%4', '%5', %6, "
                                        "'%7', '%8', %9, "
@@ -241,6 +251,30 @@ void filterModeMap(QMap<int, SurgModePtr>& container, const std::vector<int>& al
                                        "'%22', '%23', %24, "
                                        "%25, %26, %27"
                                        ")");
+    const   QString insertUserProgQuery = QString(
+                                         "INSERT INTO Lists ("
+                                         "Num, User_ID, Prog_ID,"
+                                         "Bi1Cut_INSTR, Bi1Cut_MODE, Bi1Cut_POWER, "
+                                         "Bi1Coag_INSTR, Bi1Coag_MODE, Bi1Coag_POWER, "
+                                         "Bi2Cut_INSTR, Bi2Cut_MODE, Bi2Cut_POWER, "
+                                         "Bi2Coag_INSTR, Bi2Coag_MODE, Bi2Coag_POWER, "
+                                         "Mono1Cut_INSTR, Mono1Cut_MODE, Mono1Cut_POWER, "
+                                         "Mono1Coag_INSTR, Mono1Coag_MODE, Mono1Coag_POWER, "
+                                         "Mono2Cut_INSTR, Mono2Cut_MODE, Mono2Cut_POWER, "
+                                         "Mono2Coag_INSTR, Mono2Coag_MODE, Mono2Coag_POWER, "
+                                         "Pedal_1, Pedal_2, OutEnabled_MASK"
+                                         ") VALUES ("
+                                         "%28, %29, NULL,"
+                                         "'%1', '%2', %3, "
+                                         "'%4', '%5', %6, "
+                                         "'%7', '%8', %9, "
+                                         "'%10', '%11', %12, "
+                                         "'%13', '%14', %15, "
+                                         "'%16', '%17', %18, "
+                                         "'%19', '%20', %21, "
+                                         "'%22', '%23', %24, "
+                                         "%25, %26, %27"
+                                         ")");
 
 }
 
@@ -270,11 +304,12 @@ void ProgLoader::slotSaveCurrentState()
             || idx.data(SocketModel::CoagModeNum).toInt() == 0) {
             return;
         } else {
-            cut[0] = QString::number(idx.data(SocketModel::CutModeInstrID).toInt());
-            cut[1] = QString::number(idx.data(SocketModel::CutModeId).toInt());
+            cut[0] = makeDbString(idx, SocketModel::CutModeInstrIdList, SocketModel::CutModeInstrID);
+            cut[1] = makeDbString(idx, SocketModel::CutModeIdList, SocketModel::CutModeId);
             cut[2] = QString::number(idx.data(SocketModel::CutModePower).toInt());
-            coag[0] = QString::number(idx.data(SocketModel::CoagModeInstrID).toInt());
-            coag[1] = QString::number(idx.data(SocketModel::CoagModeId).toInt());
+
+            coag[0] = makeDbString(idx, SocketModel::CoagModeInstrIdList, SocketModel::CoagModeInstrID);
+            coag[1] = makeDbString(idx, SocketModel::CoagModeIdList, SocketModel::CoagModeId);
             coag[2] = QString::number(idx.data(SocketModel::CoagModePower).toInt());
 
             int ped = idx.data(SocketModel::SocketPedal).toInt();
@@ -333,25 +368,6 @@ void ProgLoader::slotSaveCurrentState()
             qDebug() << "Failed to save current state";
         }
     }
-    // //проблема в запросе - меняем каждый раз одну и ту же строку - надо инкрементить id
-    // for (int i = subCount; i < 4; ++i) {
-    //     const SocketStrings state;
-    //     const std::pair<int, int> pedalState = {-1, -1};
-    //     QString query = saveCurQuery
-    //                     .arg(state.at(0)[0]).arg(state.at(0)[1]).arg(state.at(0)[2])
-    //                     .arg(state.at(1)[0]).arg(state.at(1)[1]).arg(state.at(1)[2])
-    //                     .arg(state.at(2)[0]).arg(state.at(2)[1]).arg(state.at(2)[2])
-    //                     .arg(state.at(3)[0]).arg(state.at(3)[1]).arg(state.at(3)[2])
-    //                     .arg(state.at(4)[0]).arg(state.at(4)[1]).arg(state.at(4)[2])
-    //                     .arg(state.at(5)[0]).arg(state.at(5)[1]).arg(state.at(5)[2])
-    //                     .arg(state.at(6)[0]).arg(state.at(6)[1]).arg(state.at(6)[2])
-    //                     .arg(state.at(7)[0]).arg(state.at(7)[1]).arg(state.at(7)[2])
-    //                     .arg(pedalState.first).arg(pedalState.second).arg(outEnabledMask).arg(-1);
-
-    //     if (!m_dbReaderPtr->executeUpdateQuery(query)) {
-    //         // qWarning() << "Failed to save current state";
-    //     }
-    // }
 }
 
 bool ProgLoader::readPreviousSocketSettings()
@@ -758,7 +774,7 @@ void ProgLoader::saveUserProg(const QString &name)
     ///TODO
     /// по сути тут должен быть сэйв кар стэйт но с указнием другого id
     /// и добавление записив таблицу имён юзверских программ
-
+    saveProg(name);
 }
 
 void ProgLoader::deleteUserProg(int id)
@@ -812,6 +828,123 @@ std::map<int, InstrPtr > ProgLoader::getInstrums()
     return result;
 }
 
+void ProgLoader::saveProg(const QString &name)
+{
+
+    if (m_socketModelPtr == nullptr
+        || m_socketModelPtr->itemsMap() == nullptr) {
+        // qWarning() << "Cannot save state: socket model not initialized";
+        return;
+    }
+    int idToUse = -1;
+    int indexToUse = 0;
+
+    const   QString insertUserProgNameQuery = QString(
+                                         "INSERT INTO UserProgs ("
+                                         "Name"
+                                         ") VALUES ("
+                                         "'%1')");
+
+    if (!m_dbReaderPtr->executeUpdateQuery(insertUserProgNameQuery.arg(name))) {
+        qDebug() << "Failed to save current state";
+    } else {
+        m_dbReaderPtr->commit();
+    }
+
+    QList<QVariantList> progListVariant = m_dbReaderPtr->slotSendSelectQuery(QStringList{"UserProgs"},
+                                                  QStringList{"id", "Name"},
+                                                  "");
+    if (progListVariant.isEmpty())
+        return;
+        // idToUse = 10000;
+    if (progListVariant.size() > 1) {
+        int min = INT_MIN;
+        for (const auto& item : progListVariant) {
+            if (item.at(1).toString() != name)
+                continue;
+            if (item.at(0).toInt() > min) {
+                min = item.at(0).toInt();
+                idToUse = min;
+            }
+        }
+    }
+
+
+    auto fillState = [this] (std::array<QString, 3>& cut,
+                            std::array<QString, 3>& coag,
+                            std::pair<int, int>& pedals,
+                            int _idx) {
+        QModelIndex idx = m_socketModelPtr->index(_idx);
+        if (idx.data(SocketModel::SocketStatus) == QVariant()
+            || idx.data(SocketModel::CutModeNum).toInt() == 0
+            || idx.data(SocketModel::CoagModeNum).toInt() == 0) {
+            return;
+        } else {
+            cut[0] = makeDbString(idx, SocketModel::CutModeInstrIdList, SocketModel::CutModeInstrID);
+            cut[1] = makeDbString(idx, SocketModel::CutModeIdList, SocketModel::CutModeId);
+            cut[2] = QString::number(idx.data(SocketModel::CutModePower).toInt());
+
+            coag[0] = makeDbString(idx, SocketModel::CoagModeInstrIdList, SocketModel::CoagModeInstrID);
+            coag[1] = makeDbString(idx, SocketModel::CoagModeIdList, SocketModel::CoagModeId);
+            coag[2] = QString::number(idx.data(SocketModel::CoagModePower).toInt());
+
+            int ped = idx.data(SocketModel::SocketPedal).toInt();
+
+            if (ped == SINGLE_PED)
+                pedals.first = _idx + 1;
+            if (ped == DOUBLE_PED)
+                pedals.second = _idx + 1;
+        }
+    };
+
+    std::vector<SocketStrings> allStates;
+    std::vector<std::pair<int, int>> allPedals;
+    int subCount = m_socketModelPtr->subProgCount();
+    int curSubIndex = m_socketModelPtr->subProgIdx();
+    allStates.resize(subCount);
+    allPedals.resize(subCount, {0, 0});
+    m_socketModelPtr->blockSignals(true);
+    for (int list = 0; list < subCount; ++list) {
+        m_socketModelPtr->setSubProgIdx(list);
+        SocketStrings & state = allStates[list];
+        std::pair<int, int> & pedalState = allPedals[list];
+        //bi1cut bi1coag
+        fillState(state[0], state[1], pedalState, 0);
+        fillState(state[2], state[3], pedalState, 1);
+        fillState(state[4], state[5], pedalState, 2);
+        fillState(state[6], state[7], pedalState, 3);
+    }
+    m_socketModelPtr->setSubProgIdx(curSubIndex);
+    m_socketModelPtr->blockSignals(false);
+
+    // OutEnabled_MASK - битовая маска доступности полусокетов
+    // TODO: если нужно сохранять доступность, добавить логику
+    int outEnabledMask = 11111111;  // По умолчанию все включены (11111111)
+
+    // Формируем SQL запрос для REPLACE (INSERT OR UPDATE)
+
+    qDebug() << "saving N pages - " << subCount;
+    for (int i = 0; i < subCount; ++i) {
+        const SocketStrings & state = allStates.at(i);
+        const std::pair<int, int> & pedalState = allPedals.at(i);
+        QString query = insertUserProgQuery
+        // QString query = saveCurQuery
+        .arg(state.at(0).at(0) == "-1" ? "" : state.at(0).at(0)).arg(state.at(0).at(1) == "1000" ? "" : state.at(0).at(1)).arg(state.at(0).at(2))
+        .arg(state.at(1).at(0) == "-1" ? "" : state.at(1).at(0)).arg(state.at(1).at(1) == "1000" ? "" : state.at(1).at(1)).arg(state.at(1).at(2))
+        .arg(state.at(2).at(0) == "-1" ? "" : state.at(2).at(0)).arg(state.at(2).at(1) == "1000" ? "" : state.at(2).at(1)).arg(state.at(2).at(2))
+        .arg(state.at(3).at(0) == "-1" ? "" : state.at(3).at(0)).arg(state.at(3).at(1) == "1000" ? "" : state.at(3).at(1)).arg(state.at(3).at(2))
+        .arg(state.at(4).at(0) == "-1" ? "" : state.at(4).at(0)).arg(state.at(4).at(1) == "1000" ? "" : state.at(4).at(1)).arg(state.at(4).at(2))
+        .arg(state.at(5).at(0) == "-1" ? "" : state.at(5).at(0)).arg(state.at(5).at(1) == "1000" ? "" : state.at(5).at(1)).arg(state.at(5).at(2))
+        .arg(state.at(6).at(0) == "-1" ? "" : state.at(6).at(0)).arg(state.at(6).at(1) == "1000" ? "" : state.at(6).at(1)).arg(state.at(6).at(2))
+        .arg(state.at(7).at(0) == "-1" ? "" : state.at(7).at(0)).arg(state.at(7).at(1) == "1000" ? "" : state.at(7).at(1)).arg(state.at(7).at(2))
+        .arg(pedalState.first).arg(pedalState.second).arg(outEnabledMask).arg(i+1).arg(idToUse+1000);
+
+        if (!m_dbReaderPtr->executeUpdateQuery(query)) {
+            qDebug() << "Failed to save current state";
+        }
+    }
+}
+
 void ProgLoader::setSocketModelPtr(QSharedPointer<SocketModel> newSocketModelPtr)
 {
     m_socketModelPtr = newSocketModelPtr;
@@ -823,136 +956,4 @@ bool ProgLoader::loadCurrentState()
         return false;
     bool res = programmLoadSocketInit(1000, true);
     return res;
-    // return ;
-    /*
-
-    // Проверяем, есть ли запись с id=1000
-    QList<QVariantList> stateList = m_dbReaderPtr->slotSendSelectQuery(
-        QStringList{"Lists"},
-        QStringList{"Bi1Cut_INSTR", "Bi1Cut_MODE", "Bi1Cut_POWER",
-                    "Bi1Coag_INSTR", "Bi1Coag_MODE", "Bi1Coag_POWER",
-                    "Bi2Cut_INSTR", "Bi2Cut_MODE", "Bi2Cut_POWER",
-                    "Bi2Coag_INSTR", "Bi2Coag_MODE", "Bi2Coag_POWER",
-                    "Mono1Cut_INSTR", "Mono1Cut_MODE", "Mono1Cut_POWER",
-                    "Mono1Coag_INSTR", "Mono1Coag_MODE", "Mono1Coag_POWER",
-                    "Mono2Cut_INSTR", "Mono2Cut_MODE", "Mono2Cut_POWER",
-                    "Mono2Coag_INSTR", "Mono2Coag_MODE", "Mono2Coag_POWER",
-                    "Pedal_1", "Pedal_2", "OutEnabled_MASK", "Num"},
-        "id = 1000"
-    );
-//последнее состояние - всегда 5 листов, просто не все заняты
-    if (stateList.isEmpty() || stateList.size() != 5) {
-        // qDebug() << "No saved state found (id=1000), using defaults";
-        return;
-    }
-    // m_socketModelPtr->bl
-    // for (int i = 0; i < 5; ++i) {
-    //     const QVariantList& state = stateList.at(i);
-    // }
-
-    const QVariantList& state = stateList.at(0);
-
-    // Проверяем, что в state достаточно полей (минимум 24 для сокетов)
-    if (state.size() < 24) {
-        // qWarning() << "Invalid state data: expected at least 24 fields, got" << state.size();
-        return;
-    }
-
-    // Восстанавливаем состояние для каждого сокета
-    for (int i = 0; i < 4; i++) {
-        int baseIdx = i * 6;  // Каждый сокет занимает 6 полей
-
-        // Резка - парсим строку (может быть пустой или содержать ID)
-        QString cutInstrStr = state.at(baseIdx + 0).toString();
-        QString cutModeStr = state.at(baseIdx + 1).toString();
-        int cutPower = state.at(baseIdx + 2).toInt();
-
-        // Коагуляция
-        QString coagInstrStr = state.at(baseIdx + 3).toString();
-        QString coagModeStr = state.at(baseIdx + 4).toString();
-        int coagPower = state.at(baseIdx + 5).toInt();
-
-        // Парсим ID (берём первое значение, если список через запятую)
-        int cutInstrId = cutInstrStr.isEmpty() ? 0 : cutInstrStr.split(',').first().toInt();
-        int cutModeId = cutModeStr.isEmpty() ? 1000 : cutModeStr.split(',').first().toInt();
-        int coagInstrId = coagInstrStr.isEmpty() ? 0 : coagInstrStr.split(',').first().toInt();
-        int coagModeId = coagModeStr.isEmpty() ? 1000 : coagModeStr.split(',').first().toInt();
-
-        // Проверяем мощность
-        cutPower = std::max(1, cutPower);
-        coagPower = std::max(1, coagPower);
-
-        auto socket = m_socketModelPtr->itemsMap()->at(i);
-
-        if (socket.isNull()) {
-            // qWarning() << "Socket" << i << "is null, skipping restore";
-            continue;
-        }
-
-        // Устанавливаем режимы
-        socket->setModeId(cutModeId, false);
-        socket->setModeId(coagModeId, true);
-
-        // Проверка для эндоскопических режимов: округление и валидация значений
-        auto cutMode = socket->curCutMode();
-        if (!cutMode.isNull() && cutMode->isEndo()) {
-// если поделим инт на 10.0, округлим вниз и скастим к инту - будем целочисленное деление на 10
-            // int endoCut = static_cast<int>(std::floor(cutPower / 10.0));
-            int endoCut = cutPower / 10;
-            int endoCoag = cutPower % 10;
-            if (endoCut < 1) endoCut = 1;
-            else if (endoCut > ENDO_MAX) endoCut = ENDO_MAX;
-            if (endoCoag < 1) endoCoag = 1;
-            else if (endoCoag > ENDO_MAX) endoCoag = ENDO_MAX;
-            cutPower = endoCut * 10 + endoCoag;
-        }
-
-        auto coagMode = socket->curCoagMode();
-        if (!coagMode.isNull() && coagMode->isEndo()) {
-            int endoCut = cutPower / 10;
-            int endoCoag = coagPower % 10;
-            if (endoCut < 1) endoCut = 1;
-            else if (endoCut > ENDO_MAX) endoCut = ENDO_MAX;
-            if (endoCoag < 1) endoCoag = 1;
-            else if (endoCoag > ENDO_MAX) endoCoag = ENDO_MAX;
-            coagPower = endoCut * 10 + endoCoag;
-        }
-
-        // Устанавливаем мощность
-        socket->setCutModePower(cutPower);
-        socket->setCoagModePower(coagPower);
-
-        // Устанавливаем инструменты
-        socket->setInstrumId(cutInstrId, false);
-        socket->setInstrumId(coagInstrId, true);
-    }
-
-    // Восстанавливаем педали
-    if (state.size() >= 27) {
-        int pedal1Socket = state.at(24).toInt();  // Номер сокета для single педали
-        int pedal2Socket = state.at(25).toInt();  // Номер сокета для double педали
-
-        // Устанавливаем педали напрямую в сокеты (без вызова dataChanged)
-        for (int i = 0; i < 4; i++) {
-            auto socket = m_socketModelPtr->itemsMap()->at(i);
-            if (socket.isNull())
-                continue;
-
-            // Определяем тип педали для этого сокета
-            int pedalType = Onyx::NO_PED;
-
-            if (i == pedal1Socket) {
-                pedalType = Onyx::SINGLE_PED;
-            } else if (i == pedal2Socket) {
-                pedalType = Onyx::DOUBLE_PED;
-            }
-
-            socket->setPedal(pedalType);
-        }
-        // TODO: Восстановить OutEnabled_MASK
-        // int mask = state.at(26).toInt();
-    }
-    //поменяли напрочь всё
-    emit m_socketModelPtr->dataChanged(QModelIndex(), QModelIndex(), {});
-    */
 }

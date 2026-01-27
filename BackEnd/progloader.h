@@ -18,7 +18,7 @@ class ProgLoader : public QObject
 	Q_OBJECT
 public:
 	explicit ProgLoader(QObject *parent = nullptr);
-	    /**
+	/**
 	 * @brief Сохраняет текущее состояние всех сокетов в БД (таблица Lists, id=1000)
 	 */
 
@@ -70,7 +70,7 @@ public:
 
 	void deleteUserProg(int id);
 
-	 /**
+	/**
 	 * @brief Загружает последнее сохранённое состояние из БД
 	 */
 	bool loadCurrentState();
@@ -81,6 +81,8 @@ public:
 
 private:
 	std::map<int, InstrPtr> getInstrums();
+	void saveProg(const QString& name = "");
+
 	QPointer<DataBaseReader> m_dbReaderPtr;
 	QSharedPointer<SocketModel> m_socketModelPtr;
 };

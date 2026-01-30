@@ -40,6 +40,31 @@ Canvas {
         return changedPower
     }
 
+    // Функция изменения мощности на основе переданного значения (для автоповтора)
+    function changePowerFromValue(currentValue, direction) {
+        var changedPower = currentValue
+        if (direction === "up") {
+            if (currentValue < 20) changedPower += 1
+            else if (currentValue < 50) changedPower += 2
+            else if (currentValue < 100) changedPower += 5
+            else if (currentValue < 200) changedPower += 10
+            else if (currentValue < 400) changedPower += 25
+            // Ограничиваем максимальным значением
+            if (changedPower > maxPower) changedPower = maxPower
+        }
+        if (direction === "down") {
+            if (currentValue <= 1) changedPower = 1
+            else if (currentValue <= 20) changedPower -= 1
+            else if (currentValue <= 50) changedPower -= 2
+            else if (currentValue <= 100) changedPower -= 5
+            else if (currentValue <= 200) changedPower -= 10
+            else if (currentValue <= 400) changedPower -= 25
+            // Ограничиваем минимальным значением
+            if (changedPower < 1) changedPower = 1
+        }
+        return changedPower
+    }
+
     function changePowerEndoCut(direction) {
         var changedPower = modePower
         if (direction === "up") {
@@ -266,6 +291,10 @@ Canvas {
             anchors.margins: 95
             anchors.right: parent.right
             anchors.verticalCenter: parent.verticalCenter
+            
+            // Локальная переменная для отслеживания текущего значения во время автоповтора
+            property int currentPowerValue: modePower
+            
             Label {
                 anchors {
                     margins: 10
@@ -281,7 +310,12 @@ Canvas {
             MouseArea {
                 anchors.fill: parent
                 onPressed: {
-                    modePowerRect.newPower(changePower("up"));
+                    // Инициализируем локальное значение текущим значением мощности
+                    powerPlusButton.currentPowerValue = modePower;
+                    // Вычисляем и отправляем новое значение
+                    var newValue = changePowerFromValue(powerPlusButton.currentPowerValue, "up");
+                    powerPlusButton.currentPowerValue = newValue;
+                    modePowerRect.newPower(newValue);
                     delayPlusTimer.start();
                 }
                 onReleased: {
@@ -307,7 +341,12 @@ Canvas {
                 id: autoRepeatPlusTimer
                 interval: 150  // Интервал повторения в миллисекундах
                 repeat: true
-                onTriggered: modePowerRect.newPower(changePower("up"));
+                onTriggered: {
+                    // Используем локальное значение для вычисления следующего
+                    var newValue = changePowerFromValue(powerPlusButton.currentPowerValue, "up");
+                    powerPlusButton.currentPowerValue = newValue;
+                    modePowerRect.newPower(newValue);
+                }
             }
         }
 
@@ -324,6 +363,10 @@ Canvas {
             anchors.margins: 95
             anchors.left: parent.left
             anchors.verticalCenter: parent.verticalCenter
+            
+            // Локальная переменная для отслеживания текущего значения во время автоповтора
+            property int currentPowerValue: modePower
+            
             Label {
                 anchors {
                     margins: 10
@@ -339,7 +382,12 @@ Canvas {
             MouseArea {
                 anchors.fill: parent
                 onPressed: {
-                    modePowerRect.newPower(changePower("down"));
+                    // Инициализируем локальное значение текущим значением мощности
+                    powerMinusButton.currentPowerValue = modePower;
+                    // Вычисляем и отправляем новое значение
+                    var newValue = changePowerFromValue(powerMinusButton.currentPowerValue, "down");
+                    powerMinusButton.currentPowerValue = newValue;
+                    modePowerRect.newPower(newValue);
                     delayMinusTimer.start();
                 }
                 onReleased: {
@@ -365,7 +413,12 @@ Canvas {
                 id: autoRepeatMinusTimer
                 interval: 150  // Интервал повторения в миллисекундах
                 repeat: true
-                onTriggered: modePowerRect.newPower(changePower("down"));
+                onTriggered: {
+                    // Используем локальное значение для вычисления следующего
+                    var newValue = changePowerFromValue(powerMinusButton.currentPowerValue, "down");
+                    powerMinusButton.currentPowerValue = newValue;
+                    modePowerRect.newPower(newValue);
+                }
             }
         }
 

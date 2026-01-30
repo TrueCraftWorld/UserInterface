@@ -84,6 +84,12 @@ void ControlCenter::makeHandleConnections()
         m_handle->setProgList(m_progLoader->getListOfPrograms(id));
     });
 
+    connect(m_handle, &ProgHandle::signalUserProgsRequest,
+            this, [this] () {
+        qDebug() << " lamba signalUserProgsRequest";
+        m_handle->setUserProgList(m_progLoader->getUserProgList());
+    });
+
     connect(m_handle, &ProgHandle::signalAddEmptyDefault,
             m_progLoader, &ProgLoader::defaultSocketInit);
 

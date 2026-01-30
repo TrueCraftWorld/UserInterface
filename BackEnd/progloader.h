@@ -9,6 +9,7 @@
 #include "instrument.h"
 #include "databasereader.h"
 #include "socketmodel.h"
+#include "userprogsloadmodel.h"
 // bi1CutInstr = "0", bi1CutMode = "1000", bi1CutPower = "1";
 
 
@@ -64,7 +65,8 @@ public:
 
 	QMap<int, QString> getScopes();
 
-	QMap<int, QString> getUserProgList();
+	std::map<int, QString> getUserProgList();
+	// QMap<int, QString> getUserProgList();
 
 	void saveUserProg(const QString& name);
 
@@ -85,6 +87,7 @@ private:
 
 	QPointer<DataBaseReader> m_dbReaderPtr;
 	QSharedPointer<SocketModel> m_socketModelPtr;
+	QSharedPointer<UserProgsLoadModel> m_userProgModelPtr;
 };
 
 #endif // PROGLOADER_H

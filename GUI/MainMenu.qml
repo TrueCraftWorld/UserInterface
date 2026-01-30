@@ -8,6 +8,7 @@ Item {
     id: settinsScreen
     signal recommendButtonPressed()
     signal settingsButtonPressed()
+    signal userButtonPressed()
     signal exitButtonPressed()
     Rectangle {
         id: background
@@ -53,10 +54,21 @@ Item {
             style: "btn-outline-primary lg"
             Layout.alignment: Qt.AlignHCenter | Qt.AlignTop
             Layout.preferredWidth: 320
-            Layout.preferredHeight: 320
+            Layout.preferredHeight: 120
 
-            text: qsTr("Рекомендованные")
+            text: qsTr("Рекомендованные программы")
             onClicked: recommendButtonPressed()
+        }
+
+        SButton {
+            id: userProgButton
+            style: "btn-outline-primary lg"
+            Layout.alignment: Qt.AlignHCenter | Qt.AlignTop
+            Layout.preferredWidth: 320
+            Layout.preferredHeight: 120
+
+            onClicked: userButtonPressed()
+            text: qsTr("Пользовательские программы")
         }
 
         SButton {
@@ -64,10 +76,16 @@ Item {
             style: "btn-outline-primary lg"
             Layout.alignment: Qt.AlignHCenter | Qt.AlignTop
             Layout.preferredWidth: 320
-            Layout.preferredHeight: 320
+            Layout.preferredHeight: 120
 
             onClicked: settingsButtonPressed()
             text: qsTr("Настройки ...")
         }
+        Item {
+            id: filler
+            Layout.fillHeight: true
+            Layout.fillWidth: true
+        }
+
     }
 }

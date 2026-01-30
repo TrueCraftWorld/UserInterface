@@ -53,6 +53,12 @@ void ProgHandle::copyCurrent()
     emit signalCopyCurrent();
 }
 
+void ProgHandle::userProgs()
+{
+    qDebug() << "call userProgs";
+    emit signalUserProgsRequest();
+}
+
 void ProgHandle::permitAll()
 {
     emit signalUnlockProg();
@@ -110,4 +116,21 @@ void ProgHandle::setScopeNameList(QMap<int, QString> scopes)
     // m_scopeNameList = m_scopes.values();
     setScopeIdx(0);
     emit scopeNameList();
+}
+
+QStringList ProgHandle::userProgList() const
+{
+    QStringList res;
+    for (const auto& item : m_userProgs) {
+        res.push_back(item.second);
+    }
+    return res;
+}
+
+void ProgHandle::setUserProgList(const std::map<int, QString> &progs)
+{
+    qDebug() << "setUserProgList";
+
+    m_userProgs = (progs);
+    emit userProgListChanged();
 }

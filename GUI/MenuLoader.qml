@@ -27,6 +27,12 @@ Item {
                 menuLoader.source = "qrc:/SettingsMain.qml"
             }
         }
+        function onUserButtonPressed() {
+            if (menuLoader.item instanceof MainMenu) { // Проверяем, что загружен именно Text
+                menuLoader.source = "qrc:/UserProgsSelector.qml"
+            }
+        }
+
         function onReturnButtonPressed() {
             if (menuLoader.item instanceof MainMenu)
                 ;

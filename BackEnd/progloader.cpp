@@ -1,5 +1,7 @@
 #include "progloader.h"
 #include "socket.h"
+
+
 #include <unordered_set>
 #include <cmath>
 #include <vector>
@@ -240,7 +242,7 @@ QString makeDbString( const QModelIndex& idx,
                                        "Mono2Coag_INSTR, Mono2Coag_MODE, Mono2Coag_POWER, "
                                        "Pedal_1, Pedal_2, OutEnabled_MASK"
                                        ") VALUES ("
-                                       "%28, 1000"
+                                       "%28, 1000,"
                                        "'%1', '%2', %3, "
                                        "'%4', '%5', %6, "
                                        "'%7', '%8', %9, "
@@ -761,11 +763,16 @@ QMap<int, QString> ProgLoader::getScopes ()
     return scopeList;
 }
 
-QMap<int, QString> ProgLoader::getUserProgList()
+std::map<int, QString> ProgLoader::getUserProgList()
 {
-    QMap<int, QString> res;
-    ///TODO
-    /// нужна новая таблица в БД, с именами и айдишниками юзверских программ, откуда мы сможем читать
+    qDebug() << "getUserProgList";
+    std::map<int, QString> res;
+    QList<QVariantList> progListVariant = m_dbReaderPtr->slotSendSelectQuery(QStringList{"UserProgs"},
+                                                  QStringList{"id", "Name"},
+                                                  "");
+    for (const auto& progItem : qAsConst(progListVariant)) {
+        res.emplace(std::pair{progItem.at(0).toInt(), progItem.at(1).toString()});
+    }
     return res;
 }
 

@@ -45,6 +45,13 @@ void LinkStm::start()
     }
 }
 
+void LinkStm::argonBlow()
+{
+    UartTx argonBlowCommand;
+    argonBlowCommand.com = ArgonBlow;
+    setTxCommand(argonBlowCommand);
+}
+
 void LinkStm::unpackRxCommand(const QByteArray &rxPacket)
 {
     // Замеряем задержку от момента readyRead (readData) до входа в unpackRxCommand
@@ -200,6 +207,8 @@ void LinkStm::sendCommand()
         if (!m_txCommandList.isEmpty()) {   // Какую-то спец команду надо передать
             m_txCommand = m_txCommandList.takeFirst();
             m_comState = SPECIAL;
+//            qDebug() << "txCom: " << m_txCommand.com << ": " << QString::number(m_txCommand.com, 16);
+
         }
 
         //______________Подготовка активации________________
@@ -242,7 +251,8 @@ void LinkStm::sendCommand()
                 m_txCommand.data.append((power % 2) << 7);  // Младший бит мощности
                 m_txCommand.data.append(mode);              // Режим
                 // В старшем бите 0 - использовать первый баллон, 1 - второй; дальше - установленный расход от 0,0 до 8,0
-                m_txCommand.data.append((m_activCylinderFirst ? 0 : 0x80) | (m_argonFlowRate & 0x1F));
+                m_txCommand.data.append((m_activCylinderFirst ? 0 : 0x80) | (m_argonFlowRate & 0x7F));
+//                qDebug() << "ACT " << getHexStr(m_txCommand.data) << "Ar: " << m_argonFlowRate;
             }
         }
 
@@ -786,6 +796,12 @@ void LinkStm::setAutoSSmode(quint8 mode)
 void LinkStm::setActivCylinderFirst(bool first)
 {
     m_activCylinderFirst = first;
+}
+
+void LinkStm::setArgonFlowRate(quint8 rate)
+{
+    m_argonFlowRate = rate;
+//    qDebug() << "Aragorn changed to: " << rate;
 }
 
 void LinkStm::updateSocketData(int socketIndex, quint16 cutModeNum, quint16 coagModeNum, 

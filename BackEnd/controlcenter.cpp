@@ -229,9 +229,12 @@ void ControlCenter::setLinkStm(LinkStm* linkStm)
         connect(m_periphery, &PeriphHandler::enableActivationChanged,
                 m_linkStm,  &LinkStm::setEnableActivation,
                 Qt::QueuedConnection);
-        ///TODO реализовать метод приёма данных в linkStm
-        // connect(m_periphery, &PeriphHandler::argonFlowRateChanged,
-        //         m_linkStm, &LinkStm::set);
+        connect(m_periphery, &PeriphHandler::sigArgonFlowRateChanged,
+                m_linkStm, &LinkStm::setArgonFlowRate,
+                Qt::QueuedConnection);
+        connect(m_periphery, &PeriphHandler::sigArgonBlow,
+                m_linkStm, &LinkStm::argonBlow,
+                Qt::QueuedConnection);
 
         // Инициализируем все сокеты текущими данными
         initSocketsForPeriphery();

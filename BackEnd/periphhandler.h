@@ -14,7 +14,7 @@ class PeriphHandler : public QObject
 	Q_PROPERTY(int neutralSize READ neutralSize WRITE setNeutralSize NOTIFY neutralSizeChanged)
 	Q_PROPERTY(bool argonCylinder1Connected READ argonCylinder1Connected NOTIFY argonCylinder1ConnectedChanged)
 	Q_PROPERTY(bool argonCylinder2Connected READ argonCylinder2Connected NOTIFY argonCylinder2ConnectedChanged)
-	Q_PROPERTY(quint8 argonFlowRate READ argonFlowRate WRITE setArgonFlowRate NOTIFY argonFlowRateChanged)
+	Q_PROPERTY(quint8 argonFlowRate READ argonFlowRate WRITE setArgonFlowRate NOTIFY sigArgonFlowRateChanged)
 	Q_PROPERTY(quint8 argonRealRate READ argonRealRate NOTIFY argonRealRateChanged)
 	Q_PROPERTY(bool activCylinderFirst READ activCylinderFirst WRITE setActivCylinderFirst NOTIFY activCylinderFirstChanged)
 	Q_PROPERTY(bool enableActivation READ enableActivation WRITE setEnableActivation NOTIFY enableActivationChanged)
@@ -143,7 +143,8 @@ signals:
 	void neutralSizeChanged(int size);
 	void argonCylinder1ConnectedChanged(bool connected);
 	void argonCylinder2ConnectedChanged(bool connected);
-	void argonFlowRateChanged(quint8 rate);
+	void sigArgonFlowRateChanged(quint8 rate);
+    void sigArgonBlow();
 	void argonRealRateChanged(quint8 rate);
 	void activCylinderFirstChanged(bool first);
 	void enableActivationChanged(bool enable);

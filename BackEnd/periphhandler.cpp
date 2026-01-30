@@ -104,8 +104,7 @@ void PeriphHandler::setArgonFlowRate(quint8 rate)
 		return;
 
 	m_argonFlowRate = rate;
-	emit argonFlowRateChanged(rate);
-	// TODO: Отправить команду установки расхода в LinkStm при необходимости
+    emit sigArgonFlowRateChanged(rate);
 }
 
 void PeriphHandler::argonBlow()
@@ -113,6 +112,7 @@ void PeriphHandler::argonBlow()
 	// TODO: Отправить команду продувки аргона через LinkStm
 	// Например: m_linkStm->sendArgonBlowCommand();
 	qDebug() << "Argon blow command triggered";
+    emit sigArgonBlow();
 }
 
 quint8 PeriphHandler::argonRealRate() const

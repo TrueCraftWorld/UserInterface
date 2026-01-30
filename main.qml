@@ -100,7 +100,8 @@ Window {
 
    Drawer {
       id: leftDrawer
-      width: 0.8 * container.width
+      width: container.width
+//      width: 0.8 * container.width
       height: container.height
       edge: Qt.LeftEdge
       

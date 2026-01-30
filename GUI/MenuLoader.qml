@@ -46,6 +46,11 @@ Item {
                 menuLoader.source = "qrc:/SettingsMain.qml"
                         })
             }
+                    if (menuLoader.item.exitButtonPressed) {
+                        menuLoader.item.exitButtonPressed.connect(function() {
+                            closeMe()
+                        })
+                    }
                 } catch(e) {
                     // Игнорируем ошибки подключения
                 }

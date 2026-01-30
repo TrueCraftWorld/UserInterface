@@ -9,6 +9,8 @@ Item {
     signal recommendButtonPressed()
     signal settingsButtonPressed()
     signal exitButtonPressed()
+    
+    property bool videoPlayerVisible: false
     Rectangle {
         id: background
         anchors.fill: parent
@@ -38,22 +40,23 @@ Item {
     }
 
 
-    SColumn {
-        id: buttonColumn
-        anchors{
+    Grid {
+        id: buttonGrid
+        anchors {
             top: screenTitle.bottom
             topMargin: 25
+            horizontalCenter: parent.horizontalCenter
         }
-
-        width: parent.width
-        rowSpacing: 15
+        columns: 2
+        rows: 2
+        columnSpacing: 20
+        rowSpacing: 20
 
         SButton {
             id: wifiButton
             style: "btn-outline-primary lg"
-            Layout.alignment: Qt.AlignHCenter | Qt.AlignTop
-            Layout.preferredWidth: 320
-            Layout.preferredHeight: 320
+            width: 380
+            height: 280
 
             text: qsTr("Рекомендованные")
             onClicked: recommendButtonPressed()
@@ -62,12 +65,30 @@ Item {
         SButton {
             id: updateButton
             style: "btn-outline-primary lg"
-            Layout.alignment: Qt.AlignHCenter | Qt.AlignTop
-            Layout.preferredWidth: 320
-            Layout.preferredHeight: 320
+            width: 380
+            height: 280
 
             onClicked: settingsButtonPressed()
             text: qsTr("Настройки ...")
         }
+        
+        SButton {
+            id: videoButton
+            style: "btn-outline-primary lg"
+            width: 380
+            height: 280
+
+            onClicked: settinsScreen.videoPlayerVisible = true
+            text: qsTr("Видео 🎬")
+        }
+    }
+    
+    // Видеопроигрыватель
+    VideoPlayer {
+        id: videoPlayer
+        anchors.fill: parent
+        visible: settinsScreen.videoPlayerVisible
+        z: 1000
+        onCloseRequested: settinsScreen.videoPlayerVisible = false
     }
 }

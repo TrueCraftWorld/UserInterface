@@ -22,6 +22,7 @@ HEADERS += \
     $$PWD/socketmodel.h \
     $$PWD/stmupdater.h \
     $$PWD/surgicalmode.h \
+    $$PWD/systemmonitor.h \
     $$PWD/uartqmlbridge.h
 
 SOURCES += \
@@ -42,6 +43,7 @@ SOURCES += \
     $$PWD/socketmodel.cpp \
     $$PWD/stmupdater.cpp \
     $$PWD/surgicalmode.cpp \
+    $$PWD/systemmonitor.cpp \
     $$PWD/uartqmlbridge.cpp
 
 RESOURCES += \

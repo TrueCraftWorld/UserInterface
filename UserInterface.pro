@@ -2,7 +2,7 @@ include($$PWD/GUI/userinterface.pri)
 include($$PWD/SettingsScreen/settingsscreen.pri)
 include($$PWD/BackEnd/BackEnd.pri)
 
-QT += quick
+QT += quick multimedia
 
 # You can make your code fail to compile if it uses deprecated APIs.
 # In order to do so, uncomment the following line.

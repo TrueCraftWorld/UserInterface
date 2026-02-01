@@ -351,3 +351,17 @@ Onyx::SocketState SOCKET::getInfo() const
     res.pedal = pedal();
     return res;
 }
+
+int SOCKET::coagModeCount() const
+{
+    if (m_coagHalf.isNull())
+        return 0;
+    return m_coagHalf->modeCount();
+}
+
+int SOCKET::cutModeCount() const
+{
+    if (m_cutHalf.isNull())
+        return 0;
+    return m_cutHalf->modeCount();
+}

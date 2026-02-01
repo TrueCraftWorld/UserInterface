@@ -124,6 +124,12 @@ public:
     bool setInstrumIndex(int index);
     bool setInstrumId(int id);
 
+    /**
+     * @brief количество режимов, не считая заглушку
+     * @return
+     */
+    int modeCount();
+
 private:
     int getModeIndex(const QString& name) const;
     int getModeIndex(int id) const;

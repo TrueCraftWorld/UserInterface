@@ -27,9 +27,17 @@ void ProgHandle::removeSubProg()
     emit signalRemoveSub();
 }
 
-void ProgHandle::loadUserProg(int recomProgId)
+void ProgHandle::loadUserProg(int progIndex)
 {
-    emit signalUserProgChosen(recomProgId);
+    if (m_userProgs.size() <= static_cast<size_t>(progIndex))
+        return;
+
+    auto iter = m_userProgs.cbegin();
+    for (int i = 0; i < progIndex; ++i) {
+        iter++;
+    }
+
+    emit signalUserProgChosen(iter->first);
 }
 
 void ProgHandle::saveProg(int id, const QString &name)

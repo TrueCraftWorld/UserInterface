@@ -54,6 +54,7 @@ public:
         CoagModeInstrIndex,
         CoagModeInstrID,
         CoagModeInstrIdList,
+        CoagInstrIdList, //это список для всего сокета, а выше для конкретного режима
         CoagModeInstrNum,
         CoagModeIsEndo,
         CoagModesNames,
@@ -72,6 +73,7 @@ public:
         CutModeInstrIndex,
         CutModeInstrID,
         CutModeInstrIdList,
+        CutInstrIdList,
         CutModeInstrNum,
         CutModeIsEndo,
         CutModesNames,

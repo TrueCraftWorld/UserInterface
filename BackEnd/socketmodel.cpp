@@ -3,6 +3,22 @@
 #include <QTimer>
 // #include <algorithm>
 
+namespace {
+template<typename Key, typename Value>
+void uniteMaps(
+    std::map<Key, Value>& destination,
+    const std::map<Key, Value>& source) {
+    for (const auto& [key, value] : source) {
+        auto it = destination.find(key);
+        if (it != destination.end()) {
+            continue;
+        } else {
+            destination[key] = value;
+        }
+    }
+}
+}
+
 SocketModel::SocketModel(QObject *parent)
     : QAbstractListModel{parent}
 {
@@ -147,6 +163,20 @@ QVariant SocketModel::data(const QModelIndex &index, int role) const
         }
         return res;
     }
+    case CoagInstrIdList:
+    {
+        QStringList res;
+        std::map<int, Onyx::InstrInfo> all;
+        int lim = socketItem.coagModeCount();
+        for (int mode = 0; mode < lim; ++mode) {
+            const auto& modePtr = socketItem.getMode(mode, true);
+            uniteMaps(all,modePtr->InstrConstraints() );
+        }
+        for (const auto& [key, item] : all) {
+            res.append(QString::number(item.id));
+        }
+        return res;
+    }
     case CoagModeInstrNum:
     {
         if (socketItem.curCoagMode().isNull()
@@ -220,6 +250,20 @@ QVariant SocketModel::data(const QModelIndex &index, int role) const
         QStringList res;
         const auto& instrs = socketItem.curCutMode()->InstrConstraints();
         for (const auto& [key, item] : instrs) {
+            res.append(QString::number(item.id));
+        }
+        return res;
+    }
+    case CutInstrIdList:
+    {
+        QStringList res;
+        std::map<int, Onyx::InstrInfo> all;
+        int lim = socketItem.cutModeCount();
+        for (int mode = 0; mode < lim; ++mode) {
+            const auto& modePtr = socketItem.getMode(mode, false);
+            uniteMaps(all,modePtr->InstrConstraints() );
+        }
+        for (const auto& [key, item] : all) {
             res.append(QString::number(item.id));
         }
         return res;

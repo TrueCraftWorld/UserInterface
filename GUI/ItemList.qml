@@ -134,6 +134,18 @@ Rectangle {
                     }
                 }
                 Rectangle {
+                    id: spacer
+                    height: 2
+                    width: parent.width
+                    gradient: Gradient.SolidStone/*Gradient {
+                        GradientStop { position: 0.0; color: "transparent" }
+                        GradientStop { position: 0.5; color: "white" }
+                        GradientStop { position: 1.0; color: "transparent" }
+                    }*/
+                    anchors.bottom: parent.bottom
+                    anchors.bottomMargin: 3
+                }
+                Rectangle {
                     id: selectionBorder
                     anchors.fill: parent
                     color: "transparent"

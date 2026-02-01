@@ -90,6 +90,9 @@ void ControlCenter::makeHandleConnections()
         m_handle->setUserProgList(m_progLoader->getUserProgList());
     });
 
+    connect(m_handle, &ProgHandle::signalUserProgChosen,
+            m_progLoader, &ProgLoader::loadUserProg);
+
     connect(m_handle, &ProgHandle::signalAddEmptyDefault,
             m_progLoader, &ProgLoader::defaultSocketInit);
 

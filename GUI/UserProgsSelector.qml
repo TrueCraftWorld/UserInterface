@@ -37,7 +37,6 @@ Rectangle {
 
     Component.onCompleted: {
         recomHandle.userProgs()
-        // updateModel()
     }
 
     GradientBack {

@@ -229,6 +229,9 @@ public:
 
     Onyx::SocketState getInfo() const;
 
+    int coagModeCount() const;
+    int cutModeCount() const;
+
 private:
     HalfSockPtr m_cutHalf = nullptr;
     HalfSockPtr m_coagHalf = nullptr;

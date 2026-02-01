@@ -189,3 +189,10 @@ int HalfSocket::getModeIndex(int id) const
     return -1;
 }
 
+
+int HalfSocket::modeCount()
+{
+    if (m_modes.size())
+        return m_modes.size() - 1;
+    return 0;
+}

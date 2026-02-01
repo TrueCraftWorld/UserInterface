@@ -81,6 +81,9 @@ public:
 
 	void setSocketModelPtr(QSharedPointer<SocketModel> newSocketModelPtr);
 
+public slots:
+	 bool loadUserProg(int userProgId);
+
 private:
 	std::map<int, InstrPtr> getInstrums();
 	void saveProg(const QString& name = "");

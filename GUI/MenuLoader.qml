@@ -46,6 +46,11 @@ Item {
                 menuLoader.source = "qrc:/SettingsMain.qml"
                         })
             }
+                    if (menuLoader.item.secretKeysButtonPressed) {
+                        menuLoader.item.secretKeysButtonPressed.connect(function() {
+                menuLoader.source = "qrc:/SecretKeysWindow.qml"
+                        })
+            }
                     if (menuLoader.item.exitButtonPressed) {
                         menuLoader.item.exitButtonPressed.connect(function() {
                             closeMe()

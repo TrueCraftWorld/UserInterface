@@ -11,6 +11,7 @@ HEADERS += \
     $$PWD/instrimageprovider.h \
     $$PWD/instrument.h \
     $$PWD/jsonstorage.h \
+    $$PWD/keygenerator.h \
     $$PWD/linkstm.h \
     $$PWD/loggingcategories.h \
     $$PWD/pedal.h \
@@ -32,6 +33,7 @@ SOURCES += \
     $$PWD/instrimageprovider.cpp \
     $$PWD/instrument.cpp \
     $$PWD/jsonstorage.cpp \
+    $$PWD/keygenerator.cpp \
     $$PWD/linkstm.cpp \
     $$PWD/loggingcategories.cpp \
     $$PWD/pedal.cpp \

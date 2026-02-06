@@ -386,6 +386,24 @@ Window {
          }
       }
    }
+   
+   // Монитор системы в правом нижнем углу
+   SystemMonitor {
+      id: systemMonitor
+      anchors {
+         right: parent.right
+         bottom: parent.bottom
+         margins: 10
+      }
+      z: 9999  // Поверх всего
+      monitoringActive: true
+      
+      // MouseArea для пропуска событий сквозь монитор
+      MouseArea {
+         anchors.fill: parent
+         enabled: false  // Отключаем перехват событий - все проходят сквозь
+      }
+   }
    // Область для свайпов и закрытия панелей
    // MouseArea {
    //    id: swipeArea

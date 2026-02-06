@@ -6,6 +6,7 @@
 #include "BackEnd/controlcenter.h"
 #include "BackEnd/instrimageprovider.h"
 #include "BackEnd/systemmonitor.h"
+#include "BackEnd/keygenerator.h"
 #include "qqmlcontext.h"
 
 #include <QFile>
@@ -70,7 +71,7 @@ int main(int argc, char *argv[])
     
     // Переключаем RK809 на динамик (SPK) вместо наушников (HP)
     // Playback Mux: 0=HP (наушники), 1=SPK (динамик через GPIO)
-    QProcess::execute("amixer", QStringList() << "-c" << "0" << "cset" << "numid=4" << "1");
+    QProcess::execute("amixer", QStringList() << "-c" << "0" << "cset" << "numid=4" << "0");
     
     // Включаем аудио в playbin
     qputenv("QT_GSTREAMER_PLAYBIN_FLAGS", "audio+video+soft-colorbalance+soft-volume");
@@ -107,6 +108,9 @@ int main(int argc, char *argv[])
 
     // Создаём монитор системы
     SystemMonitor *sysMonitor = new SystemMonitor();
+    
+    // Создаём генератор секретных ключей
+    KeyGenerator *keyGen = new KeyGenerator();
 
     QQmlApplicationEngine engine;
     engine.rootContext()->setContextProperty("theModel", ctrl->getSocketModel());
@@ -114,6 +118,7 @@ int main(int argc, char *argv[])
     engine.rootContext()->setContextProperty("recomHandle", ctrl->getHandle());
     engine.rootContext()->setContextProperty("periphHandle", ctrl->getPeripheryHandle());
     engine.rootContext()->setContextProperty("sysMonitor", sysMonitor);
+    engine.rootContext()->setContextProperty("keyGenerator", keyGen);
 
     engine.addImageProvider(QLatin1String("instrums"), new InstrImageProvider);
     engine.addImageProvider(QLatin1String("instruments"), new InstrImageProvider);

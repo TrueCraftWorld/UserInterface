@@ -9,6 +9,7 @@ Item {
     signal recommendButtonPressed()
     signal settingsButtonPressed()
     signal exitButtonPressed()
+    signal secretKeysButtonPressed()
     
     property bool videoPlayerVisible: false
     Rectangle {
@@ -51,35 +52,69 @@ Item {
         rows: 2
         columnSpacing: 20
         rowSpacing: 20
+        clip: false  // Не обрезаем - позволяем теням отображаться
 
-        SButton {
-            id: wifiButton
-            style: "btn-outline-primary lg"
+        Item {
             width: 380
             height: 280
-
-            text: qsTr("Рекомендованные")
-            onClicked: recommendButtonPressed()
+            clip: true
+            
+            SButton {
+                id: wifiButton
+//                style: "btn-outline-primary lg"
+                style: "btn-primary lg"           // Попробуйте: btn-primary, btn-secondary, btn-info, btn-light
+                width: parent.width
+                height: parent.height
+                text: qsTr("Рекомендованные")
+                onClicked: recommendButtonPressed()
+            }
         }
 
-        SButton {
-            id: updateButton
-            style: "btn-outline-primary lg"
+        Item {
             width: 380
             height: 280
-
-            onClicked: settingsButtonPressed()
-            text: qsTr("Настройки ...")
+            clip: true
+            
+            SButton {
+                id: updateButton
+//                style: "btn-outline-primary lg"
+                style: "btn-primary lg"           // Попробуйте: btn-primary, btn-secondary, btn-info, btn-light
+                width: parent.width
+                height: parent.height
+                onClicked: settingsButtonPressed()
+                text: qsTr("Настройки ...")
+            }
         }
         
-        SButton {
-            id: videoButton
-            style: "btn-outline-primary lg"
+        Item {
             width: 380
             height: 280
-
-            onClicked: settinsScreen.videoPlayerVisible = true
-            text: qsTr("Видео 🎬")
+            clip: true
+            
+            SButton {
+                id: videoButton
+                style: "btn-primary lg"           // Попробуйте: btn-primary, btn-secondary, btn-info, btn-light
+//                style: "btn-outline-primary lg"
+                width: parent.width
+                height: parent.height
+                onClicked: settinsScreen.videoPlayerVisible = true
+                text: qsTr("Видео 🎬")
+            }
+        }
+        
+        Item {
+            width: 380
+            height: 280
+            clip: true
+            
+            SButton {
+                id: secretKeysButton
+                style: "btn-primary lg"
+                width: parent.width
+                height: parent.height
+                onClicked: secretKeysButtonPressed()
+                text: qsTr("Секретные ключи 🔐")
+            }
         }
     }
     

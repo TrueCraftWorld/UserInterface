@@ -2,11 +2,18 @@ include($$PWD/GUI/userinterface.pri)
 include($$PWD/SettingsScreen/settingsscreen.pri)
 include($$PWD/BackEnd/BackEnd.pri)
 
-QT += quick multimedia
+QT += quick multimedia multimediawidgets
 
 # You can make your code fail to compile if it uses deprecated APIs.
 # In order to do so, uncomment the following line.
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
+
+# Для Linux
+# Закомментировано - Qt Multimedia уже включает поддержку GStreamer
+#unix:!mac {
+#    CONFIG += link_pkgconfig
+#    PKGCONFIG += gstreamer-1.0 gstreamer-video-1.0
+#}
 
 SOURCES += \
         main.cpp

@@ -278,7 +278,7 @@ QString makeDbStringInstr( const QModelIndex& idx,
                                          "Mono2Coag_INSTR, Mono2Coag_MODE, Mono2Coag_POWER, "
                                          "Pedal_1, Pedal_2, OutEnabled_MASK"
                                          ") VALUES ("
-                                         "%28, %29, NULL,"
+                                         "%28, NULL, %29,"
                                          "'%1', '%2', %3, "
                                          "'%4', '%5', %6, "
                                          "'%7', '%8', %9, "
@@ -552,8 +552,8 @@ bool ProgLoader::programmLoadSocketInit(int progId, bool clear)
     // Если progId = 0, создаём фиктивную запись программы
     progListVariant = m_dbReaderPtr->slotSendSelectQuery(QStringList{"Lists"},
                                                       fields,
-                                                      progId > 1000 ?
-                                                       queryConditionUser.arg(progId) : queryConditionRecom.arg(progId));
+                                                      /*progId > 1000 ?
+                                                       queryConditionUser.arg(progId) :*/ queryConditionRecom.arg(progId));
     if (progListVariant.size() == 0)
         return false;
 
@@ -802,6 +802,11 @@ void ProgLoader::deleteUserProg(int id)
     /// надо удалить запись в таблице листов и в таблице имён программ
     /// может быть для удаления сделать коммит по закрытию базы???
     ///
+    QString removeQuery = "DELETE FROM Lists WHERE Prog_ID = %1";
+    QString removeNameQuery = "DELETE FROM UserProgs WHERE Prog_ID = %2";
+    m_dbReaderPtr->executeUpdateQuery(removeQuery.arg(1000 + id));
+    m_dbReaderPtr->executeUpdateQuery(removeNameQuery.arg(id));
+
 }
 
 std::map<int, std::map<int, Onyx::InstrInfo> > ProgLoader::getConstraints(const QList<int>& idList)
@@ -887,6 +892,8 @@ void ProgLoader::saveProg(const QString &name)
             }
         }
     }
+    if (idToUse == -1)
+        idToUse = 0;
 
 
     auto fillState = [this] (std::array<QString, 3>& cut,
@@ -901,13 +908,15 @@ void ProgLoader::saveProg(const QString &name)
         } else {
             cut[0] = makeDbStringInstr(idx, SocketModel::CutInstrIdList, SocketModel::CutModeInstrID);
             cut[1] = makeDbStringMode(idx, SocketModel::CutModeIdList, SocketModel::CutModeId);
-            if (!cut[0].isEmpty() && !cut[1].isEmpty())
+            if (!cut[0].isEmpty() && !cut[1].isEmpty()) {
                 cut[2] = QString::number(idx.data(SocketModel::CutModePower).toInt());
+            }
 
             coag[0] = makeDbStringInstr(idx, SocketModel::CoagInstrIdList, SocketModel::CoagModeInstrID);
             coag[1] = makeDbStringMode(idx, SocketModel::CoagModeIdList, SocketModel::CoagModeId);
-            if (!coag[0].isEmpty() && !coag[1].isEmpty())
+            if (!coag[0].isEmpty() && !coag[1].isEmpty()) {
                 coag[2] = QString::number(idx.data(SocketModel::CoagModePower).toInt());
+            }
 
             int ped = idx.data(SocketModel::SocketPedal).toInt();
 
@@ -943,6 +952,7 @@ void ProgLoader::saveProg(const QString &name)
     int outEnabledMask = 11111111;  // По умолчанию все включены (11111111)
 
     // Формируем SQL запрос для REPLACE (INSERT OR UPDATE)
+// using SocketStrings = std::array<std::array<QString, 3>, 8>; //instrId, modeId, power
 
     qDebug() << "saving N pages - " << subCount;
     for (int i = 0; i < subCount; ++i) {
@@ -950,18 +960,36 @@ void ProgLoader::saveProg(const QString &name)
         const std::pair<int, int> & pedalState = allPedals.at(i);
         QString query = insertUserProgQuery
         // QString query = saveCurQuery
-        .arg(state.at(0).at(0) == "-1" ? "" : state.at(0).at(0)).arg(state.at(0).at(1) == "1000" ? "" : state.at(0).at(1)).arg(state.at(0).at(2))
-        .arg(state.at(1).at(0) == "-1" ? "" : state.at(1).at(0)).arg(state.at(1).at(1) == "1000" ? "" : state.at(1).at(1)).arg(state.at(1).at(2))
-        .arg(state.at(2).at(0) == "-1" ? "" : state.at(2).at(0)).arg(state.at(2).at(1) == "1000" ? "" : state.at(2).at(1)).arg(state.at(2).at(2))
-        .arg(state.at(3).at(0) == "-1" ? "" : state.at(3).at(0)).arg(state.at(3).at(1) == "1000" ? "" : state.at(3).at(1)).arg(state.at(3).at(2))
-        .arg(state.at(4).at(0) == "-1" ? "" : state.at(4).at(0)).arg(state.at(4).at(1) == "1000" ? "" : state.at(4).at(1)).arg(state.at(4).at(2))
-        .arg(state.at(5).at(0) == "-1" ? "" : state.at(5).at(0)).arg(state.at(5).at(1) == "1000" ? "" : state.at(5).at(1)).arg(state.at(5).at(2))
-        .arg(state.at(6).at(0) == "-1" ? "" : state.at(6).at(0)).arg(state.at(6).at(1) == "1000" ? "" : state.at(6).at(1)).arg(state.at(6).at(2))
-        .arg(state.at(7).at(0) == "-1" ? "" : state.at(7).at(0)).arg(state.at(7).at(1) == "1000" ? "" : state.at(7).at(1)).arg(state.at(7).at(2))
-        .arg(pedalState.first).arg(pedalState.second).arg(outEnabledMask).arg(i+1).arg(idToUse+1000);
 
+        .arg(state.at(0).at(0) == "-1" ? "" : state.at(0).at(0))
+            .arg(state.at(0).at(1) == "1000" ? "" : state.at(0).at(1))
+                .arg(state.at(0).at(2))
+        .arg(state.at(1).at(0) == "-1" ? "" : state.at(1).at(0))
+            .arg(state.at(1).at(1) == "1000" ? "" : state.at(1).at(1))
+                .arg(state.at(1).at(2))
+        .arg(state.at(2).at(0) == "-1" ? "" : state.at(2).at(0))
+            .arg(state.at(2).at(1) == "1000" ? "" : state.at(2).at(1))
+                .arg(state.at(2).at(2))
+        .arg(state.at(3).at(0) == "-1" ? "" : state.at(3).at(0))
+            .arg(state.at(3).at(1) == "1000" ? "" : state.at(3).at(1))
+                .arg(state.at(3).at(2))
+        .arg(state.at(4).at(0) == "-1" ? "" : state.at(4).at(0))
+            .arg(state.at(4).at(1) == "1000" ? "" : state.at(4).at(1))
+                .arg(state.at(4).at(2))
+        .arg(state.at(5).at(0) == "-1" ? "" : state.at(5).at(0))
+            .arg(state.at(5).at(1) == "1000" ? "" : state.at(5).at(1))
+                .arg(state.at(5).at(2))
+        .arg(state.at(6).at(0) == "-1" ? "" : state.at(6).at(0))
+            .arg(state.at(6).at(1) == "1000" ? "" : state.at(6).at(1))
+                .arg(state.at(6).at(2))
+        .arg(state.at(7).at(0) == "-1" ? "" : state.at(7).at(0))
+            .arg(state.at(7).at(1) == "1000" ? "" : state.at(7).at(1))
+                .arg(state.at(7).at(2))
+        .arg(pedalState.first).arg(pedalState.second).arg(outEnabledMask).arg(i+1).arg(idToUse+1001);
+
+        qDebug() <<query;
         if (!m_dbReaderPtr->executeUpdateQuery(query)) {
-            qDebug() << "Failed to save current state";
+            qDebug() << "Failed to save userProg";
         }
     }
 }
@@ -973,7 +1001,7 @@ void ProgLoader::setSocketModelPtr(QSharedPointer<SocketModel> newSocketModelPtr
 
 bool ProgLoader::loadUserProg(int userProgId)
 {
-    return programmLoadSocketInit(userProgId + 1000, true);
+    return programmLoadSocketInit(userProgId + 1001, true);
 }
 
 bool ProgLoader::loadCurrentState()

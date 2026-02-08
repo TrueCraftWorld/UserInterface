@@ -170,7 +170,7 @@ QVariant SocketModel::data(const QModelIndex &index, int role) const
         int lim = socketItem.coagModeCount();
         for (int mode = 0; mode < lim; ++mode) {
             const auto& modePtr = socketItem.getMode(mode, true);
-            uniteMaps(all,modePtr->InstrConstraints() );
+            uniteMaps(all, modePtr->InstrConstraints() );
         }
         for (const auto& [key, item] : all) {
             res.append(QString::number(item.id));

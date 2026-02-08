@@ -21,7 +21,7 @@ constexpr int ENDO_MAX = 3;
 //     std::array<QString, 3> mono2Cut  = {"0","1000","1"};
 //     std::array<QString, 3> mono2Coag = {"0","1000","1"};
 // };
-using SocketStrings = std::array<std::array<QString, 3>, 8>; //instrNum, modeNum, power
+using SocketStrings = std::array<std::array<QString, 3>, 8>; //instrId, modeId, power
 
 class SocketModel : public QAbstractListModel
 {

@@ -3,6 +3,22 @@
 #include <QTimer>
 // #include <algorithm>
 
+namespace {
+template<typename Key, typename Value>
+void uniteMaps(
+    std::map<Key, Value>& destination,
+    const std::map<Key, Value>& source) {
+    for (const auto& [key, value] : source) {
+        auto it = destination.find(key);
+        if (it != destination.end()) {
+            continue;
+        } else {
+            destination[key] = value;
+        }
+    }
+}
+}
+
 SocketModel::SocketModel(QObject *parent)
     : QAbstractListModel{parent}
 {
@@ -97,6 +113,8 @@ QVariant SocketModel::data(const QModelIndex &index, int role) const
         return socketItem.coagModeIndex();
     case CoagModeId:
         return socketItem.coagModeId();
+    case CoagModeIdList:
+        return socketItem.coagModeNamesIds();
     case CoagModeNum:
         if (socketItem.curCoagMode().isNull())
             return 0;
@@ -136,9 +154,33 @@ QVariant SocketModel::data(const QModelIndex &index, int role) const
         if (socketItem.curCoagMode().isNull())
             return -1;
         return socketItem.curCoagMode()->selectedInstrId();
+    case CoagModeInstrIdList:
+    {
+        QStringList res;
+        const auto& instrs = socketItem.curCoagMode()->InstrConstraints();
+        for (const auto& [key, item] : instrs) {
+            res.append(QString::number(item.id));
+        }
+        return res;
+    }
+    case CoagInstrIdList:
+    {
+        QStringList res;
+        std::map<int, Onyx::InstrInfo> all;
+        int lim = socketItem.coagModeCount();
+        for (int mode = 0; mode < lim; ++mode) {
+            const auto& modePtr = socketItem.getMode(mode, true);
+            uniteMaps(all,modePtr->InstrConstraints() );
+        }
+        for (const auto& [key, item] : all) {
+            res.append(QString::number(item.id));
+        }
+        return res;
+    }
     case CoagModeInstrNum:
     {
-        if (socketItem.curCoagMode().isNull())
+        if (socketItem.curCoagMode().isNull()
+            || m_instrMapPtr == nullptr)
             return -1;
         
         int instrId = socketItem.curCoagMode()->selectedInstrId();
@@ -164,6 +206,8 @@ QVariant SocketModel::data(const QModelIndex &index, int role) const
         return socketItem.cutModeIndex();
     case CutModeId:
         return socketItem.cutModeId();
+    case CutModeIdList:
+        return socketItem.cutModeNamesIds();
     case CutModeNum:
         if (socketItem.curCutMode().isNull())
             return 0;
@@ -206,9 +250,33 @@ QVariant SocketModel::data(const QModelIndex &index, int role) const
         if (socketItem.curCutMode().isNull())
             return -1;
         return socketItem.curCutMode()->selectedInstrId();
+    case CutModeInstrIdList:
+    {
+        QStringList res;
+        const auto& instrs = socketItem.curCutMode()->InstrConstraints();
+        for (const auto& [key, item] : instrs) {
+            res.append(QString::number(item.id));
+        }
+        return res;
+    }
+    case CutInstrIdList:
+    {
+        QStringList res;
+        std::map<int, Onyx::InstrInfo> all;
+        int lim = socketItem.cutModeCount();
+        for (int mode = 0; mode < lim; ++mode) {
+            const auto& modePtr = socketItem.getMode(mode, false);
+            uniteMaps(all,modePtr->InstrConstraints() );
+        }
+        for (const auto& [key, item] : all) {
+            res.append(QString::number(item.id));
+        }
+        return res;
+    }
     case CutModeInstrNum:
     {
-        if (socketItem.curCutMode().isNull())
+        if (socketItem.curCutMode().isNull()
+                || m_instrMapPtr == nullptr)
             return -1;
         
         int instrId = socketItem.curCutMode()->selectedInstrId();
@@ -216,7 +284,9 @@ QVariant SocketModel::data(const QModelIndex &index, int role) const
         if (instrId == 1000)
             return 1000;
         
-        auto iter = m_instrMapPtr->find(instrId);
+
+        auto iter = m_instrMapPtr->find(socketItem.curCutMode()->selectedInstrId());
+
         if (iter != m_instrMapPtr->end())
             return iter->second->legacyNumber();
         else
@@ -839,5 +909,44 @@ void SocketModel::populateRoles()
         QString roleName = metaEnum.valueToKey(roleKey);
         roleName = roleName.toLower();
         m_roles.insert(roleKey, roleName.toUtf8());
+    }
+}
+
+std::vector<SocketStrings> SocketModel::getDatabaseText()
+{
+    std::vector<SocketStrings> progDesc;
+    progDesc.resize(m_subProgCount);
+    for (int i = 0; i < m_itemsMapVect.size(); ++i) {
+        SocketStrings& listDesc = progDesc[i];
+        const auto& list = m_itemsMapVect.at(i);
+        const auto& instrList = m_instrMapVect.at(i);
+        for (int j = 0; j < list.size(); ++j) {
+            const auto& socket = list.at(j);
+            auto& socketDescCut = listDesc.at(2*j);
+            auto& socketDescCoag = listDesc.at(2*j + 1);
+            //instrNum, modeNum, power
+            socketDescCut.at(0) = QString::number(socket->curCutMode()
+                                                    ? socket->curCutMode()->selectedInstrId()
+                                                    : 0);
+            QStringList сutModes = socket->cutModeNamesIds();
+            QStringList cutInstrums;
+            for (int i = 0; i < сutModes.size(); ++i) {
+                cutInstrums.append(instrumNamesIds(j, i, false));
+            }
+            cutInstrums.removeDuplicates();
+            int curCutId = socket->cutModeId();
+            cutInstrums.removeOne(QString::number(curCutId));
+            cutInstrums.prepend(QString::number(curCutId));
+
+            socketDescCut.at(1) = cutInstrums.join(',');
+            socketDescCut.at(2) = QString::number(socket->cutModePower());
+
+            socketDescCoag.at(0) = QString::number(socket->curCoagMode()
+                                                    ? socket->curCoagMode()->selectedInstrId()
+                                                    : 0);
+            socketDescCoag.at(1) = QString::number(socket->coagModeNum());
+            socketDescCoag.at(2) = QString::number(socket->coagModePower());
+
+        }
     }
 }

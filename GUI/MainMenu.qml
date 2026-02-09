@@ -8,6 +8,7 @@ Item {
     id: settinsScreen
     signal recommendButtonPressed()
     signal settingsButtonPressed()
+    signal userButtonPressed()
     signal exitButtonPressed()
     signal secretKeysButtonPressed()
     

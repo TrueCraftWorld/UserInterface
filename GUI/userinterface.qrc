@@ -35,5 +35,6 @@
         <file>VideoPlayer.qml</file>
         <file>SystemMonitor.qml</file>
         <file>SecretKeysWindow.qml</file>
+        <file>UserProgsSelector.qml</file>
     </qresource>
 </RCC>

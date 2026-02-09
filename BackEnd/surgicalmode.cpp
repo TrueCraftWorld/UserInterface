@@ -115,15 +115,15 @@ bool SurgicalMode::setSelectedInstrId(int newSelectedInstrId)
 
     if (iter != m_InstrConstraints.end()) {
         m_selectedInstrId = newSelectedInstrId;
-        int id = 0;
+        int index = 0;
         const Onyx::InstrInfo& check = iter->second;
         for (const auto& [key, item] : m_InstrConstraints)
         {
             if (check.id == item.id) {
-                m_selectedInstrIndex = id;
+                m_selectedInstrIndex = index;
                 return true;
             }
-            id++;
+            index++;
         }
     }
     return false;

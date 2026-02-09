@@ -33,6 +33,7 @@ DISTFILES += \
     $$PWD/SocketContainerV2.qml \
     $$PWD/StatusBar.qml \
     $$PWD/VideoPlayer.qml
+    $$PWD/UserProgsSelector.qml
 
 HEADERS +=
 

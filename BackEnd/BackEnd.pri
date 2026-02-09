@@ -3,6 +3,9 @@ QT += serialport multimedia sql concurrent
 
 CONFIG += c++17
 
+# Линковка с математической библиотекой
+LIBS += -lm
+
 HEADERS += \
     $$PWD/Structures.h \
     $$PWD/controlcenter.h \
@@ -25,6 +28,7 @@ HEADERS += \
     $$PWD/surgicalmode.h \
     $$PWD/systemmonitor.h \
     $$PWD/uartqmlbridge.h
+    $$PWD/userprogsloadmodel.h
 
 SOURCES += \
     $$PWD/controlcenter.cpp \
@@ -47,6 +51,7 @@ SOURCES += \
     $$PWD/surgicalmode.cpp \
     $$PWD/systemmonitor.cpp \
     $$PWD/uartqmlbridge.cpp
+    $$PWD/userprogsloadmodel.cpp
 
 RESOURCES += \
     $$PWD/backend.qrc

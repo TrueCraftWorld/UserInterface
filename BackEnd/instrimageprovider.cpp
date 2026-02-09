@@ -54,6 +54,19 @@ void InstrImageProvider::scanFiles()
         // qWarning() << "InstrImageProvider: Directory does not exist:" << modesDir.absolutePath();
     }
     
+    // Сканируем папку со скоупами
+    QDir scopesDir("/home/kikorik/FOTEK/Images/scopes");
+    if (scopesDir.exists()) {
+        QFileInfoList scopeFiles = scopesDir.entryInfoList(filters,
+                                                        QDir::Files
+                                                         | QDir::NoDotAndDotDot
+                                                         | QDir::Readable);
+        s_knownFiles.append(scopeFiles);
+        // qDebug() << "InstrImageProvider: Found" << scopeFiles.size() << "scope files in" << scopesDir.absolutePath();
+    } else {
+        // qWarning() << "InstrImageProvider: Directory does not exist:" << scopesDir.absolutePath();
+    }
+    
     // qDebug() << "InstrImageProvider: Total" << s_knownFiles.size() << "image files loaded";
     
     s_filesScanned = true;

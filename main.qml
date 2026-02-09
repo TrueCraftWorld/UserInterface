@@ -112,16 +112,17 @@ Window {
          id: progNameInput
          width: 0.7 * parent.width
          anchors.centerIn: parent
+         color: "white"
       }
       anchors.centerIn: parent
-
-      // onAccepted: console.log("Ok clicked")
-      // onRejected: console.log("Cancel clicked")
    }
    Connections {
       target: saveDialog
       function onAccepted() {
          recomHandle.saveProg(saveDialog.progName)
+      }
+      function onOpened() {
+         saveDialog.progName = ""
       }
    }
 

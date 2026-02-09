@@ -142,8 +142,10 @@ Rectangle {
                         GradientStop { position: 0.5; color: "white" }
                         GradientStop { position: 1.0; color: "transparent" }
                     }*/
+                    z: 0
+                    opacity: 0.5
                     anchors.bottom: parent.bottom
-                    anchors.bottomMargin: 3
+                    anchors.bottomMargin: 0
                 }
                 Rectangle {
                     id: selectionBorder

@@ -592,15 +592,18 @@ bool ProgLoader::programmLoadSocketInit(int progId, bool clear)
         } else {
             std::vector<int> allowedModesId__;
         //просто разрешаем все назначенные инструменты и режимы, если такие допустимы на сокетах, без дополнительных масок
-            for (int i = 0; i < 8; ++i)
-                allowedModesId__.push_back(progItem.at(4 + 3*i).toInt());
-            std::sort(allowedModesId__.begin(), allowedModesId__.end());
-            if (allowedModesId__.size() >1) {
-                for (auto iter = allowedModesId__.begin()+1; iter < allowedModesId__.end(); ++iter) {
-                    if ( *(iter-1) == *(iter) ) {
-                        iter = allowedModesId__.erase(iter);
-                    }
+            for (int i = 0; i < 8; ++i) {
+                QString allowed = progItem.at(4 + 3*i).toString();
+                QStringList list = allowed.split(',');
+                for (const auto& mode : list) {
+                    allowedModesId__.push_back(mode.toInt());
                 }
+            }
+            std::sort(allowedModesId__.begin(), allowedModesId__.end());
+            if (allowedModesId__.size() > 1) {
+                // std::unordered_set<int> check;
+                auto last = std::unique(allowedModesId__.begin(), allowedModesId__.end());
+                allowedModesId__.erase(last, allowedModesId__.end());
             }
             allowedModesId = QList<int>::fromVector(QVector<int>::fromStdVector(allowedModesId__));
         }
@@ -613,20 +616,22 @@ bool ProgLoader::programmLoadSocketInit(int progId, bool clear)
                                                            QStringList{"Instr_ID"},
                                                            QString("List_ID = %1").arg(progItem.at(0).toUInt()));
 
-            for (const auto& item : allowedInstr)
+            for (const auto& item : allowedInstr) {
                 allowedInstrId.push_back(item.at(0).toInt());
+            }
         } else {
             std::vector<int> allowedInstrId__;
-            for (int i = 0; i < 8; ++i)
-                allowedInstrId__.push_back(progItem.at(3 + 3*i).toInt());
-            std::sort(allowedInstrId__.begin(), allowedInstrId__.end());
-            if (allowedInstrId__.size() > 1) {
-                for (auto iter = allowedInstrId__.begin()+1; iter < allowedInstrId__.end(); ++iter) {
-                    if ( *(iter - 1) == *(iter) ) {
-                        iter = allowedInstrId__.erase(iter);
-                    }
+            for (int i = 0; i < 8; ++i) {
+                // allowedInstrId__.push_back(progItem.at(3 + 3*i).toInt());
+                QString allowed = progItem.at(3 + 3*i).toString();
+                QStringList list = allowed.split(',');
+                for (const auto& instr : list) {
+                    allowedInstrId__.push_back(instr.toInt());
                 }
             }
+            std::sort(allowedInstrId__.begin(), allowedInstrId__.end());
+            auto last = std::unique(allowedInstrId__.begin(), allowedInstrId__.end());
+            allowedInstrId__.erase(last, allowedInstrId__.end());
             allowedInstrId = allowedInstrId__;
         }
 
@@ -881,7 +886,7 @@ void ProgLoader::saveProg(const QString &name)
     if (progListVariant.isEmpty())
         return;
         // idToUse = 10000;
-    if (progListVariant.size() > 1) {
+    if (progListVariant.size() >= 1) {
         int min = INT_MIN;
         for (const auto& item : progListVariant) {
             if (item.at(1).toString() != name)
@@ -910,12 +915,16 @@ void ProgLoader::saveProg(const QString &name)
             cut[1] = makeDbStringMode(idx, SocketModel::CutModeIdList, SocketModel::CutModeId);
             if (!cut[0].isEmpty() && !cut[1].isEmpty()) {
                 cut[2] = QString::number(idx.data(SocketModel::CutModePower).toInt());
+            } else {
+                cut[2] = "";
             }
 
             coag[0] = makeDbStringInstr(idx, SocketModel::CoagInstrIdList, SocketModel::CoagModeInstrID);
             coag[1] = makeDbStringMode(idx, SocketModel::CoagModeIdList, SocketModel::CoagModeId);
             if (!coag[0].isEmpty() && !coag[1].isEmpty()) {
                 coag[2] = QString::number(idx.data(SocketModel::CoagModePower).toInt());
+            } else {
+                coag[2] = "";
             }
 
             int ped = idx.data(SocketModel::SocketPedal).toInt();
@@ -954,7 +963,7 @@ void ProgLoader::saveProg(const QString &name)
     // Формируем SQL запрос для REPLACE (INSERT OR UPDATE)
 // using SocketStrings = std::array<std::array<QString, 3>, 8>; //instrId, modeId, power
 
-    qDebug() << "saving N pages - " << subCount;
+    qDebug() << "saving N Upages - " << subCount;
     for (int i = 0; i < subCount; ++i) {
         const SocketStrings & state = allStates.at(i);
         const std::pair<int, int> & pedalState = allPedals.at(i);

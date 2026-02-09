@@ -102,7 +102,7 @@ Rectangle {
             anchors.fill: parent
             curIndex: recomHandle.scopeIdx
             noImage: false
-            imageSourceTemplate: "image://instrums/Scope%1"
+            imageSourceTemplate: "image://scopes/scope%1"
         }
 
     }

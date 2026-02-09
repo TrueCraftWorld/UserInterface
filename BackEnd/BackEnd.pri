@@ -3,6 +3,9 @@ QT += serialport multimedia sql concurrent
 
 CONFIG += c++17
 
+# Линковка с математической библиотекой
+LIBS += -lm
+
 HEADERS += \
     $$PWD/Structures.h \
     $$PWD/controlcenter.h \

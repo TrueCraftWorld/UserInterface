@@ -16,37 +16,38 @@ Item {
     }
     Connections {
         target: menuLoader.item // Подключаемся к сигналам загруженного компонента
+        enabled: menuLoader.item !== null
+        ignoreUnknownSignals: true
 
         function onRecommendButtonPressed() {
-            if (menuLoader.item instanceof MainMenu) { // Проверяем, что загружен именно Text
-                menuLoader.source = "qrc:/ProgItemList.qml"
-            }
+            menuLoader.source = "qrc:/ProgItemList.qml"
         }
+        
         function onSettingsButtonPressed() {
-            if (menuLoader.item instanceof MainMenu) { // Проверяем, что загружен именно Text
-                menuLoader.source = "qrc:/SettingsMain.qml"
-            }
+            menuLoader.source = "qrc:/SettingsMain.qml"
         }
+        
         function onUserButtonPressed() {
-            if (menuLoader.item instanceof MainMenu) { // Проверяем, что загружен именно Text
-                menuLoader.source = "qrc:/UserProgsSelector.qml"
-            }
+            menuLoader.source = "qrc:/UserProgsSelector.qml"
+        }
+        
+        function onExitButtonPressed() {
+            closeMe()
         }
 
         function onReturnButtonPressed() {
-            if (menuLoader.item instanceof MainMenu)
-                ;
-            else {
-                if (shortcut) {
-                    shortcut = false
-                    closeMe()
+            if (shortcut) {
+                shortcut = false
+                closeMe()
+                if (menuLoader.item && menuLoader.item.loadClear !== undefined) {
                     menuLoader.item.loadClear = true;
-                    menuLoader.source = "qrc:/MainMenu.qml"
-                } else {
-                    menuLoader.source = "qrc:/MainMenu.qml"
                 }
+                menuLoader.source = "qrc:/MainMenu.qml"
+            } else {
+                menuLoader.source = "qrc:/MainMenu.qml"
             }
         }
+        
         function onClickedButton(progId) {
             closeMe()
             menuLoader.source = "qrc:/MainMenu.qml"

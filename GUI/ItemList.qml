@@ -85,7 +85,7 @@ Rectangle {
                     Image {
                         id: itemImage
                         asynchronous: true
-                        source: imageSourceTemplate.arg(model.itemId)
+                        source: imageSourceTemplate.replace("%1", model.itemId)
                         anchors.fill: parent
                         fillMode: Image.PreserveAspectFit
                     }

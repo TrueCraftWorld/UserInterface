@@ -3,23 +3,23 @@
 #include <QtQml/qqml.h>
 
 
-SOCKET::SOCKET(SOCKET::SocType type) :
+SOCKET::SOCKET(Onyx::SocType type) :
     m_socketType(type),
-    m_socketStatus(S_ENABLED),
-    m_displayMode(S_COLLAPSED)
+    m_socketStatus(Onyx::S_ENABLED),
+    m_displayMode(Onyx::S_COLLAPSED)
 {
     switch (m_socketType) {
-    case BIPOLAR_1:
-        m_allowedPedals = {Pedal::NO_PED, Pedal::SINGLE_PED, Pedal::DOUBLE_PED};
+    case Onyx::BIPOLAR_1:
+        m_allowedPedals = {Onyx::NO_PED, Onyx::SINGLE_PED, Onyx::DOUBLE_PED};
         break;
-    case BIPOLAR_2:
-        m_allowedPedals = {Pedal::NO_PED, Pedal::SINGLE_PED, Pedal::DOUBLE_PED, Pedal::INSTR_BUTTON_BI};
+    case Onyx::BIPOLAR_2:
+        m_allowedPedals = {Onyx::NO_PED, Onyx::SINGLE_PED, Onyx::DOUBLE_PED, Onyx::INSTR_BUTTON_BI};
         break;
-    case MONOPOLAR_1:
-        m_allowedPedals = {Pedal::NO_PED, Pedal::SINGLE_PED, Pedal::DOUBLE_PED, Pedal::INSTR_BUTTON_MONO};
+    case Onyx::MONOPOLAR_1:
+        m_allowedPedals = {Onyx::NO_PED, Onyx::SINGLE_PED, Onyx::DOUBLE_PED, Onyx::INSTR_BUTTON_MONO};
         break;
-    case MONOPOLAR_2:
-        m_allowedPedals = {Pedal::NO_PED, Pedal::SINGLE_PED, Pedal::DOUBLE_PED, Pedal::INSTR_BUTTON_MONO};
+    case Onyx::MONOPOLAR_2:
+        m_allowedPedals = {Onyx::NO_PED, Onyx::SINGLE_PED, Onyx::DOUBLE_PED, Onyx::INSTR_BUTTON_MONO};
         break;
     default:
         break;
@@ -31,6 +31,8 @@ SOCKET::SOCKET(SOCKET::SocType type) :
 
 int SOCKET::coagModeIndex() const
 {
+    if (m_coagHalf.isNull())
+        return -1;
     return m_coagHalf->modeIndex();
 }
 
@@ -41,17 +43,37 @@ bool SOCKET::setCoagModeIndex(int newCoagModeIndex)
 
 int SOCKET::cutModeIndex() const
 {
+    if (m_cutHalf.isNull())
+        return -1;
     return m_cutHalf->modeIndex();
 }
 
 int SOCKET::coagModeId() const
 {
+    if (m_coagHalf.isNull())
+        return 1000;
     return m_coagHalf->modeId();
 }
 
 int SOCKET::cutModeId() const
 {
+    if (m_cutHalf.isNull())
+        return 1000;
     return m_cutHalf->modeId();
+}
+
+int SOCKET::coagModeNum() const
+{
+    if (m_coagHalf.isNull())
+        return 1000;
+    return m_coagHalf->curMode()->num();
+}
+
+int SOCKET::cutModeNum() const
+{
+    if (m_cutHalf.isNull())
+        return 1000;
+    return m_cutHalf->curMode()->num();
 }
 
 bool SOCKET::setCutModeIndex(int newCutModeIndex)
@@ -68,12 +90,12 @@ bool SOCKET::setModeId(int id, bool isCoag)
     return half->setModeId(id);
 }
 
-SOCKET::SocType SOCKET::socketType() const
+Onyx::SocType SOCKET::socketType() const
 {
     return m_socketType;
 }
 
-void SOCKET::setSocketType(SOCKET::SocType newSocketType)
+void SOCKET::setSocketType(Onyx::SocType newSocketType)
 {
     if (m_socketType == newSocketType)
         return;
@@ -81,29 +103,29 @@ void SOCKET::setSocketType(SOCKET::SocType newSocketType)
     m_cutHalf = HalfSockPtr::create(false);
     m_coagHalf = HalfSockPtr::create(true);
     switch (m_socketType) {
-    case BIPOLAR_1:
-        m_allowedPedals = {Pedal::NO_PED, Pedal::SINGLE_PED, Pedal::DOUBLE_PED};
+    case Onyx::BIPOLAR_1:
+        m_allowedPedals = {Onyx::NO_PED, Onyx::SINGLE_PED, Onyx::DOUBLE_PED};
         break;
-    case BIPOLAR_2:
-        m_allowedPedals = {Pedal::NO_PED, Pedal::SINGLE_PED, Pedal::DOUBLE_PED, Pedal::INSTR_BUTTON_BI};
+    case Onyx::BIPOLAR_2:
+        m_allowedPedals = {Onyx::NO_PED, Onyx::SINGLE_PED, Onyx::DOUBLE_PED, Onyx::INSTR_BUTTON_BI};
         break;
-    case MONOPOLAR_1:
-        m_allowedPedals = {Pedal::NO_PED, Pedal::SINGLE_PED, Pedal::DOUBLE_PED, Pedal::INSTR_BUTTON_MONO};
+    case Onyx::MONOPOLAR_1:
+        m_allowedPedals = {Onyx::NO_PED, Onyx::SINGLE_PED, Onyx::DOUBLE_PED, Onyx::INSTR_BUTTON_MONO};
         break;
-    case MONOPOLAR_2:
-        m_allowedPedals = {Pedal::NO_PED, Pedal::SINGLE_PED, Pedal::DOUBLE_PED, Pedal::INSTR_BUTTON_MONO};
+    case Onyx::MONOPOLAR_2:
+        m_allowedPedals = {Onyx::NO_PED, Onyx::SINGLE_PED, Onyx::DOUBLE_PED, Onyx::INSTR_BUTTON_MONO};
         break;
     default:
         break;
     }
 }
 
-SOCKET::SocStatus SOCKET::socketStatus() const
+Onyx::SocStatus SOCKET::socketStatus() const
 {
     return m_socketStatus;
 }
 
-void SOCKET::setSocketStatus(SocStatus newSocketStatus)
+void SOCKET::setSocketStatus(Onyx::SocStatus newSocketStatus)
 {
     if (m_socketStatus == newSocketStatus)
         return;
@@ -207,22 +229,6 @@ CSurgModePtr SOCKET::curCutMode() const
     return m_cutHalf->curMode();
 }
 
-QByteArray SOCKET::toByteArray()
-{
-    /// Номер сокета (какой-нибудь индивидуальный код) 1байт (ну 256 сокетов это навсегда)
-    /// Номер режима резания (индивидуальный код ) 2 байта (возможно второй байт для доп признаков)
-    /// мощность режима резания (2 байта)
-    /// Номер режима коагуляции (индивидуальный код )
-    /// мощность режима коагуляции
-    /// Итого 9 байт - 4 16бит значения и 1 8бит
-    ///
-    QByteArray res;
-    // QDataStream stream();
-    // stream << m_socketType << m_cutHalf->toByteArray() << m_coagHalf->toByteArray();
-
-    return res;
-}
-
 bool SOCKET::setInstrumIndex(int index, bool isCoag)
 {
     HalfSockPtr half = isCoag ? m_coagHalf : m_cutHalf;
@@ -264,9 +270,9 @@ void SOCKET::setAllowed(bool allow)
     //     return;
 
     if (allow)
-        m_socketStatus = S_ENABLED;
+        m_socketStatus = Onyx::S_ENABLED;
     else
-        m_socketStatus = S_OFF;
+        m_socketStatus = Onyx::S_OFF;
 }
 
 CSurgModePtr SOCKET::curCoagMode() const
@@ -295,10 +301,10 @@ int SOCKET::displayMode() const
     return m_displayMode;
 }
 
-bool SOCKET::setDisplayMode(SocDisplayMode newDisplayMode)
+bool SOCKET::setDisplayMode(Onyx::SocDisplayMode newDisplayMode)
 {
-    if (newDisplayMode < SOCKET::S_COLLAPSED
-        || newDisplayMode > SOCKET::S_EXPANDED)
+    if (newDisplayMode < Onyx::S_COLLAPSED
+        || newDisplayMode > Onyx::S_EXPANDED)
         return false;
     m_displayMode = newDisplayMode;
     return true;
@@ -333,4 +339,15 @@ bool SOCKET::setPedal(int type)
 QList<int> SOCKET::allowedPedals() const
 {
     return m_allowedPedals;
+}
+
+Onyx::SocketState SOCKET::getInfo() const
+{
+    Onyx::SocketState res;
+    res.coagModeNum = coagModeNum();
+    res.cutModeNum = cutModeNum();
+    res.cutModePower = cutModePower();
+    res.coagModePower = coagModePower();
+    res.pedal = pedal();
+    return res;
 }

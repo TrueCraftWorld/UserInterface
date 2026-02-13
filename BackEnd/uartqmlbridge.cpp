@@ -3,9 +3,9 @@
 
 UartToQmlBridge::UartToQmlBridge(QObject *parent, QString port, QSerialPort::BaudRate rate)
     : QObject{parent},
+      m_serial(new QSerialPort(this)),
       m_portName(port),
       m_baudRate(rate),
-      m_serial(new QSerialPort(this)),
       m_waitForAnswer(false)
 {
     Q_UNUSED(parent);
@@ -76,6 +76,7 @@ QByteArray UartToQmlBridge::readData()
     QTime readTime = QTime::currentTime();
     const QByteArray data = m_serial->readAll();
     m_transmitDelay = m_writeTime.msecsTo(readTime);
+    m_lastReadTime = readTime;
     
     // Отладочный вывод RX удалён
     

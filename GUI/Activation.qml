@@ -7,34 +7,31 @@ Popup {
     // Привязка к данным из ControlCenter
     property string socketName /*control.activeSocketName || "Неизвестный сокет"*/
     property string modeName /*control.activeModeName || "Режим не выбран"*/
-    property int power /*control.activePower || 0*/
-    property bool isCoag /*control.activeIsCoag || false*/
+    property int power: 0
+    property bool isCoag: false
+    property bool isEndo: false
+    
+    onPowerChanged: {
+//        console.log("Activation.qml: power changed to", power)
+    }
+    
+    onOpened: {
+//        console.log("Activation.qml opened: socketName=", socketName, "modeName=", modeName, "power=", power, "isCoag=", isCoag, "isEndo=", isEndo)
+    }
     
     // Настройки popup
     modal: true  // Модальный - блокируем касания
     closePolicy: Popup.NoAutoClose  // Закрывается только программно
-    // parent: Overlay.overlay
     anchors.centerIn: parent
     width: parent.width
     height: parent.height
     
-    // Привязка к координатам и размерам активного сокета
-    // x: control.activeSocketX || 0
-    // y: control.activeSocketY || 0
-    // width: control.activeSocketWidth || 350
-    // height: control.activeSocketHeight || 400
     
     // Перехватываем все события мыши
     MouseArea {
         anchors.fill: parent
         propagateComposedEvents: false
         preventStealing: true
-        
-        // onPressed: mouse.accepted = true
-        // onReleased: mouse.accepted = true
-        // onClicked: mouse.accepted = true
-        // onDoubleClicked: mouse.accepted = true
-        // onWheel: wheel.accepted = true
     }
     
     // Фон в зависимости от режима
@@ -51,14 +48,14 @@ Popup {
             loops: Animation.Infinite
             
             NumberAnimation {
-                from: 0.9
+                from: 0.8
                 to: 1.0
                 duration: 600
                 easing.type: Easing.InOutSine
             }
             NumberAnimation {
                 from: 1.0
-                to: 0.9
+                to: 0.8
                 duration: 600
                 easing.type: Easing.InOutSine
             }
@@ -72,7 +69,7 @@ Popup {
             spacing: 20
             
             // Заголовок "АКТИВАЦИЯ"
-            Text {
+            Label {
                 anchors.horizontalCenter: parent.horizontalCenter
                 text: qsTr("АКТИВАЦИЯ ") + socketName
                 font.pixelSize: 32
@@ -91,7 +88,8 @@ Popup {
             }
             
             // Название режима
-            Text {
+            Label {
+                id: modeNameLabel
                 anchors.horizontalCenter: parent.horizontalCenter
                 text: modeName
                 font.pixelSize: 48
@@ -101,13 +99,117 @@ Popup {
             }
 
             // Мощность
-            Text {
+            Rectangle {
+                id: powerInfoRect
                 anchors.horizontalCenter: parent.horizontalCenter
-                text: power
-                font.pixelSize: 80
-                color: isCoag ? "yellow" : "brown"
+                width: 400
+                height: 150
+                color: "transparent"
+                
+                Column {
+                    visible: !activationPopup.isEndo
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    anchors.top: parent.top
+                    anchors.bottom: parent.bottom
+                    width: parent.width
+                    spacing: 10
+                    Label {
+                        width: parent.width
+                        font.pixelSize: 28
+                        font.bold: true
+                        color: activationPopup.isCoag ? "white" : "black"
+                        style: Text.Outline
+                        styleColor: activationPopup.isCoag ? "black" : "white"
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                        text: qsTr("Мощность")
+                    }
+                    Label {
+                        width: parent.width
+                        height: parent.height - parent.children[0].height - parent.spacing
+                        font.pixelSize: 70
+                        font.bold: true
+                        color: activationPopup.isCoag ? "white" : "black"
+                        style: Text.Outline
+                        styleColor: activationPopup.isCoag ? "black" : "white"
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                        text: activationPopup.power
+                    }
+                }
+
+                Column {
+                    id: endoCutColumn
+                    visible: activationPopup.isEndo
+                    anchors.left: parent.left
+                    anchors.right: parent.horizontalCenter
+                    anchors.top: parent.top
+                    anchors.bottom: parent.bottom
+                    spacing: 10
+                    Label {
+                        width: parent.width
+                        font.pixelSize: 28
+                        font.bold: true
+                        color: activationPopup.isCoag ? "white" : "black"
+                        style: Text.Outline
+                        styleColor: activationPopup.isCoag ? "black" : "white"
+                        text: qsTr("Эффект\nрезания")
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                    }
+                    Label {
+                        width: parent.width
+                        height: parent.height - parent.children[0].height - parent.spacing
+                        font.pixelSize: 70
+                        font.bold: true
+                        color: activationPopup.isCoag ? "white" : "black"
+                        style: Text.Outline
+                        styleColor: activationPopup.isCoag ? "black" : "white"
+                        text: {
+                            var cutValue = Math.floor(activationPopup.power / 10)
+//                            console.log("Endo cut value:", cutValue, "from power:", activationPopup.power)
+                            return cutValue
+                        }
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                    }
+                }
+                Column {
+                    id: endoCoagColumn
+                    visible: activationPopup.isEndo
+                    anchors.left: parent.horizontalCenter
+                    anchors.right: parent.right
+                    anchors.top: parent.top
+                    anchors.bottom: parent.bottom
+                    spacing: 10
+                    Label {
+                        width: parent.width
+                        font.pixelSize: 28
+                        font.bold: true
+                        color: activationPopup.isCoag ? "white" : "black"
+                        style: Text.Outline
+                        styleColor: activationPopup.isCoag ? "black" : "white"
+                        text: qsTr("Эффект\nкоагуляции")
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                    }
+                    Label {
+                        width: parent.width
+                        height: parent.height - parent.children[0].height - parent.spacing
+                        font.pixelSize: 70
+                        font.bold: true
+                        color: activationPopup.isCoag ? "white" : "black"
                 style: Text.Outline
-                styleColor: isCoag ? "black" : "white"
+                        styleColor: activationPopup.isCoag ? "black" : "white"
+                        text: {
+                            var coagValue = activationPopup.power % 10
+//                            console.log("Endo coag value:", coagValue, "from power:", activationPopup.power)
+                            return coagValue
+                        }
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                    }
+                }
             }
         }
         
@@ -173,18 +275,5 @@ Popup {
             easing.type: Easing.InQuad
         }
     }
-    
-    // Синхронизация с control.activation
-    // Connections {
-    //     target: control
-        
-    //     function onActivationChanged(active) {
-    //         if (active) {
-    //             activationPopup.open()
-    //         } else {
-    //             activationPopup.close()
-    //         }
-    //     }
-    // }
 }
 

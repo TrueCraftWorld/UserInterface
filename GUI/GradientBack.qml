@@ -84,7 +84,6 @@ Rectangle {
         opacity: 0.2
 
         property real beamPosition: -0.5
-        property bool useCoagColors: isCoag
 
         onPaint: {
             var ctx = getContext("2d")
@@ -103,11 +102,6 @@ Rectangle {
             gradient.addColorStop(0.4, "rgba(0, 0, 0, 0)")
 
             // Явно задаём цвет луча для каждого режима
-            // if (useCoagColors) {
-            //     gradient.addColorStop(0.5, "rgba(80, 120, 255, 0.6)")  // Синий луч
-            // } else {
-            //     gradient.addColorStop(0.5, "rgba(180, 150, 60, 0.5)")  // Приглушённый жёлтый луч
-            // }
             gradient.addColorStop(0.5, beamColor)
             // beamColor
 
@@ -137,9 +131,9 @@ Rectangle {
             requestPaint()
         }
 
-        onUseCoagColorsChanged: {
-            requestPaint()
-        }
+        // onUseCoagColorsChanged: {
+        //     requestPaint()
+        // }
     }
 
     // Слой 4: Мягкое пульсирующее сияние в центре

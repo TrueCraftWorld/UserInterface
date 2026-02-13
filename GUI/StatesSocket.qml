@@ -5,6 +5,14 @@ Rectangle {
     id: socketRoot
     color: "transparent"
 
+    // Константы состояний сокета (соответствуют Onyx::SocStatus)
+    readonly property int socketStateOff: 0          // S_OFF - Отключен
+    readonly property int socketStateDisabled: 1    // S_DISABLED - Выключен, активация запрещена
+    readonly property int socketStateEnabled: 2     // S_ENABLED - Включен, активация разрешена
+    readonly property int socketStateActiveCoag: 3  // S_ACTIVE_COAG - Активирован, коагуляция
+    readonly property int socketStateActiveCut: 4   // S_ACTIVE_CUT - Активирован, резание
+    readonly property int socketStateError: 5        // S_ERROR - Ошибка, активация запрещена
+
     property string title
     property int socketId
     property int socketState
@@ -34,16 +42,22 @@ Rectangle {
     state: "expanded"
 
     onSocketStateChanged: {
-        console.log("socketState", socketState)
-        if (socketState == 3) {
+//        console.log("socketState", socketState)
+        if (socketState === socketStateActiveCoag) {
+            activationIndicator.socketName = title
             activationIndicator.isCoag = true
             activationIndicator.modeName = coagModeName
             activationIndicator.power = coagModePower
+            activationIndicator.isEndo = coagIsEndo
+//            console.log("Activation: socketName=", title, "modeName=", coagModeName, "power=", coagModePower, "isEndo=", coagIsEndo)
             activationIndicator.open();
-        } else if (socketState == 4) {
+        } else if (socketState === socketStateActiveCut) {
+            activationIndicator.socketName = title
             activationIndicator.isCoag = false
             activationIndicator.modeName = cutModeName
             activationIndicator.power = cutModePower
+            activationIndicator.isEndo = cutIsEndo
+//            console.log("Activation: socketName=", title, "modeName=", cutModeName, "power=", cutModePower, "isEndo=", cutIsEndo)
             activationIndicator.open();
         } else {
             activationIndicator.close();
@@ -78,12 +92,16 @@ Rectangle {
 
         // Перехватываем события от HalfSocket только для разворачивания
         MouseArea {
+            id: leftOverlayMouseArea
             anchors.fill: parent
+            propagateComposedEvents: true
             onClicked: {
                 if (socketRoot.state === "collapsed") {
                     socketRoot.socketExpandRequest()
+                    mouse.accepted = true // Останавливаем распространение события
+                } else {
+                    mouse.accepted = false // Пропускаем событие дальше
                 }
-                mouse.accepted = true // Останавливаем распространение события
             }
             // Не перехватываем события, если сокет уже развернут
             enabled: socketRoot.state === "collapsed"
@@ -103,12 +121,16 @@ Rectangle {
 
         // Перехватываем события от HalfSocket только для разворачивания
         MouseArea {
+            id: rightOverlayMouseArea
             anchors.fill: parent
+            propagateComposedEvents: true
             onClicked: {
                 if (socketRoot.state === "collapsed") {
                     socketRoot.socketExpandRequest()
+                    mouse.accepted = true // Останавливаем распространение события
+                } else {
+                    mouse.accepted = false // Пропускаем событие дальше
                 }
-                mouse.accepted = true // Останавливаем распространение события
             }
             // Не перехватываем события, если сокет уже развернут
             enabled: socketRoot.state === "collapsed"
@@ -117,8 +139,9 @@ Rectangle {
 
     Rectangle {
         id: middleRect
-        color: "black"
+        color: "green"
         width: fontMetrics.advanceWidth("MONO 22")
+        height: 60
 
         Label {
             id: socketNameLabel
@@ -143,6 +166,30 @@ Rectangle {
                 } else {
                     socketRoot.socketCollapseRequest()
                 }
+            }
+        }
+
+        // Треугольник, указывающий вверх (для сворачивания)
+        Canvas {
+            id: collapseTriangle
+            width: 60
+            height: 30
+            anchors.bottom: parent.bottom
+            anchors.horizontalCenter: parent.horizontalCenter
+            anchors.bottomMargin: 20
+            visible: socketRoot.state === "expanded"
+
+            onPaint: {
+                var ctx = getContext("2d")
+                ctx.reset()
+                ctx.fillStyle = "lightgray"
+                ctx.beginPath()
+                // Треугольник, направленный вверх
+                ctx.moveTo(width / 2, 0)           // Верхняя точка (середина)
+                ctx.lineTo(width, height)           // Правая нижняя точка
+                ctx.lineTo(0, height)               // Левая нижняя точка
+                ctx.closePath()
+                ctx.fill()
             }
         }
     }
@@ -228,15 +275,18 @@ Rectangle {
             AnchorChanges {
                 target: middleRect
                 anchors.horizontalCenter: undefined
-                anchors.left: parent.left
-                anchors.right: parent.right
+                anchors.left: undefined
+                anchors.right: undefined
+//                anchors.left: parent.left
+//                anchors.right: parent.right
                 anchors.top: parent.top
                 anchors.bottom: undefined
             }
             PropertyChanges {
                 target: middleRect
                 color: "transparent"
-                height: fontMetrics.height + socketNameLabel.anchors.margins
+                height: rightRect.height * .4
+//                height: fontMetrics.height + socketNameLabel.anchors.margins
             }
 
             AnchorChanges {

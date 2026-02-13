@@ -7,8 +7,7 @@ Popup {
     property int socId
     property int modeIndex
     property bool isCoag
-    property var modeEditor: Editor
-
+    readonly property var modeEditor: Editor
 
     id: root
     modal: true
@@ -32,10 +31,10 @@ Popup {
     
     // Получаем Num текущего режима
     property int currentModeNum: {
-        if (modeEditor.currentModeIndex < 0
-            || modeEditor.currentModeIndex >= itemNumArr.length)
+        if (modeIndex < 0
+            || modeIndex >= itemNumArr.length)
             return 0
-        return itemNumArr[modeEditor.currentModeIndex]
+        return itemNumArr[modeIndex]
     }
     
 
@@ -69,16 +68,15 @@ Popup {
         itemNumArr = modeEditor.modeNamesNums()
         
         updateModel()
-        modeEditor.currentModeIndex = modeIndex
-        modeListView.selectedIndex = modeEditor.currentModeIndex
+        modeEditor.currentModeIndex = root.modeIndex
+        modeListView.curIndex = modeEditor.currentModeIndex
 
-        initiallySelectedItem = modeIndex
+        initiallySelectedItem = root.modeIndex
     }
     
-    // onClosed: {
-    //     // Разрешаем активацию при закрытии popup
-    //     control.enableActivation = true
-    // }
+    onClosed: {
+        // Активация управляется централизованно через main.qml
+    }
 
     Rectangle {
         id: back

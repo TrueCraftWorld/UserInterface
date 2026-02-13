@@ -26,6 +26,13 @@ Window {
    // Свойство для нейтрального электрода
    property bool neutralConnected: false
 
+   function activationEnable() {
+         periphHandle.enableActivation = !(pedDrawer.opened
+                                    | leftDrawer.opened
+                                    | argNeutDrawer.opened
+                                    | socketsDummy.modeDialogOpened
+                                    | socketsDummy.instrDialogOpened)
+   }
 
    StatusBar {
       id: statusDummy
@@ -33,7 +40,6 @@ Window {
       text: qsTr("В бою с шипящими змеями — эфой и гадюкой — маленький, цепкий, храбрый ёж съел их")
       width: parent.width
       height: 85
-      z: 30
       anchors {
          top: parent.top
       }
@@ -44,58 +50,38 @@ Window {
       objectName: "socketContainer"
       innerModel: theModel
       width: parent.width - 180
-      z: 5  // Ниже панелей, но выше фонового MouseArea
       anchors {
          horizontalCenter: parent.horizontalCenter
          bottom: parent.bottom
          top: statusDummy.bottom
       }
-
    }
 
-   // Левая панель - перекрывает центральный контейнер
-   LeftPanel {
-      id: leftPanel
-      panelExpanded: leftPanelExpanded
-      expandedWidth: container.width / 2
-      collapsedWidth: 90
-      animationDuration: container.panelAnimationDuration
-      animationEasing: container.panelAnimationEasing
-      height: socketsDummy.height
-      anchors.bottom: socketsDummy.bottom
-      x: 0  // Всегда видима
-      z: 15
-
-      // Синхронизируем состояние панели с контейнером
-      onPanelExpandedChanged: {
-         leftPanelExpanded = panelExpanded
+   PeripheryPanel {
+      id: argNeutralPanel
+      anchors {
+         left: parent.left
+         bottom: parent.bottom
+         top: statusDummy.bottom
+         right: socketsDummy.left
       }
    }
-
-   // Правая панель - перекрывает центральный контейнер
-   // PedalPanel {
-   //    id: rightPanel
-   //    panelExpanded: rightPanelExpanded
-   //    socketModel: theModel
-   //    expandedWidth: container.width / 2
-   //    collapsedWidth: 90
-   //    animationDuration: container.panelAnimationDuration
-   //    animationEasing: container.panelAnimationEasing
-   //    height: socketsDummy.height
-   //    anchors.bottom: socketsDummy.bottom
-   //    x: container.width - width
-   //    z: 15  // Поверх центрального контейнера
-
-   //    // Синхронизируем состояние панели с контейнером
-   //    onPanelExpandedChanged: {
-   //       rightPanelExpanded = panelExpanded
-   //    }
-   // }
+   Connections {
+      target: argNeutralPanel
+      function onOpenPeriphDrawer() {
+         argNeutDrawer.open()
+      }
+   }
+   PeripheryDrawer {
+      id: argNeutDrawer
+      width: .5 * container.width
+      height: container.height
+      edge: Qt.LeftEdge
+   }
 
    PedalContainer {
-      id: pedalContainerrr
+      id: pedalContainer
       innerModel: theModel
-      z: 30
       anchors {
          left: socketsDummy.right
          right: parent.right
@@ -103,6 +89,7 @@ Window {
          top: statusDummy.bottom
       }
    }
+
    PedalDrawer {
       id: pedDrawer
       innerModel: theModel
@@ -110,27 +97,313 @@ Window {
       height: container.height
       edge: Qt.RightEdge
    }
-   Connections {
-      target: pedalContainerrr
-      function onPedMenuRequest(socketId) {
-         pedDrawer.socketId = socketId
-         pedDrawer.open()
-      }
-   }
 
    Drawer {
       id: leftDrawer
-      width: 0.8 * container.width
+      width: container.width
+//      width: 0.8 * container.width
       height: container.height
       edge: Qt.LeftEdge
-      // Loader
-      // SettingsMain {
+      
+      // Отключаем встроенную модальность, используем свою
+      modal: false
+      closePolicy: Popup.NoAutoClose
+      
       MenuLoader {
          id: menuLoad
          anchors.fill: parent
       }
    }
 
+   // Overlay для закрытия drawer'ов при касании вне их
+   Item {
+      id: drawerOverlay
+      anchors.fill: parent
+      z: 1  // Выше основного контента, но drawer'ы будут иметь z намного выше (по умолчанию 10000)
+      visible: argNeutDrawer.opened || pedDrawer.opened || leftDrawer.opened
+      
+      Rectangle {
+         anchors.fill: parent
+         color: "black"
+         opacity: 0.5
+         
+         MouseArea {
+            anchors.fill: parent
+            onPressed: {
+               mouse.accepted = true
+            }
+            onReleased: {
+               if (argNeutDrawer.opened) argNeutDrawer.close()
+               if (pedDrawer.opened) pedDrawer.close()
+               if (leftDrawer.opened) leftDrawer.close()
+               mouse.accepted = true
+            }
+         }
+      }
+   }
+
+   Connections {
+      target: leftDrawer
+      function onOpenedChanged() {
+         container.activationEnable()
+      }
+   }
+   Connections {
+      target: pedDrawer
+      function onOpenedChanged() {
+         container.activationEnable()
+      }
+   }
+   Connections {
+      target: argNeutDrawer
+      function onOpenedChanged() {
+         container.activationEnable()
+      }
+   }
+   Connections {
+      target: socketsDummy
+      function onModeDialogOpenedChanged() {
+         container.activationEnable()
+      }
+   }
+   Connections {
+      target: socketsDummy
+      function onInstrDialogOpenedChanged() {
+         container.activationEnable()
+      }
+   }
+
+   Connections {
+      target: pedalContainer
+      function onPedMenuRequest(socketId) {
+         pedDrawer.socketId = socketId
+         pedDrawer.open()
+      }
+   }
+   Connections {
+      target: argNeutralPanel
+      function onOpenPeriphDrawer() {
+         argNeutDrawer.open()
+      }
+   }
+
+    // MouseArea для обработки свайпов в области PeripheryPanel
+    MouseArea {
+       id: peripherySwipeArea
+       anchors {
+          left: parent.left
+          top: statusDummy.bottom
+          bottom: parent.bottom
+       }
+       width: 200
+       z: 10  // Выше других элементов
+       propagateComposedEvents: true  // Ключевое свойство для пропуска событий
+       
+       property real startX: 0
+       property real startY: 0
+       property bool isSwipeGesture: false
+       property bool hadSwipeGesture: false
+       property real minSwipeDistance: 50
+       
+       onPressed: {
+          startX = mouse.x
+          startY = mouse.y
+          isSwipeGesture = false
+          hadSwipeGesture = false
+       }
+       
+       onPositionChanged: {
+          if (pressed) {
+             var deltaX = mouse.x - startX
+             var deltaY = Math.abs(mouse.y - startY)
+             // Если горизонтальное движение больше вертикального и больше 30px вправо
+             if (deltaX > 30 && Math.abs(deltaX) > deltaY) {
+                isSwipeGesture = true
+                hadSwipeGesture = true
+                mouse.accepted = true
+             } else if (isSwipeGesture) {
+                mouse.accepted = true
+             } else {
+                mouse.accepted = false
+             }
+          }
+       }
+       
+       onReleased: {
+          if (isSwipeGesture) {
+             var deltaX = mouse.x - startX
+             // Если свайп вправо больше порога, открываем drawer
+             if (deltaX > minSwipeDistance) {
+                argNeutDrawer.open()
+                mouse.accepted = true
+                isSwipeGesture = false
+                hadSwipeGesture = false
+                return
+             }
+          }
+          // Если был свайп, но не достиг порога, блокируем событие
+          if (hadSwipeGesture) {
+             mouse.accepted = true
+          } else {
+             // Если не было свайпа, пропускаем событие для клика
+             mouse.accepted = false
+          }
+          isSwipeGesture = false
+       }
+       
+       onClicked: {
+          // Если это был свайп (даже не завершенный), принимаем событие, чтобы оно не проходило дальше
+          // Если это обычный клик, пропускаем событие (propagateComposedEvents сработает)
+          mouse.accepted = hadSwipeGesture
+          hadSwipeGesture = false
+       }
+    }
+
+   // MouseArea для обработки свайпов в области PedalContainer
+   MouseArea {
+      id: pedalSwipeArea
+      anchors {
+         right: parent.right
+         top: statusDummy.bottom
+         bottom: parent.bottom
+      }
+      width: 200
+      z: 10  // Выше других элементов
+      propagateComposedEvents: true
+      
+      property real startX: 0
+      property real startY: 0
+      property bool isSwipeGesture: false
+      property bool hadSwipeGesture: false  // Сохраняем информацию о свайпе для onClicked
+      property real minSwipeDistance: 50
+      
+      onPressed: {
+         startX = mouse.x
+         startY = mouse.y
+         isSwipeGesture = false
+         hadSwipeGesture = false
+      }
+      
+      onPositionChanged: {
+         if (pressed) {
+            var deltaX = mouse.x - startX
+            var deltaY = Math.abs(mouse.y - startY)
+            // Если горизонтальное движение больше вертикального и больше 30px влево
+            if (deltaX < -30 && Math.abs(deltaX) > deltaY) {
+               isSwipeGesture = true
+               hadSwipeGesture = true
+               // Принимаем событие, чтобы оно не проходило дальше
+               mouse.accepted = true
+            } else if (isSwipeGesture) {
+               // Если уже был свайп, продолжаем принимать события
+               mouse.accepted = true
+            } else {
+               mouse.accepted = false
+            }
+         }
+      }
+      
+      onReleased: {
+         if (isSwipeGesture) {
+            var deltaX = mouse.x - startX
+            // Если свайп влево больше порога, открываем drawer
+            if (deltaX < -minSwipeDistance) {
+               // Ищем expanded сокет
+               var expandedSocketId = -1
+               if (theModel) {
+                  for (var i = 0; i < theModel.rowCount(); i++) {
+                     var socketIndex = theModel.index(i, 0)
+                     if (socketIndex.valid) {
+                        var displayMode = theModel.data(socketIndex, SocketModel.SocketDisplayMode)
+                        if (displayMode === "expanded") {
+                           expandedSocketId = i
+                           break
+                        }
+                     }
+                  }
+               }
+               pedDrawer.socketId = expandedSocketId
+               pedDrawer.open()
+               mouse.accepted = true  // Блокируем событие при успешном свайпе
+               isSwipeGesture = false
+               hadSwipeGesture = false
+               return
+            }
+         }
+         // Если был свайп, но не достиг порога, все равно блокируем событие
+         if (hadSwipeGesture) {
+            mouse.accepted = true
+         } else {
+            // Если не было свайпа, пропускаем событие для клика
+            mouse.accepted = false
+         }
+         isSwipeGesture = false
+         // hadSwipeGesture сохраняем для onClicked
+      }
+      
+      onClicked: {
+         // Если это был свайп (даже не завершенный), принимаем событие, чтобы оно не проходило дальше
+         // Если это обычный клик, пропускаем событие для клика по педалям
+         mouse.accepted = hadSwipeGesture
+         hadSwipeGesture = false
+      }
+   }
+
+   Connections {
+      target: statusDummy
+      function onDrawerCalled() {
+         leftDrawer.open()
+      }
+   }
+   Connections {
+      target: menuLoad
+      function onCloseMe() {
+         leftDrawer.close()
+      }
+   }
+   Connections {
+      target: socketsDummy
+      function onProgAddRequest(addType) {
+         switch (addType) {
+            case 0:
+            {
+               recomHandle.copyCurrent();
+               break;
+            }
+            case 1:
+            {
+               menuLoad.shortcut = true;
+               menuLoad.source = "qrc:/ProgItemList.qml"
+               menuLoad.item.loadClear = false;
+               leftDrawer.open()
+               break;
+            }
+            case 2:
+            {
+               recomHandle.addEmptyDefault();
+               break;
+            }
+         }
+      }
+   }
+   
+   // Монитор системы в правом нижнем углу
+   SystemMonitor {
+      id: systemMonitor
+      anchors {
+         right: parent.right
+         bottom: parent.bottom
+         margins: 10
+      }
+      z: 9999  // Поверх всего
+      monitoringActive: true
+      
+      // MouseArea для пропуска событий сквозь монитор
+      MouseArea {
+         anchors.fill: parent
+         enabled: false  // Отключаем перехват событий - все проходят сквозь
+      }
+   }
    // Область для свайпов и закрытия панелей
    // MouseArea {
    //    id: swipeArea
@@ -259,16 +532,4 @@ Window {
 
    // }
 
-   Connections {
-      target: statusDummy
-      function onDrawerCalled() {
-         leftDrawer.open()
-      }
-   }
-   Connections {
-      target: menuLoad
-      function onCloseMe() {
-         leftDrawer.close()
-      }
-   }
 }

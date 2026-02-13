@@ -25,6 +25,7 @@ Rectangle {
         isCoag: halfSocketRoot.isCoag
         instrumName: halfSocketRoot.instrumName
         instrumNum: halfSocketRoot.instrumNum
+        modeId: halfSocketRoot.modeId
         isEndo: halfSocketRoot.isEndo
         anchors {
             top: parent.top

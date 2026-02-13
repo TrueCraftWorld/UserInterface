@@ -9,6 +9,9 @@ Item {
     signal recommendButtonPressed()
     signal settingsButtonPressed()
     signal exitButtonPressed()
+    signal secretKeysButtonPressed()
+    
+    property bool videoPlayerVisible: false
     Rectangle {
         id: background
         anchors.fill: parent
@@ -38,39 +41,89 @@ Item {
     }
 
 
-    SColumn {
-        id: buttonColumn
-        anchors{
+    Grid {
+        id: buttonGrid
+        anchors {
             top: screenTitle.bottom
             topMargin: 25
+            horizontalCenter: parent.horizontalCenter
+        }
+        columns: 2
+        rows: 2
+        columnSpacing: 20
+        rowSpacing: 20
+        clip: false  // Не обрезаем - позволяем теням отображаться
+
+        Item {
+            width: 380
+            height: 280
+            clip: true
+            
+            SButton {
+                id: wifiButton
+//                style: "btn-outline-primary lg"
+                style: "btn-primary lg"           // Попробуйте: btn-primary, btn-secondary, btn-info, btn-light
+                width: parent.width
+                height: parent.height
+                text: qsTr("Рекомендованные")
+                onClicked: recommendButtonPressed()
+            }
         }
 
-        width: parent.width
-        rowSpacing: 15
-
-        SButton {
-            id: wifiButton
-            style: "btn-outline-primary lg"
-            Layout.alignment: Qt.AlignHCenter | Qt.AlignTop
-            Layout.preferredWidth: 320
-            Layout.preferredHeight: 320
-            // verticalPadding: 10
-
-            text: qsTr("Рекомендованные")
-            onClicked: recommendButtonPressed()
+        Item {
+            width: 380
+            height: 280
+            clip: true
+            
+            SButton {
+                id: updateButton
+//                style: "btn-outline-primary lg"
+                style: "btn-primary lg"           // Попробуйте: btn-primary, btn-secondary, btn-info, btn-light
+                width: parent.width
+                height: parent.height
+                onClicked: settingsButtonPressed()
+                text: qsTr("Настройки ...")
+            }
         }
-
-        SButton {
-            id: updateButton
-            style: "btn-outline-primary lg"
-            Layout.alignment: Qt.AlignHCenter | Qt.AlignTop
-            Layout.preferredWidth: 320
-            Layout.preferredHeight: 320
-            // span: 10
-            // verticalPadding: 10
-
-            onClicked: settingsButtonPressed()
-            text: qsTr("Настройки ...")
+        
+        Item {
+            width: 380
+            height: 280
+            clip: true
+            
+            SButton {
+                id: videoButton
+                style: "btn-primary lg"           // Попробуйте: btn-primary, btn-secondary, btn-info, btn-light
+//                style: "btn-outline-primary lg"
+                width: parent.width
+                height: parent.height
+                onClicked: settinsScreen.videoPlayerVisible = true
+                text: qsTr("Видео 🎬")
+            }
         }
+        
+        Item {
+            width: 380
+            height: 280
+            clip: true
+            
+            SButton {
+                id: secretKeysButton
+                style: "btn-primary lg"
+                width: parent.width
+                height: parent.height
+                onClicked: secretKeysButtonPressed()
+                text: qsTr("Секретные ключи 🔐")
+            }
+        }
+    }
+    
+    // Видеопроигрыватель
+    VideoPlayer {
+        id: videoPlayer
+        anchors.fill: parent
+        visible: settinsScreen.videoPlayerVisible
+        z: 1000
+        onCloseRequested: settinsScreen.videoPlayerVisible = false
     }
 }

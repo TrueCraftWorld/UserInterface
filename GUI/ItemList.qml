@@ -10,7 +10,6 @@ Rectangle {
     property alias curIndex: theView.currentIndex
     property bool noImage: false
     property int initialIndex: -1
-    // property int selectedIndex: -1  // Индекс реально выбранного элемента (при клике)
     signal newIndexSelected(int newIndex)
 
     color: "transparent"
@@ -42,12 +41,9 @@ Rectangle {
             displayMarginBeginning: 15
             displayMarginEnd: 15
             spacing: 10
-            // ScrollBar.vertical
             clip: true
 
             delegate: Rectangle {
-                // property bool isCurrent: (index === theView.currentIndex)
-                // property bool isSelected: (index === itemList.selectedIndex)
                 property bool isSelected: (index === curIndex)
                 property bool isInitial: (index === initialIndex)
                 height: 100
@@ -141,10 +137,11 @@ Rectangle {
                     id: selectionBorder
                     anchors.fill: parent
                     color: "transparent"
-                    border.width: (isSelected || isInitial) ? 3 : 0
+                    border.width: (isSelected || (isInitial && !isSelected)) ? 3 : 0
                     radius: 8
-                    ///TODO придумать более визуально уместное выделение исходного элемента
-                    border.color: isInitial ? "magenta" : "white"
+                    // Розовая рамка только для изначального элемента, если он не выбран сейчас
+                    // Белая рамка для текущего выбранного элемента
+                    border.color: (isInitial && !isSelected) ? "grey" : "white"
                 }
 
                 MouseArea {

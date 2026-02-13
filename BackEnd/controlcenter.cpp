@@ -1,10 +1,8 @@
 #include "controlcenter.h"
-#include "socket.h"
 #include "proghandle.h"
 
-// #include <algorithm>
-// #include <cmath>
-#include <map>
+#include <algorithm>
+#include <vector>
 
 #include <QQmlEngine>
 #include <QString>
@@ -12,57 +10,46 @@
 #include <QDebug>
 #include <QVector>
 #include <QVariant>
+#include <QElapsedTimer>
 
+std::vector<int> m_rolesSaveTriggered = {
+    SocketModel::SocketRoles::CoagModeId,
+    SocketModel::SocketRoles::CutModeId,
+    SocketModel::SocketRoles::CoagModePower,
+    SocketModel::SocketRoles::CutModePower,
+    SocketModel::SocketRoles::CoagModeInstrNum,
+    SocketModel::SocketRoles::CutModeInstrNum,
+    SocketModel::SocketRoles::SocketPedal,
+};
 
 ControlCenter::ControlCenter(QObject *parent)
     : QObject{parent},
-    m_argonCylinder1Connected(false),
-    m_argonCylinder2Connected(false),
-    m_autoStStopTissue(false),
-    m_neutralElConnected(false),
-    m_neutralElDivided(true),
-    m_autoSSmode(0),
-    m_argonFlowRate(80),
-    m_argonRealRate(0),
-    m_activCylinderFirst(true),  // По умолчанию активен первый баллон
-    m_wirelessPedalCharge(0),
+
     m_socketModel(new SocketModel()),
     m_editor(new SocketModeEditor(m_socketModel,this)),
     m_handle(new ProgHandle(this)),
     m_progLoader(new ProgLoader(this)),
-    // m_dbReader(nullptr),
+    m_periphery(new PeriphHandler(this)),
     m_linkStm(nullptr),
     m_saveTimer(new QTimer(this))
 {
     QQmlEngine::setObjectOwnership(m_socketModel.data(), QQmlEngine::CppOwnership);
     QQmlEngine::setObjectOwnership(m_editor, QQmlEngine::CppOwnership);
     QQmlEngine::setObjectOwnership(m_handle, QQmlEngine::CppOwnership);
-    QQmlEngine::setObjectOwnership(m_progLoader, QQmlEngine::CppOwnership);
-    m_progLoader->setSocketModelPtr(m_socketModel);
-    // QQmlEngine::setObjectOwnership(this, QQmlEngine::CppOwnership);
-    
-    // Настройка таймера для отложенного сохранения
-    m_saveTimer->setSingleShot(true);
-    m_saveTimer->setInterval(2000);  // 2 секунды
-    // connect(m_saveTimer, &QTimer::timeout, this, &ControlCenter::saveCurrentState);
-    connect(m_saveTimer, &QTimer::timeout, m_progLoader, &ProgLoader::saveCurrentState);
-    
-    makeHandleConnections();
+    QQmlEngine::setObjectOwnership(m_periphery, QQmlEngine::CppOwnership);
+    std::sort(m_rolesSaveTriggered.begin(), m_rolesSaveTriggered.end());
+    init();
 }
 
 ControlCenter::~ControlCenter()
-{
-    // if (!m_socketModel.isNull()) {
-    //     m_socketModel->deleteLater();
-    // }
-}
+{ }
 
-void ControlCenter::registerControl()
+void ControlCenter::registerHandles()
 {
     qmlRegisterUncreatableType<SocketModel>("BackEnd", 1, 0, "SocketModel", "should be one and exist not only for qml");
     qmlRegisterUncreatableType<SocketModeEditor>("BackEnd", 1, 0, "SocketModeEditor", "should be one and exist not only for qml");
     qmlRegisterUncreatableType<ProgHandle>("BackEnd", 1, 0, "ProgHandle", "should be one and exist not only for qml");
-    // qmlRegisterUncreatableType<P>("BackEnd", 1, 0, "ControlCenter", "should be one and exist not only for qml");
+    qmlRegisterUncreatableType<PeriphHandler>("BackEnd", 1, 0, "PeriphHandle", "should be one and exist not only for qml");
 }
 
 QPointer<SocketModel> ControlCenter::getSocketModel() const
@@ -72,10 +59,11 @@ QPointer<SocketModel> ControlCenter::getSocketModel() const
 
 void ControlCenter::init()
 {
-    readConfigs();
-    initComms();
-    initSockets();
+    m_progLoader->setSocketModelPtr(m_socketModel);
+    m_saveTimer->setSingleShot(true);
+    m_saveTimer->setInterval(2000);  // 2 секунды
     prepareConnectios();
+    initSockets();
 }
 
 void ControlCenter::makeHandleConnections()
@@ -89,41 +77,23 @@ void ControlCenter::makeHandleConnections()
     connect(m_handle, &ProgHandle::signalRecomProgChosen, 
             m_progLoader, &ProgLoader::programmLoadSocketInit);
     
-    connect(m_handle, &ProgHandle::signalLoadEmpty, 
-            this, [this] () {
-            m_progLoader->defaultSocketInit(true);
-    });
-    
-    // Автосохранение при успешном изменении режима
-    connect(m_editor, &SocketModeEditor::editingFinished, 
-            this, [this](bool success) {
-        if (success) {
-            m_progLoader->saveCurrentState();
-        }
-    });
-
     connect(m_handle, &ProgHandle::signalScopeRequest,
             this, [this] (int id) {
         m_handle->setProgList(m_progLoader->getListOfPrograms(id));
     });
 
-    //     void signalCopyCurrent();
-
-    // void signalAddEmptyDefault(bool clearLoad);
     connect(m_handle, &ProgHandle::signalAddEmptyDefault,
             m_progLoader, &ProgLoader::defaultSocketInit);
 
     connect(m_handle, &ProgHandle::signalCopyCurrent,
             m_socketModel.data(), &SocketModel::copyCurrentList);
+
 }
 
-QPointer<SocketModeEditor> ControlCenter::editor() const
+QPointer<SocketModeEditor> ControlCenter::getModeEditor() const
 {
     return m_editor;
 }
-
-void ControlCenter::initComms()
-{}
 
 void ControlCenter::initSockets()
 {
@@ -132,190 +102,62 @@ void ControlCenter::initSockets()
     m_handle->setScopeNameList(m_progLoader->getScopes());
 }
 
-void ControlCenter::readConfigs()
-{ }
-
 void ControlCenter::prepareConnectios()
-{ }
+{
+    makeHandleConnections();
+    if (m_progLoader && m_saveTimer)
+        connect(m_saveTimer, &QTimer::timeout,
+                m_progLoader, &ProgLoader::slotSaveCurrentState);
 
+    if (m_progLoader && m_editor)
+        connect(m_editor, &SocketModeEditor::editingFinished,
+                this, [this] (bool success) {
+            if (success) {
+                scheduleSave();
+            }
+        });
+    connect(m_socketModel.data(), &SocketModel::dataChanged,
+            this, [this] (const QModelIndex&, const QModelIndex&, const QVector<int>& roles) {
+        if (roles.empty()) {
+            scheduleSave();
+            return;
+        }
+        size_t checkIdx = 0;
+        std::vector<int> rolesSrtd = std::vector(roles.begin(), roles.end());
+        std::sort(rolesSrtd.begin(), rolesSrtd.end());
+        //стд вектор, чтобы не переживать о shared-контейнерах и утечках
+        //сортировка для того, чтобы справиться за 1 проход;
+        for (const auto& item : rolesSrtd) {
+            for (size_t i = checkIdx; i < m_rolesSaveTriggered.size(); ++i) {
+                if (m_rolesSaveTriggered[i] < item) {
+                    checkIdx++;
+                    continue;
+                }
+                break;
+            }
+            //паранойная доп проверка на размер массива
+            if (checkIdx < m_rolesSaveTriggered.size()
+                    && item == m_rolesSaveTriggered[checkIdx]) {
+                    //нашли хоть одну нужную роль - тикаем, запустив сохранение
+                scheduleSave();
+                return;
+            }
+        }
+
+    });
+}
 
 QPointer<ProgHandle> ControlCenter::getHandle() const
 {
     return m_handle;
 }
 
-bool ControlCenter::neutralElConnected() const
-{
-    return m_neutralElConnected;
-}
-
-void ControlCenter::unitStateHandler(LinkStm::UnitState state)
-{
-    if (m_neutralElConnected != state.neutraElConnected) {
-       m_neutralElConnected = state.neutraElConnected;
-       emit neutralElConnectedChanged(m_neutralElConnected);
-    }
-    
-    bool cylinder1Changed = false;
-    bool cylinder2Changed = false;
-    
-    if (m_argonCylinder1Connected != state.argonCylinder1) {
-        m_argonCylinder1Connected = state.argonCylinder1;
-        cylinder1Changed = true;
-        emit argonCylinder1ConnectedChanged(m_argonCylinder1Connected);
-    }
-    
-    if (m_argonCylinder2Connected != state.argonCylinder2) {
-        m_argonCylinder2Connected = state.argonCylinder2;
-        cylinder2Changed = true;
-        emit argonCylinder2ConnectedChanged(m_argonCylinder2Connected);
-    }
-    
-    // Обновляем реальный расход аргона
-    if (m_argonRealRate != state.argonRealRate) {
-        m_argonRealRate = state.argonRealRate;
-        qDebug() << "РЕАЛЬНЫЙ РАСХОД: " << m_argonRealRate;
-        emit argonRealRateChanged(m_argonRealRate);
-    }
-    
-    // Автоматическое переключение активного баллона
-    if (cylinder1Changed || cylinder2Changed) {
-        // Если второй баллон подключён, а первый нет - переключаемся на второй
-        if (m_argonCylinder2Connected && !m_argonCylinder1Connected) {
-            if (m_activCylinderFirst) {
-                setActivCylinderFirst(false);
-            }
-        }
-        // Если первый баллон подключён, а второй нет - переключаемся на первый
-        else if (m_argonCylinder1Connected && !m_argonCylinder2Connected) {
-            if (!m_activCylinderFirst) {
-                setActivCylinderFirst(true);
-            }
-        }
-    }
-}
-//void ControlCenter::setNeutralElConnected(bool connected)
-//{
-//    if (m_neutralElConnected == connected)
-//        return;
-
-//    m_neutralElConnected = connected;
-//    emit neutralElConnectedChanged(connected);
-//}
-
-bool ControlCenter::neutralElDivided() const
-{
-    return m_neutralElDivided;
-}
-
-void ControlCenter::setNeutralElDivided(bool divided)
-{
-    if (m_neutralElDivided == divided)
-        return;
-    
-    m_neutralElDivided = divided;
-    emit neutralElDividedChanged(divided);
-    
-    // Обновляем состояние в LinkStm
-    if (!m_linkStm.isNull()) {
-        m_linkStm->setNeutralElDivided(divided);
-    }
-}
-
-bool ControlCenter::argonCylinder1Connected() const
-{
-    return m_argonCylinder1Connected;
-}
-
-bool ControlCenter::argonCylinder2Connected() const
-{
-    return m_argonCylinder2Connected;
-}
-
-quint8 ControlCenter::argonFlowRate() const
-{
-    return m_argonFlowRate;
-}
-
-void ControlCenter::setArgonFlowRate(quint8 rate)
-{
-    if (m_argonFlowRate == rate)
-        return;
-    
-    m_argonFlowRate = rate;
-    emit argonFlowRateChanged(rate);
-    
-    // TODO: Отправить команду установки расхода в LinkStm при необходимости
-}
-
-void ControlCenter::argonBlow()
-{
-    // TODO: Отправить команду продувки аргона через LinkStm
-    // Например: m_linkStm->sendArgonBlowCommand();
-    qDebug() << "Argon blow command triggered";
-}
-
-quint8 ControlCenter::argonRealRate() const
-{
-    return m_argonRealRate;
-}
-
-bool ControlCenter::activCylinderFirst() const
-{
-    return m_activCylinderFirst;
-}
-
-void ControlCenter::setActivCylinderFirst(bool first)
-{
-    if (m_activCylinderFirst == first)
-        return;
-    
-    m_activCylinderFirst = first;
-    emit activCylinderFirstChanged(first);
-    
-    // Передаём значение в LinkStm
-    if (m_linkStm) {
-        m_linkStm->setActivCylinderFirst(first);
-    }
-}
-
-void ControlCenter::setArgonRealRate(quint8 rate)
-{
-    if (m_argonRealRate == rate)
-        return;
-    
-    m_argonRealRate = rate;
-    emit argonRealRateChanged(rate);
-}
-
-bool ControlCenter::enableActivation() const
-{
-    return m_enableActivation;
-}
-
-void ControlCenter::setEnableActivation(bool enable)
-{
-    if (m_enableActivation == enable)
-        return;
-    
-    m_enableActivation = enable;
-    emit enableActivationChanged(enable);
-    
-    // Обновляем состояние в LinkStm
-    if (!m_linkStm.isNull()) {
-        m_linkStm->setEnableActivation(enable);
-    }
-}
-
-bool ControlCenter::activation() const
-{
-    return m_activation;
-}
-
 void ControlCenter::scheduleSave()
 {
-    // Перезапускаем таймер (если он уже запущен, он сбросится)
-    m_saveTimer->start();
+    //переделал так - если уже бежит таймер, то пусть бежит. сохранится всё скопом
+    //если не бежит - запустим
+    if (!m_saveTimer->isActive())
+        m_saveTimer->start();
 }
 
 void ControlCenter::setLinkStm(LinkStm* linkStm)
@@ -325,174 +167,137 @@ void ControlCenter::setLinkStm(LinkStm* linkStm)
         
     // Отключаем старые соединения, если они были
     if (!m_linkStm.isNull()) {
-        disconnect(m_linkStm, &LinkStm::recieveData, this, &ControlCenter::uartChat);
-        disconnect(m_linkStm, &LinkStm::error, this, &ControlCenter::uartError);
+        disconnect(m_linkStm, nullptr, nullptr, nullptr);
+        m_linkStm->deleteLater();
+        m_linkStm = nullptr;
     }
     
     m_linkStm = linkStm;
     
     // Подключаем обработчик входящих данных
     if (!m_linkStm.isNull()) {
-        connect(m_linkStm, &LinkStm::recieveData, this, &ControlCenter::uartChat);
-        connect(m_linkStm, &LinkStm::error, this, &ControlCenter::uartError);
-//        connect(m_linkStm, &LinkStm::neutralElConnectedChanged, this, &ControlCenter::setNeutralElConnected);
-        connect(m_linkStm, &LinkStm::unitStateChanged, this, &ControlCenter::unitStateHandler);
+//        connect(m_linkStm, &LinkStm::sigUnitStateChanged,
+//                m_periphery, &PeriphHandler::unitStateHandler,
+//                Qt::QueuedConnection);
         
         // Инициализируем текущие значения состояния в LinkStm
-        m_linkStm->setEnableActivation(m_enableActivation);
-        m_linkStm->setNeutralElDivided(m_neutralElDivided);
+        m_linkStm->setEnableActivation(m_periphery->enableActivation());
+        m_linkStm->setNeutralElDivided(m_periphery->neutralElDivided());
         
         // Подключаем сигнал обновления данных сокетов
         // чуть громоздко но без лишних сигналов, полностью нативно
         connect(m_socketModel.data(), &SocketModel::dataChanged,
-                this, [this] (const QModelIndex &topLeft, const QModelIndex &bottomRight, const QVector<int> &roles = QVector<int>()) {
+                this, [this] (const QModelIndex &topLeft,
+                                const QModelIndex &bottomRight,
+                                const QVector<int> &/*roles = QVector<int>()*/) {
             int idxStart = topLeft.row();
             int idxStop = bottomRight.row();
             for (int i = idxStart; i <= idxStop; ++i) {
-                m_linkStm->updateSocketData(i,
-                                            topLeft.siblingAtRow(i).data(SocketModel::CutModeNum).value<quint16>(),
-                                            topLeft.siblingAtRow(i).data(SocketModel::CoagModeNum).value<quint16>(),
-                                            topLeft.siblingAtRow(i).data(SocketModel::CutModePower).value<quint16>(),
-                                            topLeft.siblingAtRow(i).data(SocketModel::CoagModePower).value<quint16>(),
-                                            topLeft.siblingAtRow(i).data(SocketModel::SocketPedal).value<quint8>()
-                                            );
+            //вызовы data по доке reenterant так что мы можем предать в арги прям вызовы
+                QMetaObject::invokeMethod(  m_linkStm.data(),
+                                        "updateSocketData",
+                                        Qt::QueuedConnection,
+                                        Q_ARG(int, i),  // socketIndex
+                                        Q_ARG(quint16, topLeft.siblingAtRow(i).data(SocketModel::CutModeNum).value<quint16>()),
+                                        Q_ARG(quint16, topLeft.siblingAtRow(i).data(SocketModel::CoagModeNum).value<quint16>()),
+                                        Q_ARG(quint16, topLeft.siblingAtRow(i).data(SocketModel::CutModePower).value<quint16>()),
+                                        Q_ARG(quint16, topLeft.siblingAtRow(i).data(SocketModel::CoagModePower).value<quint16>()),
+                                        Q_ARG(quint8, topLeft.siblingAtRow(i).data(SocketModel::SocketPedal).value<quint8>()));
             }
-        });
+        }, Qt::QueuedConnection);
         
         // Подключаем сигналы активации
-        connect(m_linkStm, &LinkStm::startActivation, this, &ControlCenter::onStartActivation);
-        connect(m_linkStm, &LinkStm::stopActivation, this, &ControlCenter::onStopActivation);
+        connect(m_linkStm, &LinkStm::sigStartActivation,
+                m_socketModel.data(), &SocketModel::startActivation,
+                Qt::QueuedConnection);
+        connect(m_linkStm, &LinkStm::sigStopActivation,
+                m_socketModel.data(), &SocketModel::stopActivation,
+                Qt::QueuedConnection);
         
+//-----------Коннекты получения перифейрийной информации
+        connect(m_linkStm, &LinkStm::sigUnitStateChanged,
+                m_periphery, &PeriphHandler::unitStateHandler,
+                Qt::QueuedConnection);
+
+//-----------Коннекты передачи пользовательских действий
+        connect(m_periphery, &PeriphHandler::activCylinderFirstChanged,
+                m_linkStm, &LinkStm::setActivCylinderFirst,
+                Qt::QueuedConnection);
+        connect(m_periphery, &PeriphHandler::neutralElDividedChanged,
+                m_linkStm, &LinkStm::setNeutralElDivided,
+                Qt::QueuedConnection);
+        connect(m_periphery, &PeriphHandler::enableActivationChanged,
+                m_linkStm,  &LinkStm::setEnableActivation,
+                Qt::QueuedConnection);
+        connect(m_periphery, &PeriphHandler::sigArgonFlowRateChanged,
+                m_linkStm, &LinkStm::setArgonFlowRate,
+                Qt::QueuedConnection);
+        connect(m_periphery, &PeriphHandler::sigArgonBlow,
+                m_linkStm, &LinkStm::argonBlow,
+                Qt::QueuedConnection);
+
         // Инициализируем все сокеты текущими данными
-        initializeAllSocketsInLinkStm();
+        initSocketsForPeriphery();
         
-        qDebug() << "LinkStm connected to ControlCenter";
+//        qDebug() << "LinkStm connected to ControlCenter";
     }
 }
 
-void ControlCenter::initializeAllSocketsInLinkStm()
+void ControlCenter::initSocketsForPeriphery()
 {
-    if (m_linkStm.isNull() || !m_socketModel || !m_socketModel->itemsMap()) {
+    if (m_linkStm.isNull() || !m_socketModel) {
         qWarning() << "Cannot initialize sockets in LinkStm: missing dependencies";
         return;
     }
-    
-    // Инициализируем все сокеты текущими данными
-    for (int i = 0; i < 4; i++) {
-        auto iter = m_socketModel->itemsMap()->find(i);
-        if (iter != m_socketModel->itemsMap()->end() && !iter->second.isNull()) {
-            auto socket = iter->second;
-            
-            // Получаем текущие данные сокета
-            quint16 cutModeNum = 1000;  // По умолчанию
-            quint16 coagModeNum = 1000; // По умолчанию
-            quint16 cutModePower = socket->cutModePower();
-            quint16 coagModePower = socket->coagModePower();
-            quint8 pedal = socket->pedal();
-            
-            // Получаем Num режимов (не ID!)
-            auto cutMode = socket->curCutMode();
-            if (!cutMode.isNull()) {
-                cutModeNum = cutMode->num();
-            }
-            
-            auto coagMode = socket->curCoagMode();
-            if (!coagMode.isNull()) {
-                coagModeNum = coagMode->num();
-            }
-            
-            // Обновляем данные в LinkStm
-            m_linkStm->updateSocketData(i, cutModeNum, coagModeNum, 
-                                      cutModePower, coagModePower, pedal);
-        }
+    // Используем queued-вызовы, так как LinkStm работает в отдельном потоке
+    for (int i = 0; i < m_socketModel->rowCount(QModelIndex()); ++i) {
+        Onyx::SocketState info =
+                m_socketModel->index(i).data(SocketModel::SocketUartInfo).value<Onyx::SocketState>();
+
+        QMetaObject::invokeMethod(
+            m_linkStm.data(),
+            "updateSocketData",
+            Qt::QueuedConnection,
+            Q_ARG(int, i),
+            Q_ARG(Onyx::SocketState, info));
     }
-    
-    qDebug() << "All sockets initialized in LinkStm";
 }
 
-void ControlCenter::onStartActivation(quint8 socketId, bool isCut)
+QPointer<PeriphHandler> ControlCenter::getPeripheryHandle() const
 {
-    if (!m_socketModel || !m_socketModel->itemsMap()) {
-        qWarning() << "Cannot start activation: socket model not available";
-        return;
-    }
-    
-    auto iter = m_socketModel->itemsMap()->find(socketId);
-    if (iter == m_socketModel->itemsMap()->end() || iter->second.isNull()) {
-        qWarning() << "Cannot start activation: socket" << socketId << "not found";
-        return;
-    }
-    auto socket = iter->second;
-    // Получаем данные для активации
-    QString socketName = socket->socketName();
-    QString modeName = "Режим не выбран";
-    quint16 power = 0;
-    // bool isCoag = !isCut;
-    
-    // Получаем режим и мощность
-    if (isCut) {
-        auto cutMode = socket->curCutMode();
-        if (!cutMode.isNull()) {
-            modeName = cutMode->modeName();
-            power = socket->cutModePower();
-        }
-    } else {
-        auto coagMode = socket->curCoagMode();
-        if (!coagMode.isNull()) {
-            modeName = coagMode->modeName();
-            power = socket->coagModePower();
-        }
-    }
-    
-    
-    // Запускаем активацию с минимальной задержкой, чтобы сокет успел развернуться
-
-    QTimer::singleShot(0, this, [this, socketId, isCut]() {
-        if (m_socketModel) {
-            m_socketModel->expandSocket(socketId);
-            m_socketModel->qmlSetData(socketId, isCut ? SOCKET::S_ACTIVE_CUT : SOCKET::S_ACTIVE_COAG, "socketstatus");
-        }
-    });
-    
-    qDebug() << "Activation started: socket" << socketId << "mode:" << modeName << "power:" << power;
+    return m_periphery;
 }
 
-void ControlCenter::onStopActivation(quint8 stopReason)
-{
-    // Останавливаем активацию
-    m_socketModel->stopActivation();
-    
-    qDebug() << "Activation stopped, reason:" << stopReason;
-}
+//не понял задумки в этих фнкциях
+// void ControlCenter::uartChat(LinkStm::UartRx* rxData)
+// {
+//     rxData = nullptr;
+// }
 
-void ControlCenter::uartChat(LinkStm::UartRx* rxData)
-{
-    rxData = nullptr;
-}
+// void ControlCenter::uartError(quint8 errorState)
+// {
+//     switch (errorState) {
+//     case (LinkStm::STATE_OK + 32):
+//         // Все в порядке
+//         break;
+//     case (LinkStm::STATE_TX_ERR + 32):
+//         // qWarning() << "UART TX Error";
+//         break;
+//     case (LinkStm::STATE_NO_RX + 32):
+//         // qWarning() << "UART No RX";
+//         break;
+//     case (LinkStm::STATE_RX_ERR + 32):
+//         // qWarning() << "UART RX Error";
+//         break;
+//     case (LinkStm::STATE_RX_LEN_ERR + 32):
+//         // qWarning() << "UART RX Length Error";
+//         break;
+//     case (LinkStm::STATE_RX_CRC_ERR + 32):
+//         // qWarning() << "UART RX CRC Error";
+//         break;
+//     default:
+//         // qWarning() << "Some error: " << errorState;
+//         break;
+//     }
+// }
 
-void ControlCenter::uartError(quint8 errorState)
-{
-    switch (errorState) {
-    case (LinkStm::STATE_OK + 32):
-        // Все в порядке
-        break;
-    case (LinkStm::STATE_TX_ERR + 32):
-        // qWarning() << "UART TX Error";
-        break;
-    case (LinkStm::STATE_NO_RX + 32):
-        // qWarning() << "UART No RX";
-        break;
-    case (LinkStm::STATE_RX_ERR + 32):
-        // qWarning() << "UART RX Error";
-        break;
-    case (LinkStm::STATE_RX_LEN_ERR + 32):
-        // qWarning() << "UART RX Length Error";
-        break;
-    case (LinkStm::STATE_RX_CRC_ERR + 32):
-        // qWarning() << "UART RX CRC Error";
-        break;
-    default:
-        // qWarning() << "Some error: " << errorState;
-        break;
-    }
-}

@@ -5,6 +5,9 @@ import QtQuick.Layouts 1.15
 Rectangle {
     id: argonRoot
     
+    // Маркер для PeripheryDrawer: этот компонент имеет интерактивные элементы и должен получать события напрямую
+    property bool hasInteractiveContent: true
+    
     // Публичные свойства
     property bool cylinder1Connected: true      // Баллон 1 наполнен
     property bool cylinder2Connected: false     // Баллон 2 наполнен
@@ -20,14 +23,25 @@ Rectangle {
     property int step: showControls ? 16 : 12  // Базовый шаг размера: 12 свёрнуто, 16 развёрнуто
 
     // Внутреннее свойства для размеров кнопок
-    property int  buttonStep: 16
+    readonly property int  buttonStep: 16
     
     // Сигналы
     signal flowRateUpdated(int newRate)
     signal argonBlow()
+    signal activCylinderToggled(bool first)
     
     // Отслеживание изменения showControls для отправки сигнала при сворачивании
     property int lastSentFlowRate: flowRate
+    property bool isUserChange: false  // Флаг для отслеживания изменений пользователем
+    
+    onFlowRateChanged: {
+        // Отправляем сигнал при изменении расхода пользователем (через кнопки)
+        if (isUserChange && lastSentFlowRate !== flowRate) {
+            flowRateUpdated(flowRate)
+            lastSentFlowRate = flowRate
+            isUserChange = false  // Сбрасываем флаг после отправки
+        }
+    }
     
     onShowControlsChanged: {
         // Когда панель сворачивается (showControls становится false)
@@ -39,13 +53,66 @@ Rectangle {
     
     color: "transparent"
     
-    // MouseArea для перехвата всех событий в области компонента
-    MouseArea {
-        anchors.fill: parent
-        z: 0
-        onPressed: mouse.accepted = true
-        onReleased: mouse.accepted = true
-        onClicked: mouse.accepted = true
+    component CustomButton: Rectangle {
+        id: rootCustomBut
+        property int delta
+        property string iconText
+        property bool pressed: mouseArea.pressed
+        
+        signal clicked()
+
+        radius: 6
+        color: pressed ? "#9EFE9E" : "#BDBDBD"
+        border {
+            color: "#757575"
+            width: 2
+        }
+        
+        Text {
+            anchors.centerIn: parent
+            text: iconText
+            font.pixelSize: buttonStep * 2
+            font.bold: true
+            color: "#2c2c2c"
+        }
+        
+        MouseArea {
+            id: mouseArea
+            anchors.fill: parent
+            
+            onPressed: {
+                // Первое срабатывание СРАЗУ при нажатии (как в ModePowerRect)
+                rootCustomBut.clicked()
+                // Запускаем таймер задержки перед автоповтором
+                delayTimer.start()
+            }
+            
+            onReleased: {
+                delayTimer.stop()
+                autoRepeatTimer.stop()
+            }
+            
+            onCanceled: {
+                delayTimer.stop()
+                autoRepeatTimer.stop()
+            }
+        }
+        
+        // Таймер задержки перед началом автоповтора
+        Timer {
+            id: delayTimer
+            interval: 500  // Задержка перед началом автоповтора (мс)
+            repeat: false
+            onTriggered: autoRepeatTimer.start()
+        }
+        
+        // Таймер автоповтора
+        Timer {
+            id: autoRepeatTimer
+            interval: 150  // Интервал повторения в миллисекундах
+            repeat: true
+            onTriggered: rootCustomBut.clicked()
+        }
     }
 
     Rectangle {
@@ -54,10 +121,11 @@ Rectangle {
         anchors.right: parent.right
         anchors.bottom: parent.bottom
         anchors.top: parent.top
-        color: "grey"
-        radius: 7
-        border.color: "orange"
-        z: 1
+        // color: "grey"
+        color: "transparent"
+        // radius: 7
+        // border.color: "orange"
+        // z: 1
 //        visible: !showControls
         
         // Иконка баллона
@@ -72,73 +140,25 @@ Rectangle {
             color: "#2c2c2c"
         }
 
-        Rectangle {
-            id: firstCylinderRect
+        ArgCylinder {
+            id: firstCylinder
+            isFirst: true;
             width: 85
             height: step * 12.5
             anchors.top: arLabel.bottom
             anchors.topMargin: 8
             x: showControls ? 100 : (parent.width - width) / 2
-            color: "transparent"
-
-            Rectangle {
-                id: cylinder1Body
-                width: step * 4
-                height: step * 11
-                radius: width / 2
-                color: cylinder1Connected ? (activCylinderFirst ? "#30f020" : "#80f070") : "gray"
-                anchors.horizontalCenter: parent.horizontalCenter
-                anchors.bottom: parent.bottom
-                border.color: "#d9d9d9"
-                border.width: 6
-            }
-            Rectangle {
-                id: cylinder1Neck
-                width: step
-                height: step * 2
-                radius: width / 2
-                color: "#d9d9d9"
-                anchors.horizontalCenter: parent.horizontalCenter
-                anchors.bottom: cylinder1Body.top
-                anchors.bottomMargin: -(step / 2)
-            }
-            Rectangle {
-                id: cylinder1Valve
-                width: step * 3
-                height: step
-                radius: height / 2
-                color: "#d9d9d9"
-                anchors.horizontalCenter: parent.horizontalCenter
-                anchors.top: cylinder1Neck.top
-                anchors.topMargin: 3
-            }
-            Text {
-                anchors.horizontalCenter: parent.horizontalCenter
-                anchors.bottom: parent.bottom
-                anchors.bottomMargin: 20
-                text: "1"
-                font.pixelSize: (cylinder1Connected & activCylinderFirst) ? (step * 3) : step * 2
-                font.bold: true
-                color: "black"
-            }
-            Label {
-                id: empty1
-                text: "X"
-                anchors.fill: parent
-                font.pixelSize: step * 5
-                font.bold: true
-                color: "yellow"
-                visible: !cylinder1Connected
-                horizontalAlignment: Qt.AlignHCenter
-                verticalAlignment: Qt.AlignVCenter
-            }
-
-            MouseArea {
-                id: cylinder1MA
-                anchors.fill: parent
-                onClicked: {
-                    if (cylinder1Connected && !activCylinderFirst)
-                        activCylinderFirst = true;
+            cylConnected: cylinder1Connected
+            cylSelected: activCylinderFirst
+            interactive: showControls  // Баллоны кликабельны только в развернутом состоянии
+        }
+        Connections {
+            target: firstCylinder
+            function onCylClicked() {
+                if (cylinder1Connected && !activCylinderFirst) {
+                    activCylinderFirst = true;
+                    console.log("Argon.qml: first cylinder selected");
+                    activCylinderToggled(true);
                 }
             }
         }
@@ -154,91 +174,33 @@ Rectangle {
 //            z: 100
             
             // Кнопка +10
-            Rectangle {
-                id: plus10Btn
+            CustomButton {
+                id: plus10BtnNew
                 width: buttonStep * 6
                 height: buttonStep * 3.5
-                radius: 5
-                property bool isPressed: false
-                color: isPressed ? "#9EFE9E" : "#BDBDBD"
-                border {
-                    color: "#757575"
-                    width: 2
-                }
-                
-                Text {
-                    anchors.centerIn: parent
-                    text: "▲"
-                    font.pixelSize: buttonStep * 2
-                    font.bold: true
-                    color: "#2c2c2c"
-                }
-                
-                MouseArea {
-                    id: plus10MA
-                    anchors.fill: parent
-                    onClicked: {
-                        // Визуальная обратная связь
-                        plus10Btn.isPressed = true
-                        plus10Timer.restart()
-                        
-                        // Логика увеличения
-                        var newRate = flowRate + 10
-                        if (newRate <= maxFlowRate) {
-                            flowRate = newRate
-                        }
+                delta: 10
+                iconText: "▲"
+                onClicked: {
+                    var newRate = flowRate + delta
+                    if (newRate <= maxFlowRate) {
+                        isUserChange = true  // Устанавливаем флаг перед изменением
+                        flowRate = newRate
                     }
-                }
-                
-                Timer {
-                    id: plus10Timer
-                    interval: 200
-                    repeat: false
-                    onTriggered: plus10Btn.isPressed = false
                 }
             }
-            
-            // Кнопка +1
-            Rectangle {
-                id: plus1Btn
+            CustomButton {
+                id: plus1BtnNew
                 width: buttonStep * 6
                 height: buttonStep * 3.5
-                radius: 5
-                property bool isPressed: false
-                color: isPressed ? "#9EFE9E" : "#BDBDBD"
-                border {
-                    color: "#757575"
-                    width: 2
-                }
-                
-                Text {
-                    anchors.centerIn: parent
-                    text: "▲"
-                    font.pixelSize: buttonStep * 2
-                    font.bold: true
-                    color: "#2c2c2c"
-                }
-                
-                MouseArea {
-                    id: plus1MA
-                    anchors.fill: parent
-                    onClicked: {
-                        // Визуальная обратная связь
-                        plus1Btn.isPressed = true
-                        plus1Timer.restart()
-                        
-                        // Логика увеличения
-                        if (flowRate < maxFlowRate) {
-                            flowRate++
-                        }
+                delta: 1
+                iconText: "▲"
+                onClicked: {
+                    var newRate = flowRate + delta
+                    if (newRate <= maxFlowRate) {
+                        isUserChange = true  // Устанавливаем флаг перед изменением
+                        flowRate = newRate
                     }
-                }
-                
-                Timer {
-                    id: plus1Timer
-                    interval: 200
-                    repeat: false
-                    onTriggered: plus1Btn.isPressed = false
+//                    console.log("Argon flowrate: ", flowRate, " ▲ 1");
                 }
             }
         }
@@ -248,7 +210,8 @@ Rectangle {
             id: argonFlowRect
             width: showControls ? (step * 7) : parent.width
             height: step * 4
-            anchors.top: showControls ? arLabel.bottom : firstCylinderRect.bottom
+            // anchors.top: showControls ? arLabel.bottom : firstCylinderRect.bottom
+            anchors.top: showControls ? arLabel.bottom : firstCylinder.bottom
             anchors.topMargin: showControls ? (step * 4) : 0
             anchors.left: showControls ? undefined : parent.left
             anchors.horizontalCenter: showControls ? parent.horizontalCenter : undefined
@@ -263,7 +226,10 @@ Rectangle {
                 text: Math.floor(displayRate / 10) + "." + (displayRate % 10)
                 font.pixelSize: step * 3
                 font.bold: true
-                color: isActivation ? "#000000" : "#2c2c2c"  // чёрный во время активации
+                // В развернутом виде — тёмный текст, в свернутом (PeripheryPanel) — светлый для тёмного фона
+                color: isActivation
+                       ? "#000000"
+                       : (argonRoot.showControls ? "#2c2c2c" : "white")
             }
             Text {
                 id: litrPerMin
@@ -272,7 +238,7 @@ Rectangle {
                 text: qsTr("л/мин")
                 font.pixelSize: 20
                 font.bold: true
-                color: "#2c2c2c"
+                color: argonRoot.showControls ? "#2c2c2c" : "white"
             }
         }
         
@@ -287,168 +253,62 @@ Rectangle {
 //            z: 100
             
             // Кнопка -10
-            Rectangle {
-                id: minus10Btn
+            CustomButton {
+                id: minus10BtnNew
                 width: buttonStep * 6
                 height: buttonStep * 3.5
-                radius: 5
-                property bool isPressed: false
-                color: isPressed ? "#9EFE9E" : "#BDBDBD"
-                border {
-                    color: "#757575"
-                    width: 2
-                }
-                
-                Text {
-                    anchors.centerIn: parent
-                    text: "▼"
-                    font.pixelSize: buttonStep * 2
-                    font.bold: true
-                    color: "#2c2c2c"
-                }
-                
-                MouseArea {
-                    id: minus10MA
-                    anchors.fill: parent
-                    onClicked: {
-                        // Визуальная обратная связь
-                        minus10Btn.isPressed = true
-                        minus10Timer.restart()
-                        
-                        // Логика уменьшения
-                        var newRate = flowRate - 10
-                        if (newRate >= minFlowRate) {
-                            flowRate = newRate
-                        }
+                delta: -10
+                iconText: "▼"
+                onClicked: {
+                    var newRate = flowRate + delta
+                    if (newRate >= 0) {
+                        isUserChange = true  // Устанавливаем флаг перед изменением
+                        flowRate = newRate
                     }
-                }
-                
-                Timer {
-                    id: minus10Timer
-                    interval: 200
-                    repeat: false
-                    onTriggered: minus10Btn.isPressed = false
+//                    console.log("Argon flowrate: ", flowRate, " ▼ 10");
                 }
             }
-            
-            // Кнопка -1
-            Rectangle {
-                id: minus1Btn
+            CustomButton {
+                id: minus1BtnNew
                 width: buttonStep * 6
                 height: buttonStep * 3.5
-                radius: 5
-                property bool isPressed: false
-                color: isPressed ? "#9EFE9E" : "#BDBDBD"
-                border {
-                    color: "#757575"
-                    width: 2
-                }
-                
-                Text {
-                    anchors.centerIn: parent
-                    text: "▼"
-                    font.pixelSize: buttonStep * 2
-                    font.bold: true
-                    color: "#2c2c2c"
-                }
-                
-                MouseArea {
-                    id: minus1MA
-                    anchors.fill: parent
-                    onClicked: {
-                        // Визуальная обратная связь
-                        minus1Btn.isPressed = true
-                        minus1Timer.restart()
-                        
-                        // Логика уменьшения
-                        if (flowRate > minFlowRate) {
-                            flowRate--
-                        }
+                delta: -1
+                iconText: "▼"
+                onClicked: {
+                    var newRate = flowRate + delta
+                    if (newRate >= 0) {
+                        isUserChange = true  // Устанавливаем флаг перед изменением
+                        flowRate = newRate
                     }
-                }
-                
-                Timer {
-                    id: minus1Timer
-                    interval: 200
-                    repeat: false
-                    onTriggered: minus1Btn.isPressed = false
+//                    console.log("Argon flowrate: ", flowRate, " ▼ 1");
                 }
             }
         }
 
-        Rectangle {
-            id: secondCylinderRect
+        ArgCylinder {
+            id: secondCylinder
             width: showControls ? (step * 7) : parent.width
             height: step * 12.5
             anchors.top: showControls ? arLabel.bottom : argonFlowRect.bottom
             anchors.topMargin: showControls ? 8 : 25
             x: showControls ? (parent.width - width - 100) : (parent.width - width) / 2
-            color: "transparent"
+            isFirst: false;
+            cylConnected: cylinder2Connected
+            cylSelected: !activCylinderFirst
+            interactive: showControls  // Баллоны кликабельны только в развернутом состоянии
+        }
 
-            Rectangle {
-                id: cylinder2Body
-                width: step * 4
-                height: step * 11
-                radius: width / 2
-                color: cylinder2Connected ? (activCylinderFirst ? "#80f070" : "#30f020") : "gray"
-                anchors.horizontalCenter: parent.horizontalCenter
-                anchors.bottom: parent.bottom
-                border.color: "#d9d9d9"
-                border.width: 6
-            }
-            Rectangle {
-                id: cylinder2Neck
-                width: step
-                height: step * 2
-                radius: width / 2
-                color: "#d9d9d9"
-                anchors.horizontalCenter: parent.horizontalCenter
-                anchors.bottom: cylinder2Body.top
-                anchors.bottomMargin: -(step / 2)
-            }
-
-            Rectangle {
-                id: cylinder2Valve
-                width: step * 3
-                height: step
-                radius: height / 2
-                color: "#d9d9d9"
-                anchors.horizontalCenter: parent.horizontalCenter
-                anchors.top: cylinder2Neck.top
-                anchors.topMargin: 3
-            }
-            Text {
-                anchors.horizontalCenter: parent.horizontalCenter
-                anchors.bottom: parent.bottom
-                anchors.bottomMargin: 20
-                text: "2"
-                font.pixelSize: (cylinder2Connected & !activCylinderFirst) ? (step * 3) : step * 2
-                font.bold: true
-                color: "black"
-            }
-            Label {
-                id: empty2
-                text: "X"
-                anchors.fill: parent
-                font.pixelSize: step * 5
-                font.bold: true
-                color: "yellow"
-                visible: !cylinder2Connected
-                horizontalAlignment: Qt.AlignHCenter
-                verticalAlignment: Qt.AlignVCenter
-            }
-
-            MouseArea {
-                id: cylinder2MA
-                anchors.fill: parent
-                onClicked: {
-                    if (cylinder2Connected && activCylinderFirst)
-                        activCylinderFirst = false;
+        Connections {
+            target: secondCylinder
+            function onCylClicked() {
+                if (cylinder2Connected && activCylinderFirst) {
+                    activCylinderFirst = false;
+//                    console.log("Argon.qml: second cylinder selected");
+                    activCylinderToggled(false);
                 }
             }
         }
         
-        // Кнопка продувки
         Rectangle {
             id: blowButton
             width: parent.width - 40

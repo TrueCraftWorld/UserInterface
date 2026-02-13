@@ -17,27 +17,44 @@ void InstrImageProvider::scanFiles()
     
     QStringList filters;
     filters << "*.png" << "*.PNG";
+
+    ///TODO зарефакторить - полученный ниже подход в случае расширения очень повторяем и несёт
+    /// в себе опасность итеративных одинаковых ошибок.
+    //получаем список фалов в корне, добавляем его как set в map под строкой, допустим, empty
+    //получаем список папок, добавляем их содержимое под названием папки
+    //получив имя, проверям его наличие в мапе кэша
+    //если нету
+    //проверям наличие папки (это символы до первого слеша), так получаем нужный сет, и проверяем в нём
+    //если нет - то если сильно хочется(но мне кажется это зло, т.к.errorProne со всех сторон)
+    //то ищем проверяем, добивая номерные нули.
+
+
     
     // Сканируем папку с инструментами
     QDir instrDir("/home/kikorik/FOTEK/Images/instruments");
     if (instrDir.exists()) {
-        s_knownFiles = instrDir.entryInfoList(filters, QDir::Files | QDir::NoDotAndDotDot | QDir::Readable);
-        qDebug() << "InstrImageProvider: Found" << s_knownFiles.size() << "instrument files in" << instrDir.absolutePath();
+        s_knownFiles = instrDir.entryInfoList(filters, QDir::Files
+                                                        | QDir::NoDotAndDotDot
+                                                        | QDir::Readable);
+        // qDebug() << "InstrImageProvider: Found" << s_knownFiles.size() << "instrument files in" << instrDir.absolutePath();
     } else {
-        qWarning() << "InstrImageProvider: Directory does not exist:" << instrDir.absolutePath();
+        // qWarning() << "InstrImageProvider: Directory does not exist:" << instrDir.absolutePath();
     }
     
     // Сканируем папку с режимами
     QDir modesDir("/home/kikorik/FOTEK/Images/modes");
     if (modesDir.exists()) {
-        QFileInfoList modeFiles = modesDir.entryInfoList(filters, QDir::Files | QDir::NoDotAndDotDot | QDir::Readable);
+        QFileInfoList modeFiles = modesDir.entryInfoList(filters,
+                                                        QDir::Files
+                                                         | QDir::NoDotAndDotDot
+                                                         | QDir::Readable);
         s_knownFiles.append(modeFiles);
-        qDebug() << "InstrImageProvider: Found" << modeFiles.size() << "mode files in" << modesDir.absolutePath();
+        // qDebug() << "InstrImageProvider: Found" << modeFiles.size() << "mode files in" << modesDir.absolutePath();
     } else {
-        qWarning() << "InstrImageProvider: Directory does not exist:" << modesDir.absolutePath();
+        // qWarning() << "InstrImageProvider: Directory does not exist:" << modesDir.absolutePath();
     }
     
-    qDebug() << "InstrImageProvider: Total" << s_knownFiles.size() << "image files loaded";
+    // qDebug() << "InstrImageProvider: Total" << s_knownFiles.size() << "image files loaded";
     
     s_filesScanned = true;
 }
@@ -48,7 +65,9 @@ InstrImageProvider::InstrImageProvider()
     scanFiles();
 }
 
-QPixmap InstrImageProvider::requestPixmap(const QString &id, QSize *size, const QSize &requestedSize)
+QPixmap InstrImageProvider::requestPixmap(const QString &id,
+                                            QSize *size,
+                                            const QSize &requestedSize)
 {
     static QSize defaultSize = QSize(800, 300);
     static double widthToHeight = 160.0/60.0;
@@ -85,15 +104,19 @@ QPixmap InstrImageProvider::requestPixmap(const QString &id, QSize *size, const 
     }
     
     // Проверка на нулевой индекс (например, monomode0, minstr0, bimode0)
+    // или на 1000 (NO_MODE - режим не выбран)
     // Извлекаем число из конца строки
     QString numPart;
     for (int i = id.length() - 1; i >= 0 && id[i].isDigit(); --i) {
         numPart.prepend(id[i]);
     }
-    if (!numPart.isEmpty() && numPart.toInt() == 0) {
-        if (size)
-            *size = mySize;
-        return emptyPixmap.scaled(mySize, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+    if (!numPart.isEmpty()) {
+        int numValue = numPart.toInt();
+        if (numValue == 0 || numValue == 1000) {
+            if (size)
+                *size = mySize;
+            return emptyPixmap.scaled(mySize, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+        }
     }
     
     // Проверяем кэш
@@ -109,9 +132,9 @@ QPixmap InstrImageProvider::requestPixmap(const QString &id, QSize *size, const 
                 m_cache.insert(id, pixmap);
                 return pixmap.scaled(mySize, Qt::KeepAspectRatio);
             } else {
-                qWarning() << "InstrImageProvider: Failed to load pixmap from" << item.absoluteFilePath();
-            }
+                // qWarning() << "InstrImageProvider: Failed to load pixmap from" << item.absoluteFilePath();
         }
+    }
     }
     
     // Если не найдено, пробуем с ведущими нулями (для файлов типа instr001.png)
@@ -144,7 +167,7 @@ QPixmap InstrImageProvider::requestPixmap(const QString &id, QSize *size, const 
                         QPixmap pixmap(item.absoluteFilePath());
                         if (!pixmap.isNull()) {
                             m_cache.insert(id, pixmap);
-                            qDebug() << "InstrImageProvider: Loaded" << id << "(as" << variant << ") from" << item.absoluteFilePath();
+                            // qDebug() << "InstrImageProvider: Loaded" << id << "(as" << variant << ") from" << item.absoluteFilePath();
                             return pixmap.scaled(mySize, Qt::KeepAspectRatio);
                         }
                     }
@@ -153,7 +176,9 @@ QPixmap InstrImageProvider::requestPixmap(const QString &id, QSize *size, const 
         }
     }
     
-    // Если не найдено, возвращаем пустой pixmap с предупреждением
-    qWarning() << "InstrImageProvider: Image not found for id:" << id << "(searched among" << s_knownFiles.size() << "files)";
-    return QPixmap().scaled(mySize, Qt::KeepAspectRatio);
+    // Если не найдено, возвращаем прозрачный pixmap с предупреждением
+    // qWarning() << "InstrImageProvider: Image not found for id:" << id << "(searched among" << s_knownFiles.size() << "files)";
+    if (size)
+        *size = mySize;
+    return emptyPixmap.scaled(mySize, Qt::KeepAspectRatio, Qt::SmoothTransformation);
 }

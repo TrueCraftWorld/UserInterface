@@ -6,14 +6,14 @@ SurgicalMode::SurgicalMode(const QString& name,
                            int maximum,
                            int minimum,
                            int id,
-                           const std::map<int, InstrInfo>& _instrs,
+                           const std::map<int, Onyx::InstrInfo>& _instrs,
                            int num,
                            const QString& brief,
                            const QString& descript,
                            bool isEndo) :
     m_maximumPower(maximum),
     m_minimumPower(minimum),
-    m_currentPower(1),
+    m_currentPower(1),  // Мощность по умолчанию = 1
     m_modeName(name),
     m_isCoag(isCoag),
     m_id(id),
@@ -23,9 +23,8 @@ SurgicalMode::SurgicalMode(const QString& name,
     m_isEndo(isEndo),
     m_InstrConstraints(_instrs)
 {
-    // Q_UNUSED(parent);
-    if (m_InstrConstraints.size())
-        setSelectedInstrIndex(0);
+    // Устанавливаем "Инструмент не выбран" (индекс = размер списка, ID = 1000)
+    setSelectedInstrIndex(m_InstrConstraints.size());
 }
 
 int SurgicalMode::maximumPower() const
@@ -77,8 +76,21 @@ int SurgicalMode::selectedInstrIndex() const
 
 bool SurgicalMode::setSelectedInstrIndex(int newSelectedInstrIndex)
 {
-    if (newSelectedInstrIndex >= m_InstrConstraints.size())
+    // Проверяем, что индекс не отрицательный
+    if (newSelectedInstrIndex < 0)
         return false;
+    
+    // Если индекс равен размеру списка, это "Инструмент не выбран" (ID = 1000)
+    if (static_cast<size_t>(newSelectedInstrIndex) == m_InstrConstraints.size()) {
+        m_selectedInstrIndex = newSelectedInstrIndex;
+        m_selectedInstrId = 1000;  // Специальный ID для "не выбран"
+        return true;
+    }
+    
+    // Проверяем, что индекс в пределах списка
+    if (static_cast<size_t>(newSelectedInstrIndex) > m_InstrConstraints.size())
+        return false;
+    
     m_selectedInstrIndex = newSelectedInstrIndex;
     //элементы map отсортированы по возрастанию ключа
     for (const auto& iter : m_InstrConstraints) {
@@ -104,7 +116,7 @@ bool SurgicalMode::setSelectedInstrId(int newSelectedInstrId)
     if (iter != m_InstrConstraints.end()) {
         m_selectedInstrId = newSelectedInstrId;
         int id = 0;
-        const InstrInfo& check = iter->second;
+        const Onyx::InstrInfo& check = iter->second;
         for (const auto& [key, item] : m_InstrConstraints)
         {
             if (check.id == item.id) {
@@ -117,12 +129,12 @@ bool SurgicalMode::setSelectedInstrId(int newSelectedInstrId)
     return false;
 }
 
-std::map<int, InstrInfo> SurgicalMode::InstrConstraints() const
+std::map<int, Onyx::InstrInfo> SurgicalMode::InstrConstraints() const
 {
     return m_InstrConstraints;
 }
 
-std::optional<InstrInfo> SurgicalMode::getConstraints(int index) const
+std::optional<Onyx::InstrInfo> SurgicalMode::getConstraints(int index) const
 {
     if (index >= m_InstrConstraints.size())
         return std::nullopt;
@@ -137,7 +149,7 @@ std::optional<InstrInfo> SurgicalMode::getConstraints(int index) const
     return std::nullopt;
 }
 
-void SurgicalMode::setInstrConstraints(const std::map<int, InstrInfo> &newInstrConstraints)
+void SurgicalMode::setInstrConstraints(const std::map<int, Onyx::InstrInfo> &newInstrConstraints)
 {
     m_InstrConstraints = newInstrConstraints;
 }

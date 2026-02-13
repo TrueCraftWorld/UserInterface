@@ -1,6 +1,6 @@
 #include "pedal.h"
 
-Pedal::Pedal(Pedal::PedalType pedId)
+Pedal::Pedal(Onyx::PedalType pedId)
     : m_pedType(pedId)
 {}
 
@@ -11,8 +11,8 @@ int Pedal::pedalType() const
 
 bool Pedal::setPedType(int newPedId)
 {
-    if (newPedId < Pedal::NO_PED || newPedId > Pedal::INSTR_BUTTON_MONO)
+    if (newPedId < Onyx::NO_PED || newPedId > Onyx::INSTR_BUTTON_MONO)
         return false;
-    m_pedType = static_cast<PedalType>(newPedId);
+    m_pedType = static_cast<Onyx::PedalType>(newPedId);
     return true;
 }

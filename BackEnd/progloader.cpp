@@ -1,7 +1,7 @@
 #include "progloader.h"
 #include "socket.h"
 #include <unordered_set>
-#include <cmath>
+#include <cstdlib>  // для abs()
 
 
 namespace {
@@ -21,6 +21,8 @@ void filterMapByKey(std::map<int, T>& map, const std::vector<int>& keys_to_keep)
         }
     }
 }
+
+using namespace Onyx;
 
 std::vector<int> parseCommaSeparatedNumbers(const QString& input) {
     std::vector<int> result;
@@ -56,22 +58,22 @@ QString makeCommaSeparatedNumbers(QList<int> list) {
     return res;
 }
 
-QString makeSocketName(SOCKET::SocType type) {
+QString makeSocketName(Onyx::SocType type) {
     QString socketName = "";
     switch (type) {
-    case SOCKET::EMPTY:
+    case Onyx::EMPTY:
         socketName = QString("EMPTY");
         break;
-    case SOCKET::BIPOLAR_1:
+    case Onyx::BIPOLAR_1:
         socketName = QString("БИ 1");
         break;
-    case SOCKET::BIPOLAR_2:
+    case Onyx::BIPOLAR_2:
         socketName = QString("БИ 2");
         break;
-    case SOCKET::MONOPOLAR_1:
+    case Onyx::MONOPOLAR_1:
         socketName = QString("МОНО 1");
         break;
-    case SOCKET::MONOPOLAR_2:
+    case Onyx::MONOPOLAR_2:
         socketName = QString("МОНО 2");
         break;
     }
@@ -145,8 +147,14 @@ bool hasNonZeroDigit(int number, int digitPosition) {
     // Приводим число к положительному виду для упрощения
     number = abs(number);
 
+    // Вычисляем 10^digitPosition целочисленным способом (без pow)
+    int powerOf10 = 1;
+    for (int i = 0; i < digitPosition; ++i) {
+        powerOf10 *= 10;
+    }
+
     // Делим число на 10^digitPosition, чтобы перенести нужный разряд в конец
-    int shiftedNumber = number / static_cast<int>(std::pow(10, digitPosition));
+    int shiftedNumber = number / powerOf10;
 
     // Если после сдвига число стало нулём, значит разряд отсутствует
     if (shiftedNumber == 0) {
@@ -196,10 +204,11 @@ ProgLoader::ProgLoader(QObject *parent)
     : QObject{parent}
 {
     if (m_dbReaderPtr.isNull())
-            m_dbReaderPtr = new DataBaseReader("/home/kikorik/FOTEK/someShadyDB.db");
+//            m_dbReaderPtr = new DataBaseReader("/home/kikorik/FOTEK/someShadyDB.db");
+        m_dbReaderPtr = new DataBaseReader("/home/kikorik/FOTEK/eshfDb.db");
 }
 
-void ProgLoader::saveCurrentState()
+void ProgLoader::slotSaveCurrentState()
 {
     if (m_socketModelPtr == nullptr || m_socketModelPtr->itemsMap() == nullptr) {
         // qWarning() << "Cannot save state: socket model not initialized";
@@ -220,7 +229,9 @@ void ProgLoader::saveCurrentState()
         auto socket = m_socketModelPtr->itemsMap()->at(i);
 
         // Проверяем, что режимы не null
-        if (socket.isNull() || socket->curCutMode().isNull() || socket->curCoagMode().isNull()) {
+        if (socket.isNull()
+            || socket->curCutMode().isNull()
+            || socket->curCoagMode().isNull()) {
             // qWarning() << "Socket" << i << "has null mode, skipping";
             continue;
         }
@@ -291,9 +302,9 @@ void ProgLoader::saveCurrentState()
 
         int pedalType = socket->pedal();
 
-        if (pedalType == Pedal::SINGLE_PED) {
+        if (pedalType == SINGLE_PED) {
             pedal1 = i;  // Номер сокета (0-3)
-        } else if (pedalType == Pedal::DOUBLE_PED) {
+        } else if (pedalType == DOUBLE_PED) {
             pedal2 = i;  // Номер сокета (0-3)
         }
         // INSTR_BUTTON_BI и INSTR_BUTTON_MONO игнорируем
@@ -349,13 +360,6 @@ bool ProgLoader::readPreviousSocketSettings()
     return false;
 }
 
-// void ProgLoader::removeSubProg(int index)
-// {
-//     if (m_socketModelPtr.isNull())
-//         return;
-//     m_socketModelPtr->removeSubProg(index);
-// }
-
 void ProgLoader::defaultSocketInit(bool clear)
 {
     std::vector<std::map<int, SockPtr>> socketMapVector;
@@ -401,7 +405,7 @@ void ProgLoader::defaultSocketInit(bool clear)
 
         //Шаг4---------------------------------------------------------
     QString queryConditionModes = "BI_MONO = %1 AND CUT_COAG = %2 AND id IN (%3)";
-    instrumConstraints = getConstarints(allowedModesId);
+    instrumConstraints = getConstraints(allowedModesId);
 
     //Шаг5---------------------------------------------------------
     //тут какой-то затуп с базой на каких-то прогах, разрешено всего несколько инструментов
@@ -424,7 +428,7 @@ void ProgLoader::defaultSocketInit(bool clear)
         socketMapVector.push_back(std::map<int, SockPtr>());
         std::map<int, SockPtr>& socketMap = socketMapVector[socketMapVector.size() - 1];
         for (int i = 0; i < 4; ++i) {
-            SOCKET::SocType type = SOCKET::SocType(i+1);
+            Onyx::SocType type = Onyx::SocType(i+1);
             SockPtr socket = SockPtr::create(type);
             socketMap[i] = socket;
 
@@ -436,7 +440,7 @@ void ProgLoader::defaultSocketInit(bool clear)
                 QList<QVariantList> modesList = m_dbReaderPtr->slotSendSelectQuery(QStringList{"Modes"},
                             QStringList{"MaxPower","Name_RU", "id", "Num", "Brief_RU", "Descript_RU", "ENDO_REG"},
                             queryConditionModes
-                                        .arg(socket->socketType() <= SOCKET::BIPOLAR_2 ? 0 : 1)
+                                        .arg(socket->socketType() <= Onyx::BIPOLAR_2 ? 0 : 1)
                                         .arg(halfSocket)
                                         .arg(makeCommaSeparatedNumbers(allowedModesId)));
 
@@ -485,7 +489,7 @@ void ProgLoader::defaultSocketInit(bool clear)
                 // Проверка для эндоскопических режимов: если мощность = 1, устанавливаем 11
                 auto mode = isCoag ? socket->curCoagMode() : socket->curCutMode();
                 if (!mode.isNull() && mode->isEndo()) {
-                    int endoCut = static_cast<int>(std::floor(defaultPower / 10.0));
+                    int endoCut = defaultPower / 10;  // Целочисленное деление вместо floor
                     int endoCoag = defaultPower % 10;
                     if (endoCut < 1) endoCut = 1;
                     else if (endoCut > ENDO_MAX) endoCut = ENDO_MAX;
@@ -502,7 +506,7 @@ void ProgLoader::defaultSocketInit(bool clear)
             bool cutEna = hasNonZeroDigit(progItem.at(29).toInt(), (8 - 2*i) );
             bool allowSock = cutEna || coagEna;
             socket->setAllowed(allowSock);
-            socket->setDisplayMode(SOCKET::S_COLLAPSED);
+            socket->setDisplayMode(Onyx::S_COLLAPSED);
         }
         instrMapVector.push_back(getInstrums());
     }
@@ -553,7 +557,7 @@ void ProgLoader::programmLoadSocketInit(int progId, bool clear)
 
     //Шаг4---------------------------------------------------------
     QString queryConditionModes = "BI_MONO = %1 AND CUT_COAG = %2 AND id IN (%3)";
-    instrumConstraints = getConstarints(allowedModesId);
+    instrumConstraints = getConstraints(allowedModesId);
 
     //Шаг5---------------------------------------------------------
     //тут какой-то затуп с базой на каких-то прогах, разрешено всего несколько инструментов
@@ -575,7 +579,7 @@ void ProgLoader::programmLoadSocketInit(int progId, bool clear)
         socketMapVector.push_back(std::map<int, SockPtr>());
         std::map<int, SockPtr>& socketMap = socketMapVector[socketMapVector.size() - 1];
         for (int i = 0; i < 4; ++i) {
-            SOCKET::SocType type = SOCKET::SocType(i+1);
+            Onyx::SocType type = Onyx::SocType(i+1);
             SockPtr socket = SockPtr::create(type);
             socketMap[i] = socket;
 
@@ -587,7 +591,7 @@ void ProgLoader::programmLoadSocketInit(int progId, bool clear)
                 QList<QVariantList> modesList = m_dbReaderPtr->slotSendSelectQuery(QStringList{"Modes"},
                             QStringList{"MaxPower","Name_RU", "id", "Num", "Brief_RU", "Descript_RU", "ENDO_REG"},
                             queryConditionModes
-                                        .arg(socket->socketType() <= SOCKET::BIPOLAR_2 ? 0 : 1)
+                                        .arg(socket->socketType() <= Onyx::BIPOLAR_2 ? 0 : 1)
                                         .arg(halfSocket)
                                         .arg(makeCommaSeparatedNumbers(allowedModesId)));
 
@@ -637,7 +641,7 @@ void ProgLoader::programmLoadSocketInit(int progId, bool clear)
                 // Проверка для эндоскопических режимов: если мощность = 1, устанавливаем 11
                 auto mode = isCoag ? socket->curCoagMode() : socket->curCutMode();
                 if (!mode.isNull() && mode->isEndo()) {
-                    int endoCut = static_cast<int>(std::floor(defaultPower / 10.0));
+                    int endoCut = defaultPower / 10;  // Целочисленное деление вместо floor
                     int endoCoag = defaultPower % 10;
                     if (endoCut < 1) endoCut = 1;
                     else if (endoCut > ENDO_MAX) endoCut = ENDO_MAX;
@@ -653,7 +657,7 @@ void ProgLoader::programmLoadSocketInit(int progId, bool clear)
             bool cutEna = hasNonZeroDigit(progItem.at(29).toInt(), (8 - 2*i) );
             bool allowSock = cutEna || coagEna;
             socket->setAllowed(allowSock);
-            socket->setDisplayMode(SOCKET::S_COLLAPSED);
+            socket->setDisplayMode(Onyx::S_COLLAPSED);
         }
         instrMapVector.push_back(getInstrums());
     }
@@ -701,22 +705,22 @@ QMap<int, QString> ProgLoader::getScopes ()
     return scopeList;
 }
 
-std::map<int, std::map<int, InstrInfo> > ProgLoader::getConstarints(const QList<int>& idList)
+std::map<int, std::map<int, Onyx::InstrInfo> > ProgLoader::getConstraints(const QList<int>& idList)
 {
-    std::map<int, std::map<int, InstrInfo> > result;
+    std::map<int, std::map<int, Onyx::InstrInfo> > result;
     QString queryCondition = "Mode_ID = %1";
 
     for (int i : idList) {
         QList<QVariantList> intstrListForMode = m_dbReaderPtr->slotSendSelectQuery(QStringList{"ModInstr"},
                                                                             QStringList{"Instr_ID","Min_Power","Mid_Power","Max_Power"},
                                                                             queryCondition.arg(i));
-        std::map<int, InstrInfo>& modeMap = result[i];
+        std::map<int, Onyx::InstrInfo>& modeMap = result[i];
         for (const auto& item : intstrListForMode) {
             int a = item.at(0).toInt();
             int b = item.at(1).toInt();
             int c = item.at(2).toInt();
             int d = item.at(3).toInt();
-            InstrInfo bla = InstrInfo(a,
+            Onyx::InstrInfo bla = Onyx::InstrInfo(a,
                                       b,
                                       c,
                                       d);
@@ -860,12 +864,12 @@ void ProgLoader::loadCurrentState()
                 continue;
 
             // Определяем тип педали для этого сокета
-            int pedalType = Pedal::NO_PED;
+            int pedalType = Onyx::NO_PED;
 
             if (i == pedal1Socket) {
-                pedalType = Pedal::SINGLE_PED;
+                pedalType = Onyx::SINGLE_PED;
             } else if (i == pedal2Socket) {
-                pedalType = Pedal::DOUBLE_PED;
+                pedalType = Onyx::DOUBLE_PED;
             }
 
             socket->setPedal(pedalType);

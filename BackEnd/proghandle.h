@@ -23,11 +23,12 @@ public:
     Q_INVOKABLE void loadRecommendedProg(int recomProgId, bool clear = true);
     Q_INVOKABLE void removeSubProg();
     Q_INVOKABLE void loadUserProg(int recomProgId);
-    Q_INVOKABLE void loadEmptyProg();
     Q_INVOKABLE void permitAll();
     Q_INVOKABLE void saveProg(int id, const QString& name);
     Q_INVOKABLE void addEmptyDefault();
     Q_INVOKABLE void copyCurrent();
+    Q_INVOKABLE QString readTextFile(const QString& filePath);
+    Q_INVOKABLE QStringList scanVideoFiles(const QString& folderPath);
 
     QStringList scopeNameList() const;
     QStringList progNameList() const;

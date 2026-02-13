@@ -7,7 +7,7 @@ Popup {
     property int socId: -1
     property int modeIndex: -1
     property bool isCoag: false
-    property var modeEditor: Editor
+    readonly property var modeEditor: Editor
     property string imageNameTemplate
     
     id: root
@@ -43,6 +43,7 @@ Popup {
                 // rowIndex: i
             })
         }
+        
         instrumListView.innerModel = combinedModel
     }
 
@@ -64,11 +65,6 @@ Popup {
         //запоминаем тот индекс, что был изначально, чтобы отметить элемент
         initiallySelectedItem = modeEditor.currentInstrIndex
     }
-    
-    // onClosed: {
-    //     // Разрешаем активацию при закрытии popup
-    //     control.enableActivation = true
-    // }
     
     Rectangle {
         id: back
@@ -384,12 +380,6 @@ Popup {
                         power: modeEditor.lowPowerBound
                         selected: (modeEditor.currentPower === power)
                         isEndo: modeEditor.isEndo
-                        // onPowerChosen: {
-                        //     if (modeEditor.midPowerBound === 0) {
-                        //         modeEditor.updateParameter("currentpower", but1.power)
-                        //     }
-                        //     console.log("1 midPower = ", modeEditor.midPowerBound)
-                        // }
                     }
                     PowerRect {
                         id: but2
@@ -401,13 +391,6 @@ Popup {
                         power: modeEditor.midPowerBound
                         selected: (modeEditor.currentPower === power)
                         isEndo: modeEditor.isEndo
-                        //сам PowerRect становится невидимый, если мощность ноль, на него нельзя нажать и получить 0
-                        // onPowerChosen: {
-                        //     if (modeEditor.midPowerBound !== 0) {
-                        //         modeEditor.updateParameter("currentpower", but2.power)
-                        //     }
-                        //     console.log("2 midPower = ", modeEditor.midPowerBound)
-                        // }
                     }
                     PowerRect {
                         id: but3

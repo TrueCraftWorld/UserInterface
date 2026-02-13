@@ -206,25 +206,9 @@ Rectangle {
 
             anchors.fill: parent
             onClicked: {
-                console.log("initial PedClick")
+//                console.log("initial PedClick")
                 pedalRoot.pedalMenuRequest()
             }
         }
     }
-    // MouseArea {
-    //     id: pressHandle
-    //     anchors.fill: parent
-    //     // z: 1
-    //     propagateComposedEvents: true
-        
-    //     onPressed: {
-    //         mouse.accepted = false  // Пропускаем событие для обработки свайпов
-    //     }
-        
-    //     onClicked: {
-    //         pedalRoot.pedalMenuRequest()
-    //         mouse.accepted = true
-    //     }
-    // }
-
 }

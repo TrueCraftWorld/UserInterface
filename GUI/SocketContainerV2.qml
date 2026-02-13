@@ -6,6 +6,8 @@ Rectangle {
 
     signal progAddRequest(int type)
     property var innerModel
+    property alias modeDialogOpened: modeDialog.opened
+    property alias instrDialogOpened: instrDialog.opened
     color: "gray"
     
     ColumnLayout {
@@ -68,7 +70,11 @@ Rectangle {
                     }
                     MouseArea {
                         anchors.fill: parent
-                        onClicked: progSelector.open()
+
+                        onClicked:  {
+                            periphHandle.enableActivation = true;
+                            progSelector.open()
+                        }
                     }
                 }
                 Item {
@@ -93,6 +99,7 @@ Rectangle {
                     }
                     MouseArea {
                         anchors.fill: parent
+
                         onClicked: recomHandle.removeSubProg()
                     }
                 }
@@ -131,17 +138,38 @@ Rectangle {
         }
     }
     Connections {
+        target: instrDialog
+        function onClosed() {
+            periphHandle.enableActivation = true;
+        }
+    }
+    Connections {
+        target: progSelector
+        function onClosed() {
+            periphHandle.enableActivation = true;
+        }
+    }
+    Connections {
+        target: modeDialog
+        function onClosed() {
+            periphHandle.enableActivation = true;
+        }
+    }
+
+    Connections {
         target: repeat
         function onInstrumDialogRequest(soc, mod, iscoag) {
             instrDialog.socId = soc
             instrDialog.modeIndex = mod
             instrDialog.isCoag = iscoag
+            periphHandle.enableActivation = false;
             instrDialog.open()
         }
         function onModeDialogRequest(soc, mod, iscoag) {
             modeDialog.socId = soc
             modeDialog.modeIndex = mod
             modeDialog.isCoag = iscoag
+            periphHandle.enableActivation = false;
             modeDialog.open()
         }
     }

@@ -5,6 +5,7 @@
 #include <QStringList>
 #include <QSharedPointer>
 
+#include "Structures.h"
 #include "surgicalmode.h"
 
 class HalfSocket
@@ -13,10 +14,10 @@ public:
     HalfSocket(bool isCoag, int state = 1);
 
 public:
-    /*! Перечисление возможных состояний сокета */
-    enum HS_State {HS_DISABLED, /*!< Выключен, активация запрещена */
-                    HS_ENABLED, /*!< Включен, активация разрешена */
-                        };
+    // /*! Перечисление возможных состояний сокета */
+    // enum HS_State {HS_DISABLED, /*!< Выключен, активация запрещена */
+    //                 HS_ENABLED, /*!< Включен, активация разрешена */
+    //                     };
 
     /**
      * @brief Возвращает внутренний индекс текущего  режима
@@ -33,7 +34,7 @@ public:
      * @brief Возвращает статус сокета
      * @return тип
      */
-    HS_State halfSocketState() const;
+    Onyx::HS_State halfSocketState() const;
 
     /**
      * @brief возвращает название текущего режима
@@ -67,7 +68,7 @@ public:
      * @brief смена текущего состояния сокета
      * @param newSocketStatus
      */
-    void setHalfSocketState(HS_State newSocketStatus);
+    void setHalfSocketState(Onyx::HS_State newSocketStatus);
 
     /**
      * @brief Геттер режима

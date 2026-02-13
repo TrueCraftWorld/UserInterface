@@ -2,15 +2,12 @@
     <qresource prefix="/">
         <file>Collapsible.qml</file>
         <file>DummySocket.qml</file>
-        <file>SocketContainer.qml</file>
         <file>StatusBar.qml</file>
         <file>SocketEditor.qml</file>
         <file>SocketView.qml</file>
-        <file>EditorPopup.qml</file>
         <file>HalfSocket.qml</file>
         <file>InstrumRect.qml</file>
         <file>ModePowerRect.qml</file>
-        <file>LeftPanel.qml</file>
         <file>NeutralEl.qml</file>
         <file>Argon.qml</file>
         <file>SocketRepeater.qml</file>
@@ -25,12 +22,18 @@
         <file>MenuLoader.qml</file>
         <file>Pedal.qml</file>
         <file>PedalEditor.qml</file>
-        <file>PedalPanel.qml</file>
         <file>ProgAdditionPop.qml</file>
         <file>Activation.qml</file>
         <file>PedalContainer.qml</file>
         <file>PedalRepeater.qml</file>
         <file>GradientBack.qml</file>
         <file>PedalDrawer.qml</file>
+        <file>ArgCylinder.qml</file>
+        <file>PeripheryDrawer.qml</file>
+        <file>PeripheryPanel.qml</file>
+        <file>NeutralButton.qml</file>
+        <file>VideoPlayer.qml</file>
+        <file>SystemMonitor.qml</file>
+        <file>SecretKeysWindow.qml</file>
     </qresource>
 </RCC>

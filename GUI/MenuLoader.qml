@@ -46,16 +46,27 @@ Item {
                 menuLoader.source = "qrc:/SettingsMain.qml"
                         })
             }
-                    if (menuLoader.item.secretKeysButtonPressed) {
-                        menuLoader.item.secretKeysButtonPressed.connect(function() {
-                menuLoader.source = "qrc:/SecretKeysWindow.qml"
-                        })
+        }
+        function onUserButtonPressed() {
+            if (menuLoader.item instanceof MainMenu) { // Проверяем, что загружен именно Text
+                menuLoader.source = "qrc:/UserProgsSelector.qml"
             }
-                    if (menuLoader.item.exitButtonPressed) {
-                        menuLoader.item.exitButtonPressed.connect(function() {
-                            closeMe()
+        }
+
+        function onReturnButtonPressed() {
+            if (menuLoader.item instanceof MainMenu)
+                ;
+            else {
+                if (menuLoader.item.secretKeysButtonPressed) {
+                        menuLoader.item.secretKeysButtonPressed.connect(function() {
+                             menuLoader.source = "qrc:/SecretKeysWindow.qml"
                         })
-                    }
+                 }
+                 if (menuLoader.item.exitButtonPressed) {
+                      menuLoader.item.exitButtonPressed.connect(function() {
+                          closeMe()
+                      })
+                  }
                 } catch(e) {
                     // Игнорируем ошибки подключения
                 }

@@ -4,10 +4,14 @@
 #include <QObject>
 #include <QPointer>
 #include <map>
+#include <array>
 
 #include "instrument.h"
 #include "databasereader.h"
 #include "socketmodel.h"
+#include "userprogsloadmodel.h"
+// bi1CutInstr = "0", bi1CutMode = "1000", bi1CutPower = "1";
+
 
 
 class ProgLoader : public QObject
@@ -15,7 +19,7 @@ class ProgLoader : public QObject
 	Q_OBJECT
 public:
 	explicit ProgLoader(QObject *parent = nullptr);
-	    /**
+	/**
 	 * @brief Сохраняет текущее состояние всех сокетов в БД (таблица Lists, id=1000)
 	 */
 
@@ -27,6 +31,7 @@ signals:
 public:
 
 	bool readPreviousSocketSettings();
+
 	void defaultSocketInit(bool clear = true);
 	// void removeSubProg(int index);
 	/**
@@ -49,7 +54,7 @@ public:
 	 *         6.3 инициализация сокета полученным списком допустимыз режимов и инструментов
 	 *         6.4 установка режима, мощностии и инструмента по умолчанию
 	 */
-	void programmLoadSocketInit(int progId, bool clear = true);
+	bool programmLoadSocketInit(int progId, bool clear = true);
 
 	/**
 	 * @brief getListOfPrograms получение списка доспуных программ в категории
@@ -60,19 +65,32 @@ public:
 
 	QMap<int, QString> getScopes();
 
-	 /**
+	std::map<int, QString> getUserProgList();
+	// QMap<int, QString> getUserProgList();
+
+	void saveUserProg(const QString& name);
+
+	void deleteUserProg(int id);
+
+	/**
 	 * @brief Загружает последнее сохранённое состояние из БД
 	 */
-	void loadCurrentState();
+	bool loadCurrentState();
 
 	std::map<int, std::map<int, Onyx::InstrInfo>> getConstraints(const QList<int> &idList);
 
 	void setSocketModelPtr(QSharedPointer<SocketModel> newSocketModelPtr);
 
+public slots:
+	 bool loadUserProg(int userProgId);
+
 private:
 	std::map<int, InstrPtr> getInstrums();
+	void saveProg(const QString& name = "");
+
 	QPointer<DataBaseReader> m_dbReaderPtr;
 	QSharedPointer<SocketModel> m_socketModelPtr;
+	QSharedPointer<UserProgsLoadModel> m_userProgModelPtr;
 };
 
 #endif // PROGLOADER_H

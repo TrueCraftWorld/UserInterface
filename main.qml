@@ -115,32 +115,31 @@ Window {
       }
    }
 
-   // Overlay для закрытия drawer'ов при касании вне их
-   Item {
-      id: drawerOverlay
-      anchors.fill: parent
-      z: 1  // Выше основного контента, но drawer'ы будут иметь z намного выше (по умолчанию 10000)
-      visible: argNeutDrawer.opened || pedDrawer.opened || leftDrawer.opened
-      
-      Rectangle {
-         anchors.fill: parent
-         color: "black"
-         opacity: 0.5
-         
-         MouseArea {
-            anchors.fill: parent
-            onPressed: {
-               mouse.accepted = true
-            }
-            onReleased: {
-               if (argNeutDrawer.opened) argNeutDrawer.close()
-               if (pedDrawer.opened) pedDrawer.close()
-               if (leftDrawer.opened) leftDrawer.close()
-               mouse.accepted = true
-            }
-         }
+   Dialog {
+      readonly property string progName: progNameInput.text
+      id: saveDialog
+      width: 0.8 * parent.width
+      title: qsTr("Укажите название программы")
+      // footer: ""
+      standardButtons: Dialog.Ok | Dialog.Cancel
+      contentItem: TextInput {
+         id: progNameInput
+         width: 0.7 * parent.width
+         anchors.centerIn: parent
+         color: "white"
       }
+      anchors.centerIn: parent
    }
+   Connections {
+      target: saveDialog
+      function onAccepted() {
+         recomHandle.saveProg(saveDialog.progName)
+      }
+      function onOpened() {
+         saveDialog.progName = ""
+      }
+    }
+   // Overlay для закрытия drawer'ов при касании вне их
 
    Connections {
       target: leftDrawer
@@ -184,6 +183,32 @@ Window {
       target: argNeutralPanel
       function onOpenPeriphDrawer() {
          argNeutDrawer.open()
+      }
+   }
+
+   Item {
+      id: drawerOverlay
+      anchors.fill: parent
+      z: 1  // Выше основного контента, но drawer'ы будут иметь z намного выше (по умолчанию 10000)
+      visible: argNeutDrawer.opened || pedDrawer.opened || leftDrawer.opened
+      
+      Rectangle {
+         anchors.fill: parent
+         color: "black"
+         opacity: 0.5
+         
+         MouseArea {
+            anchors.fill: parent
+            onPressed: {
+               mouse.accepted = true
+            }
+            onReleased: {
+               if (argNeutDrawer.opened) argNeutDrawer.close()
+               if (pedDrawer.opened) pedDrawer.close()
+               if (leftDrawer.opened) leftDrawer.close()
+               mouse.accepted = true
+            }
+         }
       }
    }
 
@@ -353,6 +378,9 @@ Window {
       target: statusDummy
       function onDrawerCalled() {
          leftDrawer.open()
+      }
+      function onSaveCalled() {
+         saveDialog.open()
       }
    }
    Connections {

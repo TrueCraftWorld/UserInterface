@@ -11,6 +11,18 @@
 
 constexpr int ENDO_MAX = 3;
 
+// struct SocketStrings {
+//     std::array<QString, 3> bi1Cut  = {"0","1000","1"};
+//     std::array<QString, 3> bi1Coag = {"0","1000","1"};
+//     std::array<QString, 3> bi2Cut  = {"0","1000","1"};
+//     std::array<QString, 3> bi2Coag = {"0","1000","1"};
+//     std::array<QString, 3> mono1Cut  = {"0","1000","1"};
+//     std::array<QString, 3> mono1Coag = {"0","1000","1"};
+//     std::array<QString, 3> mono2Cut  = {"0","1000","1"};
+//     std::array<QString, 3> mono2Coag = {"0","1000","1"};
+// };
+using SocketStrings = std::array<std::array<QString, 3>, 8>; //instrId, modeId, power
+
 class SocketModel : public QAbstractListModel
 {
     Q_OBJECT
@@ -29,6 +41,7 @@ public:
         SocketUartInfo,
         CoagModeIndex,
         CoagModeId,
+        CoagModeIdList,
         CoagModeNum,
         CoagModeBrief,
         CoagModeDescript,
@@ -40,10 +53,14 @@ public:
         CoagModeInstrImage,
         CoagModeInstrIndex,
         CoagModeInstrID,
+        CoagModeInstrIdList,
+        CoagInstrIdList, //это список для всего сокета, а выше для конкретного режима
         CoagModeInstrNum,
         CoagModeIsEndo,
+        CoagModesNames,
         CutModeIndex,
         CutModeId,
+        CutModeIdList,
         CutModeNum,
         CutModeBrief,
         CutModeDescript,
@@ -55,10 +72,11 @@ public:
         CutModeInstrImage,
         CutModeInstrIndex,
         CutModeInstrID,
+        CutModeInstrIdList,
+        CutInstrIdList,
         CutModeInstrNum,
         CutModeIsEndo,
         CutModesNames,
-        CoagModesNames,
     };
     Q_ENUM(SocketRoles)
 
@@ -109,6 +127,9 @@ public:
                     const std::vector<std::map<int, InstrPtr >> &instrMapVect,
                     bool add = false);
 
+    int subProgIdx() const;
+    int subProgCount() const;
+    void setSubProgIdx(int newIndex);
 signals:
     void subProgIdxChanged();
     void subProgCountChanged();
@@ -120,13 +141,11 @@ private:
                  const std::map<int, InstrPtr > &newInstrumMap);
 
     virtual QHash<int, QByteArray> roleNames() const override final;
-    int subProgIdx() const;
-    int subProgCount() const;
 
-    void setSubProgIdx(int newIndex);
     int roleIntByName(const QString& name);
 
     void socketCollapser(int expandedSocket);
+
     /**
      * @brief pedalRemover удалятор педалей из сокетов
      * @param socketToSkip - айди сокета, который не участвует в удалении ( в него мы педаль добавили)
@@ -138,6 +157,7 @@ private:
      * @brief populateRoles - метамагическая запонялка имён ролей по именам енума ролей
      */
     void populateRoles();
+    std::vector<SocketStrings> getDatabaseText();
 
 //поля
 private:

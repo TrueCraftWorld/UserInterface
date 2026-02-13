@@ -128,8 +128,8 @@ private:
     int m_maximumPower;
     int m_minimumPower;
     int m_currentPower;
-    int m_selectedInstrId;
-    int m_selectedInstrIndex;
+    int m_selectedInstrId = -1;
+    int m_selectedInstrIndex = -1;
     // QString m_curInstrN?ame;
     QString m_modeName;
     bool m_isCoag;

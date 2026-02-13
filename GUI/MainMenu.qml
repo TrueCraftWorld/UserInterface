@@ -8,6 +8,7 @@ Item {
     id: settinsScreen
     signal recommendButtonPressed()
     signal settingsButtonPressed()
+    signal userButtonPressed()
     signal exitButtonPressed()
     signal secretKeysButtonPressed()
     
@@ -54,76 +55,73 @@ Item {
         rowSpacing: 20
         clip: false  // Не обрезаем - позволяем теням отображаться
 
-        Item {
-            width: 380
-            height: 280
-            clip: true
-            
-            SButton {
-                id: wifiButton
-//                style: "btn-outline-primary lg"
-                style: "btn-primary lg"           // Попробуйте: btn-primary, btn-secondary, btn-info, btn-light
-                width: parent.width
-                height: parent.height
-                text: qsTr("Рекомендованные")
-                onClicked: recommendButtonPressed()
-            }
+        width: parent.width
+        rowSpacing: 15
+
+        SButton {
+            id: wifiButton
+            style: "btn-outline-primary lg"
+            Layout.alignment: Qt.AlignHCenter | Qt.AlignTop
+            Layout.preferredWidth: 320
+            Layout.preferredHeight: 120
+
+            text: qsTr("Рекомендованные программы")
+            onClicked: recommendButtonPressed()
         }
 
-        Item {
-            width: 380
-            height: 280
-            clip: true
+        SButton {
+            id: userProgButton
+            style: "btn-outline-primary lg"
+            Layout.alignment: Qt.AlignHCenter | Qt.AlignTop
+            Layout.preferredWidth: 320
+            Layout.preferredHeight: 120
+
+            onClicked: userButtonPressed()
+            text: qsTr("Пользовательские программы")
+        }
+
+        SButton {
+            id: updateButton
+            style: "btn-outline-primary lg"
+            Layout.alignment: Qt.AlignHCenter | Qt.AlignTop
+            Layout.preferredWidth: 320
+            Layout.preferredHeight: 120
+
+            onClicked: settingsButtonPressed()
+            text: qsTr("Настройки ...")
+        }
             
-            SButton {
-                id: updateButton
+        SButton {
+            id: videoButton
+            style: "btn-primary lg"           // Попробуйте: btn-primary, btn-secondary, btn-info, btn-light
 //                style: "btn-outline-primary lg"
-                style: "btn-primary lg"           // Попробуйте: btn-primary, btn-secondary, btn-info, btn-light
-                width: parent.width
-                height: parent.height
-                onClicked: settingsButtonPressed()
-                text: qsTr("Настройки ...")
-            }
+            width: parent.width
+            height: parent.height
+            onClicked: settinsScreen.videoPlayerVisible = true
+            text: qsTr("Видео 🎬")
+        }
+
+        SButton {
+            id: secretKeysButton
+            style: "btn-primary lg"
+            width: parent.width
+            height: parent.height
+            onClicked: secretKeysButtonPressed()
+            text: qsTr("Секретные ключи 🔐")
         }
         
-        Item {
-            width: 380
-            height: 280
-            clip: true
-            
-            SButton {
-                id: videoButton
-                style: "btn-primary lg"           // Попробуйте: btn-primary, btn-secondary, btn-info, btn-light
-//                style: "btn-outline-primary lg"
-                width: parent.width
-                height: parent.height
-                onClicked: settinsScreen.videoPlayerVisible = true
-                text: qsTr("Видео 🎬")
-            }
-        }
         
         Item {
-            width: 380
-            height: 280
-            clip: true
-            
-            SButton {
-                id: secretKeysButton
-                style: "btn-primary lg"
-                width: parent.width
-                height: parent.height
-                onClicked: secretKeysButtonPressed()
-                text: qsTr("Секретные ключи 🔐")
-            }
+            id: filler
+            Layout.fillHeight: true
+            Layout.fillWidth: true
         }
     }
-    
-    // Видеопроигрыватель
     VideoPlayer {
         id: videoPlayer
         anchors.fill: parent
         visible: settinsScreen.videoPlayerVisible
         z: 1000
         onCloseRequested: settinsScreen.videoPlayerVisible = false
-    }
+   }
 }

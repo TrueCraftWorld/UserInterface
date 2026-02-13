@@ -19,7 +19,7 @@ std::vector<int> m_rolesSaveTriggered = {
     SocketModel::SocketRoles::CutModePower,
     SocketModel::SocketRoles::CoagModeInstrNum,
     SocketModel::SocketRoles::CutModeInstrNum,
-    SocketModel::SocketRoles::SocketPedal,
+    SocketModel::SocketRoles::SocketPedal
 };
 
 ControlCenter::ControlCenter(QObject *parent)
@@ -62,8 +62,10 @@ void ControlCenter::init()
     m_progLoader->setSocketModelPtr(m_socketModel);
     m_saveTimer->setSingleShot(true);
     m_saveTimer->setInterval(2000);  // 2 секунды
+    m_socketModel->blockSignals(true);
     prepareConnectios();
     initSockets();
+    m_socketModel->blockSignals(false);
 }
 
 void ControlCenter::makeHandleConnections()
@@ -82,12 +84,23 @@ void ControlCenter::makeHandleConnections()
         m_handle->setProgList(m_progLoader->getListOfPrograms(id));
     });
 
+    connect(m_handle, &ProgHandle::signalUserProgsRequest,
+            this, [this] () {
+        qDebug() << " lamba signalUserProgsRequest";
+        m_handle->setUserProgList(m_progLoader->getUserProgList());
+    });
+
+    connect(m_handle, &ProgHandle::signalUserProgChosen,
+            m_progLoader, &ProgLoader::loadUserProg);
+
     connect(m_handle, &ProgHandle::signalAddEmptyDefault,
             m_progLoader, &ProgLoader::defaultSocketInit);
 
+    connect(m_handle, &ProgHandle::signalSaveName,
+            m_progLoader, &ProgLoader::saveUserProg);
+
     connect(m_handle, &ProgHandle::signalCopyCurrent,
             m_socketModel.data(), &SocketModel::copyCurrentList);
-
 }
 
 QPointer<SocketModeEditor> ControlCenter::getModeEditor() const
@@ -97,8 +110,9 @@ QPointer<SocketModeEditor> ControlCenter::getModeEditor() const
 
 void ControlCenter::initSockets()
 {
-    m_progLoader->defaultSocketInit();
-    m_progLoader->loadCurrentState();
+    if (!m_progLoader->loadCurrentState())
+        m_progLoader->defaultSocketInit();
+
     m_handle->setScopeNameList(m_progLoader->getScopes());
 }
 
@@ -116,6 +130,7 @@ void ControlCenter::prepareConnectios()
                 scheduleSave();
             }
         });
+
     connect(m_socketModel.data(), &SocketModel::dataChanged,
             this, [this] (const QModelIndex&, const QModelIndex&, const QVector<int>& roles) {
         if (roles.empty()) {
@@ -143,8 +158,8 @@ void ControlCenter::prepareConnectios()
                 return;
             }
         }
-
     });
+    connect(m_socketModel.data(), &SocketModel::subProgCountChanged, this, &ControlCenter::scheduleSave);
 }
 
 QPointer<ProgHandle> ControlCenter::getHandle() const
@@ -156,8 +171,11 @@ void ControlCenter::scheduleSave()
 {
     //переделал так - если уже бежит таймер, то пусть бежит. сохранится всё скопом
     //если не бежит - запустим
-    if (!m_saveTimer->isActive())
+    qDebug() << "scheduleSave";
+    if (!m_saveTimer->isActive() || m_saveTimer->remainingTime() < 10) {
+        m_saveTimer->stop();
         m_saveTimer->start();
+    }
 }
 
 void ControlCenter::setLinkStm(LinkStm* linkStm)

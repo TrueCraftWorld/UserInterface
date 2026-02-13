@@ -4,7 +4,7 @@ import StratifyLabs.UI 2.0
 Rectangle {
     id: statusRoot
     signal drawerCalled()
-    signal savePressed()
+    signal saveCalled()
     property alias text: mainText.text
 
     border {
@@ -21,11 +21,9 @@ Rectangle {
         iconString: Fa.Icon.bars
         style: "btn-naked"
 
-            onClicked: {
-                statusRoot.drawerCalled()
-            }
-
-
+        onClicked: {
+            statusRoot.drawerCalled()
+        }
     }
     SText {
         id: mainText
@@ -41,9 +39,9 @@ Rectangle {
         iconString: Fa.Icon.save
         style: "btn-naked"
 
-            onClicked: {
-                statusRoot.savePressed()
-            }
+        onClicked: {
+            statusRoot.saveCalled()
+        }
     }
 
 }

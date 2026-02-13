@@ -1,3 +1,4 @@
+#include <QDebug>
 #include "proghandle.h"
 #include <QFile>
 #include <QTextStream>
@@ -5,6 +6,7 @@
 #include <QDir>
 #include <QStringList>
 
+#include "proghandle.h"
 
 ProgHandle::ProgHandle(QObject *parent)
     : QObject{parent}
@@ -31,14 +33,28 @@ void ProgHandle::removeSubProg()
     emit signalRemoveSub();
 }
 
-void ProgHandle::loadUserProg(int recomProgId)
+void ProgHandle::loadUserProg(int progIndex)
 {
-    emit signalUserProgChosen(recomProgId);
+    if (m_userProgs.size() <= static_cast<size_t>(progIndex))
+        return;
+
+    auto iter = m_userProgs.cbegin();
+    for (int i = 0; i < progIndex; ++i) {
+        iter++;
+    }
+
+    emit signalUserProgChosen(iter->first);
 }
 
 void ProgHandle::saveProg(int id, const QString &name)
 {
     emit signalSave(id, name);
+}
+
+void ProgHandle::saveProg(const QString &name)
+{
+    emit signalSaveName(name);
+    qDebug() << "saving" << name;
 }
 
 void ProgHandle::addEmptyDefault()
@@ -49,6 +65,12 @@ void ProgHandle::addEmptyDefault()
 void ProgHandle::copyCurrent()
 {
     emit signalCopyCurrent();
+}
+
+void ProgHandle::userProgs()
+{
+    qDebug() << "call userProgs";
+    emit signalUserProgsRequest();
 }
 
 void ProgHandle::permitAll()
@@ -108,6 +130,23 @@ void ProgHandle::setScopeNameList(QMap<int, QString> scopes)
     // m_scopeNameList = m_scopes.values();
     setScopeIdx(0);
     emit scopeNameList();
+}
+
+QStringList ProgHandle::userProgList() const
+{
+    QStringList res;
+    for (const auto& item : m_userProgs) {
+        res.push_back(item.second);
+    }
+    return res;
+}
+
+void ProgHandle::setUserProgList(const std::map<int, QString> &progs)
+{
+    qDebug() << "setUserProgList";
+
+    m_userProgs = (progs);
+    emit userProgListChanged();
 }
 
 QString ProgHandle::readTextFile(const QString& filePath)

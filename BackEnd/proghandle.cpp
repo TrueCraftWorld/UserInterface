@@ -1,4 +1,10 @@
 #include <QDebug>
+#include "proghandle.h"
+#include <QFile>
+#include <QTextStream>
+#include <QDebug>
+#include <QDir>
+#include <QStringList>
 
 #include "proghandle.h"
 
@@ -141,4 +147,51 @@ void ProgHandle::setUserProgList(const std::map<int, QString> &progs)
 
     m_userProgs = (progs);
     emit userProgListChanged();
+}
+
+QString ProgHandle::readTextFile(const QString& filePath)
+{
+    QFile file(filePath);
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        qWarning() << "ProgHandle: Cannot open file:" << filePath;
+        return QString();
+    }
+    
+    QTextStream in(&file);
+    QString content = in.readAll();
+    file.close();
+    
+    return content;
+}
+
+QStringList ProgHandle::scanVideoFiles(const QString& folderPath)
+{
+    QDir dir(folderPath);
+    if (!dir.exists()) {
+        qWarning() << "ProgHandle: Video folder does not exist:" << folderPath;
+        return QStringList();
+    }
+    
+    // Поддерживаемые форматы видео
+    QStringList filters;
+    filters << "*.mp4" << "*.MP4"
+            << "*.avi" << "*.AVI"
+            << "*.mkv" << "*.MKV"
+            << "*.mov" << "*.MOV"
+            << "*.wmv" << "*.WMV"
+            << "*.flv" << "*.FLV"
+            << "*.webm" << "*.WEBM"
+            << "*.m4v" << "*.M4V"
+            << "*.mpeg" << "*.MPEG"
+            << "*.mpg" << "*.MPG";
+    
+    dir.setNameFilters(filters);
+    dir.setFilter(QDir::Files | QDir::Readable);
+    dir.setSorting(QDir::Name);
+    
+    QStringList videoFiles = dir.entryList();
+    
+    qDebug() << "ProgHandle: Found" << videoFiles.size() << "video files in" << folderPath;
+    
+    return videoFiles;
 }

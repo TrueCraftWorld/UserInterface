@@ -1,7 +1,7 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 
-Button {
+Rectangle {
     id: neutButRoot
     property color borderColor
     property int borderWidth
@@ -9,77 +9,189 @@ Button {
     property color theColor
     property color innerTextColor
     property alias innerText: optionalText.text
-    property int neutRadius: 12
-    property alias radius : backRect.radius
+    property int innerTextFontSize: 14  // Размер шрифта для innerText
     property bool divided
     property bool button: true
+    property bool pressed: mouseArea.pressed  // Для совместимости с Button API
+    
+    signal clicked()
 
-    component DevHalf: Rectangle {
-        id: divHalfRoot
-        color: "transparent"
-        property bool isLeft
-        transform: Scale {
-            origin.x: divHalfRoot.width / 2
-            origin.y: divHalfRoot.height / 2
-            xScale: divHalfRoot.isLeft ? -1 : 1
-        }
-        Rectangle {
-            id: body
-            radius: neutRadius
-            anchors {
-                left: parent.left
-                right: parent.right
-                bottom: parent.bottom
-                margins: 0
-            }
-            height: .75 * parent.height
-            color: neutColor
-        }
-        Rectangle {
-            id: handle
-            radius: body.radius/2
-            anchors {
-                left: parent.left
-                bottom: body.top
-                top: parent.top
-                margins: 0
-                bottomMargin: -(1.1 * (handle.radius + body.radius))
-            }
-            width: nonDividedBody.width * .2
-            color: neutColor
-        }
+    color: theColor
+    radius: 10
+    border {
+        color: borderColor
+        width: borderWidth
     }
 
-    background: Rectangle {
-        id: backRect
-        anchors.fill: parent
-        anchors.margins: 0
-        color: theColor
-        radius: 10
-        border {
-            color: borderColor
-            width: borderWidth
-        }
-    }
-
-    contentItem: Rectangle {
+    Rectangle {
+        id: contentRect
         color: "transparent"
         anchors {
             fill: parent
-            topMargin: parent.height * .1
-            bottomMargin: parent.height * .1
-            leftMargin: parent.width * .1
-            rightMargin: parent.width * .1
         }
-        Rectangle {
-            id: darker
-            visible: button
-            anchors.centerIn: parent
-            width: backRect.width
-            height: backRect.height
-            color: "black"
-            opacity: neutButRoot.pressed ? 0.2 : 0
-            radius: backRect.radius
+        Canvas {
+            id: neutralBack
+            anchors.fill: parent
+
+            onPaint: {
+                var ctx = getContext("2d")
+                ctx.reset()
+                ctx.fillStyle = neutColor
+                ctx.beginPath()
+
+                // Используем единый масштаб для сохранения пропорций
+                var scaleX = width / 70
+                var scaleY = height / 110
+                // Масштаб надо делать целочисленным, иначе всё поедет
+                var scale = Math.floor(Math.min(scaleX, scaleY))
+
+                // Вычисляем смещения для центрирования по горизонтали и привязки к низу
+                var offsetX = (width - 70 * scale) / 2
+                var margin = 10  // Отступ снизу
+                var offsetY = height - 110 * scale - margin
+
+                // Начинаем с левой стороны
+                ctx.moveTo(offsetX + 0, offsetY + 12 * scale)
+
+                // Закругление в верхнем левом углу
+                ctx.arcTo(offsetX + 0, offsetY + 6 * scale, offsetX + 6 * scale, offsetY + 6 * scale, 6 * scale)
+                ctx.lineTo(offsetX + 18 * scale, offsetY + 6 * scale)
+                ctx.lineTo(offsetX + 18 * scale, offsetY + 13 * scale)
+
+                ctx.arcTo(offsetX + 18 * scale, offsetY + 19 * scale, offsetX + 24 * scale, offsetY + 19 * scale, 6 * scale)
+                ctx.lineTo(offsetX + 47 * scale, offsetY + 19 * scale)
+
+                ctx.arcTo(offsetX + 53 * scale, offsetY + 19 * scale, offsetX + 53 * scale, offsetY + 13 * scale, 6 * scale)
+                ctx.lineTo(offsetX + 53 * scale, offsetY + 6 * scale)
+                ctx.lineTo(offsetX + 64 * scale, offsetY + 6 * scale)
+
+                ctx.arcTo(offsetX + 70 * scale, offsetY + 6 * scale, offsetX + 70 * scale, offsetY + 12 * scale, 6 * scale)
+                ctx.lineTo(offsetX + 70 * scale, offsetY + 104 * scale)
+
+                ctx.arcTo(offsetX + 70 * scale, offsetY + 110 * scale, offsetX + 64 * scale, offsetY + 110 * scale, 6 * scale)
+                ctx.lineTo(offsetX + 6 * scale, offsetY + 110 * scale)
+
+                ctx.arcTo(offsetX + 0, offsetY + 110 * scale, offsetX + 0, offsetY + 104 * scale, 6 * scale)
+
+                // Замыкаем путь
+                ctx.closePath()
+                ctx.fill()
+            }
+            
+            // Перерисовываем при изменении цвета или размеров
+            onWidthChanged: requestPaint()
+            onHeightChanged: requestPaint()
+        }
+        
+        // Перерисовываем neutralBack при изменении цвета
+        Connections {
+            target: neutButRoot
+            function onNeutColorChanged() {
+                neutralBack.requestPaint()
+            }
+        }
+
+        Canvas {
+            id: neutralBody
+            anchors.fill: parent
+
+            onPaint: {
+                var ctx = getContext("2d")
+                ctx.reset()
+
+                // Используем единый масштаб для сохранения пропорций
+                var scaleX = width / 70
+                var scaleY = height / 110
+                // Масштаб надо делать целочисленным, иначе всё поедет
+                var scale = Math.floor(Math.min(scaleX, scaleY))
+
+                // Вычисляем смещения для центрирования по горизонтали и привязки к низу
+                var offsetX = (width - 70 * scale) / 2
+                var margin = 10  // Отступ снизу
+                var offsetY = height - 110 * scale - margin
+                
+                // Создаём градиент, имитирующий серебро (вертикальный)
+                var gradient = ctx.createLinearGradient(
+                    offsetX + 35 * scale, offsetY + 0,
+                    offsetX + 35 * scale, offsetY + 102 * scale
+                )
+                gradient.addColorStop(0, "#808080")    // Тёмно-серый
+                gradient.addColorStop(0.15, "#c0c0c0")    // Светло-серый
+                gradient.addColorStop(0.35, "#f0f0f0") // Почти белый (блик)
+                gradient.addColorStop(0.6, "#a8a8a8")  // Средне-серый
+                gradient.addColorStop(0.8, "#d0d0d0") // Серебристый
+                gradient.addColorStop(1, "#b0b0b0")    // Тёмно-серый
+                
+                ctx.fillStyle = gradient
+                ctx.beginPath()
+
+                if (divided) {
+                    // Левая половина
+                    ctx.moveTo(offsetX + 25 * scale, offsetY + 0)
+                    ctx.lineTo(offsetX + 33 * scale, offsetY + 0)
+                    ctx.lineTo(offsetX + 33 * scale, offsetY + 102 * scale)
+                    ctx.lineTo(offsetX + 14 * scale, offsetY + 102 * scale)
+
+                    ctx.arcTo(offsetX + 8 * scale, offsetY + 102 * scale, offsetX + 8 * scale, offsetY + 96 * scale, 6 * scale)
+                    ctx.lineTo(offsetX + 8 * scale, offsetY + 31 * scale)
+
+                    ctx.arcTo(offsetX + 8 * scale, offsetY + 25 * scale, offsetX + 14 * scale, offsetY + 25 * scale, 6 * scale)
+                    ctx.lineTo(offsetX + 20 * scale, offsetY + 25 * scale)
+                    ctx.arcTo(offsetX + 25 * scale, offsetY + 25 * scale, offsetX + 25 * scale, offsetY + 20 * scale, 5 * scale)
+
+                    // Замыкаем путь
+                    ctx.closePath()
+                    ctx.fill()
+
+                    // Правая половина
+                    ctx.beginPath()
+                    ctx.moveTo(offsetX + 45 * scale, offsetY + 0)
+                    ctx.lineTo(offsetX + 37 * scale, offsetY + 0)
+                    ctx.lineTo(offsetX + 37 * scale, offsetY + 102 * scale)
+                    ctx.lineTo(offsetX + 56 * scale, offsetY + 102 * scale)
+
+                    ctx.arcTo(offsetX + 62 * scale, offsetY + 102 * scale, offsetX + 62 * scale, offsetY + 96 * scale, 6 * scale)
+                    ctx.lineTo(offsetX + 62 * scale, offsetY + 31 * scale)
+
+                    ctx.arcTo(offsetX + 62 * scale, offsetY + 25 * scale, offsetX + 56 * scale, offsetY + 25 * scale, 6 * scale)
+                    ctx.lineTo(offsetX + 50 * scale, offsetY + 25 * scale)
+                    ctx.arcTo(offsetX + 45 * scale, offsetY + 25 * scale, offsetX + 45 * scale, offsetY + 20 * scale, 5 * scale)
+                }
+                // Неразделённый нейтральник
+                else {
+                    ctx.moveTo(offsetX + 28 * scale, offsetY + 0)
+                    ctx.lineTo(offsetX + 42 * scale, offsetY + 0)
+                    ctx.lineTo(offsetX + 42 * scale, offsetY + 20 * scale)
+
+                    ctx.arcTo(offsetX + 42 * scale, offsetY + 25 * scale, offsetX + 47 * scale, offsetY + 25 * scale, 5 * scale)
+                    ctx.lineTo(offsetX + 56 * scale, offsetY + 25 * scale)
+
+                    ctx.arcTo(offsetX + 62 * scale, offsetY + 25 * scale, offsetX + 62 * scale, offsetY + 31 * scale, 6 * scale)
+                    ctx.lineTo(offsetX + 62 * scale, offsetY + 96 * scale)
+
+                    ctx.arcTo(offsetX + 62 * scale, offsetY + 102 * scale, offsetX + 56 * scale, offsetY + 102 * scale, 6 * scale)
+                    ctx.lineTo(offsetX + 14 * scale, offsetY + 102 * scale)
+
+                    ctx.arcTo(offsetX + 8 * scale, offsetY + 102 * scale, offsetX + 8 * scale, offsetY + 96 * scale, 6 * scale)
+                    ctx.lineTo(offsetX + 8 * scale, offsetY + 31 * scale)
+
+                    ctx.arcTo(offsetX + 8 * scale, offsetY + 25 * scale, offsetX + 14 * scale, offsetY + 25 * scale, 6 * scale)
+                    ctx.lineTo(offsetX + 23 * scale, offsetY + 25 * scale)
+                    ctx.arcTo(offsetX + 28 * scale, offsetY + 25 * scale, offsetX + 28 * scale, offsetY + 20 * scale, 5 * scale)
+                }
+
+                // Замыкаем путь
+                ctx.closePath()
+                ctx.fill()
+            }
+        }
+
+        // Перерисовываем Canvas при изменении типа электрода
+        Connections {
+            target: neutButRoot
+            function onDividedChanged() {
+                neutralBody.requestPaint()
+            }
         }
 
         Label {
@@ -90,88 +202,15 @@ Button {
             anchors.left: parent.left
             anchors.right: parent.right
             anchors.top: parent.top
+            anchors.topMargin: 7
             color: innerTextColor
-        }
-        Rectangle {
-            id: nonDividedRoot
-            visible: !divided
-            color: "transparent"
-            anchors {
-                top: parent.top
-                left: parent.left
-                right: parent.right
-                bottom: parent.bottom
-                topMargin: optionalText.visible ? optionalText.height : 0
-                bottomMargin: 0
-                leftMargin: 0
-                rightMargin: 0
-            }
-            Rectangle {
-                id: nonDividedBody
-                radius: neutRadius
-                anchors {
-                    left: parent.left
-                    right: parent.right
-                    bottom: parent.bottom
-                    margins: 0
-                }
-                height: .75 * parent.height
-                color: neutColor
-            }
-            Rectangle {
-                id: nonDividedHandle
-                radius: neutRadius/2
-                anchors {
-                    horizontalCenter: parent.horizontalCenter
-                    bottom: nonDividedBody.top
-                    top: parent.top
-                    margins: 0
-                    bottomMargin: -nonDividedHandle.radius
-                }
-                width: nonDividedBody.width * .2
-                color: neutColor
-            }
-        }
-        Rectangle {
-            id: dividedRoot
-            visible: divided
-            color: "transparent"
-            anchors {
-                top: parent.top
-                left: parent.left
-                right: parent.right
-                bottom: parent.bottom
-                topMargin: optionalText.visible ? optionalText.height : 0
-                bottomMargin: 0
-                leftMargin: 0
-                rightMargin: 0
-            }
-            DevHalf {
-                id: leftDivHalf
-                isLeft: true
-                anchors {
-                    left: parent.left
-                    right: parent.horizontalCenter
-                    top: parent.top
-                    bottom: parent.bottom
-                    margins: 0
-                    rightMargin: parent.width * .05
-                }
-            }
-            DevHalf {
-                id: rightDivHalf
-                isLeft: false
-                anchors {
-                    right: parent.right
-                    left: parent.horizontalCenter
-                    top: parent.top
-                    bottom: parent.bottom
-                    margins: 0
-                    leftMargin: parent.width * .05
-                }
-            }
+            font.pixelSize: innerTextFontSize
         }
     }
-
-
+    
+    MouseArea {
+        id: mouseArea
+        anchors.fill: parent
+        onClicked: neutButRoot.clicked()
+    }
 }

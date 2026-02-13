@@ -29,6 +29,19 @@ Rectangle {
         isActivation: periphHandle.activation
         activCylinderFirst: periphHandle.activCylinderFirst
     }
+    Connections {
+        target: argonView
+        function onFlowRateUpdated(newRate) {
+            periphHandle.setArgonFlowRate(newRate)
+        }
+        function onArgonBlow() {
+            periphHandle.argonBlow()
+        }
+        function onActivCylinderToggled(first) {
+            console.log("PeripheryPanel.qml: onActivCylinderToggled", first)
+            periphHandle.activCylinderFirst = first
+        }
+    }
     NeutralEl {
         id: neutralView
         height: 165
@@ -40,10 +53,24 @@ Rectangle {
         }
         // Передаем параметры
         neutralConnected: periphHandle.neutralElConnected
+        neutralDivided: periphHandle.neutralElDivided
+        neutralSize: periphHandle.neutralSize
         showControls: false
     }
+    
+    // MouseArea для открытия drawer - размещаем в конце для наивысшего z-order
     MouseArea {
         anchors.fill: parent
-        onClicked: peripheryPanelRoot.openPeriphDrawer();
+        z: 1000  // Очень высокий z
+        onPressed: {
+//            console.log("PeripheryPanel PRESSED at", mouse.x, mouse.y)
+        }
+        onReleased: {
+//            console.log("PeripheryPanel RELEASED")
+        }
+        onClicked: {
+//            console.log("PeripheryPanel CLICKED - opening drawer")
+            peripheryPanelRoot.openPeriphDrawer()
+        }
     }
 }

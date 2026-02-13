@@ -9,11 +9,14 @@ PeriphHandler::PeriphHandler(QObject *parent)
     m_autoStStopTissue(false),
     m_neutralElConnected(false),
     m_neutralElDivided(true),
+    m_neutralSize(0),  // По умолчанию Small
     m_autoSSmode(0),
     m_argonFlowRate(80),
     m_argonRealRate(0),
     m_activCylinderFirst(true),  // По умолчанию активен первый баллон
-    m_wirelessPedalCharge(0)
+    m_wirelessPedalCharge(0),
+    m_enableActivation(true),
+    m_activation(false)
 {
 
 }
@@ -45,6 +48,13 @@ void PeriphHandler::unitStateHandler(Onyx::UnitState state)
 		m_argonRealRate = state.argonRealRate;
 		// qDebug() << "РЕАЛЬНЫЙ РАСХОД: " << m_argonRealRate;
 		emit argonRealRateChanged(m_argonRealRate);
+	}
+
+	// Обновляем состояние активации на основе activOutput
+	bool isActivating = (state.activOutput != 0);
+	if (m_activation != isActivating) {
+		m_activation = isActivating;
+		emit activationChanged(m_activation);
 	}
 
 	// Автоматическое переключение активного баллона
@@ -94,8 +104,7 @@ void PeriphHandler::setArgonFlowRate(quint8 rate)
 		return;
 
 	m_argonFlowRate = rate;
-	emit argonFlowRateChanged(rate);
-	// TODO: Отправить команду установки расхода в LinkStm при необходимости
+    emit sigArgonFlowRateChanged(rate);
 }
 
 void PeriphHandler::argonBlow()
@@ -103,6 +112,7 @@ void PeriphHandler::argonBlow()
 	// TODO: Отправить команду продувки аргона через LinkStm
 	// Например: m_linkStm->sendArgonBlowCommand();
 	qDebug() << "Argon blow command triggered";
+    emit sigArgonBlow();
 }
 
 quint8 PeriphHandler::argonRealRate() const
@@ -122,7 +132,7 @@ bool PeriphHandler::enableActivation() const
 
 void PeriphHandler::setEnableActivation(bool enable)
 {
-	qDebug() << "setEnableActivation(bool enable)" << enable;
+//	qDebug() << "setEnableActivation(bool enable)" << enable;
 	if (m_enableActivation == enable)
 		return;
 
@@ -152,6 +162,20 @@ void PeriphHandler::setNeutralElDivided(bool divided)
 bool PeriphHandler::neutralElConnected() const
 {
 	return m_neutralElConnected;
+}
+
+int PeriphHandler::neutralSize() const
+{
+	return m_neutralSize;
+}
+
+void PeriphHandler::setNeutralSize(int size)
+{
+	if (m_neutralSize == size)
+		return;
+
+	m_neutralSize = size;
+	emit neutralSizeChanged(size);
 }
 
 void PeriphHandler::setArgonRealRate(quint8 rate)

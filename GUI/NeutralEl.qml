@@ -5,89 +5,110 @@ Rectangle {
     id: neutralEl
     color: "transparent"
 
+    // Маркер для PeripheryDrawer: этот компонент имеет интерактивные элементы и должен получать события напрямую
+    property bool hasInteractiveContent: true
+
     // Свойства компонента
-    property int neutralSize: 0      // 0 = Small, 1 = Medium, 2 = Large
+    property int neutralSize: periphHandle ? periphHandle.neutralSize : 0      // 0 = Small, 1 = Medium, 2 = Large
     // property bool neutralDivided: true  // НЭ разделённый или нет
-    property bool neutralDivided: periphHandle.neutralElDivided  // НЭ разделённый или нет - привязка к ControlCenter
+    property bool neutralDivided: periphHandle ? periphHandle.neutralElDivided : true  // НЭ разделённый или нет - привязка к ControlCenter
 
     // property bool neutralConnected: false  // Передается снаружи
     property bool neutralConnected: periphHandle.neutralElConnected  // Передается снаружи
     property bool showControls: false      // Показывать ли кнопки управления
 
-    component MassSelectionBut: Button {
+    // Сигналы для синхронизации с PeriphHandler
+    // Используем другие имена, чтобы не конфликтовать с автоматическими сигналами свойств
+    signal neutralDividedToggled(bool divided)
+    signal neutralSizeSelected(int size)
+
+    component MassSelectionBut: Rectangle {
         id: rootCustomBut
         required property int type
         property string iconText
-        autoRepeat: true
-        autoRepeatDelay: 200
-        autoRepeatInterval: 200
-        height: parent.height * .26
-        width: parent.width * .6
-
-        background: null
-        contentItem: Rectangle {
-            id: backGround
-            anchors.fill: parent
-            radius: 10
-            color: neutralSize === type
-                ? ( "cyan" )
-                : ("lightgray" )
-            border {
-                color: neutralSize === type ? "white" : "transparent"
-                width: neutralSize === type ? 3 : 0
-            }
-            Rectangle {
-                id: darker
-                anchors.fill: parent
-                color: "black"
-                opacity: rootCustomBut.pressed ? 0.2 : 0
-                radius: backGround.radius
-            }
-            Text {
-                anchors.centerIn: parent
-                text: iconText
-                font.bold: true
-                color: "#2c2c2c"
-                horizontalAlignment: Text.AlignHCenter
-            }
+        property bool pressed: mouseArea.pressed
+        
+        signal clicked()
+        
+        height: parent.height * .27
+        width: parent.width * .7  // Уменьшена ширина, чтобы не перекрывать кнопки типа слева
+        radius: 10
+        
+        color: neutralSize === type ? "cyan" : "lightgray"
+        border {
+            color: neutralSize === type ? "purple" : "transparent"
+            width: neutralSize === type ? 3 : 0
         }
-        onClicked: {
-            neutralSize = type
+        
+        Rectangle {
+            id: darker
+            anchors.fill: parent
+            color: "black"
+            opacity: rootCustomBut.pressed ? 0.2 : 0
+            radius: rootCustomBut.radius
+        }
+        
+        Text {
+            anchors.fill: parent
+            anchors.margins: 5
+            text: iconText
+            textFormat: Text.StyledText  // Поддержка HTML-разметки
+            font.pixelSize: Math.min(parent.height / 4, parent.width / 12)  // Адаптивный размер шрифта
+            color: "#2c2c2c"
+            horizontalAlignment: Text.AlignHCenter
+            verticalAlignment: Text.AlignVCenter
+            wrapMode: Text.WordWrap  // Перенос текста
+            lineHeight: 1.3  // Увеличенный межстрочный интервал (1.0 = нормальный, 1.3 = +30%)
+        }
+        
+        MouseArea {
+            id: mouseArea
+            anchors.fill: parent
+            onClicked: {
+                rootCustomBut.clicked()
+                if (neutralSize !== type) {
+                    neutralSize = type
+                    neutralSizeSelected(type)
+                }
+            }
         }
     }
 
     Connections {
         target: buttonDivided
         function onClicked() {
-            ///TODO перекомментировать в реальном использовании
-            neutralDivided = true
-            // periphHandle.neutralDivided = true
+            if (neutralDivided !== true) {
+                neutralDivided = true
+                neutralDividedToggled(true)
+            }
         }
     }
     Connections {
         target: buttonNotDivided
         function onClicked() {
-            ///TODO перекомментировать в реальном использовании
-            neutralDivided = false
-            // periphHandle.neutralDivided = false
+            if (neutralDivided !== false) {
+                neutralDivided = false
+                neutralDividedToggled(false)
+            }
         }
     }
 
     NeutralButton {
         id: neutralImage
 
-        borderColor: "orange"
+        borderColor: "purple"
         borderWidth: 3
         divided: neutralDivided
-        neutColor: neutralConnected ? "lightgreen" : "red"
-        theColor: neutralConnected ? "gray" : "white"
+        neutColor: neutralConnected ? "green" : "red"
+        theColor: neutralConnected ? "lightgray" : "white"
 
         anchors.left: parent.left
         anchors.bottom: parent.bottom
+        anchors.bottomMargin: showControls ? 10 : 0  // Отступ только в режиме с контролами
         height: parent.height
         width: showControls ? 160 : parent.width
-        neutRadius: showControls ? 12 : 8
         button: false
+        innerTextFontSize: showControls ? 18 : 14  // Меньший шрифт в компактном режиме (PeripheryPanel)
         innerText: {
             if (neutralSize === 0)
                 qsTr("< 5кг\nМакс.50")
@@ -112,14 +133,15 @@ Rectangle {
         height: parent.height
         color: "transparent"
         radius: 10
-        border.color: "white"
+        border.color: "purple"
+        border.width: 2
         visible: showControls
 
         NeutralButton {
             id: buttonDivided
-            height: parent.height * .43
-            width: parent.width * .33
-            borderColor: neutralDivided ? "white" : "transparent"
+            height: parent.height * .45
+            width: parent.width * .22
+            borderColor: neutralDivided ? "purple" : "transparent"
             borderWidth: neutralDivided ? 3 : 0
             divided: true
             neutColor: "green"
@@ -133,9 +155,9 @@ Rectangle {
         }
         NeutralButton {
             id: buttonNotDivided
-            height: parent.height * .43
-            width: parent.width * .33
-            borderColor: !neutralDivided ? "white" : "transparent"
+            height: parent.height * .45
+            width: parent.width * .22
+            borderColor: !neutralDivided ? "purple" : "transparent"
             borderWidth: !neutralDivided ? 3 : 0
             divided: false
             neutColor: "green"
@@ -151,7 +173,7 @@ Rectangle {
         MassSelectionBut {
             id: smallNeutralSize
             type: 0
-            iconText: qsTr("Младенец: < 5 кг\n Максимальная мощность 50")
+            iconText: qsTr("Младенец: &lt; <b>5</b> кг<br>Макс. мощность <b>50</b>")
             anchors {
                 top: parent.top
                 right: parent.right
@@ -162,7 +184,7 @@ Rectangle {
         MassSelectionBut {
             id: mediumNeutralSize
             type: 1
-            iconText: qsTr("Ребёнок: 5-15 кг\nМаксимальная мощность 75")
+            iconText: qsTr("Ребёнок: <b>5-15</b> кг<br>Макс. мощность <b>75</b>")
             anchors {
                 verticalCenter: parent.verticalCenter
                 right: parent.right
@@ -172,7 +194,7 @@ Rectangle {
         MassSelectionBut {
             id: largeNeutralSize
             type: 2
-            iconText: qsTr("Взрослый: > 15 кг\nМаксимальная мощность 400")
+            iconText: qsTr("Взрослый: &gt; <b>15</b> кг<br>Макс. мощность <b>400</b>")
             anchors {
                 bottom: parent.bottom
                 right: parent.right

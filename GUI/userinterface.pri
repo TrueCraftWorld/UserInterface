@@ -1,4 +1,4 @@
-QT += quick
+QT += quick multimedia
 CONFIG += c++17 link_pkgconfig disable-desktop
 
 RESOURCES += $$PWD/userinterface.qrc
@@ -33,6 +33,7 @@ DISTFILES += \
     $$PWD/SocketContainerV2.qml \
     $$PWD/StatusBar.qml \
     $$PWD/UserProgsSelector.qml
+    $$PWD/VideoPlayer.qml
 
 HEADERS +=
 

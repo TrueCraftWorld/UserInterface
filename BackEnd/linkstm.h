@@ -23,6 +23,7 @@ public:
         Allright = 0x00,                // Базовый запрос
         Activation = 0x20,              // Активация
         StopActivation = 0x40,          // Остановка активации
+        ArgonBlow = 0x3F,               // Продувка газового тракта
         Signal = 0x80,                  // Выдача звукового сигнала (аварии)
 
         ErrorMU = 0x80,                 // Ошибка модуля управления
@@ -165,10 +166,12 @@ public:
     // Методы для установки состояния из PeriphHandler
 public slots:
     void start();
+    void argonBlow();
     void setEnableActivation(bool enable);
     void setNeutralElDivided(bool divided);
     void setAutoSSmode(quint8 mode);
     void setActivCylinderFirst(bool first);
+    void setArgonFlowRate(quint8 rate);
     void updateSocketData(int socketIndex, quint16 cutModeNum, quint16 coagModeNum, 
                          quint16 cutModePower, quint16 coagModePower, quint8 pedal);
     void updateSocketData(int socketIndex, const Onyx::SocketState& info);

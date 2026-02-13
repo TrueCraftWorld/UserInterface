@@ -40,6 +40,31 @@ Canvas {
         return changedPower
     }
 
+    // Функция изменения мощности на основе переданного значения (для автоповтора)
+    function changePowerFromValue(currentValue, direction) {
+        var changedPower = currentValue
+        if (direction === "up") {
+            if (currentValue < 20) changedPower += 1
+            else if (currentValue < 50) changedPower += 2
+            else if (currentValue < 100) changedPower += 5
+            else if (currentValue < 200) changedPower += 10
+            else if (currentValue < 400) changedPower += 25
+            // Ограничиваем максимальным значением
+            if (changedPower > maxPower) changedPower = maxPower
+        }
+        if (direction === "down") {
+            if (currentValue <= 1) changedPower = 1
+            else if (currentValue <= 20) changedPower -= 1
+            else if (currentValue <= 50) changedPower -= 2
+            else if (currentValue <= 100) changedPower -= 5
+            else if (currentValue <= 200) changedPower -= 10
+            else if (currentValue <= 400) changedPower -= 25
+            // Ограничиваем минимальным значением
+            if (changedPower < 1) changedPower = 1
+        }
+        return changedPower
+    }
+
     function changePowerEndoCut(direction) {
         var changedPower = modePower
         if (direction === "up") {
@@ -156,6 +181,14 @@ Canvas {
     Rectangle {
         id: mode
         color: "transparent"
+        z: 10  // Поднимаем над powerControls для обработки кликов
+        // Явно задаём анкоры по умолчанию для expanded state
+        anchors {
+            left: parent.left
+            right: parent.right
+            top: parent.top
+        }
+        height: 90  // Базовая высота для области выбора режима
         Label {
             id: modeLabel
             text: modeName
@@ -177,11 +210,37 @@ Canvas {
                 }
             }
         }
+
+
+//        // Визуальная подсветка границ MouseArea
+//        Rectangle {
+//            anchors {
+//                fill: parent
+//                topMargin: 5
+//                leftMargin: 10
+//                rightMargin: 10
+//                bottomMargin: 30
+//            }
+//            color: "red"
+//            opacity: 0.2
+//            border.color: "yellow"
+//            border.width: 2
+//            z: 9999
+//        }
+        
         MouseArea {
             id: modeSelectButton
-            anchors.fill: parent
+            anchors {
+                fill: parent
+                topMargin: 5
+                leftMargin: 60
+                rightMargin: 60
+                bottomMargin: 5  // ИСПРАВЛЕНО: было 90, что давало отрицательную высоту
+            }
+            z: 10  // Поднимаем над другими элементами
             onClicked: modePowerRect.modeEditDialogRequest()
         }
+
     }
 
     Item {
@@ -237,6 +296,10 @@ Canvas {
             anchors.margins: 95
             anchors.right: parent.right
             anchors.verticalCenter: parent.verticalCenter
+            
+            // Локальная переменная для отслеживания текущего значения во время автоповтора
+            property int currentPowerValue: modePower
+            
             Label {
                 anchors {
                     margins: 10
@@ -251,7 +314,44 @@ Canvas {
             }
             MouseArea {
                 anchors.fill: parent
-                onClicked: modePowerRect.newPower(changePower("up"));
+                onPressed: {
+                    // Инициализируем локальное значение текущим значением мощности
+                    powerPlusButton.currentPowerValue = modePower;
+                    // Вычисляем и отправляем новое значение
+                    var newValue = changePowerFromValue(powerPlusButton.currentPowerValue, "up");
+                    powerPlusButton.currentPowerValue = newValue;
+                    modePowerRect.newPower(newValue);
+                    delayPlusTimer.start();
+                }
+                onReleased: {
+                    delayPlusTimer.stop();
+                    autoRepeatPlusTimer.stop();
+                }
+                onCanceled: {
+                    delayPlusTimer.stop();
+                    autoRepeatPlusTimer.stop();
+                }
+            }
+
+            // Таймер задержки перед началом автоповтора
+            Timer {
+                id: delayPlusTimer
+                interval: 500  // Задержка перед началом автоповтора (мс)
+                repeat: false
+                onTriggered: autoRepeatPlusTimer.start();
+            }
+
+            // Таймер автоповтора
+            Timer {
+                id: autoRepeatPlusTimer
+                interval: 150  // Интервал повторения в миллисекундах
+                repeat: true
+                onTriggered: {
+                    // Используем локальное значение для вычисления следующего
+                    var newValue = changePowerFromValue(powerPlusButton.currentPowerValue, "up");
+                    powerPlusButton.currentPowerValue = newValue;
+                    modePowerRect.newPower(newValue);
+                }
             }
         }
 
@@ -268,6 +368,10 @@ Canvas {
             anchors.margins: 95
             anchors.left: parent.left
             anchors.verticalCenter: parent.verticalCenter
+            
+            // Локальная переменная для отслеживания текущего значения во время автоповтора
+            property int currentPowerValue: modePower
+            
             Label {
                 anchors {
                     margins: 10
@@ -282,7 +386,44 @@ Canvas {
             }
             MouseArea {
                 anchors.fill: parent
-                onClicked: modePowerRect.newPower(changePower("down"));
+                onPressed: {
+                    // Инициализируем локальное значение текущим значением мощности
+                    powerMinusButton.currentPowerValue = modePower;
+                    // Вычисляем и отправляем новое значение
+                    var newValue = changePowerFromValue(powerMinusButton.currentPowerValue, "down");
+                    powerMinusButton.currentPowerValue = newValue;
+                    modePowerRect.newPower(newValue);
+                    delayMinusTimer.start();
+                }
+                onReleased: {
+                    delayMinusTimer.stop();
+                    autoRepeatMinusTimer.stop();
+                }
+                onCanceled: {
+                    delayMinusTimer.stop();
+                    autoRepeatMinusTimer.stop();
+                }
+            }
+
+            // Таймер задержки перед началом автоповтора
+            Timer {
+                id: delayMinusTimer
+                interval: 500  // Задержка перед началом автоповтора (мс)
+                repeat: false
+                onTriggered: autoRepeatMinusTimer.start();
+            }
+
+            // Таймер автоповтора
+            Timer {
+                id: autoRepeatMinusTimer
+                interval: 150  // Интервал повторения в миллисекундах
+                repeat: true
+                onTriggered: {
+                    // Используем локальное значение для вычисления следующего
+                    var newValue = changePowerFromValue(powerMinusButton.currentPowerValue, "down");
+                    powerMinusButton.currentPowerValue = newValue;
+                    modePowerRect.newPower(newValue);
+                }
             }
         }
 
@@ -620,6 +761,10 @@ Canvas {
 //                anchors.top: powerControls.top
 //                anchors.bottom: powerControls.bottom
             }
+            PropertyChanges {
+                target: mode;
+                height: undefined  // В collapsed высота определяется анкорами
+            }
             AnchorChanges {
                 target: mode
                 anchors.left: {modePowerRect.isCoag ? powerControls.right : modePowerRect.left}
@@ -672,6 +817,10 @@ Canvas {
                 target: modeSelectButton;
                 enabled: true
             }
+            PropertyChanges {
+                target: mode;
+                height: 100
+            }
 //            AnchorChanges {
 //                target: powerPlusButton
 //                anchors.right: modePowerRect.right
@@ -686,6 +835,10 @@ Canvas {
 //                target: powerSlider
 //                anchors.bottom: parent.bottom
 //            }
+            PropertyChanges {
+                target: mode;
+                height: 90  // Достаточная высота для клика
+            }
             AnchorChanges {
                 target: mode
                 anchors.left: modePowerRect.left

@@ -31,6 +31,8 @@ public:
     Q_INVOKABLE void addEmptyDefault();
     Q_INVOKABLE void copyCurrent();
     Q_INVOKABLE void userProgs();
+    Q_INVOKABLE QString readTextFile(const QString& filePath);
+    Q_INVOKABLE QStringList scanVideoFiles(const QString& folderPath);
 
     QStringList scopeNameList() const;
     QStringList progNameList() const;

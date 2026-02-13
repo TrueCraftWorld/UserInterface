@@ -5,6 +5,9 @@ import QtQuick.Layouts 1.15
 Rectangle {
     id: argonRoot
     
+    // Маркер для PeripheryDrawer: этот компонент имеет интерактивные элементы и должен получать события напрямую
+    property bool hasInteractiveContent: true
+    
     // Публичные свойства
     property bool cylinder1Connected: true      // Баллон 1 наполнен
     property bool cylinder2Connected: false     // Баллон 2 наполнен
@@ -25,9 +28,20 @@ Rectangle {
     // Сигналы
     signal flowRateUpdated(int newRate)
     signal argonBlow()
+    signal activCylinderToggled(bool first)
     
     // Отслеживание изменения showControls для отправки сигнала при сворачивании
     property int lastSentFlowRate: flowRate
+    property bool isUserChange: false  // Флаг для отслеживания изменений пользователем
+    
+    onFlowRateChanged: {
+        // Отправляем сигнал при изменении расхода пользователем (через кнопки)
+        if (isUserChange && lastSentFlowRate !== flowRate) {
+            flowRateUpdated(flowRate)
+            lastSentFlowRate = flowRate
+            isUserChange = false  // Сбрасываем флаг после отправки
+        }
+    }
     
     onShowControlsChanged: {
         // Когда панель сворачивается (showControls становится false)
@@ -39,49 +53,67 @@ Rectangle {
     
     color: "transparent"
     
-    component CustomButton: Button {
+    component CustomButton: Rectangle {
         id: rootCustomBut
         property int delta
         property string iconText
-        property alias color : backGround.color
-        property alias borderColor : backGround.border.color
-        property alias borderWidth : backGround.border.width
+        property bool pressed: mouseArea.pressed
+        
+        signal clicked()
 
-        autoRepeat: true
-        autoRepeatDelay: 200
-        autoRepeatInterval: 200
-        // auto
-        background: null
-
-        contentItem: Rectangle {
-            id: backGround
+        radius: 6
+        color: pressed ? "#9EFE9E" : "#BDBDBD"
+        border {
+            color: "#757575"
+            width: 2
+        }
+        
+        Text {
+            anchors.centerIn: parent
+            text: iconText
+            font.pixelSize: buttonStep * 2
+            font.bold: true
+            color: "#2c2c2c"
+        }
+        
+        MouseArea {
+            id: mouseArea
             anchors.fill: parent
-            radius: 6
-
-            color: rootCustomBut.pressed ? "#9EFE9E" : "#BDBDBD"
-            border {
-                color: "#757575"
-                width: 2
+            
+            onPressed: {
+                // Первое срабатывание СРАЗУ при нажатии (как в ModePowerRect)
+                rootCustomBut.clicked()
+                // Запускаем таймер задержки перед автоповтором
+                delayTimer.start()
             }
-            Text {
-                anchors.centerIn: parent
-                // text: "▲"
-                text: iconText
-                font.pixelSize: buttonStep * 2
-                font.bold: true
-                color: "#2c2c2c"
+            
+            onReleased: {
+                delayTimer.stop()
+                autoRepeatTimer.stop()
+            }
+            
+            onCanceled: {
+                delayTimer.stop()
+                autoRepeatTimer.stop()
             }
         }
+        
+        // Таймер задержки перед началом автоповтора
+        Timer {
+            id: delayTimer
+            interval: 500  // Задержка перед началом автоповтора (мс)
+            repeat: false
+            onTriggered: autoRepeatTimer.start()
+        }
+        
+        // Таймер автоповтора
+        Timer {
+            id: autoRepeatTimer
+            interval: 150  // Интервал повторения в миллисекундах
+            repeat: true
+            onTriggered: rootCustomBut.clicked()
+        }
     }
-
-    // // MouseArea для перехвата всех событий в области компонента
-    // MouseArea {
-    //     anchors.fill: parent
-    //     z: 0
-    //     onPressed: mouse.accepted = true
-    //     onReleased: mouse.accepted = true
-    //     onClicked: mouse.accepted = true
-    // }
 
     Rectangle {
         id: argonView
@@ -118,12 +150,16 @@ Rectangle {
             x: showControls ? 100 : (parent.width - width) / 2
             cylConnected: cylinder1Connected
             cylSelected: activCylinderFirst
+            interactive: showControls  // Баллоны кликабельны только в развернутом состоянии
         }
         Connections {
             target: firstCylinder
             function onCylClicked() {
-                if (cylinder1Connected && !activCylinderFirst)
+                if (cylinder1Connected && !activCylinderFirst) {
                     activCylinderFirst = true;
+                    console.log("Argon.qml: first cylinder selected");
+                    activCylinderToggled(true);
+                }
             }
         }
 
@@ -147,6 +183,7 @@ Rectangle {
                 onClicked: {
                     var newRate = flowRate + delta
                     if (newRate <= maxFlowRate) {
+                        isUserChange = true  // Устанавливаем флаг перед изменением
                         flowRate = newRate
                     }
                 }
@@ -160,8 +197,10 @@ Rectangle {
                 onClicked: {
                     var newRate = flowRate + delta
                     if (newRate <= maxFlowRate) {
+                        isUserChange = true  // Устанавливаем флаг перед изменением
                         flowRate = newRate
                     }
+//                    console.log("Argon flowrate: ", flowRate, " ▲ 1");
                 }
             }
         }
@@ -187,7 +226,10 @@ Rectangle {
                 text: Math.floor(displayRate / 10) + "." + (displayRate % 10)
                 font.pixelSize: step * 3
                 font.bold: true
-                color: isActivation ? "#000000" : "#2c2c2c"  // чёрный во время активации
+                // В развернутом виде — тёмный текст, в свернутом (PeripheryPanel) — светлый для тёмного фона
+                color: isActivation
+                       ? "#000000"
+                       : (argonRoot.showControls ? "#2c2c2c" : "white")
             }
             Text {
                 id: litrPerMin
@@ -196,7 +238,7 @@ Rectangle {
                 text: qsTr("л/мин")
                 font.pixelSize: 20
                 font.bold: true
-                color: "#2c2c2c"
+                color: argonRoot.showControls ? "#2c2c2c" : "white"
             }
         }
         
@@ -220,8 +262,10 @@ Rectangle {
                 onClicked: {
                     var newRate = flowRate + delta
                     if (newRate >= 0) {
+                        isUserChange = true  // Устанавливаем флаг перед изменением
                         flowRate = newRate
                     }
+//                    console.log("Argon flowrate: ", flowRate, " ▼ 10");
                 }
             }
             CustomButton {
@@ -233,8 +277,10 @@ Rectangle {
                 onClicked: {
                     var newRate = flowRate + delta
                     if (newRate >= 0) {
+                        isUserChange = true  // Устанавливаем флаг перед изменением
                         flowRate = newRate
                     }
+//                    console.log("Argon flowrate: ", flowRate, " ▼ 1");
                 }
             }
         }
@@ -249,13 +295,17 @@ Rectangle {
             isFirst: false;
             cylConnected: cylinder2Connected
             cylSelected: !activCylinderFirst
+            interactive: showControls  // Баллоны кликабельны только в развернутом состоянии
         }
 
         Connections {
             target: secondCylinder
             function onCylClicked() {
-                if (cylinder2Connected && activCylinderFirst)
+                if (cylinder2Connected && activCylinderFirst) {
                     activCylinderFirst = false;
+//                    console.log("Argon.qml: second cylinder selected");
+                    activCylinderToggled(false);
+                }
             }
         }
         

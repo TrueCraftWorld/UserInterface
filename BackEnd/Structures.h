@@ -129,5 +129,6 @@ struct UnitState {
 
 }
 Q_DECLARE_METATYPE(Onyx::SocketState);
+Q_DECLARE_METATYPE(Onyx::UnitState);
 
 #endif // STRUCTURES_H

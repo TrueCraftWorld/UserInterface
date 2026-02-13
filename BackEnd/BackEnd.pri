@@ -11,6 +11,7 @@ HEADERS += \
     $$PWD/instrimageprovider.h \
     $$PWD/instrument.h \
     $$PWD/jsonstorage.h \
+    $$PWD/keygenerator.h \
     $$PWD/linkstm.h \
     $$PWD/loggingcategories.h \
     $$PWD/pedal.h \
@@ -24,6 +25,7 @@ HEADERS += \
     $$PWD/surgicalmode.h \
     $$PWD/uartqmlbridge.h \
     $$PWD/userprogsloadmodel.h
+    $$PWD/systemmonitor.h 
 
 SOURCES += \
     $$PWD/controlcenter.cpp \
@@ -32,6 +34,7 @@ SOURCES += \
     $$PWD/instrimageprovider.cpp \
     $$PWD/instrument.cpp \
     $$PWD/jsonstorage.cpp \
+    $$PWD/keygenerator.cpp \
     $$PWD/linkstm.cpp \
     $$PWD/loggingcategories.cpp \
     $$PWD/pedal.cpp \
@@ -45,6 +48,7 @@ SOURCES += \
     $$PWD/surgicalmode.cpp \
     $$PWD/uartqmlbridge.cpp \
     $$PWD/userprogsloadmodel.cpp
+    $$PWD/systemmonitor.cpp 
 
 RESOURCES += \
     $$PWD/backend.qrc

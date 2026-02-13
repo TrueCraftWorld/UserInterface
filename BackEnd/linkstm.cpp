@@ -1,4 +1,6 @@
 #include "linkstm.h"
+#include <QMetaType>
+#include <QElapsedTimer>
 //перенёс инициализатор в конструктор - так не происходит инициализация по умолчанию,
 // а затем присваивание новых значени1
 LinkStm::LinkStm(QObject *parent)
@@ -15,6 +17,9 @@ LinkStm::LinkStm(QObject *parent)
     m_argonFlowRate(0),
     m_comState(IDLE)
 {
+    // Регистрируем типы для использования в Qt::QueuedConnection
+    qRegisterMetaType<Onyx::UnitState>("Onyx::UnitState");
+    qRegisterMetaType<Onyx::UnitState>("UnitState");
     // m_unitState и так с инициализатором по умолчанию
     for (int i = 0; i < 4; i++) {
         m_socketList[i].cutModeNum = 1000;  // Режим не выбран
@@ -28,8 +33,6 @@ LinkStm::LinkStm(QObject *parent)
     // Таймер обмена по uart
     m_uartTimer->setTimerType(Qt::PreciseTimer);
     connect(m_uartTimer, &QTimer::timeout, [this]() {sendCommand();});
-    m_uartTimer->start(100);
-    qDebug(logInfo()) << "start Uart Timer";
 
     connect(m_uart, &UartToQmlBridge::uartRecieve, this, &LinkStm::unpackRxCommand);
 
@@ -39,15 +42,27 @@ void LinkStm::start()
 {
     if (m_uartTimer && !m_uartTimer->isActive()) {
         m_uartTimer->start(100);
-        qDebug(logInfo()) << "start Uart Timer in thread" << QThread::currentThread();
     }
+}
+
+void LinkStm::argonBlow()
+{
+    UartTx argonBlowCommand;
+    argonBlowCommand.com = ArgonBlow;
+    setTxCommand(argonBlowCommand);
 }
 
 void LinkStm::unpackRxCommand(const QByteArray &rxPacket)
 {
-    // Засекаем время начала приёма (отладка была удалена)
-    // QTime rxStartTime = QTime::currentTime();
-    
+    // Замеряем задержку от момента readyRead (readData) до входа в unpackRxCommand
+    QTime now = QTime::currentTime();
+    int delayFromReadyRead = m_uart->lastReadTime().msecsTo(now);
+//    qDebug() << "Delay readyRead -> unpackRxCommand:" << delayFromReadyRead << "ms";
+
+    // Засекаем время обработки unpackRxCommand + checkRxCommand
+    QElapsedTimer processTimer;
+    processTimer.start();
+
     quint8 xorValue = 0;
     quint8 rxByte = 0;
     QByteArray destuffedBuffer;         // Для отработки байт-стаффинга
@@ -115,12 +130,13 @@ void LinkStm::unpackRxCommand(const QByteArray &rxPacket)
     // Повторяем команду, если ответ не подходящий
     else {
         m_state = STATE_RX_ERR;
+        qDebug() << "не тот ответ от stm";
     }
-    
-    // Отладочный замер времени от readyRead до m_waitAnswer=false удалён
-    
+
     m_waitAnswer = false;
-//    qDebug() << QString("!!! ").append(getHexStr(destuffedBuffer));
+
+    // Логируем время обработки входящего пакета
+//    qDebug() << "unpackRxCommand+checkRxCommand took" << processTimer.elapsed() << "ms";
 }
 
 // Первичная проверка, то пришло, или нет
@@ -159,7 +175,9 @@ void LinkStm::sendCommand()
     static int mode = 1000;             // Активированный режим
     static int power = 0;               // Активированная мощность
     static int updateCounter = 0;       // Счётчик обновления ПО
-   static int updateProgr = 0;
+    static int updateProgr = 0;
+    static UartState preState = STATE_OK;   // Предыдущее состояние
+    static int errCounter = 0;
 
     m_comState = IDLE;
 
@@ -168,14 +186,29 @@ void LinkStm::sendCommand()
        m_state = STATE_NO_RX;
     //_____________ Проверяем ответ rx__________
     if (m_state != STATE_OK) {
-        emit sigError(m_state + 32);           // Ошибки ответа (первые 32 - то, что присылается по uart)
+        if (m_state != preState) {
+            qDebug() << "UART-ошибки: " << m_state;
+            emit sigError(m_state + 32);        // Ошибки ответа (первые 32 - то, что присылается по uart)
+            preState = m_state;                 // Запоминаем предыдущее состояние
+            errCounter = 0;                     // Сбрасываем счётчик ошибок
+        }
+        else if (errCounter++ > 100) {
+            m_state = STATE_OK;                 // Делаем попытку выйти на нормальную работу
+            errCounter = 0;
+        }
     }
     else {
+        errCounter = 0;
+    }
+
+    if (m_state == STATE_OK) {
         readRxCommand();                    // Читаем ответ
 
         if (!m_txCommandList.isEmpty()) {   // Какую-то спец команду надо передать
             m_txCommand = m_txCommandList.takeFirst();
             m_comState = SPECIAL;
+//            qDebug() << "txCom: " << m_txCommand.com << ": " << QString::number(m_txCommand.com, 16);
+
         }
 
         //______________Подготовка активации________________
@@ -201,7 +234,7 @@ void LinkStm::sendCommand()
                     if (afterEmit > 5) {
                         qDebug() << "Activation emit took" << (afterEmit) << "ms";
                     }
-                    qDebug() << "Activation " << mode << power;
+//                    qDebug() << "Activation " << mode << power;
                     m_comState = ACTIVATION;
             }
         }
@@ -218,7 +251,8 @@ void LinkStm::sendCommand()
                 m_txCommand.data.append((power % 2) << 7);  // Младший бит мощности
                 m_txCommand.data.append(mode);              // Режим
                 // В старшем бите 0 - использовать первый баллон, 1 - второй; дальше - установленный расход от 0,0 до 8,0
-                m_txCommand.data.append((m_activCylinderFirst ? 0 : 0x80) | (m_argonFlowRate & 0x1F));
+                m_txCommand.data.append((m_activCylinderFirst ? 0 : 0x80) | (m_argonFlowRate & 0x7F));
+//                qDebug() << "ACT " << getHexStr(m_txCommand.data) << "Ar: " << m_argonFlowRate;
             }
         }
 
@@ -349,8 +383,6 @@ QByteArray LinkStm::packTxCommand()
     quint8 i;
 
     // Заполняем буфер: адрес модуля + длина, команда, данные, crc
-//    buffer.resize(MAX_PACKET_LEN);
-//    buffer.clear();
     buffer[0] = (quint8) m_txCommand.mc | (m_txCommand.data.length() / 2); // Т.к. у нас переменна только длина данных, а они кратны 2, то можно передавать меньше
     buffer[1] = m_txCommand.com;
 
@@ -442,6 +474,7 @@ void LinkStm::readRxCommand()
             case PRESS_PED1:
             case PRESS_PED2_Y:
             case PRESS_PED2_B:
+                unitState.pedalKnob = static_cast<PedalKnobPressed>(pressValue);
 //                qDebug() << "Pressed pedal: " << unitState.pedalKnob << "current m_comState:" << m_comState;
                 if (m_comState != ACTIVATION) {
                     m_comState = START_ACTIVATION;
@@ -472,11 +505,6 @@ void LinkStm::readRxCommand()
             qDebug() << "Посылка от stm отстой - нет нажатий кнопок";
             unitState.pedalKnob = PRESS_NONE;
         }
-        
-        if (m_unitState != unitState) {
-            m_unitState = unitState;
-            emit sigUnitStateChanged(m_unitState);
-        }
         break;
     }
     // Во время активации
@@ -493,17 +521,18 @@ void LinkStm::readRxCommand()
         if (m_rxCommand.data.size() >= 2) {
             unitState.argonRealRate = static_cast<quint8>(m_rxCommand.data.at(1)) & 0x3F; // Реальный расход от 0,0 до 8,0 (0-80)
         }
-
-        if (m_unitState != unitState) {
-            m_unitState = unitState;
-            emit sigUnitStateChanged(m_unitState);
-        }
-        
         m_comState = ACTIVATION;
         break;
     // Остановка
     case RxStop:
+        unitState.activOutput = 0;  // Сбрасываем активированный выход
+        unitState.activMode = 0;    // Сбрасываем активированный режим
+//        if (m_unitState != unitState) {
+//            m_unitState = unitState;
+//            emit sigUnitStateChanged(m_unitState);
+//        }
         emit sigStopActivation(m_rxCommand.com & 0x03);
+//        qDebug() << "Stop! m_rxCommand: " << m_rxCommand.com << m_rxCommand.data;
         m_comState = IDLE;
         break;
     // Ответ на спец.запросы
@@ -523,13 +552,21 @@ void LinkStm::readRxCommand()
         else if (m_rxCommand.com == BootAck) {
             m_comState = IDLE;
         }
-        m_comState = UPDATING;
+        else
+            m_comState = UPDATING;
         break;
     default:
         // Что-то странное пришло
         qWarning() << "Unknown rx command: " << m_rxCommand.com;
         break;
     }
+
+    if (m_unitState != unitState) {
+        m_unitState = unitState;
+        emit sigUnitStateChanged(m_unitState);
+    }
+
+//    qDebug() << "m_comState: " << m_comState;
 }
 
 LinkStm::ActiveSocket LinkStm::determineSocket(const PedalKnobPressed &pedalKnob)
@@ -629,7 +666,7 @@ const LinkStm::BootChoice &LinkStm::boot() const
 void LinkStm::setBoot(const BootChoice &newBoot)
 {
     m_boot = newBoot;
-    qDebug() << m_boot;
+//    qDebug() << m_boot;
 }
 
 const LinkStm::UartRx &LinkStm::rxCommand() const
@@ -679,11 +716,11 @@ void LinkStm::setTxCommandBoot()
     // Ставим в очередь
     if (checkCommandList(bootCommand))
         m_txCommandList.append(bootCommand);
-//    m_txCommandQueue.enqueue(bootCommand);
     bootCommand.com = CurrentVersion;
-    if (checkCommandList(bootCommand))
+    if (checkCommandList(bootCommand)) {
         m_txCommandList.append(bootCommand);
-//    m_txCommandQueue.enqueue(bootCommand);
+        qDebug() << "bootCommand CurrentVersion";
+    }
 }
 
 
@@ -759,6 +796,12 @@ void LinkStm::setAutoSSmode(quint8 mode)
 void LinkStm::setActivCylinderFirst(bool first)
 {
     m_activCylinderFirst = first;
+}
+
+void LinkStm::setArgonFlowRate(quint8 rate)
+{
+    m_argonFlowRate = rate;
+//    qDebug() << "Aragorn changed to: " << rate;
 }
 
 void LinkStm::updateSocketData(int socketIndex, quint16 cutModeNum, quint16 coagModeNum, 

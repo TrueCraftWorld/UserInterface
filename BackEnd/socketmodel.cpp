@@ -182,8 +182,13 @@ QVariant SocketModel::data(const QModelIndex &index, int role) const
         if (socketItem.curCoagMode().isNull()
             || m_instrMapPtr == nullptr)
             return -1;
-        auto iter = m_instrMapPtr->find(socketItem.curCoagMode()->selectedInstrId());
-
+        
+        int instrId = socketItem.curCoagMode()->selectedInstrId();
+        // Если выбран "Инструмент не выбран" (ID = 1000), возвращаем 1000
+        if (instrId == 1000)
+            return 1000;
+        
+        auto iter = m_instrMapPtr->find(instrId);
         if (iter != m_instrMapPtr->end())
             return iter->second->legacyNumber();
         else
@@ -273,9 +278,13 @@ QVariant SocketModel::data(const QModelIndex &index, int role) const
         if (socketItem.curCutMode().isNull()
                 || m_instrMapPtr == nullptr)
             return -1;
-
-        auto iter = m_instrMapPtr->find(socketItem.curCutMode()->selectedInstrId());
-
+        
+        int instrId = socketItem.curCutMode()->selectedInstrId();
+        // Если выбран "Инструмент не выбран" (ID = 1000), возвращаем 1000
+        if (instrId == 1000)
+            return 1000;
+        
+        auto iter = m_instrMapPtr->find(instrId);
         if (iter != m_instrMapPtr->end())
             return iter->second->legacyNumber();
         else
@@ -437,6 +446,8 @@ QStringList SocketModel::instrumNames(int socketId, int modeIndex, bool isCoag) 
         if (instIter != m_instrMapPtr->end())
             names.append(instIter->second->name());
     }
+    // Добавляем "Инструмент не выбран" в конец списка
+    names.append(QObject::tr("Инструмент не выбран"));
     return names;
 }
 
@@ -470,6 +481,8 @@ QStringList SocketModel::instrumNamesIds(int socketId, int modeIndex, bool isCoa
         if (instIter != m_instrMapPtr->end())
             names.append(QString("%1").arg(instIter->second->id()));
     }
+    // Добавляем ID для "Инструмент не выбран"
+    names.append("1000");
     return names;
 }
 
@@ -492,6 +505,8 @@ QStringList SocketModel::instrumNamesNums(int socketId, int modeIndex, bool isCo
         if (instIter != m_instrMapPtr->end())
             nums.append(QString("%1").arg(instIter->second->legacyNumber()));
     }
+    // Добавляем Num для "Инструмент не выбран"
+    nums.append("1000");
     return nums;
 }
 
@@ -565,17 +580,35 @@ void SocketModel::startActivation(int socketId, bool isCut)
 {
     QTimer::singleShot(0, this, [this, socketId, isCut]() {
         expandSocket(socketId);
-        qmlSetData(socketId, isCut ? Onyx::S_ACTIVE_CUT : Onyx::S_ACTIVE_COAG, "socketstatus");
+        // Сначала сбрасываем статус, чтобы QML увидел изменение при повторной активации
+        Onyx::SocStatus newStatus = isCut ? Onyx::S_ACTIVE_CUT : Onyx::S_ACTIVE_COAG;
+        if (m_itemsMapPtr && socketId < static_cast<int>(m_itemsMapPtr->size())) {
+            auto iter = m_itemsMapPtr->find(socketId);
+            if (iter != m_itemsMapPtr->end() && !iter->second.isNull()) {
+                // Если статус уже установлен, сначала сбрасываем его
+                if (iter->second->socketStatus() == newStatus) {
+                    qmlSetData(socketId, Onyx::S_ENABLED, "socketstatus");
+                    // Даём время QML обработать изменение
+                    QTimer::singleShot(10, this, [this, socketId, newStatus]() {
+                        qmlSetData(socketId, newStatus, "socketstatus");
+                    });
+                } else {
+                    qmlSetData(socketId, newStatus, "socketstatus");
+                }
+            }
+        }
     });
 }
 
 void SocketModel::stopActivation()
 {
+//    qDebug() << "SocketModel::stopActivation() called";
     if (m_itemsMapPtr == nullptr)
         return ;
     for (auto& item : *m_itemsMapPtr) {
         if (item.second->socketStatus() == Onyx::S_ACTIVE_CUT
             || item.second->socketStatus() == Onyx::S_ACTIVE_COAG) {
+//            qDebug() << "Stopping activation for socket" << item.first;
             qmlSetData(item.first, Onyx::S_ENABLED, "socketstatus");
         }
     }
@@ -633,6 +666,7 @@ bool SocketModel::commitModeChange(int socketId, int modeIndex, const QVariantMa
             roles.append(CoagModeInstrName);
             roles.append(CoagModeInstrIndex);
             roles.append(CoagModeInstrID);
+            roles.append(CoagModeInstrNum);  // Добавляем Num для обновления изображения
             res = true;
         }
         if (res)
@@ -674,6 +708,7 @@ bool SocketModel::commitModeChange(int socketId, int modeIndex, const QVariantMa
             roles.append(CutModeInstrName);
             roles.append(CutModeInstrIndex);
             roles.append(CutModeInstrID);
+            roles.append(CutModeInstrNum);  // Добавляем Num для обновления изображения
             res = true;
         }
         if (res)

@@ -43,6 +43,7 @@ Popup {
                 // rowIndex: i
             })
         }
+        
         instrumListView.innerModel = combinedModel
     }
 

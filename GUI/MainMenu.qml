@@ -10,6 +10,9 @@ Item {
     signal settingsButtonPressed()
     signal userButtonPressed()
     signal exitButtonPressed()
+    signal secretKeysButtonPressed()
+    
+    property bool videoPlayerVisible: false
     Rectangle {
         id: background
         anchors.fill: parent
@@ -39,12 +42,18 @@ Item {
     }
 
 
-    SColumn {
-        id: buttonColumn
-        anchors{
+    Grid {
+        id: buttonGrid
+        anchors {
             top: screenTitle.bottom
             topMargin: 25
+            horizontalCenter: parent.horizontalCenter
         }
+        columns: 2
+        rows: 2
+        columnSpacing: 20
+        rowSpacing: 20
+        clip: false  // Не обрезаем - позволяем теням отображаться
 
         width: parent.width
         rowSpacing: 15
@@ -81,11 +90,38 @@ Item {
             onClicked: settingsButtonPressed()
             text: qsTr("Настройки ...")
         }
+            
+        SButton {
+            id: videoButton
+            style: "btn-primary lg"           // Попробуйте: btn-primary, btn-secondary, btn-info, btn-light
+//                style: "btn-outline-primary lg"
+            width: parent.width
+            height: parent.height
+            onClicked: settinsScreen.videoPlayerVisible = true
+            text: qsTr("Видео 🎬")
+        }
+
+        SButton {
+            id: secretKeysButton
+            style: "btn-primary lg"
+            width: parent.width
+            height: parent.height
+            onClicked: secretKeysButtonPressed()
+            text: qsTr("Секретные ключи 🔐")
+        }
+        
+        
         Item {
             id: filler
             Layout.fillHeight: true
             Layout.fillWidth: true
         }
-
     }
+    VideoPlayer {
+        id: videoPlayer
+        anchors.fill: parent
+        visible: settinsScreen.videoPlayerVisible
+        z: 1000
+        onCloseRequested: settinsScreen.videoPlayerVisible = false
+   }
 }

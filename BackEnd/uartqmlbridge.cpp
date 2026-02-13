@@ -76,6 +76,7 @@ QByteArray UartToQmlBridge::readData()
     QTime readTime = QTime::currentTime();
     const QByteArray data = m_serial->readAll();
     m_transmitDelay = m_writeTime.msecsTo(readTime);
+    m_lastReadTime = readTime;
     
     // Отладочный вывод RX удалён
     

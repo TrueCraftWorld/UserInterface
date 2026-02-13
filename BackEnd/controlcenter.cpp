@@ -194,9 +194,9 @@ void ControlCenter::setLinkStm(LinkStm* linkStm)
     
     // Подключаем обработчик входящих данных
     if (!m_linkStm.isNull()) {
-        connect(m_linkStm, &LinkStm::sigUnitStateChanged,
-                m_periphery, &PeriphHandler::unitStateHandler,
-                Qt::QueuedConnection);
+//        connect(m_linkStm, &LinkStm::sigUnitStateChanged,
+//                m_periphery, &PeriphHandler::unitStateHandler,
+//                Qt::QueuedConnection);
         
         // Инициализируем текущие значения состояния в LinkStm
         m_linkStm->setEnableActivation(m_periphery->enableActivation());
@@ -215,13 +215,12 @@ void ControlCenter::setLinkStm(LinkStm* linkStm)
                 QMetaObject::invokeMethod(  m_linkStm.data(),
                                         "updateSocketData",
                                         Qt::QueuedConnection,
-                                        Q_ARG(int, i),
-                                        Q_ARG(Onyx::SocketState, topLeft.siblingAtRow(i).data(SocketModel::SocketUartInfo).value<Onyx::SocketState>()));
-                                        // Q_ARG(quint16, topLeft.siblingAtRow(i).data(SocketModel::CutModeNum).value<quint16>()),
-                                        // Q_ARG(quint16, topLeft.siblingAtRow(i).data(SocketModel::CoagModeNum).value<quint16>()),
-                                        // Q_ARG(quint16, topLeft.siblingAtRow(i).data(SocketModel::CutModePower).value<quint16>()),
-                                        // Q_ARG(quint16, topLeft.siblingAtRow(i).data(SocketModel::CoagModePower).value<quint16>()),
-                                        // Q_ARG(quint8, topLeft.siblingAtRow(i).data(SocketModel::SocketPedal).value<quint8>()));
+                                        Q_ARG(int, i),  // socketIndex
+                                        Q_ARG(quint16, topLeft.siblingAtRow(i).data(SocketModel::CutModeNum).value<quint16>()),
+                                        Q_ARG(quint16, topLeft.siblingAtRow(i).data(SocketModel::CoagModeNum).value<quint16>()),
+                                        Q_ARG(quint16, topLeft.siblingAtRow(i).data(SocketModel::CutModePower).value<quint16>()),
+                                        Q_ARG(quint16, topLeft.siblingAtRow(i).data(SocketModel::CoagModePower).value<quint16>()),
+                                        Q_ARG(quint8, topLeft.siblingAtRow(i).data(SocketModel::SocketPedal).value<quint8>()));
             }
         }, Qt::QueuedConnection);
         
@@ -248,14 +247,17 @@ void ControlCenter::setLinkStm(LinkStm* linkStm)
         connect(m_periphery, &PeriphHandler::enableActivationChanged,
                 m_linkStm,  &LinkStm::setEnableActivation,
                 Qt::QueuedConnection);
-        ///TODO реализовать метод приёма данных в linkStm
-        // connect(m_periphery, &PeriphHandler::argonFlowRateChanged,
-        //         m_linkStm, &LinkStm::set);
+        connect(m_periphery, &PeriphHandler::sigArgonFlowRateChanged,
+                m_linkStm, &LinkStm::setArgonFlowRate,
+                Qt::QueuedConnection);
+        connect(m_periphery, &PeriphHandler::sigArgonBlow,
+                m_linkStm, &LinkStm::argonBlow,
+                Qt::QueuedConnection);
 
         // Инициализируем все сокеты текущими данными
         initSocketsForPeriphery();
         
-        qDebug() << "LinkStm connected to ControlCenter";
+//        qDebug() << "LinkStm connected to ControlCenter";
     }
 }
 
@@ -265,11 +267,17 @@ void ControlCenter::initSocketsForPeriphery()
         qWarning() << "Cannot initialize sockets in LinkStm: missing dependencies";
         return;
     }
-    //тут можем прерывать сколько угодно - это одноразовый вызов в начале работы
+    // Используем queued-вызовы, так как LinkStm работает в отдельном потоке
     for (int i = 0; i < m_socketModel->rowCount(QModelIndex()); ++i) {
-        m_linkStm->updateSocketData(i,
-                                    m_socketModel->index(i).data(
-                                    SocketModel::SocketUartInfo).value<Onyx::SocketState>());
+        Onyx::SocketState info =
+                m_socketModel->index(i).data(SocketModel::SocketUartInfo).value<Onyx::SocketState>();
+
+        QMetaObject::invokeMethod(
+            m_linkStm.data(),
+            "updateSocketData",
+            Qt::QueuedConnection,
+            Q_ARG(int, i),
+            Q_ARG(Onyx::SocketState, info));
     }
 }
 

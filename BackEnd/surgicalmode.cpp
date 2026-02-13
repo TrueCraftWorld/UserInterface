@@ -13,7 +13,7 @@ SurgicalMode::SurgicalMode(const QString& name,
                            bool isEndo) :
     m_maximumPower(maximum),
     m_minimumPower(minimum),
-    m_currentPower(1),
+    m_currentPower(1),  // Мощность по умолчанию = 1
     m_modeName(name),
     m_isCoag(isCoag),
     m_id(id),
@@ -23,9 +23,8 @@ SurgicalMode::SurgicalMode(const QString& name,
     m_isEndo(isEndo),
     m_InstrConstraints(_instrs)
 {
-    // Q_UNUSED(parent);
-    if (m_InstrConstraints.size())
-        setSelectedInstrIndex(0);
+    // Устанавливаем "Инструмент не выбран" (индекс = размер списка, ID = 1000)
+    setSelectedInstrIndex(m_InstrConstraints.size());
 }
 
 int SurgicalMode::maximumPower() const
@@ -77,8 +76,21 @@ int SurgicalMode::selectedInstrIndex() const
 
 bool SurgicalMode::setSelectedInstrIndex(int newSelectedInstrIndex)
 {
-    if (newSelectedInstrIndex >= m_InstrConstraints.size())
+    // Проверяем, что индекс не отрицательный
+    if (newSelectedInstrIndex < 0)
         return false;
+    
+    // Если индекс равен размеру списка, это "Инструмент не выбран" (ID = 1000)
+    if (static_cast<size_t>(newSelectedInstrIndex) == m_InstrConstraints.size()) {
+        m_selectedInstrIndex = newSelectedInstrIndex;
+        m_selectedInstrId = 1000;  // Специальный ID для "не выбран"
+        return true;
+    }
+    
+    // Проверяем, что индекс в пределах списка
+    if (static_cast<size_t>(newSelectedInstrIndex) > m_InstrConstraints.size())
+        return false;
+    
     m_selectedInstrIndex = newSelectedInstrIndex;
     //элементы map отсортированы по возрастанию ключа
     for (const auto& iter : m_InstrConstraints) {

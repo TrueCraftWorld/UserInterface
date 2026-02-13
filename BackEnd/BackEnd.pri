@@ -24,7 +24,7 @@ HEADERS += \
     $$PWD/stmupdater.h \
     $$PWD/surgicalmode.h \
     $$PWD/uartqmlbridge.h \
-    $$PWD/userprogsloadmodel.h
+    $$PWD/userprogsloadmodel.h \
     $$PWD/systemmonitor.h 
 
 SOURCES += \
@@ -47,7 +47,7 @@ SOURCES += \
     $$PWD/stmupdater.cpp \
     $$PWD/surgicalmode.cpp \
     $$PWD/uartqmlbridge.cpp \
-    $$PWD/userprogsloadmodel.cpp
+    $$PWD/userprogsloadmodel.cpp \
     $$PWD/systemmonitor.cpp 
 
 RESOURCES += \

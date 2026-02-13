@@ -42,7 +42,7 @@ Item {
     }
 
 
-    Grid {
+    SColumn {
         id: buttonGrid
         anchors {
             top: screenTitle.bottom
@@ -56,7 +56,7 @@ Item {
         clip: false  // Не обрезаем - позволяем теням отображаться
 
         width: parent.width
-        rowSpacing: 15
+        // rowSpacing: 15
 
         SButton {
             id: wifiButton
@@ -78,6 +78,7 @@ Item {
 
             onClicked: userButtonPressed()
             text: qsTr("Пользовательские программы")
+
         }
 
         SButton {

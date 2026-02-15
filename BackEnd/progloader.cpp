@@ -223,7 +223,7 @@ QString makeDbStringInstr( const QModelIndex& idx,
                           "Mono1Coag_INSTR", "Mono1Coag_MODE", "Mono1Coag_POWER", /* 18 19 20*/
                           "Mono2Cut_INSTR", "Mono2Cut_MODE", "Mono2Cut_POWER", /* 21 22 23*/
                           "Mono2Coag_INSTR", "Mono2Coag_MODE", "Mono2Coag_POWER", /* 24 25 26*/
-                          "Pedal_1", "Pedal_2", "OutEnabled_MASK", "User_ID"};/* 27 28 29*/
+                          "Pedal_1", "Pedal_2", "OutEnabled_MASK", "User_ID"};/* 27 28 29 30*/
     const   QString saveCurQuery = QString(
         "REPLACE INTO Lists ("
         "id, Num, Prog_ID, "
@@ -551,16 +551,12 @@ bool ProgLoader::programmLoadSocketInit(int progId, bool clear)
     std::vector<std::map<int, InstrPtr >> instrMapVector;
     std::map<int, std::map<int, InstrInfo>>  instrumConstraints;
 
-    //ПОТОМУ ЧТО ЕСЛИ SELECT * то Qt говорит, что порядок следования полей может быть случаен
-    //Шаг1---------------------------------------------------------
-
     QList<QVariantList> progListVariant;
 
     // Если progId = 0, создаём фиктивную запись программы
     progListVariant = m_dbReaderPtr->slotSendSelectQuery(QStringList{"Lists"},
                                                       fields,
-                                                      /*progId > 1000 ?
-                                                       queryConditionUser.arg(progId) :*/ queryConditionRecom.arg(progId));
+                                                      queryConditionRecom.arg(progId));
     if (progListVariant.size() == 0)
         return false;
 
@@ -612,7 +608,7 @@ bool ProgLoader::programmLoadSocketInit(int progId, bool clear)
                 auto last = std::unique(allowedModesId__.begin(), allowedModesId__.end());
                 allowedModesId__.erase(last, allowedModesId__.end());
             }
-            allowedModesId = QList<int>::fromVector(QVector<int>::fromStdVector(allowedModesId__));
+            allowedModesId = QList<int>::fromVector(QVector<int>(allowedModesId__.begin(), allowedModesId__.end()));
         }
         // allowedModes
 
@@ -734,6 +730,16 @@ bool ProgLoader::programmLoadSocketInit(int progId, bool clear)
             }
             bool coagEna = hasNonZeroDigit(progItem.at(29).toInt(), (8 - 2*i) - 1 );
             bool cutEna = hasNonZeroDigit(progItem.at(29).toInt(), (8 - 2*i) );
+
+            int monoPedSocket = progItem.at(27).toInt();
+            if (i == monoPedSocket) {
+                socket->setPedal(Onyx::SINGLE_PED);
+            }
+            int doubePedSocket = progItem.at(27).toInt();
+            if (i == monoPedSocket) {
+                socket->setPedal(Onyx::SINGLE_PED);
+            }
+
             bool allowSock = cutEna || coagEna;
             socket->setAllowed(allowSock);
             socket->setDisplayMode(Onyx::S_COLLAPSED);
@@ -772,35 +778,14 @@ QMap<int, QString> ProgLoader::getListOfPrograms(int scopeID)
     return progList;
 }
 
-QMap<int, QString> ProgLoader::getScopes ()
+std::map<int, QString> ProgLoader::getScopes()
 {
-    QList<QVariantList> scopeListVariant = m_dbReaderPtr->slotSendSelectQuery(QStringList{"Scopes"},
-                                                                        QStringList{"id", "Name_RU"},
-                                                                        "");
-
-    QMap<int, QString> scopeList;
-    for (const auto& item : scopeListVariant) {
-        bool ok;
-        int id = item.at(0).toInt(&ok);
-        QString name = item.at(1).toString();
-        if (!ok)
-            continue;
-        scopeList.insert(id, name);
-    }
-    return scopeList;
+    return getProgList(false);
 }
 
 std::map<int, QString> ProgLoader::getUserProgList()
 {
-    qDebug() << "getUserProgList";
-    std::map<int, QString> res;
-    QList<QVariantList> progListVariant = m_dbReaderPtr->slotSendSelectQuery(QStringList{"UserProgs"},
-                                                  QStringList{"id", "Name"},
-                                                  "");
-    for (const auto& progItem : qAsConst(progListVariant)) {
-        res.emplace(std::pair{progItem.at(0).toInt(), progItem.at(1).toString()});
-    }
-    return res;
+    return getProgList(true);
 }
 
 void ProgLoader::saveUserProg(const QString &name)
@@ -815,9 +800,9 @@ void ProgLoader::deleteUserProg(int id)
     /// может быть для удаления сделать коммит по закрытию базы???
     ///
     QString removeQuery = "DELETE FROM Lists WHERE Prog_ID = %1";
-    QString removeNameQuery = "DELETE FROM UserProgs WHERE Prog_ID = %2";
+    // QString removeNameQuery = "DELETE FROM UserProgs WHERE Prog_ID = %2";
     m_dbReaderPtr->executeUpdateQuery(removeQuery.arg(1000 + id));
-    m_dbReaderPtr->executeUpdateQuery(removeNameQuery.arg(id));
+    // m_dbReaderPtr->executeUpdateQuery(removeNameQuery.arg(id));
 
 }
 
@@ -1018,6 +1003,26 @@ void ProgLoader::setSocketModelPtr(QSharedPointer<SocketModel> newSocketModelPtr
 bool ProgLoader::loadUserProg(int userProgId)
 {
     return programmLoadSocketInit(userProgId + 1001, true);
+}
+
+std::map<int, QString> ProgLoader::getProgList(bool isUser)
+{
+    QList<QVariantList> scopeListVariant
+                = m_dbReaderPtr->slotSendSelectQuery(QStringList{"Scopes"},
+                                                     QStringList{"id", "Name_RU"},
+                                                     isUser ? "id > 1000" : "id < 1000");
+
+    std::map<int, QString> scopeList;
+    for (const auto& item : scopeListVariant) {
+        bool ok;
+        int id = item.at(0).toInt(&ok);
+        QString name = item.at(1).toString();
+        if (!ok) {
+            continue;
+        }
+        scopeList.insert_or_assign(id, name);
+    }
+    return scopeList;
 }
 
 bool ProgLoader::loadCurrentState()

@@ -736,7 +736,7 @@ bool ProgLoader::programmLoadSocketInit(int progId, bool clear)
                 socket->setPedal(Onyx::SINGLE_PED);
             }
             int doubePedSocket = progItem.at(27).toInt();
-            if (i == monoPedSocket) {
+            if (i == doubePedSocket) {
                 socket->setPedal(Onyx::SINGLE_PED);
             }
 
@@ -1000,6 +1000,39 @@ void ProgLoader::setSocketModelPtr(QSharedPointer<SocketModel> newSocketModelPtr
     m_socketModelPtr = newSocketModelPtr;
 }
 
+int ProgLoader::addUserScope(const QString &name)
+{
+    const   QString insertUserProgNameQuery = QString(
+                                     "INSERT INTO Scopes ("
+                                     "id, Num, Name"
+                                     ") VALUES ("
+                                     "'%1', '%1', '%2')");
+
+    int scopeId = -1;
+    QVariantList scope;
+    {
+        QList<QVariantList> scopes = m_dbReaderPtr->slotSendSelectQuery(QStringList{"Scopes"},
+                                              QStringList{"id", "Name"},
+                                              "");
+        int lastIndex = scopes.last().at(0).toInt();
+        if (lastIndex < 1000) {
+            scopeId = 1000;
+        } else {
+            scopeId = lastIndex + 1;
+        }
+    }
+    if (scopeId == -1) {
+        return scopeId;
+    }
+    if (!m_dbReaderPtr->executeUpdateQuery(insertUserProgNameQuery.arg(scopeId).arg(name))) {
+        qDebug() << "Failed to save new scope";
+        return scopeId;
+    }
+    m_dbReaderPtr->commit();
+    return scopeId;
+
+}
+
 bool ProgLoader::loadUserProg(int userProgId)
 {
     return programmLoadSocketInit(userProgId + 1001, true);
@@ -1010,7 +1043,7 @@ std::map<int, QString> ProgLoader::getProgList(bool isUser)
     QList<QVariantList> scopeListVariant
                 = m_dbReaderPtr->slotSendSelectQuery(QStringList{"Scopes"},
                                                      QStringList{"id", "Name_RU"},
-                                                     isUser ? "id > 1000" : "id < 1000");
+                                                     isUser ? "id >= 1000" : "id < 1000");
 
     std::map<int, QString> scopeList;
     for (const auto& item : scopeListVariant) {

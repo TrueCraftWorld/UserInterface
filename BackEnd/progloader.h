@@ -81,6 +81,8 @@ public:
 	std::map<int, std::map<int, Onyx::InstrInfo>> getConstraints(const QList<int> &idList);
 	
 	void setSocketModelPtr(QSharedPointer<SocketModel> newSocketModelPtr);
+
+	int addUserScope(const QString& name);
 	
 public slots:
 	bool loadUserProg(int userProgId);

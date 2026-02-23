@@ -18,12 +18,15 @@ HEADERS += \
     $$PWD/periphhandler.h \
     $$PWD/proghandle.h \
     $$PWD/progloader.h \
+    $$PWD/progloaderbase.h \
+    $$PWD/recomprogloader.h \
     $$PWD/socket.h \
     $$PWD/socketmodeeditor.h \
     $$PWD/socketmodel.h \
     $$PWD/stmupdater.h \
     $$PWD/surgicalmode.h \
     $$PWD/uartqmlbridge.h \
+    $$PWD/userprogloader.h \
     $$PWD/userprogsloadmodel.h \
     $$PWD/systemmonitor.h 
 
@@ -41,12 +44,15 @@ SOURCES += \
     $$PWD/periphhandler.cpp \
     $$PWD/proghandle.cpp \
     $$PWD/progloader.cpp \
+    $$PWD/progloaderbase.cpp \
+    $$PWD/recomprogloader.cpp \
     $$PWD/socket.cpp \
     $$PWD/socketmodeeditor.cpp \
     $$PWD/socketmodel.cpp \
     $$PWD/stmupdater.cpp \
     $$PWD/surgicalmode.cpp \
     $$PWD/uartqmlbridge.cpp \
+    $$PWD/userprogloader.cpp \
     $$PWD/userprogsloadmodel.cpp \
     $$PWD/systemmonitor.cpp 
 

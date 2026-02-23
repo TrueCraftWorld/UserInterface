@@ -57,7 +57,8 @@ void UartToQmlBridge::handleError(QSerialPort::SerialPortError error)
 bool UartToQmlBridge::writeData(const QByteArray &txData)
 {
     quint16 writedByte;
-    
+    if (!m_serial->isOpen())
+        return false;
     // Отладочный вывод TX удалён
     
     // Записываем данные в SerialPort

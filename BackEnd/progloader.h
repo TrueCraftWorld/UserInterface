@@ -4,12 +4,13 @@
 #include <QObject>
 #include <QPointer>
 #include <map>
-#include <array>
+// #include <array>
 
+#include "BackEnd/progloaderbase.h"
 #include "instrument.h"
 #include "databasereader.h"
 #include "socketmodel.h"
-#include "userprogsloadmodel.h"
+// #include "userprogsloadmodel.h"
 // bi1CutInstr = "0", bi1CutMode = "1000", bi1CutPower = "1";
 
 
@@ -18,6 +19,14 @@ class ProgLoader : public QObject
 {
 	Q_OBJECT
 public:
+
+	enum progType {
+		ptRecom = 0,
+		ptUser,
+		ptService,
+		ptCount
+	};
+
 	explicit ProgLoader(QObject *parent = nullptr);
 	/**
 	 * @brief Сохраняет текущее состояние всех сокетов в БД (таблица Lists, id=1000)
@@ -57,14 +66,13 @@ public:
 	bool programmLoadSocketInit(int progId, bool clear = true);
 	
 	/**
-	 * @brief getListOfPrograms получение списка доспуных программ в категории
+	 * @brief getCategories получение списка доспуных программ в категории
 	 * @param scopeID
 	 * @return
 	 */
-	QMap<int, QString> getListOfPrograms(int scopeID);
+	std::map<int, QString> getProgs(int scopeID);
 	
-	
-	std::map<int, QString> getScopes();
+	std::map<int, QString> getCategories();
 	
 	std::map<int, QString> getUserProgList();
 	// QMap<int, QString> getUserProgList();
@@ -94,7 +102,12 @@ private:
 	
 	QPointer<DataBaseReader> m_dbReaderPtr;
 	QSharedPointer<SocketModel> m_socketModelPtr;
-	QSharedPointer<UserProgsLoadModel> m_userProgModelPtr;
+
+	// std::map<int, QSharedPointer<ProgLoaderBase>> m_loaders;
+	// QPointer<ProgLoaderBase> loader = nullptr;
+	progType m_curLoaderType = ptRecom;
+
+	ProgLoaderBase* getLoader(progType type);
 };
 
 #endif // PROGLOADER_H

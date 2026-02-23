@@ -1,4 +1,6 @@
 #include "progloader.h"
+#include "BackEnd/recomprogloader.h"
+#include "BackEnd/userprogloader.h"
 #include "socket.h"
 
 
@@ -756,37 +758,25 @@ bool ProgLoader::programmLoadSocketInit(int progId, bool clear)
     return (true);
 }
 
-QMap<int, QString> ProgLoader::getListOfPrograms(int scopeID)
+std::map<int, QString> ProgLoader::getProgs(int scopeID)
 {
     //захардкодили, но это нужно знать
-    bool isMyselfArgon = false;
-
-    QString queryCondition = "Scope_ID = %1 AND (Argon = 0 OR Argon = %2)";
-
-    QList<QVariantList> progListVariant = m_dbReaderPtr->slotSendSelectQuery(QStringList{"Progs"},
-                                                                        QStringList{"Name_RU","id", "Prog_NUM", "Subprog_RU"},
-                                                                        queryCondition.arg(scopeID).arg(isMyselfArgon ? 2 : 1));
-
-    QMap<int, QString> progList;
-    for (const auto& item : progListVariant) {
-        // Prog tmp;
-        bool isMainProg = item.at(2).toInt() % 10 == 0 ? true : false;
-        int id = item.at(1).toInt();
-        QString name = item.at(isMainProg ? 0 : 3).toString();
-        progList.insert(id, name);
-    }
-    return progList;
+    const std::unique_ptr<ProgLoaderBase> loader{getLoader(m_curLoaderType)};
+    return loader->getPrograms(scopeID);
 }
 
-std::map<int, QString> ProgLoader::getScopes()
+std::map<int, QString> ProgLoader::getCategories()
 {
-    return getProgList(false);
+    const std::unique_ptr<ProgLoaderBase> loader{getLoader(m_curLoaderType)};
+    return loader->getCategories();
 }
 
 std::map<int, QString> ProgLoader::getUserProgList()
 {
-    return getProgList(true);
+    m_curLoaderType = ptUser;
+    return getCategories();
 }
+
 
 void ProgLoader::saveUserProg(const QString &name)
 {
@@ -795,14 +785,9 @@ void ProgLoader::saveUserProg(const QString &name)
 
 void ProgLoader::deleteUserProg(int id)
 {
-    ///TODO
-    /// надо удалить запись в таблице листов и в таблице имён программ
-    /// может быть для удаления сделать коммит по закрытию базы???
-    ///
     QString removeQuery = "DELETE FROM Lists WHERE Prog_ID = %1";
     // QString removeNameQuery = "DELETE FROM UserProgs WHERE Prog_ID = %2";
     m_dbReaderPtr->executeUpdateQuery(removeQuery.arg(1000 + id));
-    // m_dbReaderPtr->executeUpdateQuery(removeNameQuery.arg(id));
 
 }
 
@@ -992,6 +977,21 @@ void ProgLoader::saveProg(const QString &name)
         if (!m_dbReaderPtr->executeUpdateQuery(query)) {
             qDebug() << "Failed to save userProg";
         }
+    }
+}
+
+ProgLoaderBase *ProgLoader::getLoader(progType type)
+{
+
+    switch (type) {
+    case ptRecom:
+        return new RecomProgLoader();
+        break;
+    case ptUser:
+        return new UserProgLoader();
+        break;
+    default:
+        break;
     }
 }
 

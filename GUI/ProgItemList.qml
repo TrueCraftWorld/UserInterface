@@ -14,6 +14,7 @@ Rectangle {
     property var itemIdArr: []
     property var itemNameArr: []
     property bool loadClear: true
+    property bool recommended: true
 
 
     ListModel {
@@ -26,6 +27,7 @@ Rectangle {
 
     function updateModel() {
         progsModel.clear()
+        // itemNameArr = recommended ? recomHandle.progNameList ? recomHandle.
         itemNameArr = recomHandle.progNameList
         itemIdArr = recomHandle.progIdList
         if (itemIdArr.length !== itemNameArr.length) {

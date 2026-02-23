@@ -81,12 +81,12 @@ void ControlCenter::makeHandleConnections()
     
     connect(m_handle, &ProgHandle::signalScopeRequest,
             this, [this] (int id) {
-        m_handle->setProgList(m_progLoader->getListOfPrograms(id));
+        m_handle->setProgList(m_progLoader->getProgs(id));
     });
 
     connect(m_handle, &ProgHandle::signalUserProgsRequest,
             this, [this] () {
-        qDebug() << " lamba signalUserProgsRequest";
+        // qDebug() << " lamba signalUserProgsRequest";
         m_handle->setUserProgList(m_progLoader->getUserProgList());
     });
 
@@ -113,7 +113,7 @@ void ControlCenter::initSockets()
     if (!m_progLoader->loadCurrentState())
         m_progLoader->defaultSocketInit();
 
-    m_handle->setScopeNameList(m_progLoader->getScopes());
+    // m_handle->setScopeNameList(m_progLoader->getCategories());
 }
 
 void ControlCenter::prepareConnectios()

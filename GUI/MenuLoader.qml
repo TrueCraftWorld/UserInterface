@@ -63,6 +63,7 @@ Item {
                         menuLoader.item.userButtonPressed.connect(function() {
                             // menuLoader.source = "qrc:/UserProgsSelector.qml"
                             menuLoader.source = "qrc:/ProgItemList.qml"
+                            menuLoader.item.recommended = false
                         })
                     }
                     if (menuLoader.item.returnButtonPressed) {

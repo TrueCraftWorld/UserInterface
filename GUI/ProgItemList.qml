@@ -16,7 +16,6 @@ Rectangle {
     property bool loadClear: true
     property bool recommended: true
 
-
     ListModel {
         id: scopeModel
     }
@@ -47,7 +46,8 @@ Rectangle {
 
 
     Component.onCompleted: {
-
+        recomHandle.isRecomProgs = recommended;
+        // recomHandle.
         itemNameArr = recomHandle.scopeNameList
         itemIdArr = recomHandle.scopeIdList
         if (itemIdArr.length !== itemNameArr.length) {
@@ -63,6 +63,25 @@ Rectangle {
         }
         scopeList.innerModel = scopeModel
         recomHandle.scopeIdx = 0
+    }
+
+    onRecommendedChanged: {
+        console.log("onRecommendedChanged")
+        // recommended.isRecomProgs = recommended;
+        // itemNameArr = recomHandle.scopeNameList
+        // itemIdArr = recomHandle.scopeIdList
+        // if (itemIdArr.length !== itemNameArr.length) {
+        //     console.warn("Lists from C++ have different lengths!")
+        //     return
+        // }
+        // for (var i = 0; i < itemIdArr.length; i++) {
+        //     scopeModel.append({
+        //         itemId: itemIdArr[i],
+        //         itemName: itemNameArr[i],
+        //         rowIndex: i
+        //     })
+        // }
+        // scopeList.innerModel = scopeModel
     }
 
     GradientBack {

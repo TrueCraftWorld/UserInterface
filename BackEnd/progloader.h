@@ -92,11 +92,13 @@ public:
 
 	int addUserScope(const QString& name);
 	
+	void setCurLoaderType(progType newCurLoaderType);
+
 public slots:
 	bool loadUserProg(int userProgId);
 	
 private:
-	std::map<int, QString> getProgList(bool isUser = false);
+	// std::map<int, QString> getProgList(bool isUser = false);
 	std::map<int, InstrPtr> getInstrums();
 	void saveProg(const QString& name = "");
 	

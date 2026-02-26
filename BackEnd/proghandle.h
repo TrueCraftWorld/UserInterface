@@ -16,7 +16,7 @@ public:
     Q_PROPERTY(QList<int> scopeIdList READ scopeIdList NOTIFY scopeNameListChanged FINAL)
     Q_PROPERTY(QStringList progNameList READ progNameList NOTIFY progNameListChanged FINAL)
     Q_PROPERTY(QList<int> progIdList READ progIdList NOTIFY progNameListChanged FINAL)
-    Q_PROPERTY(QStringList userProgList READ userProgList NOTIFY userProgListChanged FINAL)
+    // Q_PROPERTY(QStringList userProgList READ userProgList NOTIFY userProgListChanged FINAL)
     Q_PROPERTY(int scopeIdx READ scopeIdx WRITE setScopeIdx NOTIFY scopeIdxChanged FINAL)
     Q_PROPERTY(bool isRecomProgs READ isRecomProgs WRITE setIsRecomProgs NOTIFY isRecomProgsChanged FINAL)
 
@@ -31,7 +31,7 @@ public:
     Q_INVOKABLE void saveProg(const QString& name);
     Q_INVOKABLE void addEmptyDefault();
     Q_INVOKABLE void copyCurrent();
-    Q_INVOKABLE void userProgs();
+    // Q_INVOKABLE void userProgs();
     Q_INVOKABLE QString readTextFile(const QString& filePath);
     Q_INVOKABLE QStringList scanVideoFiles(const QString& folderPath);
 
@@ -45,10 +45,10 @@ public:
 
     void setProgList(const std::map<int, QString>& lst, bool isRecom = true);
 
-    void setScopeNameList(const std::map<int, QString>& scopes, bool isRecom = true);
+    void setScopeList(const std::map<int, QString>& scopes, bool isRecom = true);
 
-    QStringList userProgList() const;
-    void setUserProgList(const std::map<int, QString>& progs);
+    // QStringList userProgList() const;
+    // void setUserProgList(const std::map<int, QString>& progs);
 
     bool isRecomProgs() const;
     void setIsRecomProgs(bool newIsRecomProgs);
@@ -76,7 +76,8 @@ signals:
 
     void signalScopeRequest(int scopeId);
 
-    void signalUserProgsRequest();
+    // void signalUserProgsRequest();
+    void updateScopes(bool isRecom);
 
     void currentModeIndexChanged();
     void scopeNameListChanged();
@@ -84,9 +85,11 @@ signals:
 
     void scopeIdxChanged();
 
-    void userProgListChanged();
+    // void userProgListChanged();
 
     void isRecomProgsChanged();
+
+
 
 private:
     int m_scopeIdx = 0;

@@ -1038,25 +1038,25 @@ bool ProgLoader::loadUserProg(int userProgId)
     return programmLoadSocketInit(userProgId + 1001, true);
 }
 
-std::map<int, QString> ProgLoader::getProgList(bool isUser)
-{
-    QList<QVariantList> scopeListVariant
-                = m_dbReaderPtr->slotSendSelectQuery(QStringList{"Scopes"},
-                                                     QStringList{"id", "Name_RU"},
-                                                     isUser ? "id >= 1000" : "id < 1000");
+// std::map<int, QString> ProgLoader::getProgList(bool isUser)
+// {
+//     QList<QVariantList> scopeListVariant
+//                 = m_dbReaderPtr->slotSendSelectQuery(QStringList{"Scopes"},
+//                                                      QStringList{"id", "Name_RU"},
+//                                                      isUser ? "id >= 1000" : "id < 1000");
 
-    std::map<int, QString> scopeList;
-    for (const auto& item : scopeListVariant) {
-        bool ok;
-        int id = item.at(0).toInt(&ok);
-        QString name = item.at(1).toString();
-        if (!ok) {
-            continue;
-        }
-        scopeList.insert_or_assign(id, name);
-    }
-    return scopeList;
-}
+//     std::map<int, QString> scopeList;
+//     for (const auto& item : scopeListVariant) {
+//         bool ok;
+//         int id = item.at(0).toInt(&ok);
+//         QString name = item.at(1).toString();
+//         if (!ok) {
+//             continue;
+//         }
+//         scopeList.insert_or_assign(id, name);
+//     }
+//     return scopeList;
+// }
 
 bool ProgLoader::loadCurrentState()
 {
@@ -1064,4 +1064,9 @@ bool ProgLoader::loadCurrentState()
         return false;
     bool res = programmLoadSocketInit(1000, true);
     return res;
+}
+
+void ProgLoader::setCurLoaderType(progType newCurLoaderType)
+{
+    m_curLoaderType = newCurLoaderType;
 }

@@ -84,11 +84,17 @@ void ControlCenter::makeHandleConnections()
         m_handle->setProgList(m_progLoader->getProgs(id));
     });
 
-    connect(m_handle, &ProgHandle::signalUserProgsRequest,
-            this, [this] () {
-        // qDebug() << " lamba signalUserProgsRequest";
-        m_handle->setUserProgList(m_progLoader->getUserProgList());
+    connect(m_handle, &ProgHandle::updateScopes,
+            this, [this] (bool isRecom) {
+        m_progLoader->setCurLoaderType(isRecom ? ProgLoader::ptRecom : ProgLoader::ptUser);
+        m_handle->setScopeList(m_progLoader->getCategories());
     });
+
+    // connect(m_handle, &ProgHandle::signalUserProgsRequest,
+    //         this, [this] () {
+    //     // qDebug() << " lamba signalUserProgsRequest";
+    //     m_handle->setUserProgList(m_progLoader->getUserProgList());
+    // });
 
     connect(m_handle, &ProgHandle::signalUserProgChosen,
             m_progLoader, &ProgLoader::loadUserProg);

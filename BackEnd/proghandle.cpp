@@ -32,7 +32,11 @@ QList<P> values(const std::map<T, P>& map) {
 ProgHandle::ProgHandle(QObject *parent)
     : QObject{parent}
 {
+    connect(this, &ProgHandle::isRecomProgsChanged,
+            this, [this] () {
+        emit updateScopes(m_isRecomProgs);
 
+    });
 }
 
 void ProgHandle::loadSelected()
@@ -90,12 +94,12 @@ void ProgHandle::copyCurrent()
     emit signalCopyCurrent();
 }
 
-void ProgHandle::userProgs()
-{
-    qDebug() << "call userProgs";
-    setIsRecomProgs(false);
-    emit signalUserProgsRequest();
-}
+// void ProgHandle::userProgs()
+// {
+//     qDebug() << "call userProgs";
+//     setIsRecomProgs(false);
+//     emit signalUserProgsRequest();
+// }
 
 void ProgHandle::permitAll()
 {
@@ -156,7 +160,7 @@ void ProgHandle::setProgList(const std::map<int, QString>& lst, bool isRecom)
     emit progNameListChanged();
 }
 
-void ProgHandle::setScopeNameList(const std::map<int, QString> &scopes, bool isRecom)
+void ProgHandle::setScopeList(const std::map<int, QString> &scopes, bool isRecom)
 {
     (isRecom ? m_scopes : m_userScopes) = scopes;
 
@@ -165,22 +169,22 @@ void ProgHandle::setScopeNameList(const std::map<int, QString> &scopes, bool isR
     emit scopeNameList();
 }
 
-QStringList ProgHandle::userProgList() const
-{
-    QStringList res;
-    for (const auto& item : m_userProgs) {
-        res.push_back(item.second);
-    }
-    return res;
-}
+// QStringList ProgHandle::userProgList() const
+// {
+//     QStringList res;
+//     for (const auto& item : m_userProgs) {
+//         res.push_back(item.second);
+//     }
+//     return res;
+// }
 
-void ProgHandle::setUserProgList(const std::map<int, QString> &progs)
-{
-    qDebug() << "setUserProgList";
+// void ProgHandle::setUserProgList(const std::map<int, QString> &progs)
+// {
+//     qDebug() << "setUserProgList";
 
-    m_userProgs = (progs);
-    emit userProgListChanged();
-}
+//     m_userProgs = (progs);
+//     emit userProgListChanged();
+// }
 
 QString ProgHandle::readTextFile(const QString& filePath)
 {
@@ -199,9 +203,11 @@ QString ProgHandle::readTextFile(const QString& filePath)
 
 QStringList ProgHandle::scanVideoFiles(const QString& folderPath)
 {
+///whyyyy on earth VIDEO got in PROG loader?
+///
     QDir dir(folderPath);
     if (!dir.exists()) {
-        qWarning() << "ProgHandle: Video folder does not exist:" << folderPath;
+        // qWarning() << "ProgHandle: Video folder does not exist:" << folderPath;
         return QStringList();
     }
     
@@ -224,7 +230,7 @@ QStringList ProgHandle::scanVideoFiles(const QString& folderPath)
     
     QStringList videoFiles = dir.entryList();
     
-    qDebug() << "ProgHandle: Found" << videoFiles.size() << "video files in" << folderPath;
+    // qDebug() << "ProgHandle: Found" << videoFiles.size() << "video files in" << folderPath;
     
     return videoFiles;
 }

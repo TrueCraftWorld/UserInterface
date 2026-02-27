@@ -4,6 +4,7 @@
 #include "socket.h"
 
 
+// #include <iostream>
 #include <unordered_set>
 #include <cmath>
 #include <vector>
@@ -767,15 +768,18 @@ std::map<int, QString> ProgLoader::getProgs(int scopeID)
 
 std::map<int, QString> ProgLoader::getCategories()
 {
+    // std::cout << "ProgLoader::getCategories()" << m_curLoaderType << std::endl;
     const std::unique_ptr<ProgLoaderBase> loader{getLoader(m_curLoaderType)};
+    // std::cout << "type" << loader->type() << std::endl;
+
     return loader->getCategories();
 }
 
-std::map<int, QString> ProgLoader::getUserProgList()
-{
-    m_curLoaderType = ptUser;
-    return getCategories();
-}
+// std::map<int, QString> ProgLoader::getUserProgList()
+// {
+//     m_curLoaderType = ptUser;
+//     return getCategories();
+// }
 
 
 void ProgLoader::saveUserProg(const QString &name)
@@ -986,10 +990,10 @@ ProgLoaderBase *ProgLoader::getLoader(progType type)
     switch (type) {
     case ptRecom:
         return new RecomProgLoader();
-        break;
+        // break;
     case ptUser:
         return new UserProgLoader();
-        break;
+        // break;
     default:
         break;
     }
@@ -1033,10 +1037,10 @@ int ProgLoader::addUserScope(const QString &name)
 
 }
 
-bool ProgLoader::loadUserProg(int userProgId)
-{
-    return programmLoadSocketInit(userProgId + 1001, true);
-}
+// bool ProgLoader::loadUserProg(int userProgId)
+// {
+//     return programmLoadSocketInit(userProgId + 1001, true);
+// }
 
 // std::map<int, QString> ProgLoader::getProgList(bool isUser)
 // {
@@ -1068,5 +1072,6 @@ bool ProgLoader::loadCurrentState()
 
 void ProgLoader::setCurLoaderType(progType newCurLoaderType)
 {
+    std::cout << "ProgLoader::setCurLoaderType" << newCurLoaderType << std::endl;
     m_curLoaderType = newCurLoaderType;
 }

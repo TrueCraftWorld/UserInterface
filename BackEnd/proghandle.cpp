@@ -5,6 +5,7 @@
 #include <QDebug>
 #include <QDir>
 #include <QStringList>
+// #include <iostream>
 
 #include "proghandle.h"
 
@@ -39,11 +40,6 @@ ProgHandle::ProgHandle(QObject *parent)
     });
 }
 
-void ProgHandle::loadSelected()
-{
-
-}
-
 void ProgHandle::loadRecommendedProg(int recomProgIdx, bool clear)
 {
     if (recomProgIdx >= m_progs.size())
@@ -58,19 +54,6 @@ void ProgHandle::loadRecommendedProg(int recomProgIdx, bool clear)
 void ProgHandle::removeSubProg()
 {
     emit signalRemoveSub();
-}
-
-void ProgHandle::loadUserProg(int progIndex)
-{
-    if (m_userProgs.size() <= static_cast<size_t>(progIndex))
-        return;
-
-    auto iter = m_userProgs.cbegin();
-    for (int i = 0; i < progIndex; ++i) {
-        iter++;
-    }
-
-    emit signalUserProgChosen(iter->first);
 }
 
 void ProgHandle::saveProg(int id, const QString &name)
@@ -94,13 +77,6 @@ void ProgHandle::copyCurrent()
     emit signalCopyCurrent();
 }
 
-// void ProgHandle::userProgs()
-// {
-//     qDebug() << "call userProgs";
-//     setIsRecomProgs(false);
-//     emit signalUserProgsRequest();
-// }
-
 void ProgHandle::permitAll()
 {
     emit signalUnlockProg();
@@ -108,22 +84,26 @@ void ProgHandle::permitAll()
 
 QStringList ProgHandle::scopeNameList() const
 {
-    return m_isRecomProgs ? values(m_scopes) : values(m_userScopes);
+    return values(m_scopes);
+    // return m_isRecomProgs ? values(m_scopes) : values(m_userScopes);
 }
 
 QStringList ProgHandle::progNameList() const
 {
-    return m_isRecomProgs ? values(m_progs) : values(m_userProgs);
+    return values(m_progs);
+    // return m_isRecomProgs ? values(m_progs) : values(m_userProgs);
 }
 
 QList<int> ProgHandle::scopeIdList() const
 {
-    return m_isRecomProgs ? keys(m_scopes) : keys(m_userProgs);
+    return keys(m_scopes);
+    // return m_isRecomProgs ? keys(m_scopes) : keys(m_userProgs);
 }
 
 QList<int> ProgHandle::progIdList() const
 {
-    auto& progs = m_isRecomProgs ? m_progs : m_userScopes;
+    // auto& progs = m_isRecomProgs ? m_progs : m_userScopes;
+    const auto& progs = m_progs;
     QList<int> res;
     res.reserve(progs.size());
     for (const auto& item : progs) {
@@ -141,8 +121,8 @@ void ProgHandle::setScopeIdx(int newScopeIdx)
 {
     if (m_scopes.size() <= newScopeIdx)
         return;
-    if (m_scopeIdx == newScopeIdx)
-        return;
+    // if (m_scopeIdx == newScopeIdx)
+    //     return;
     m_scopeIdx = newScopeIdx;
     auto iter = m_scopes.begin();
     for (int i = 0; i < newScopeIdx; ++i) {
@@ -154,37 +134,26 @@ void ProgHandle::setScopeIdx(int newScopeIdx)
 }
 
 
-void ProgHandle::setProgList(const std::map<int, QString>& lst, bool isRecom)
+void ProgHandle::setProgList(const std::map<int, QString>& lst/*, bool isRecom*/)
 {
-    (isRecom ? m_progs : m_userProgs) = lst;
+    // (m_isRecomProgs ? m_progs : m_userProgs) = lst;
+    m_progs = lst;
     emit progNameListChanged();
 }
 
-void ProgHandle::setScopeList(const std::map<int, QString> &scopes, bool isRecom)
+void ProgHandle::setScopeList(const std::map<int, QString> &scopes/*, bool isRecom*/)
 {
-    (isRecom ? m_scopes : m_userScopes) = scopes;
+    // (m_isRecomProgs ? m_scopes : m_userScopes) = scopes;
+    // std::cout << "ProgHandle::setScopeList" << m_isRecomProgs << std::endl;
+    for (const auto& item : scopes) {
+        // std::cout << item.second.toStdString() << std::endl;
+    }
 
+    m_scopes = scopes;
     // m_scopeNameList = m_scopes.values();
     setScopeIdx(0);
-    emit scopeNameList();
+    emit scopeNameListChanged();
 }
-
-// QStringList ProgHandle::userProgList() const
-// {
-//     QStringList res;
-//     for (const auto& item : m_userProgs) {
-//         res.push_back(item.second);
-//     }
-//     return res;
-// }
-
-// void ProgHandle::setUserProgList(const std::map<int, QString> &progs)
-// {
-//     qDebug() << "setUserProgList";
-
-//     m_userProgs = (progs);
-//     emit userProgListChanged();
-// }
 
 QString ProgHandle::readTextFile(const QString& filePath)
 {
@@ -242,8 +211,9 @@ bool ProgHandle::isRecomProgs() const
 
 void ProgHandle::setIsRecomProgs(bool newIsRecomProgs)
 {
-    if (m_isRecomProgs == newIsRecomProgs)
-        return;
+    // if (m_isRecomProgs == newIsRecomProgs)
+    //     return;
     m_isRecomProgs = newIsRecomProgs;
+    // std::cout << "setIsRecomProgs" << newIsRecomProgs << std::endl;
     emit isRecomProgsChanged();
 }

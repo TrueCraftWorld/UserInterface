@@ -35,7 +35,7 @@ std::map<int, QString> UserProgLoader::getCategories()
     QList<QVariantList> scopeListVariant
                 = m_dbReader->slotSendSelectQuery(QStringList{"Scopes"},
                                                      QStringList{"id", "Name_RU"},
-                                                     "id < 1000");
+                                                     "id > 1000");
 
     std::map<int, QString> scopeList;
     for (const auto& item : scopeListVariant) {

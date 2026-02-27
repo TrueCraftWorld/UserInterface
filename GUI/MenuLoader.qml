@@ -41,7 +41,11 @@ Item {
                 try {
                     if (menuLoader.item.recommendButtonPressed) {
                         menuLoader.item.recommendButtonPressed.connect(function() {
-                            menuLoader.source = "qrc:/ProgItemList.qml"
+
+                             menuLoader.setSource("qrc:/ProgItemList.qml", {"recommended" : true})
+
+                            // menuLoader.source = "qrc:/ProgItemList.qml"
+                            // menuLoader.item.recommended = true
                         })
                     }
                     if (menuLoader.item.settingsButtonPressed) {
@@ -61,9 +65,10 @@ Item {
                     }
                     if (menuLoader.item.userButtonPressed) {
                         menuLoader.item.userButtonPressed.connect(function() {
+                            menuLoader.setSource("qrc:/ProgItemList.qml", {"recommended" : false})
                             // menuLoader.source = "qrc:/UserProgsSelector.qml"
-                            menuLoader.source = "qrc:/ProgItemList.qml"
-                            menuLoader.item.recommended = false
+                            // menuLoader.source = "qrc:/ProgItemList.qml"
+                            // menuLoader.item.recommended = false
                         })
                     }
                     if (menuLoader.item.returnButtonPressed) {

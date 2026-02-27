@@ -2,6 +2,7 @@
 #include "proghandle.h"
 
 #include <algorithm>
+// #include <iostream>
 #include <vector>
 
 #include <QQmlEngine>
@@ -86,6 +87,7 @@ void ControlCenter::makeHandleConnections()
 
     connect(m_handle, &ProgHandle::updateScopes,
             this, [this] (bool isRecom) {
+        // std::cout << "caught ProgHandle::updateScopes" << isRecom << std::endl;
         m_progLoader->setCurLoaderType(isRecom ? ProgLoader::ptRecom : ProgLoader::ptUser);
         m_handle->setScopeList(m_progLoader->getCategories());
     });
@@ -96,8 +98,8 @@ void ControlCenter::makeHandleConnections()
     //     m_handle->setUserProgList(m_progLoader->getUserProgList());
     // });
 
-    connect(m_handle, &ProgHandle::signalUserProgChosen,
-            m_progLoader, &ProgLoader::loadUserProg);
+    // connect(m_handle, &ProgHandle::signalUserProgChosen,
+    //         m_progLoader, &ProgLoader::loadUserProg);
 
     connect(m_handle, &ProgHandle::signalAddEmptyDefault,
             m_progLoader, &ProgLoader::defaultSocketInit);

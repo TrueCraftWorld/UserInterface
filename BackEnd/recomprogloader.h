@@ -14,6 +14,7 @@ public:
 public:
 	virtual std::map<int, QString> getPrograms(int scopeID) override;
 	virtual std::map<int, QString> getCategories() override;
+	virtual int type() override {return 0;};
 	// virtual void deleteProg(int /*id*/) override { ;};
 };
 

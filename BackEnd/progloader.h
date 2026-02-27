@@ -74,7 +74,7 @@ public:
 	
 	std::map<int, QString> getCategories();
 	
-	std::map<int, QString> getUserProgList();
+	// std::map<int, QString> getUserProgList();
 	// QMap<int, QString> getUserProgList();
 	
 	void saveUserProg(const QString& name);
@@ -95,7 +95,7 @@ public:
 	void setCurLoaderType(progType newCurLoaderType);
 
 public slots:
-	bool loadUserProg(int userProgId);
+	// bool loadUserProg(int userProgId);
 	
 private:
 	// std::map<int, QString> getProgList(bool isUser = false);

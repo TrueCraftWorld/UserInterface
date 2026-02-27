@@ -15,6 +15,7 @@ public:
 
 	virtual std::map<int, QString> getPrograms(int scopeID) = 0;
 	virtual std::map<int, QString> getCategories() = 0;
+	virtual int type() = 0;
 	// virtual void deleteProg(int id) = 0;
 
 signals:

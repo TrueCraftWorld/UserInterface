@@ -14,7 +14,7 @@ Rectangle {
     property var itemIdArr: []
     property var itemNameArr: []
     property bool loadClear: true
-    property bool recommended: true
+    required property bool recommended/*: true*/
 
     ListModel {
         id: scopeModel
@@ -43,11 +43,9 @@ Rectangle {
         progList.innerModel = progsModel
         progList.curIndex = -1
     }
+    function init() {
 
 
-    Component.onCompleted: {
-        recomHandle.isRecomProgs = recommended;
-        // recomHandle.
         itemNameArr = recomHandle.scopeNameList
         itemIdArr = recomHandle.scopeIdList
         if (itemIdArr.length !== itemNameArr.length) {
@@ -65,23 +63,17 @@ Rectangle {
         recomHandle.scopeIdx = 0
     }
 
-    onRecommendedChanged: {
-        console.log("onRecommendedChanged")
-        // recommended.isRecomProgs = recommended;
-        // itemNameArr = recomHandle.scopeNameList
-        // itemIdArr = recomHandle.scopeIdList
-        // if (itemIdArr.length !== itemNameArr.length) {
-        //     console.warn("Lists from C++ have different lengths!")
-        //     return
-        // }
-        // for (var i = 0; i < itemIdArr.length; i++) {
-        //     scopeModel.append({
-        //         itemId: itemIdArr[i],
-        //         itemName: itemNameArr[i],
-        //         rowIndex: i
-        //     })
-        // }
-        // scopeList.innerModel = scopeModel
+
+    Component.onCompleted: {
+        recomHandle.isRecomProgs = recommended;
+    }
+
+    Connections {
+        target: recomHandle
+        function onScopeNameListChanged() {
+            console.log("bugaga")
+            init();
+        }
     }
 
     GradientBack {

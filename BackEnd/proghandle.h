@@ -22,10 +22,10 @@ public:
 
     explicit ProgHandle(QObject *parent = nullptr);
 
-    Q_INVOKABLE void loadSelected();
+    // Q_INVOKABLE void loadSelected();
     Q_INVOKABLE void loadRecommendedProg(int recomProgId, bool clear = true);
     Q_INVOKABLE void removeSubProg();
-    Q_INVOKABLE void loadUserProg(int recomProgId);
+    // Q_INVOKABLE void loadUserProg(int recomProgId);
     Q_INVOKABLE void permitAll();
     Q_INVOKABLE void saveProg(int id, const QString& name);
     Q_INVOKABLE void saveProg(const QString& name);
@@ -43,9 +43,9 @@ public:
     int scopeIdx() const;
     void setScopeIdx(int newScopeIdx);
 
-    void setProgList(const std::map<int, QString>& lst, bool isRecom = true);
+    void setProgList(const std::map<int, QString>& lst/*, bool isRecom = true*/);
 
-    void setScopeList(const std::map<int, QString>& scopes, bool isRecom = true);
+    void setScopeList(const std::map<int, QString>& scopes/*, bool isRecom = true*/);
 
     // QStringList userProgList() const;
     // void setUserProgList(const std::map<int, QString>& progs);
@@ -76,7 +76,6 @@ signals:
 
     void signalScopeRequest(int scopeId);
 
-    // void signalUserProgsRequest();
     void updateScopes(bool isRecom);
 
     void currentModeIndexChanged();
@@ -85,19 +84,15 @@ signals:
 
     void scopeIdxChanged();
 
-    // void userProgListChanged();
-
     void isRecomProgsChanged();
-
-
 
 private:
     int m_scopeIdx = 0;
     std::map<int, QString> m_scopes;
     std::map<int, QString> m_progs;
     // QStringList m_userProgList;
-    std::map<int, QString> m_userProgs;
-    std::map<int, QString> m_userScopes;
+    // std::map<int, QString> m_userProgs;
+    // std::map<int, QString> m_userScopes;
     bool m_isRecomProgs;
 };
 

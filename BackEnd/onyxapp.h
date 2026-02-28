@@ -3,12 +3,18 @@
 
 #include <QGuiApplication>
 #include <QObject>
+#include <QSharedPointer>
+
+#include "databasereader.h"
 
 class OnyxApp : public QGuiApplication
 {
 	Q_OBJECT
 public:
-	OnyxApp();
+	OnyxApp(int &argc, char **argv, int flags = ApplicationFlags);
+	QSharedPointer<DataBaseReader> getDbReader();
+private:
+	QSharedPointer<DataBaseReader> m_dbReader;
 };
 
 #endif // ONYXAPP_H

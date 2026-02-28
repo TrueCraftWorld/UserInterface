@@ -2,7 +2,7 @@
 #include "BackEnd/recomprogloader.h"
 #include "BackEnd/userprogloader.h"
 #include "socket.h"
-
+#include "onyxapp.h"
 
 // #include <iostream>
 #include <unordered_set>
@@ -305,9 +305,13 @@ QString makeDbStringInstr( const QModelIndex& idx,
 ProgLoader::ProgLoader(QObject *parent)
     : QObject{parent}
 {
-    if (m_dbReaderPtr.isNull())
-        m_dbReaderPtr = new DataBaseReader("/home/kikorik/FOTEK/eshfDb.db");
-    // m_dbReaderPtr = new DataBaseReader("/home/kikorik/FOTEK/someShadyDB.db");
+    if (m_dbReaderPtr.isNull()) {
+        OnyxApp* app = dynamic_cast<OnyxApp*>(qApp);
+        if (app) {
+            m_dbReaderPtr = app->getDbReader();
+        }
+
+    }
 }
 
 void ProgLoader::slotSaveCurrentState()
@@ -775,13 +779,6 @@ std::map<int, QString> ProgLoader::getCategories()
     return loader->getCategories();
 }
 
-// std::map<int, QString> ProgLoader::getUserProgList()
-// {
-//     m_curLoaderType = ptUser;
-//     return getCategories();
-// }
-
-
 void ProgLoader::saveUserProg(const QString &name)
 {
     saveProg(name);
@@ -949,7 +946,6 @@ void ProgLoader::saveProg(const QString &name)
         const SocketStrings & state = allStates.at(i);
         const std::pair<int, int> & pedalState = allPedals.at(i);
         QString query = insertUserProgQuery
-        // QString query = saveCurQuery
 
         .arg(state.at(0).at(0) == "-1" ? "" : state.at(0).at(0))
             .arg(state.at(0).at(1) == "1000" ? "" : state.at(0).at(1))
@@ -990,13 +986,12 @@ ProgLoaderBase *ProgLoader::getLoader(progType type)
     switch (type) {
     case ptRecom:
         return new RecomProgLoader();
-        // break;
     case ptUser:
         return new UserProgLoader();
-        // break;
     default:
         break;
     }
+    return nullptr;
 }
 
 void ProgLoader::setSocketModelPtr(QSharedPointer<SocketModel> newSocketModelPtr)
@@ -1034,33 +1029,7 @@ int ProgLoader::addUserScope(const QString &name)
     }
     m_dbReaderPtr->commit();
     return scopeId;
-
 }
-
-// bool ProgLoader::loadUserProg(int userProgId)
-// {
-//     return programmLoadSocketInit(userProgId + 1001, true);
-// }
-
-// std::map<int, QString> ProgLoader::getProgList(bool isUser)
-// {
-//     QList<QVariantList> scopeListVariant
-//                 = m_dbReaderPtr->slotSendSelectQuery(QStringList{"Scopes"},
-//                                                      QStringList{"id", "Name_RU"},
-//                                                      isUser ? "id >= 1000" : "id < 1000");
-
-//     std::map<int, QString> scopeList;
-//     for (const auto& item : scopeListVariant) {
-//         bool ok;
-//         int id = item.at(0).toInt(&ok);
-//         QString name = item.at(1).toString();
-//         if (!ok) {
-//             continue;
-//         }
-//         scopeList.insert_or_assign(id, name);
-//     }
-//     return scopeList;
-// }
 
 bool ProgLoader::loadCurrentState()
 {
@@ -1072,6 +1041,5 @@ bool ProgLoader::loadCurrentState()
 
 void ProgLoader::setCurLoaderType(progType newCurLoaderType)
 {
-    // std::cout << "ProgLoader::setCurLoaderType" << newCurLoaderType << std::endl;
     m_curLoaderType = newCurLoaderType;
 }

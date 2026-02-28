@@ -6,6 +6,7 @@ Item {
     property alias source : menuLoader.source
     property bool shortcut : false
     property alias item : menuLoader.item
+    readonly property var loader : menuLoader
 
     signal returnButtonPressed()
     signal closeMe()

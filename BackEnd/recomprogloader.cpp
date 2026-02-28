@@ -1,13 +1,17 @@
 #include "recomprogloader.h"
+#include "onyxapp.h"
 
 
 RecomProgLoader::RecomProgLoader(QObject *parent)
     : ProgLoaderBase{parent}
 {
-    if (m_dbReader.isNull())
-        m_dbReader = new DataBaseReader("/home/kikorik/FOTEK/eshfDb.db");
+    if (m_dbReader.isNull()) {
+        OnyxApp* app = dynamic_cast<OnyxApp*>(qApp);
+        if (app) {
+            m_dbReader = app->getDbReader();
+        }
+    }
 }
-
 
 std::map<int, QString> RecomProgLoader::getPrograms(int scopeID)
 {

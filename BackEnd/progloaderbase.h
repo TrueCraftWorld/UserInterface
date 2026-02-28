@@ -3,9 +3,10 @@
 
 #include "BackEnd/databasereader.h"
 #include <QObject>
-#include <QPointer>
+#include <QSharedPointer>
 #include <map>
 #include <QString>
+
 
 class ProgLoaderBase : public QObject
 {
@@ -21,7 +22,7 @@ public:
 signals:
 
 protected:
-	QPointer<DataBaseReader> m_dbReader;
+	QSharedPointer<DataBaseReader> m_dbReader;
 
 };
 

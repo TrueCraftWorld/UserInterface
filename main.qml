@@ -401,14 +401,24 @@ Window {
             case 1:
             {
                menuLoad.shortcut = true;
-               menuLoad.source = "qrc:/ProgItemList.qml"
-               menuLoad.item.loadClear = false;
+               menuLoad.loader.setSource("qrc:/ProgItemList.qml",
+                     {"recommended" : true,
+                      "loadClear" : false})
                leftDrawer.open()
                break;
             }
             case 2:
             {
                recomHandle.addEmptyDefault();
+               break;
+            }
+            case 3:
+            {
+               menuLoad.shortcut = true;
+               menuLoad.loader.setSource("qrc:/ProgItemList.qml",
+                     {"recommended" : false,
+                      "loadClear" : false})
+               leftDrawer.open()
                break;
             }
          }

@@ -7,6 +7,7 @@
 #include "BackEnd/instrimageprovider.h"
 #include "BackEnd/systemmonitor.h"
 #include "BackEnd/keygenerator.h"
+#include "BackEnd/onyxapp.h"
 #include "qqmlcontext.h"
 
 #include <QFile>
@@ -71,17 +72,17 @@ int main(int argc, char *argv[])
     
     // Переключаем RK809 на динамик (SPK) вместо наушников (HP)
     // Playback Mux: 0=HP (наушники), 1=SPK (динамик через GPIO)
-    QProcess::execute("amixer", QStringList() << "-c" << "0" << "cset" << "numid=4" << "0");
+    // QProcess::execute("amixer", QStringList() << "-c" << "0" << "cset" << "numid=4" << "0");
     
     // Включаем аудио в playbin
-    qputenv("QT_GSTREAMER_PLAYBIN_FLAGS", "audio+video+soft-colorbalance+soft-volume");
+    // qputenv("QT_GSTREAMER_PLAYBIN_FLAGS", "audio+video+soft-colorbalance+soft-volume");
     
     ///Добавляем модуль клавиатуры
     qputenv("QT_IM_MODULE", QByteArray("cutekeyboard"));
     ///Отключаем курсор мыши на embedded-системе
     // qputenv("QT_QPA_EGLFS_HIDECURSOR", "1");
 
-    QGuiApplication app(argc, argv);
+    OnyxApp app(argc, argv);
 
     // Устанавливаем кастомный обработчик для вывода только имени файла (без пути)
     qInstallMessageHandler(messageHandler);

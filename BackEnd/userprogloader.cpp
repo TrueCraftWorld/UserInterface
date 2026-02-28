@@ -1,10 +1,17 @@
 #include "userprogloader.h"
+#include "onyxapp.h"
 
 
 UserProgLoader::UserProgLoader(QObject *parent)
     : ProgLoaderBase{parent}
 {
+    if (m_dbReader.isNull()) {
+        OnyxApp* app = dynamic_cast<OnyxApp*>(qApp);
+        if (app) {
+            m_dbReader = app->getDbReader();
+        }
 
+    }
 }
 
 

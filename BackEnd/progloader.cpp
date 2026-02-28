@@ -1072,6 +1072,6 @@ bool ProgLoader::loadCurrentState()
 
 void ProgLoader::setCurLoaderType(progType newCurLoaderType)
 {
-    std::cout << "ProgLoader::setCurLoaderType" << newCurLoaderType << std::endl;
+    // std::cout << "ProgLoader::setCurLoaderType" << newCurLoaderType << std::endl;
     m_curLoaderType = newCurLoaderType;
 }

@@ -73,6 +73,7 @@ Rectangle {
         function onScopeNameListChanged() {
             console.log("bugaga")
             init();
+            updateModel();
         }
     }
 

@@ -102,7 +102,7 @@ private:
 	std::map<int, InstrPtr> getInstrums();
 	void saveProg(const QString& name = "");
 	
-	QPointer<DataBaseReader> m_dbReaderPtr;
+	QSharedPointer<DataBaseReader> m_dbReaderPtr;
 	QSharedPointer<SocketModel> m_socketModelPtr;
 
 	// std::map<int, QSharedPointer<ProgLoaderBase>> m_loaders;

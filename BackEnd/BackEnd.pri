@@ -14,6 +14,7 @@ HEADERS += \
     $$PWD/keygenerator.h \
     $$PWD/linkstm.h \
     $$PWD/loggingcategories.h \
+    $$PWD/onyxapp.h \
     $$PWD/pedal.h \
     $$PWD/periphhandler.h \
     $$PWD/proghandle.h \
@@ -40,6 +41,7 @@ SOURCES += \
     $$PWD/keygenerator.cpp \
     $$PWD/linkstm.cpp \
     $$PWD/loggingcategories.cpp \
+    $$PWD/onyxapp.cpp \
     $$PWD/pedal.cpp \
     $$PWD/periphhandler.cpp \
     $$PWD/proghandle.cpp \

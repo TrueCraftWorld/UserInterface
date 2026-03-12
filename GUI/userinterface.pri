@@ -28,6 +28,7 @@ DISTFILES += \
     $$PWD/PowerRect.qml \
     $$PWD/ProgAdditionPop.qml \
     $$PWD/ProgItemList.qml \
+    $$PWD/ProgSaveDialog.qml \
     $$PWD/SocketRepeater.qml \
     $$PWD/StatesSocket.qml \
     $$PWD/SocketContainerV2.qml \

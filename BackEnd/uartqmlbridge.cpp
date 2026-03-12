@@ -38,8 +38,8 @@ void UartToQmlBridge::openSerialPort()
     m_serial->setStopBits(QSerialPort::OneStop);
     m_serial->setFlowControl(QSerialPort::NoFlowControl);
     m_serial->close();
-    if (!m_serial->open(QIODevice::ReadWrite))
-        qDebug() << (QString("Can't open serial port ").append(m_portName));
+    // if (!m_serial->open(QIODevice::ReadWrite))
+        // qDebug() << (QString("Can't open serial port ").append(m_portName));
 }
 
 void UartToQmlBridge::closeSerialPort()

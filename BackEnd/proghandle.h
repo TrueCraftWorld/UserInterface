@@ -27,8 +27,10 @@ public:
     Q_INVOKABLE void removeSubProg();
     // Q_INVOKABLE void loadUserProg(int recomProgId);
     Q_INVOKABLE void permitAll();
-    Q_INVOKABLE void saveProg(int id, const QString& name);
-    Q_INVOKABLE void saveProg(const QString& name);
+    // Q_INVOKABLE void saveProg(int id, const QString& name);
+    // Q_INVOKABLE void saveProg(const QString& name);
+    Q_INVOKABLE void saveProg(const QString& scopeName,
+                                const QString& progName);
     Q_INVOKABLE void addEmptyDefault();
     Q_INVOKABLE void copyCurrent();
     // Q_INVOKABLE void userProgs();
@@ -71,7 +73,8 @@ signals:
 
     void signalLoadEmpty();
     void signalSave(int id, const QString& name);
-    void signalSaveName(const QString& name);
+    void signalSaveName(const QString& scopeName,
+                        const QString& progName);
     void signalUnlockProg();
 
     void signalScopeRequest(int scopeId);

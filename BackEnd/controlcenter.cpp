@@ -179,7 +179,7 @@ void ControlCenter::scheduleSave()
 {
     //переделал так - если уже бежит таймер, то пусть бежит. сохранится всё скопом
     //если не бежит - запустим
-    qDebug() << "scheduleSave";
+    // qDebug() << "scheduleSave";
     if (!m_saveTimer->isActive() || m_saveTimer->remainingTime() < 10) {
         m_saveTimer->stop();
         m_saveTimer->start();

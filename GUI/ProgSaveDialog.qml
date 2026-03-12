@@ -3,24 +3,21 @@ import QtQuick.Controls 2.15
 import BackEnd 1.0
 
 Dialog {
-
-    property string progName: progNameInput.text
+    readonly property string progName: progNameInput.text
+    readonly property string scopeName: scopeNameBox.currentText
     title: qsTr("Укажите название программы")
-    // footer: ""
     standardButtons: Dialog.Ok | Dialog.Cancel
     onOpened: {
         console.log("openSaveDia")
         recomHandle.isRecomProgs = false;
         scopeNameBox.model = recomHandle.scopeNameList
-        // var model = recomHandle.scopeNameList;
-        // for (var i = 0; i < model.length; ++i) {
-        //     console.log(i, model[i])
-        // }
+        progNameInput.text = "Программа 1"
     }
+
     contentItem: Rectangle {
         id: contRect
-        // anchors.fill: parent
-        // color: "transparent"
+        color: "transparent"
+
         ComboBox {
             id: scopeNameBox
             width: 0.7 * parent.width

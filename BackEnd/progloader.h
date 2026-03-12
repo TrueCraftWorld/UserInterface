@@ -77,7 +77,9 @@ public:
 	// std::map<int, QString> getUserProgList();
 	// QMap<int, QString> getUserProgList();
 	
-	void saveUserProg(const QString& name);
+	// void saveUserProg(const QString& name);
+	void saveUserProg(const QString& scopeName,
+	                    const QString& progName);
 	
 	void deleteUserProg(int id);
 	

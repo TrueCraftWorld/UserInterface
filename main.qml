@@ -125,11 +125,12 @@ Window {
     Connections {
         target: saveProgDialog
         function onAccepted() {
-            recomHandle.saveProg(saveProgDialog.progName)
+            recomHandle.saveProg(saveProgDialog.scopeName,
+                                 saveProgDialog.progName)
         }
-        function onOpened() {
-            saveProgDialog.progName = ""
-        }
+        // function onOpened() {
+        //     // saveProgDialog.progName = ""
+        // }
     }
     // Overlay для закрытия drawer'ов при касании вне их
 

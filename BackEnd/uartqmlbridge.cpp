@@ -38,8 +38,8 @@ void UartToQmlBridge::openSerialPort()
     m_serial->setStopBits(QSerialPort::OneStop);
     m_serial->setFlowControl(QSerialPort::NoFlowControl);
     m_serial->close();
-    if (!m_serial->open(QIODevice::ReadWrite))
-        qDebug() << (QString("Can't open serial port ").append(m_portName));
+    // if (!m_serial->open(QIODevice::ReadWrite))
+        // qDebug() << (QString("Can't open serial port ").append(m_portName));
 }
 
 void UartToQmlBridge::closeSerialPort()
@@ -57,7 +57,8 @@ void UartToQmlBridge::handleError(QSerialPort::SerialPortError error)
 bool UartToQmlBridge::writeData(const QByteArray &txData)
 {
     quint16 writedByte;
-    
+    if (!m_serial->isOpen())
+        return false;
     // Отладочный вывод TX удалён
     
     // Записываем данные в SerialPort

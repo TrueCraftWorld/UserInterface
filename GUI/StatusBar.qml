@@ -21,11 +21,9 @@ Rectangle {
         iconString: Fa.Icon.bars
         style: "btn-naked"
 
-            onClicked: {
-                statusRoot.drawerCalled()
-            }
-
-
+        onClicked: {
+            statusRoot.drawerCalled()
+        }
     }
     SText {
         id: mainText
@@ -43,9 +41,9 @@ Rectangle {
         iconString: Fa.Icon.save
         style: "btn-naked"
 
-            onClicked: {
-                statusRoot.saveCalled()
-            }
+        onClicked: {
+            statusRoot.saveCalled()
+        }
     }
 
 }

@@ -42,7 +42,7 @@ DataBaseReader::DataBaseReader(const QString& pathToDb)
     someDb.setDatabaseName(pathToDb);
 }
 
-void DataBaseReader::slotSendQuery(const QString &queryStr, int valueNumbersAwaited)
+void DataBaseReader::slotSendQuery(const QString &queryStr, int valueNumbersAwaited) const
 {
     QList<QVariantList> result;
     QSqlDatabase db = QSqlDatabase::database("etoBasa");
@@ -70,7 +70,7 @@ void DataBaseReader::slotSendQuery(const QString &queryStr, int valueNumbersAwai
 
 QList<QVariantList> DataBaseReader::slotSendSelectQuery(const QStringList &tables,
                                          const QStringList &columns,
-                                         const QString &conditions)
+                                         const QString &conditions) const
 {
     QList<QVariantList> result;
     QSqlDatabase db = QSqlDatabase::database("etoBasa");
@@ -106,7 +106,7 @@ QList<QVariantList> DataBaseReader::slotSendSelectQuery(const QStringList &table
     return result;
 }
 
-bool DataBaseReader::executeUpdateQuery(const QString &queryStr)
+bool DataBaseReader::executeUpdateQuery(const QString &queryStr) const
 {
     QSqlDatabase db = QSqlDatabase::database("etoBasa");
     if (!db.open()) {
@@ -126,7 +126,7 @@ bool DataBaseReader::executeUpdateQuery(const QString &queryStr)
     return true;
 }
 
-void DataBaseReader::commit()
+void DataBaseReader::commit() const
 {
     QSqlDatabase db = QSqlDatabase::database("etoBasa");
     if (!db.open()) {

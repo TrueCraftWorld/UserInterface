@@ -1,7 +1,10 @@
 #include "progloader.h"
+#include "BackEnd/recomprogloader.h"
+#include "BackEnd/userprogloader.h"
 #include "socket.h"
+#include "onyxapp.h"
 
-
+// #include <iostream>
 #include <unordered_set>
 #include <vector>
 #include <QDebug>
@@ -284,7 +287,7 @@ QString makeDbStringInstr( const QModelIndex& idx,
                                          "Mono2Coag_INSTR, Mono2Coag_MODE, Mono2Coag_POWER, "
                                          "Pedal_1, Pedal_2, OutEnabled_MASK"
                                          ") VALUES ("
-                                         "%28, %29, NULL,"
+                                         "%28, NULL, %29,"
                                          "'%1', '%2', %3, "
                                          "'%4', '%5', %6, "
                                          "'%7', '%8', %9, "
@@ -301,9 +304,13 @@ QString makeDbStringInstr( const QModelIndex& idx,
 ProgLoader::ProgLoader(QObject *parent)
     : QObject{parent}
 {
-    if (m_dbReaderPtr.isNull())
-//            m_dbReaderPtr = new DataBaseReader("/home/kikorik/FOTEK/someShadyDB.db");
-        m_dbReaderPtr = new DataBaseReader("/home/kikorik/FOTEK/eshfDb.db");
+    if (m_dbReaderPtr.isNull()) {
+        OnyxApp* app = dynamic_cast<OnyxApp*>(qApp);
+        if (app) {
+            m_dbReaderPtr = app->getDbReader();
+        }
+
+    }
 }
 
 void ProgLoader::slotSaveCurrentState()
@@ -370,7 +377,7 @@ void ProgLoader::slotSaveCurrentState()
     // Формируем SQL запрос для REPLACE (INSERT OR UPDATE)
     QString removeQuerry = "DELETE FROM Lists WHERE Prog_ID = 1000";
     m_dbReaderPtr->executeUpdateQuery(removeQuerry);
-    qDebug() << "saving N pages - " << subCount;
+    // qDebug() << "saving N pages - " << subCount;
     for (int i = 0; i < subCount; ++i) {
         const SocketStrings & state = allStates.at(i);
         const std::pair<int, int> & pedalState = allPedals.at(i);
@@ -387,7 +394,7 @@ void ProgLoader::slotSaveCurrentState()
         .arg(pedalState.first).arg(pedalState.second).arg(outEnabledMask).arg(i+1);
 
         if (!m_dbReaderPtr->executeUpdateQuery(query)) {
-            qDebug() << "Failed to save current state";
+            // qDebug() << "Failed to save current state";
         }
     }
 }
@@ -554,16 +561,12 @@ bool ProgLoader::programmLoadSocketInit(int progId, bool clear)
     std::vector<std::map<int, InstrPtr >> instrMapVector;
     std::map<int, std::map<int, InstrInfo>>  instrumConstraints;
 
-    //ПОТОМУ ЧТО ЕСЛИ SELECT * то Qt говорит, что порядок следования полей может быть случаен
-    //Шаг1---------------------------------------------------------
-
     QList<QVariantList> progListVariant;
 
     // Если progId = 0, создаём фиктивную запись программы
     progListVariant = m_dbReaderPtr->slotSendSelectQuery(QStringList{"Lists"},
                                                       fields,
-                                                      progId > 1000 ?
-                                                       queryConditionUser.arg(progId) : queryConditionRecom.arg(progId));
+                                                      queryConditionRecom.arg(progId));
     if (progListVariant.size() == 0)
         return false;
 
@@ -602,17 +605,20 @@ bool ProgLoader::programmLoadSocketInit(int progId, bool clear)
         } else {
             std::vector<int> allowedModesId__;
         //просто разрешаем все назначенные инструменты и режимы, если такие допустимы на сокетах, без дополнительных масок
-            for (int i = 0; i < 8; ++i)
-                allowedModesId__.push_back(progItem.at(4 + 3*i).toInt());
-            std::sort(allowedModesId__.begin(), allowedModesId__.end());
-            if (allowedModesId__.size() >1) {
-                for (auto iter = allowedModesId__.begin()+1; iter < allowedModesId__.end(); ++iter) {
-                    if ( *(iter-1) == *(iter) ) {
-                        iter = allowedModesId__.erase(iter);
-                    }
+            for (int i = 0; i < 8; ++i) {
+                QString allowed = progItem.at(4 + 3*i).toString();
+                QStringList list = allowed.split(',');
+                for (const auto& mode : list) {
+                    allowedModesId__.push_back(mode.toInt());
                 }
             }
-            allowedModesId = QList<int>::fromVector(QVector<int>::fromStdVector(allowedModesId__));
+            std::sort(allowedModesId__.begin(), allowedModesId__.end());
+            if (allowedModesId__.size() > 1) {
+                // std::unordered_set<int> check;
+                auto last = std::unique(allowedModesId__.begin(), allowedModesId__.end());
+                allowedModesId__.erase(last, allowedModesId__.end());
+            }
+            allowedModesId = QList<int>::fromVector(QVector<int>(allowedModesId__.begin(), allowedModesId__.end()));
         }
         // allowedModes
 
@@ -623,20 +629,22 @@ bool ProgLoader::programmLoadSocketInit(int progId, bool clear)
                                                            QStringList{"Instr_ID"},
                                                            QString("List_ID = %1").arg(progItem.at(0).toUInt()));
 
-            for (const auto& item : allowedInstr)
+            for (const auto& item : allowedInstr) {
                 allowedInstrId.push_back(item.at(0).toInt());
+            }
         } else {
             std::vector<int> allowedInstrId__;
-            for (int i = 0; i < 8; ++i)
-                allowedInstrId__.push_back(progItem.at(3 + 3*i).toInt());
-            std::sort(allowedInstrId__.begin(), allowedInstrId__.end());
-            if (allowedInstrId__.size() > 1) {
-                for (auto iter = allowedInstrId__.begin()+1; iter < allowedInstrId__.end(); ++iter) {
-                    if ( *(iter - 1) == *(iter) ) {
-                        iter = allowedInstrId__.erase(iter);
-                    }
+            for (int i = 0; i < 8; ++i) {
+                // allowedInstrId__.push_back(progItem.at(3 + 3*i).toInt());
+                QString allowed = progItem.at(3 + 3*i).toString();
+                QStringList list = allowed.split(',');
+                for (const auto& instr : list) {
+                    allowedInstrId__.push_back(instr.toInt());
                 }
             }
+            std::sort(allowedInstrId__.begin(), allowedInstrId__.end());
+            auto last = std::unique(allowedInstrId__.begin(), allowedInstrId__.end());
+            allowedInstrId__.erase(last, allowedInstrId__.end());
             allowedInstrId = allowedInstrId__;
         }
 
@@ -732,6 +740,16 @@ bool ProgLoader::programmLoadSocketInit(int progId, bool clear)
             }
             bool coagEna = hasNonZeroDigit(progItem.at(29).toInt(), (8 - 2*i) - 1 );
             bool cutEna = hasNonZeroDigit(progItem.at(29).toInt(), (8 - 2*i) );
+
+            int monoPedSocket = progItem.at(27).toInt();
+            if (i == monoPedSocket) {
+                socket->setPedal(Onyx::SINGLE_PED);
+            }
+            int doubePedSocket = progItem.at(27).toInt();
+            if (i == doubePedSocket) {
+                socket->setPedal(Onyx::SINGLE_PED);
+            }
+
             bool allowSock = cutEna || coagEna;
             socket->setAllowed(allowSock);
             socket->setDisplayMode(Onyx::S_COLLAPSED);
@@ -748,70 +766,24 @@ bool ProgLoader::programmLoadSocketInit(int progId, bool clear)
     return (true);
 }
 
-QMap<int, QString> ProgLoader::getListOfPrograms(int scopeID)
+std::map<int, QString> ProgLoader::getProgs(int scopeID)
 {
     //захардкодили, но это нужно знать
-    bool isMyselfArgon = false;
-
-    QString queryCondition = "Scope_ID = %1 AND (Argon = 0 OR Argon = %2)";
-
-    QList<QVariantList> progListVariant = m_dbReaderPtr->slotSendSelectQuery(QStringList{"Progs"},
-                                                                        QStringList{"Name_RU","id", "Prog_NUM", "Subprog_RU"},
-                                                                        queryCondition.arg(scopeID).arg(isMyselfArgon ? 2 : 1));
-
-    QMap<int, QString> progList;
-    for (const auto& item : progListVariant) {
-        // Prog tmp;
-        bool isMainProg = item.at(2).toInt() % 10 == 0 ? true : false;
-        int id = item.at(1).toInt();
-        QString name = item.at(isMainProg ? 0 : 3).toString();
-        progList.insert(id, name);
-    }
-    return progList;
+    const std::unique_ptr<ProgLoaderBase> loader{getLoader(m_curLoaderType)};
+    return loader->getPrograms(scopeID);
 }
 
-QMap<int, QString> ProgLoader::getScopes ()
+std::map<int, QString> ProgLoader::getCategories()
 {
-    QList<QVariantList> scopeListVariant = m_dbReaderPtr->slotSendSelectQuery(QStringList{"Scopes"},
-                                                                        QStringList{"id", "Name_RU"},
-                                                                        "");
-
-    QMap<int, QString> scopeList;
-    for (const auto& item : scopeListVariant) {
-        bool ok;
-        int id = item.at(0).toInt(&ok);
-        QString name = item.at(1).toString();
-        if (!ok)
-            continue;
-        scopeList.insert(id, name);
-    }
-    return scopeList;
-}
-
-std::map<int, QString> ProgLoader::getUserProgList()
-{
-    qDebug() << "getUserProgList";
-    std::map<int, QString> res;
-    QList<QVariantList> progListVariant = m_dbReaderPtr->slotSendSelectQuery(QStringList{"UserProgs"},
-                                                  QStringList{"id", "Name"},
-                                                  "");
-    for (const auto& progItem : qAsConst(progListVariant)) {
-        res.emplace(std::pair{progItem.at(0).toInt(), progItem.at(1).toString()});
-    }
-    return res;
-}
-
-void ProgLoader::saveUserProg(const QString &name)
-{
-    saveProg(name);
+    const std::unique_ptr<ProgLoaderBase> loader{getLoader(m_curLoaderType)};
+    return loader->getCategories();
 }
 
 void ProgLoader::deleteUserProg(int id)
 {
-    ///TODO
-    /// надо удалить запись в таблице листов и в таблице имён программ
-    /// может быть для удаления сделать коммит по закрытию базы???
-    ///
+    QString removeQuery = "DELETE FROM Lists WHERE Prog_ID = %1";
+    m_dbReaderPtr->executeUpdateQuery(removeQuery.arg(id));
+
 }
 
 std::map<int, std::map<int, Onyx::InstrInfo> > ProgLoader::getConstraints(const QList<int>& idList)
@@ -857,39 +829,80 @@ std::map<int, InstrPtr > ProgLoader::getInstrums()
     return result;
 }
 
-void ProgLoader::saveProg(const QString &name)
+void ProgLoader::saveUserProg(const QString &scopeName, const QString &progName)
 {
-
     if (m_socketModelPtr == nullptr
         || m_socketModelPtr->itemsMap() == nullptr) {
         // qWarning() << "Cannot save state: socket model not initialized";
         return;
     }
+    qDebug() << scopeName << progName;
     int idToUse = -1;
-    // int indexToUse = 0;
+    int biggestKnownId = -1;
 
-    const   QString insertUserProgNameQuery = QString(
-                                         "INSERT INTO UserProgs ("
-                                         "Name"
+    auto getScopeId = [this](const QString& name, int& bigId) -> int {
+        int res = -1;
+        const std::unique_ptr<ProgLoaderBase> loader{getLoader(ptUser)};
+
+        auto list = loader->getCategories();
+        for (const auto& item : list) {
+            if (item.second == name) {
+                res = item.first;
+                break;
+            }
+        }
+        if (!list.empty()) {
+            bigId = list.rbegin()->first;
+        }
+        return res;
+    };
+
+    int scopeId = getScopeId(scopeName, biggestKnownId);
+
+    if (scopeId == -1) {
+        //тут добавить новый скоуп
+        const   QString insertUserProgNameQuery = QString(
+                                         "INSERT INTO Scopes ("
+                                         "id, Num, Name_RU, Name_EN, Name_ES"
                                          ") VALUES ("
-                                         "'%1')");
+                                         "%1, %1, '%2', '%2', '%2')");
+        int id = biggestKnownId > 1000 ? biggestKnownId + 1 : 1001;
+        if (!m_dbReaderPtr->executeUpdateQuery(insertUserProgNameQuery
+                                                .arg(id)
+                                                .arg(scopeName))) {
+            qDebug() << "Failed to add new SCOPE";
+            return;
+        } else {
+            m_dbReaderPtr->commit();
+            scopeId = id;
+        }
+    }
 
-    if (!m_dbReaderPtr->executeUpdateQuery(insertUserProgNameQuery.arg(name))) {
-        qDebug() << "Failed to save current state";
+    const  QString insertUserProgNameQuery = QString(
+                                         "INSERT INTO Progs ("
+                                         "Prog_NUM, Argon, Name_RU, Name_EN, Name_ES, Scope_ID, Sub_NUM"
+                                         ") VALUES ("
+                                         "0, 0, '%1', '%1', '%1', %2, 0)");
+
+    if (!m_dbReaderPtr->executeUpdateQuery(insertUserProgNameQuery
+                                                    .arg(progName)
+                                                    .arg(scopeId))) {
+        qDebug() << "Failed to add Prog";
     } else {
         m_dbReaderPtr->commit();
     }
 
-    QList<QVariantList> progListVariant = m_dbReaderPtr->slotSendSelectQuery(QStringList{"UserProgs"},
-                                                  QStringList{"id", "Name"},
-                                                  "");
-    if (progListVariant.isEmpty())
+    QList<QVariantList> progListVariant = m_dbReaderPtr->slotSendSelectQuery(QStringList{"Progs"},
+                                                  QStringList{"id", "Name_RU"},
+                                                  QString("Scope_ID = %1").arg(scopeId));
+    if (progListVariant.isEmpty()) {
+        qDebug() << "нету таких прог";
         return;
-        // idToUse = 10000;
-    if (progListVariant.size() > 1) {
+    }
+    if (progListVariant.size() >= 1) {
         int min = INT_MIN;
         for (const auto& item : progListVariant) {
-            if (item.at(1).toString() != name)
+            if (item.at(1).toString() != progName)
                 continue;
             if (item.at(0).toInt() > min) {
                 min = item.at(0).toInt();
@@ -897,7 +910,10 @@ void ProgLoader::saveProg(const QString &name)
             }
         }
     }
-
+    if (idToUse == -1) {
+        qDebug() << "idToUse == -1";
+        return;
+    }
 
     auto fillState = [this] (std::array<QString, 3>& cut,
                             std::array<QString, 3>& coag,
@@ -911,13 +927,19 @@ void ProgLoader::saveProg(const QString &name)
         } else {
             cut[0] = makeDbStringInstr(idx, SocketModel::CutInstrIdList, SocketModel::CutModeInstrID);
             cut[1] = makeDbStringMode(idx, SocketModel::CutModeIdList, SocketModel::CutModeId);
-            if (!cut[0].isEmpty() && !cut[1].isEmpty())
+            if (!cut[0].isEmpty() && !cut[1].isEmpty()) {
                 cut[2] = QString::number(idx.data(SocketModel::CutModePower).toInt());
+            } else {
+                cut[2] = "";
+            }
 
             coag[0] = makeDbStringInstr(idx, SocketModel::CoagInstrIdList, SocketModel::CoagModeInstrID);
             coag[1] = makeDbStringMode(idx, SocketModel::CoagModeIdList, SocketModel::CoagModeId);
-            if (!coag[0].isEmpty() && !coag[1].isEmpty())
+            if (!coag[0].isEmpty() && !coag[1].isEmpty()) {
                 coag[2] = QString::number(idx.data(SocketModel::CoagModePower).toInt());
+            } else {
+                coag[2] = "";
+            }
 
             int ped = idx.data(SocketModel::SocketPedal).toInt();
 
@@ -935,6 +957,7 @@ void ProgLoader::saveProg(const QString &name)
     allStates.resize(subCount);
     allPedals.resize(subCount, {0, 0});
     m_socketModelPtr->blockSignals(true);
+
     for (int list = 0; list < subCount; ++list) {
         m_socketModelPtr->setSubProgIdx(list);
         SocketStrings & state = allStates[list];
@@ -945,6 +968,7 @@ void ProgLoader::saveProg(const QString &name)
         fillState(state[4], state[5], pedalState, 2);
         fillState(state[6], state[7], pedalState, 3);
     }
+
     m_socketModelPtr->setSubProgIdx(curSubIndex);
     m_socketModelPtr->blockSignals(false);
 
@@ -953,27 +977,59 @@ void ProgLoader::saveProg(const QString &name)
     int outEnabledMask = 11111111;  // По умолчанию все включены (11111111)
 
     // Формируем SQL запрос для REPLACE (INSERT OR UPDATE)
+// using SocketStrings = std::array<std::array<QString, 3>, 8>; //instrId, modeId, power
 
-    qDebug() << "saving N pages - " << subCount;
+    qDebug() << "saving N Upages - " << subCount;
     for (int i = 0; i < subCount; ++i) {
         const SocketStrings & state = allStates.at(i);
         const std::pair<int, int> & pedalState = allPedals.at(i);
         QString query = insertUserProgQuery
-        // QString query = saveCurQuery
-        .arg(state.at(0).at(0) == "-1" ? "" : state.at(0).at(0)).arg(state.at(0).at(1) == "1000" ? "" : state.at(0).at(1)).arg(state.at(0).at(2))
-        .arg(state.at(1).at(0) == "-1" ? "" : state.at(1).at(0)).arg(state.at(1).at(1) == "1000" ? "" : state.at(1).at(1)).arg(state.at(1).at(2))
-        .arg(state.at(2).at(0) == "-1" ? "" : state.at(2).at(0)).arg(state.at(2).at(1) == "1000" ? "" : state.at(2).at(1)).arg(state.at(2).at(2))
-        .arg(state.at(3).at(0) == "-1" ? "" : state.at(3).at(0)).arg(state.at(3).at(1) == "1000" ? "" : state.at(3).at(1)).arg(state.at(3).at(2))
-        .arg(state.at(4).at(0) == "-1" ? "" : state.at(4).at(0)).arg(state.at(4).at(1) == "1000" ? "" : state.at(4).at(1)).arg(state.at(4).at(2))
-        .arg(state.at(5).at(0) == "-1" ? "" : state.at(5).at(0)).arg(state.at(5).at(1) == "1000" ? "" : state.at(5).at(1)).arg(state.at(5).at(2))
-        .arg(state.at(6).at(0) == "-1" ? "" : state.at(6).at(0)).arg(state.at(6).at(1) == "1000" ? "" : state.at(6).at(1)).arg(state.at(6).at(2))
-        .arg(state.at(7).at(0) == "-1" ? "" : state.at(7).at(0)).arg(state.at(7).at(1) == "1000" ? "" : state.at(7).at(1)).arg(state.at(7).at(2))
-        .arg(pedalState.first).arg(pedalState.second).arg(outEnabledMask).arg(i+1).arg(idToUse+1000);
 
+        .arg(state.at(0).at(0) == "-1" ? "" : state.at(0).at(0))
+            .arg(state.at(0).at(1) == "1000" ? "" : state.at(0).at(1))
+                .arg(state.at(0).at(2))
+        .arg(state.at(1).at(0) == "-1" ? "" : state.at(1).at(0))
+            .arg(state.at(1).at(1) == "1000" ? "" : state.at(1).at(1))
+                .arg(state.at(1).at(2))
+        .arg(state.at(2).at(0) == "-1" ? "" : state.at(2).at(0))
+            .arg(state.at(2).at(1) == "1000" ? "" : state.at(2).at(1))
+                .arg(state.at(2).at(2))
+        .arg(state.at(3).at(0) == "-1" ? "" : state.at(3).at(0))
+            .arg(state.at(3).at(1) == "1000" ? "" : state.at(3).at(1))
+                .arg(state.at(3).at(2))
+        .arg(state.at(4).at(0) == "-1" ? "" : state.at(4).at(0))
+            .arg(state.at(4).at(1) == "1000" ? "" : state.at(4).at(1))
+                .arg(state.at(4).at(2))
+        .arg(state.at(5).at(0) == "-1" ? "" : state.at(5).at(0))
+            .arg(state.at(5).at(1) == "1000" ? "" : state.at(5).at(1))
+                .arg(state.at(5).at(2))
+        .arg(state.at(6).at(0) == "-1" ? "" : state.at(6).at(0))
+            .arg(state.at(6).at(1) == "1000" ? "" : state.at(6).at(1))
+                .arg(state.at(6).at(2))
+        .arg(state.at(7).at(0) == "-1" ? "" : state.at(7).at(0))
+            .arg(state.at(7).at(1) == "1000" ? "" : state.at(7).at(1))
+                .arg(state.at(7).at(2))
+        .arg(pedalState.first).arg(pedalState.second).arg(outEnabledMask).arg(i+1).arg(idToUse);
+
+        qDebug() <<query;
         if (!m_dbReaderPtr->executeUpdateQuery(query)) {
-            qDebug() << "Failed to save current state";
+            qDebug() << "Failed to save userProg";
         }
     }
+}
+
+ProgLoaderBase *ProgLoader::getLoader(progType type)
+{
+
+    switch (type) {
+    case ptRecom:
+        return new RecomProgLoader();
+    case ptUser:
+        return new UserProgLoader();
+    default:
+        break;
+    }
+    return nullptr;
 }
 
 void ProgLoader::setSocketModelPtr(QSharedPointer<SocketModel> newSocketModelPtr)
@@ -981,9 +1037,36 @@ void ProgLoader::setSocketModelPtr(QSharedPointer<SocketModel> newSocketModelPtr
     m_socketModelPtr = newSocketModelPtr;
 }
 
-bool ProgLoader::loadUserProg(int userProgId)
+int ProgLoader::addUserScope(const QString &name)
 {
-    return programmLoadSocketInit(userProgId + 1000, true);
+    const   QString insertUserProgNameQuery = QString(
+                                     "INSERT INTO Scopes ("
+                                     "id, Num, Name"
+                                     ") VALUES ("
+                                     "'%1', '%1', '%2')");
+
+    int scopeId = -1;
+    QVariantList scope;
+    {
+        QList<QVariantList> scopes = m_dbReaderPtr->slotSendSelectQuery(QStringList{"Scopes"},
+                                              QStringList{"id", "Name"},
+                                              "");
+        int lastIndex = scopes.last().at(0).toInt();
+        if (lastIndex < 1000) {
+            scopeId = 1000;
+        } else {
+            scopeId = lastIndex + 1;
+        }
+    }
+    if (scopeId == -1) {
+        return scopeId;
+    }
+    if (!m_dbReaderPtr->executeUpdateQuery(insertUserProgNameQuery.arg(scopeId).arg(name))) {
+        qDebug() << "Failed to save new scope";
+        return scopeId;
+    }
+    m_dbReaderPtr->commit();
+    return scopeId;
 }
 
 bool ProgLoader::loadCurrentState()
@@ -993,3 +1076,9 @@ bool ProgLoader::loadCurrentState()
     bool res = programmLoadSocketInit(1000, true);
     return res;
 }
+
+void ProgLoader::setCurLoaderType(progType newCurLoaderType)
+{
+    m_curLoaderType = newCurLoaderType;
+}
+

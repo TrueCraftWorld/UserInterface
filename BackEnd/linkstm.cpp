@@ -187,7 +187,7 @@ void LinkStm::sendCommand()
     //_____________ Проверяем ответ rx__________
     if (m_state != STATE_OK) {
         if (m_state != preState) {
-            qDebug() << "UART-ошибки: " << m_state;
+            // qDebug() << "UART-ошибки: " << m_state;
             emit sigError(m_state + 32);        // Ошибки ответа (первые 32 - то, что присылается по uart)
             preState = m_state;                 // Запоминаем предыдущее состояние
             errCounter = 0;                     // Сбрасываем счётчик ошибок
@@ -491,7 +491,7 @@ void LinkStm::readRxCommand()
                 break;
             default:
                 unitState.pedalKnob = PRESS_WRONG;
-                qWarning() << "Invalid pedal/knob press value:" << Qt::hex << pressValue;
+                // qWarning() << "Invalid pedal/knob press value:" << Qt::hex << pressValue;
                 break;
             }
             
@@ -502,7 +502,7 @@ void LinkStm::readRxCommand()
                 unitState.instrMono2 = static_cast<Onyx::InstrumentConnected>((otherByte >> 1) & 0x03);
             }
         } else {
-            qDebug() << "Посылка от stm отстой - нет нажатий кнопок";
+            // qDebug() << "Посылка от stm отстой - нет нажатий кнопок";
             unitState.pedalKnob = PRESS_NONE;
         }
         break;

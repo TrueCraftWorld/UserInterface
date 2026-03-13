@@ -1,21 +1,43 @@
 #include <QDebug>
-
 #include "proghandle.h"
 #include <QFile>
 #include <QTextStream>
 #include <QDebug>
 #include <QDir>
 #include <QStringList>
+// #include <iostream>
+
+#include "proghandle.h"
+
+namespace {
+template <typename T, typename P>
+QList<T> keys(const std::map<T, P>& map) {
+    QList<T> res;
+    res.reserve(map.size());
+    for (const auto&  item: map) {
+        res.push_back(item.first);
+    }
+    return res;
+}
+template <typename T, typename P>
+QList<P> values(const std::map<T, P>& map) {
+    QList<P> res;
+    res.reserve(map.size());
+    for (const auto&  item: map) {
+        res.push_back(item.second);
+    }
+    return res;
+}
+}
 
 ProgHandle::ProgHandle(QObject *parent)
     : QObject{parent}
 {
+    connect(this, &ProgHandle::isRecomProgsChanged,
+            this, [this] () {
+        emit updateScopes(m_isRecomProgs);
 
-}
-
-void ProgHandle::loadSelected()
-{
-
+    });
 }
 
 void ProgHandle::loadRecommendedProg(int recomProgIdx, bool clear)
@@ -23,8 +45,10 @@ void ProgHandle::loadRecommendedProg(int recomProgIdx, bool clear)
     if (recomProgIdx >= m_progs.size())
         return;
     auto iter = m_progs.begin();
-    iter += recomProgIdx;
-    emit signalRecomProgChosen(iter.key(), clear);
+    for (int a = 0; a < recomProgIdx; a++) {
+        iter++;
+    }
+    emit signalRecomProgChosen(iter->first, clear);
 }
 
 void ProgHandle::removeSubProg()
@@ -32,28 +56,21 @@ void ProgHandle::removeSubProg()
     emit signalRemoveSub();
 }
 
-void ProgHandle::loadUserProg(int progIndex)
+// void ProgHandle::saveProg(int id, const QString &name)
+// {
+//     emit signalSave(id, name);
+// }
+
+// void ProgHandle::saveProg(const QString &name)
+// {
+//     // emit signalSaveName(name);
+//     qDebug() << "saving" << name;
+// }
+
+void ProgHandle::saveProg(const QString &scopeName, const QString &progName)
 {
-    if (m_userProgs.size() <= static_cast<size_t>(progIndex))
-        return;
-
-    auto iter = m_userProgs.cbegin();
-    for (int i = 0; i < progIndex; ++i) {
-        iter++;
-    }
-
-    emit signalUserProgChosen(iter->first);
-}
-
-void ProgHandle::saveProg(int id, const QString &name)
-{
-    emit signalSave(id, name);
-}
-
-void ProgHandle::saveProg(const QString &name)
-{
-    emit signalSaveName(name);
-    qDebug() << "saving" << name;
+    qDebug() << "saveProg" << scopeName << progName;
+    emit signalSaveName(scopeName, progName);
 }
 
 void ProgHandle::addEmptyDefault()
@@ -66,12 +83,6 @@ void ProgHandle::copyCurrent()
     emit signalCopyCurrent();
 }
 
-void ProgHandle::userProgs()
-{
-    qDebug() << "call userProgs";
-    emit signalUserProgsRequest();
-}
-
 void ProgHandle::permitAll()
 {
     emit signalUnlockProg();
@@ -79,22 +90,32 @@ void ProgHandle::permitAll()
 
 QStringList ProgHandle::scopeNameList() const
 {
-    return m_scopes.values();
+    return values(m_scopes);
+    // return m_isRecomProgs ? values(m_scopes) : values(m_userScopes);
 }
 
 QStringList ProgHandle::progNameList() const
 {
-    return m_progs.values();
+    return values(m_progs);
+    // return m_isRecomProgs ? values(m_progs) : values(m_userProgs);
 }
 
 QList<int> ProgHandle::scopeIdList() const
 {
-    return m_scopes.keys();
+    return keys(m_scopes);
+    // return m_isRecomProgs ? keys(m_scopes) : keys(m_userProgs);
 }
 
 QList<int> ProgHandle::progIdList() const
 {
-    return m_progs.keys();
+    // auto& progs = m_isRecomProgs ? m_progs : m_userScopes;
+    const auto& progs = m_progs;
+    QList<int> res;
+    res.reserve(progs.size());
+    for (const auto& item : progs) {
+        res.append(item.first);
+    }
+    return res;
 }
 
 int ProgHandle::scopeIdx() const
@@ -106,29 +127,38 @@ void ProgHandle::setScopeIdx(int newScopeIdx)
 {
     if (m_scopes.size() <= newScopeIdx)
         return;
-    if (m_scopeIdx == newScopeIdx)
-        return;
+    // if (m_scopeIdx == newScopeIdx)
+    //     return;
     m_scopeIdx = newScopeIdx;
     auto iter = m_scopes.begin();
-    iter += newScopeIdx;
-    emit signalScopeRequest(iter.key());
+    for (int i = 0; i < newScopeIdx; ++i) {
+        iter++;
+    }
+    // iter += newScopeIdx;
+    emit signalScopeRequest(iter->first);
     emit scopeIdxChanged();
 }
 
 
-void ProgHandle::setProgList(QMap<int, QString> lst)
+void ProgHandle::setProgList(const std::map<int, QString>& lst/*, bool isRecom*/)
 {
+    // (m_isRecomProgs ? m_progs : m_userProgs) = lst;
     m_progs = lst;
     emit progNameListChanged();
 }
 
-void ProgHandle::setScopeNameList(QMap<int, QString> scopes)
+void ProgHandle::setScopeList(const std::map<int, QString> &scopes/*, bool isRecom*/)
 {
-    m_scopes = scopes;
+    // (m_isRecomProgs ? m_scopes : m_userScopes) = scopes;
+    // std::cout << "ProgHandle::setScopeList" << m_isRecomProgs << std::endl;
+    for (const auto& item : scopes) {
+        // std::cout << item.second.toStdString() << std::endl;
+    }
 
+    m_scopes = scopes;
     // m_scopeNameList = m_scopes.values();
     setScopeIdx(0);
-    emit scopeNameList();
+    emit scopeNameListChanged();
 }
 
 QString ProgHandle::readTextFile(const QString& filePath)
@@ -148,9 +178,11 @@ QString ProgHandle::readTextFile(const QString& filePath)
 
 QStringList ProgHandle::scanVideoFiles(const QString& folderPath)
 {
+///whyyyy on earth VIDEO got in PROG loader?
+///
     QDir dir(folderPath);
     if (!dir.exists()) {
-        qWarning() << "ProgHandle: Video folder does not exist:" << folderPath;
+        // qWarning() << "ProgHandle: Video folder does not exist:" << folderPath;
         return QStringList();
     }
     
@@ -173,24 +205,21 @@ QStringList ProgHandle::scanVideoFiles(const QString& folderPath)
     
     QStringList videoFiles = dir.entryList();
     
-    qDebug() << "ProgHandle: Found" << videoFiles.size() << "video files in" << folderPath;
+    // qDebug() << "ProgHandle: Found" << videoFiles.size() << "video files in" << folderPath;
     
     return videoFiles;
 }
 
-QStringList ProgHandle::userProgList() const
+bool ProgHandle::isRecomProgs() const
 {
-    QStringList res;
-    for (const auto& item : m_userProgs) {
-        res.push_back(item.second);
-    }
-    return res;
+    return m_isRecomProgs;
 }
 
-void ProgHandle::setUserProgList(const std::map<int, QString> &progs)
+void ProgHandle::setIsRecomProgs(bool newIsRecomProgs)
 {
-    qDebug() << "setUserProgList";
-
-    m_userProgs = (progs);
-    emit userProgListChanged();
+    // if (m_isRecomProgs == newIsRecomProgs)
+    //     return;
+    m_isRecomProgs = newIsRecomProgs;
+    // std::cout << "setIsRecomProgs" << newIsRecomProgs << std::endl;
+    emit isRecomProgsChanged();
 }

@@ -103,7 +103,7 @@ Rectangle {
     Connections {
         target: progList
         function onNewIndexSelected(index) {
-            recomHandle.loadUserProg(index)
+            // recomHandle.loadUserProg(index)
             recProgs.clickedButton(-1);
         }
     }

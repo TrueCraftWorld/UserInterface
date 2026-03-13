@@ -28,12 +28,13 @@ DISTFILES += \
     $$PWD/PowerRect.qml \
     $$PWD/ProgAdditionPop.qml \
     $$PWD/ProgItemList.qml \
+    $$PWD/ProgSaveDialog.qml \
     $$PWD/SocketRepeater.qml \
     $$PWD/StatesSocket.qml \
     $$PWD/SocketContainerV2.qml \
     $$PWD/StatusBar.qml \
-    $$PWD/VideoPlayer.qml
     $$PWD/UserProgsSelector.qml
+    $$PWD/VideoPlayer.qml
 
 HEADERS +=
 

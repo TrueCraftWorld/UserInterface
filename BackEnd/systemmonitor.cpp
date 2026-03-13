@@ -29,7 +29,7 @@ void SystemMonitor::start()
     if (!m_timer->isActive()) {
         m_timer->start(m_updateInterval);
         updateStats();  // Сразу обновляем данные
-        qDebug() << "SystemMonitor: Мониторинг запущен с интервалом" << m_updateInterval << "мс";
+        // qDebug() << "SystemMonitor: Мониторинг запущен с интервалом" << m_updateInterval << "мс";
     }
 }
 
@@ -37,7 +37,7 @@ void SystemMonitor::stop()
 {
     if (m_timer->isActive()) {
         m_timer->stop();
-        qDebug() << "SystemMonitor: Мониторинг остановлен";
+        // qDebug() << "SystemMonitor: Мониторинг остановлен";
     }
 }
 

@@ -15,7 +15,7 @@ Rectangle {
     property var itemIdArr: []
     property var itemNameArr: []
     property bool loadClear: true
-
+    required property bool recommended/*: true*/
 
     ListModel {
         id: scopeModel
@@ -27,6 +27,7 @@ Rectangle {
 
     function updateModel() {
         progsModel.clear()
+        // itemNameArr = recommended ? recomHandle.progNameList ? recomHandle.
         itemNameArr = recomHandle.progNameList
         itemIdArr = recomHandle.progIdList
         if (itemIdArr.length !== itemNameArr.length) {
@@ -43,9 +44,8 @@ Rectangle {
         progList.innerModel = progsModel
         progList.curIndex = -1
     }
+    function init() {
 
-
-    Component.onCompleted: {
 
         itemNameArr = recomHandle.scopeNameList
         itemIdArr = recomHandle.scopeIdList
@@ -62,6 +62,20 @@ Rectangle {
         }
         scopeList.innerModel = scopeModel
         recomHandle.scopeIdx = 0
+    }
+
+
+    Component.onCompleted: {
+        recomHandle.isRecomProgs = recommended;
+    }
+
+    Connections {
+        target: recomHandle
+        function onScopeNameListChanged() {
+            console.log("bugaga")
+            init();
+            updateModel();
+        }
     }
 
     GradientBack {

@@ -2,6 +2,7 @@
 #include "proghandle.h"
 
 #include <algorithm>
+// #include <iostream>
 #include <vector>
 
 #include <QQmlEngine>
@@ -81,17 +82,24 @@ void ControlCenter::makeHandleConnections()
     
     connect(m_handle, &ProgHandle::signalScopeRequest,
             this, [this] (int id) {
-        m_handle->setProgList(m_progLoader->getListOfPrograms(id));
+        m_handle->setProgList(m_progLoader->getProgs(id));
     });
 
-    connect(m_handle, &ProgHandle::signalUserProgsRequest,
-            this, [this] () {
-        qDebug() << " lamba signalUserProgsRequest";
-        m_handle->setUserProgList(m_progLoader->getUserProgList());
+    connect(m_handle, &ProgHandle::updateScopes,
+            this, [this] (bool isRecom) {
+        // std::cout << "caught ProgHandle::updateScopes" << isRecom << std::endl;
+        m_progLoader->setCurLoaderType(isRecom ? ProgLoader::ptRecom : ProgLoader::ptUser);
+        m_handle->setScopeList(m_progLoader->getCategories());
     });
 
-    connect(m_handle, &ProgHandle::signalUserProgChosen,
-            m_progLoader, &ProgLoader::loadUserProg);
+    // connect(m_handle, &ProgHandle::signalUserProgsRequest,
+    //         this, [this] () {
+    //     // qDebug() << " lamba signalUserProgsRequest";
+    //     m_handle->setUserProgList(m_progLoader->getUserProgList());
+    // });
+
+    // connect(m_handle, &ProgHandle::signalUserProgChosen,
+    //         m_progLoader, &ProgLoader::loadUserProg);
 
     connect(m_handle, &ProgHandle::signalAddEmptyDefault,
             m_progLoader, &ProgLoader::defaultSocketInit);
@@ -113,7 +121,7 @@ void ControlCenter::initSockets()
     if (!m_progLoader->loadCurrentState())
         m_progLoader->defaultSocketInit();
 
-    m_handle->setScopeNameList(m_progLoader->getScopes());
+    // m_handle->setScopeNameList(m_progLoader->getCategories());
 }
 
 void ControlCenter::prepareConnectios()
@@ -171,7 +179,7 @@ void ControlCenter::scheduleSave()
 {
     //переделал так - если уже бежит таймер, то пусть бежит. сохранится всё скопом
     //если не бежит - запустим
-    qDebug() << "scheduleSave";
+    // qDebug() << "scheduleSave";
     if (!m_saveTimer->isActive() || m_saveTimer->remainingTime() < 10) {
         m_saveTimer->stop();
         m_saveTimer->start();

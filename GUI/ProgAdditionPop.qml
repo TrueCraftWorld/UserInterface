@@ -89,6 +89,11 @@ Dialog {
                     Layout.alignment: Qt.AlignCenter
                 }
                 VariantRect{
+                    title: qsTr("ЗАГРУЗИТЬ ПОЛЬЗОВАТЕЛЬСКИЙ")
+                    buttonType: 3
+                    Layout.alignment: Qt.AlignCenter
+                }
+                VariantRect{
                     title: qsTr("ДОБАВИТЬ ПУСТОЙ")
                     buttonType: 2
                     Layout.alignment: Qt.AlignCenter

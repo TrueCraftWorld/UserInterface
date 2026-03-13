@@ -5,7 +5,7 @@
 #include <QVariant>
 #include <QVariantMap>
 
-#include "userprogsloadmodel.h"
+// #include "userprogsloadmodel.h"
 
 class ProgHandle : public QObject
 {
@@ -16,23 +16,26 @@ public:
     Q_PROPERTY(QList<int> scopeIdList READ scopeIdList NOTIFY scopeNameListChanged FINAL)
     Q_PROPERTY(QStringList progNameList READ progNameList NOTIFY progNameListChanged FINAL)
     Q_PROPERTY(QList<int> progIdList READ progIdList NOTIFY progNameListChanged FINAL)
-    Q_PROPERTY(QStringList userProgList READ userProgList NOTIFY userProgListChanged FINAL)
+    // Q_PROPERTY(QStringList userProgList READ userProgList NOTIFY userProgListChanged FINAL)
     Q_PROPERTY(int scopeIdx READ scopeIdx WRITE setScopeIdx NOTIFY scopeIdxChanged FINAL)
+    Q_PROPERTY(bool isRecomProgs READ isRecomProgs WRITE setIsRecomProgs NOTIFY isRecomProgsChanged FINAL)
 
     explicit ProgHandle(QObject *parent = nullptr);
 
-    Q_INVOKABLE void loadSelected();
+    // Q_INVOKABLE void loadSelected();
     Q_INVOKABLE void loadRecommendedProg(int recomProgId, bool clear = true);
     Q_INVOKABLE void removeSubProg();
-    Q_INVOKABLE void loadUserProg(int recomProgId);
+    // Q_INVOKABLE void loadUserProg(int recomProgId);
     Q_INVOKABLE void permitAll();
-    Q_INVOKABLE void saveProg(int id, const QString& name);
-    Q_INVOKABLE void saveProg(const QString& name);
+    // Q_INVOKABLE void saveProg(int id, const QString& name);
+    // Q_INVOKABLE void saveProg(const QString& name);
+    Q_INVOKABLE void saveProg(const QString& scopeName,
+                                const QString& progName);
     Q_INVOKABLE void addEmptyDefault();
     Q_INVOKABLE void copyCurrent();
+    // Q_INVOKABLE void userProgs();
     Q_INVOKABLE QString readTextFile(const QString& filePath);
     Q_INVOKABLE QStringList scanVideoFiles(const QString& folderPath);
-    Q_INVOKABLE void userProgs();
 
     QStringList scopeNameList() const;
     QStringList progNameList() const;
@@ -42,12 +45,15 @@ public:
     int scopeIdx() const;
     void setScopeIdx(int newScopeIdx);
 
-    void setProgList(QMap<int, QString> lst);
+    void setProgList(const std::map<int, QString>& lst/*, bool isRecom = true*/);
 
-    void setScopeNameList(QMap<int, QString> scopes);
+    void setScopeList(const std::map<int, QString>& scopes/*, bool isRecom = true*/);
 
-    QStringList userProgList() const;
-    void setUserProgList(const std::map<int, QString>& progs);
+    // QStringList userProgList() const;
+    // void setUserProgList(const std::map<int, QString>& progs);
+
+    bool isRecomProgs() const;
+    void setIsRecomProgs(bool newIsRecomProgs);
 
 signals:
     //все этим методы и сигналы нужны т.к. возможно хочется сделать модель ридонли внутри qml
@@ -67,12 +73,13 @@ signals:
 
     void signalLoadEmpty();
     void signalSave(int id, const QString& name);
-    void signalSaveName(const QString& name);
+    void signalSaveName(const QString& scopeName,
+                        const QString& progName);
     void signalUnlockProg();
 
     void signalScopeRequest(int scopeId);
 
-    void signalUserProgsRequest();
+    void updateScopes(bool isRecom);
 
     void currentModeIndexChanged();
     void scopeNameListChanged();
@@ -80,14 +87,16 @@ signals:
 
     void scopeIdxChanged();
 
-    void userProgListChanged();
+    void isRecomProgsChanged();
 
 private:
     int m_scopeIdx = 0;
-    QMap<int, QString> m_scopes;
-    QMap<int, QString> m_progs;
+    std::map<int, QString> m_scopes;
+    std::map<int, QString> m_progs;
     // QStringList m_userProgList;
-    std::map<int, QString> m_userProgs;
+    // std::map<int, QString> m_userProgs;
+    // std::map<int, QString> m_userScopes;
+    bool m_isRecomProgs;
 };
 
 

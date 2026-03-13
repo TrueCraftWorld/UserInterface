@@ -8,6 +8,7 @@ Rectangle {
     id: recProgs
     // property alias innerModel: repeatRoot.model
     signal clickedButton(int idx)
+    signal programSelected(string scopeName, string progName)
     signal returnButtonPressed()
     color: "transparent"
 
@@ -166,6 +167,15 @@ Rectangle {
         target: progList
         function onNewIndexSelected(index) {
             recomHandle.loadRecommendedProg(index, loadClear)
+            
+            var scopeName = scopeList.curIndex >= 0 && scopeList.curIndex < scopeModel.count 
+                ? scopeModel.get(scopeList.curIndex).itemName 
+                : ""
+            var progName = index >= 0 && index < progsModel.count 
+                ? progsModel.get(index).itemName 
+                : ""
+            
+            recProgs.programSelected(scopeName, progName)
             recProgs.clickedButton(-1);
         }
     }

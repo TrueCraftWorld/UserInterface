@@ -11,6 +11,8 @@ Item {
     signal userButtonPressed()
     signal exitButtonPressed()
     signal secretKeysButtonPressed()
+    signal userProgsButtonPressed()
+    signal freeSettingsButtonPressed()
     
     property bool videoPlayerVisible: false
     Rectangle {
@@ -50,14 +52,14 @@ Item {
             horizontalCenter: parent.horizontalCenter
         }
         columns: 2
-        rows: 2
+        rows: 3
         columnSpacing: 20
         rowSpacing: 20
         clip: false  // Не обрезаем - позволяем теням отображаться
 
         Item {
             width: 380
-            height: 280
+            height: 220
             clip: true
             
             SButton {
@@ -66,14 +68,44 @@ Item {
                 style: "btn-primary lg"           // Попробуйте: btn-primary, btn-secondary, btn-info, btn-light
                 width: parent.width
                 height: parent.height
-                text: qsTr("Рекомендованные")
+                text: qsTr("Рекомендованные\n программы")
                 onClicked: recommendButtonPressed()
             }
         }
 
         Item {
             width: 380
-            height: 280
+            height: 220
+            clip: true
+
+            SButton {
+                id: userProgsButton
+                style: "btn-primary lg"
+                width: parent.width
+                height: parent.height
+                onClicked: userProgsButtonPressed()
+                text: qsTr("Пользовательские\n программы")
+            }
+        }
+
+        Item {
+            width: 380
+            height: 220
+            clip: true
+
+            SButton {
+                id: freeSettingsButton
+                style: "btn-primary lg"
+                width: parent.width
+                height: parent.height
+                onClicked: freeSettingsButtonPressed()
+                text: qsTr("Свободные\n установки")
+            }
+        }
+
+        Item {
+            width: 380
+            height: 220
             clip: true
             
             SButton {
@@ -89,7 +121,7 @@ Item {
         
         Item {
             width: 380
-            height: 280
+            height: 220
             clip: true
             
             SButton {
@@ -103,20 +135,21 @@ Item {
             }
         }
         
-        Item {
-            width: 380
-            height: 280
-            clip: true
+//        Item {
+//            width: 380
+//            height: 220
+//            clip: true
             
-            SButton {
-                id: secretKeysButton
-                style: "btn-primary lg"
-                width: parent.width
-                height: parent.height
-                onClicked: secretKeysButtonPressed()
-                text: qsTr("Секретные ключи 🔐")
-            }
-        }
+//            SButton {
+//                id: secretKeysButton
+//                style: "btn-primary lg"
+//                width: parent.width
+//                height: parent.height
+//                onClicked: secretKeysButtonPressed()
+//                text: qsTr("Секретные ключи 🔐")
+//            }
+//        }
+        
     }
     
     // Видеопроигрыватель

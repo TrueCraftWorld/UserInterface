@@ -949,4 +949,5 @@ std::vector<SocketStrings> SocketModel::getDatabaseText()
 
         }
     }
+    return progDesc;
 }

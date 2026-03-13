@@ -37,7 +37,7 @@ Window {
    StatusBar {
       id: statusDummy
       //я искал панграммы для русского и хорошо так посмеялся с эфы
-      text: qsTr("В бою с шипящими змеями — эфой и гадюкой — маленький, цепкий, храбрый ёж съел их")
+      text: qsTr("")
       width: parent.width
       height: 85
       anchors {
@@ -149,12 +149,21 @@ Window {
       title: qsTr("Укажите название программы")
       // footer: ""
       standardButtons: Dialog.Ok | Dialog.Cancel
-      contentItem: TextInput {
+      contentItem: TextField {
          id: progNameInput
          width: 0.7 * parent.width
          anchors.centerIn: parent
+         placeholderText: qsTr("Введите название...")
+         focus: true
+         font.pixelSize: 18
+         selectByMouse: true
       }
       anchors.centerIn: parent
+      
+      onOpened: {
+         progNameInput.forceActiveFocus()
+         progNameInput.selectAll()
+      }
 
       // onAccepted: console.log("Ok clicked")
       // onRejected: console.log("Cancel clicked")
@@ -387,6 +396,9 @@ Window {
       function onCloseMe() {
          leftDrawer.close()
       }
+      function onProgramSelected(scopeName, progName) {
+         statusDummy.text = scopeName + ": " + progName
+      }
    }
    Connections {
       target: socketsDummy
@@ -558,5 +570,37 @@ Window {
    //    }
 
    // }
+   
+   // Виртуальная клавиатура CuteKeyboard
+   InputPanel {
+      id: inputPanel
+      
+      z: 9999
+      y: container.height
+      availableLanguageLayouts: ["Ru","En"]
+      anchors.left: parent.left
+      anchors.right: parent.right
+      
+      states: State {
+         name: "visible"
+         when: Qt.inputMethod.visible
+         PropertyChanges {
+            target: inputPanel
+            y: container.height - inputPanel.height
+         }
+      }
+      transitions: Transition {
+         from: ""
+         to: "visible"
+         reversible: true
+         ParallelAnimation {
+            NumberAnimation {
+               properties: "y"
+               duration: 150
+               easing.type: Easing.InOutQuad
+            }
+         }
+      }
+   }
 
 }

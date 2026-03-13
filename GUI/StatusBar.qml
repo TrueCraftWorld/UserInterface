@@ -32,6 +32,8 @@ Rectangle {
         height: parent.height
         anchors.left: drawerButton.right
         anchors.right: saveButton.left
+        horizontalAlignment: Text.AlignHCenter
+        verticalAlignment: Text.AlignVCenter
     }
     SButton {
         id: saveButton

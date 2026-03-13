@@ -9,6 +9,7 @@ Item {
 
     signal returnButtonPressed()
     signal closeMe()
+    signal programSelected(string scopeName, string progName)
     Loader {
         id: menuLoader
         anchors.fill: parent
@@ -38,7 +39,7 @@ Item {
                 try {
                     if (menuLoader.item.recommendButtonPressed) {
                         menuLoader.item.recommendButtonPressed.connect(function() {
-                menuLoader.source = "qrc:/ProgItemList.qml"
+                            menuLoader.source = "qrc:/ProgItemList.qml"
                         })
             }
                     if (menuLoader.item.settingsButtonPressed) {
@@ -49,6 +50,17 @@ Item {
                     if (menuLoader.item.secretKeysButtonPressed) {
                         menuLoader.item.secretKeysButtonPressed.connect(function() {
                 menuLoader.source = "qrc:/SecretKeysWindow.qml"
+                        })
+            }
+                    if (menuLoader.item.userProgsButtonPressed) {
+                        menuLoader.item.userProgsButtonPressed.connect(function() {
+                menuLoader.source = "qrc:/UserProgsSelector.qml"
+                        })
+            }
+                    if (menuLoader.item.freeSettingsButtonPressed) {
+                        menuLoader.item.freeSettingsButtonPressed.connect(function() {
+                recomHandle.addEmptyDefault()
+                closeMe()
                         })
             }
                     if (menuLoader.item.exitButtonPressed) {
@@ -81,6 +93,11 @@ Item {
                             menuLoader.item.clickedButton.connect(function(progId) {
             closeMe()
             menuLoader.source = "qrc:/MainMenu.qml"
+                            })
+                        }
+                        if (menuLoader.item.programSelected) {
+                            menuLoader.item.programSelected.connect(function(scopeName, progName) {
+                                menuLoadRoot.programSelected(scopeName, progName)
                             })
                         }
                     } catch(e) {

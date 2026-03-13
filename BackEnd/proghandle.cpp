@@ -42,13 +42,25 @@ ProgHandle::ProgHandle(QObject *parent)
 
 void ProgHandle::loadRecommendedProg(int recomProgIdx, bool clear)
 {
+    qWarning() << "loadRecommendedProg вызван с index:" << recomProgIdx << "размер m_progs:" << m_progs.size();
     if (recomProgIdx >= m_progs.size())
         return;
     auto iter = m_progs.begin();
     for (int a = 0; a < recomProgIdx; a++) {
         iter++;
     }
+    qWarning() << "Эмитим signalRecomProgChosen с progId:" << iter->first << "clear:" << clear;
     emit signalRecomProgChosen(iter->first, clear);
+}
+
+void ProgHandle::loadFreeSettings()
+{
+    emit signalFreeSettingsRequested();
+}
+
+void ProgHandle::deleteAllUserProgs()
+{
+    emit signalDeleteAllUserProgs();
 }
 
 void ProgHandle::removeSubProg()
@@ -69,7 +81,7 @@ void ProgHandle::removeSubProg()
 
 void ProgHandle::saveProg(const QString &scopeName, const QString &progName)
 {
-    qDebug() << "saveProg" << scopeName << progName;
+    qWarning() << "ProgHandle::saveProg вызван:" << scopeName << progName;
     emit signalSaveName(scopeName, progName);
 }
 

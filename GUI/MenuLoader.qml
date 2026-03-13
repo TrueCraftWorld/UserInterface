@@ -11,6 +11,8 @@ Item {
     signal returnButtonPressed()
     signal closeMe()
     signal programSelected(string scopeName, string progName)
+    signal freeSettingsModeActivated()
+    signal deleteAllUserProgsRequested()
     Loader {
         id: menuLoader
         anchors.fill: parent
@@ -67,10 +69,26 @@ Item {
                             menuLoader.setSource("qrc:/ProgItemList.qml", {"recommended" : false})
                         })
                     }
+                    if (menuLoader.item.freeSettingsButtonPressed) {
+                        menuLoader.item.freeSettingsButtonPressed.connect(function() {
+                            freeSettingsModeActivated()
+                            closeMe()
+                        })
+                    }
+                    if (menuLoader.item.serviceMenuButtonPressed) {
+                        menuLoader.item.serviceMenuButtonPressed.connect(function() {
+                            menuLoader.source = "qrc:/ServiceMenu.qml"
+                        })
+                    }
                     if (menuLoader.item.returnButtonPressed) {
                         menuLoader.item.returnButtonPressed.connect(function() {
                             returnButtonPressed()
                             // closeMe()
+                        })
+                    }
+                    if (menuLoader.item.deleteAllUserProgsRequested) {
+                        menuLoader.item.deleteAllUserProgsRequested.connect(function() {
+                            deleteAllUserProgsRequested()
                         })
                     }
                 } catch(e) {

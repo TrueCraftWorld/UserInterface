@@ -165,6 +165,14 @@ Rectangle {
             border.width: 2
         }
 
+        contentItem: Text {
+            text: retButton.text
+            font: retButton.font
+            color: "white"
+            horizontalAlignment: Text.AlignHCenter
+            verticalAlignment: Text.AlignVCenter
+        }
+
         text: qsTr("Назад")
 
         onClicked: recProgs.returnButtonPressed()
@@ -182,9 +190,15 @@ Rectangle {
         function onNewIndexSelected(index) {
             recomHandle.loadRecommendedProg(index, loadClear)
             
-            var scopeName = scopeList.curIndex >= 0 && scopeList.curIndex < scopeModel.count 
-                ? scopeModel.get(scopeList.curIndex).itemName 
-                : ""
+            var scopeName = ""
+            if (recommended) {
+                scopeName = scopeList.curIndex >= 0 && scopeList.curIndex < scopeModel.count 
+                    ? scopeModel.get(scopeList.curIndex).itemName 
+                    : ""
+            } else {
+                scopeName = "Программы пользователя"
+            }
+            
             var progName = index >= 0 && index < progsModel.count 
                 ? progsModel.get(index).itemName 
                 : ""

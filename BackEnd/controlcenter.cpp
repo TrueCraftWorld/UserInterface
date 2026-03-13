@@ -80,6 +80,16 @@ void ControlCenter::makeHandleConnections()
     connect(m_handle, &ProgHandle::signalRecomProgChosen, 
             m_progLoader, &ProgLoader::programmLoadSocketInit);
     
+    connect(m_handle, &ProgHandle::signalFreeSettingsRequested,
+            this, [this]() {
+        m_progLoader->freeSettingsSocketInit(true);
+    });
+    
+    connect(m_handle, &ProgHandle::signalDeleteAllUserProgs,
+            this, [this]() {
+        m_progLoader->deleteAllUserProgs();
+    });
+    
     connect(m_handle, &ProgHandle::signalScopeRequest,
             this, [this] (int id) {
         m_handle->setProgList(m_progLoader->getProgs(id));

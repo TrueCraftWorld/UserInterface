@@ -25,6 +25,9 @@ Window {
 
     // Свойство для нейтрального электрода
     property bool neutralConnected: false
+    
+    // Текущее название программы
+    property string currentProgName: ""
 
     function activationEnable() {
         periphHandle.enableActivation = !(pedDrawer.opened
@@ -127,6 +130,12 @@ Window {
         function onAccepted() {
             recomHandle.saveProg(saveProgDialog.scopeName,
                                  saveProgDialog.progName)
+            statusDummy.text = saveProgDialog.scopeName + ": " + saveProgDialog.progName
+            container.currentProgName = saveProgDialog.progName
+            Qt.inputMethod.hide()
+        }
+        function onRejected() {
+            Qt.inputMethod.hide()
         }
         // function onOpened() {
         //     // saveProgDialog.progName = ""
@@ -381,6 +390,17 @@ Window {
         function onCloseMe() {
             leftDrawer.close()
         }
+        function onProgramSelected(scopeName, progName) {
+            statusDummy.text = scopeName + ": " + progName
+            container.currentProgName = progName
+        }
+        function onFreeSettingsModeActivated() {
+            statusDummy.text = "Свободные установки"
+            container.currentProgName = "Свободные установки"
+        }
+        function onDeleteAllUserProgsRequested() {
+            recomHandle.deleteAllUserProgs()
+        }
     }
     Connections {
         target: socketsDummy
@@ -419,22 +439,24 @@ Window {
     }
 
     // Монитор системы в правом нижнем углу
-    SystemMonitor {
-        id: systemMonitor
-        anchors {
-            right: parent.right
-            bottom: parent.bottom
-            margins: 10
-        }
-        z: 9999  // Поверх всего
-        monitoringActive: true
+//    SystemMonitor {
+//        id: systemMonitor
+//        anchors {
+//            right: parent.right
+//            bottom: parent.bottom
+//            margins: 10
+//        }
+//        z: 9999  // Поверх всего
+//        monitoringActive: true
 
-        // MouseArea для пропуска событий сквозь монитор
-        MouseArea {
-            anchors.fill: parent
-            enabled: false  // Отключаем перехват событий - все проходят сквозь
-        }
-    }
+//        // MouseArea для пропуска событий сквозь монитор
+//        MouseArea {
+//            anchors.fill: parent
+//            enabled: false  // Отключаем перехват событий - все проходят сквозь
+//        }
+//    }
+
+
     // Область для свайпов и закрытия панелей
     // MouseArea {
     //    id: swipeArea
@@ -579,7 +601,7 @@ Window {
          ParallelAnimation {
             NumberAnimation {
                properties: "y"
-               duration: 150
+               duration: 0
                easing.type: Easing.InOutQuad
             }
          }

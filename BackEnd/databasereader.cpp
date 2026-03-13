@@ -115,11 +115,10 @@ bool DataBaseReader::executeUpdateQuery(const QString &queryStr) const
     }
 
     QSqlQuery query(db);
-    query.prepare(queryStr);
 
-    if (!query.exec()) {
-        // qWarning() << "Update query failed:" << query.lastError().text();
-        // qWarning() << "Query was:" << queryStr;
+    if (!query.exec(queryStr)) {
+        qWarning() << "Update query failed:" << query.lastError().text();
+        qWarning() << "Query was:" << queryStr;
         return false;
     }
 

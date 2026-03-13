@@ -8,6 +8,7 @@ Rectangle {
     id: recProgs
     // property alias innerModel: repeatRoot.model
     signal clickedButton(int idx)
+    signal programSelected(string scopeName, string progName)
     signal returnButtonPressed()
     color: "transparent"
 
@@ -95,6 +96,14 @@ Rectangle {
             border.width: 2
         }
 
+        contentItem: Text {
+            text: retButton.text
+            font: retButton.font
+            color: "white"
+            horizontalAlignment: Text.AlignHCenter
+            verticalAlignment: Text.AlignVCenter
+        }
+
         text: qsTr("Назад")
 
         onClicked: recProgs.returnButtonPressed()
@@ -104,6 +113,12 @@ Rectangle {
         target: progList
         function onNewIndexSelected(index) {
             // recomHandle.loadUserProg(index)
+            
+            var progName = index >= 0 && index < progModel.count 
+                ? progModel.get(index).itemName 
+                : ""
+            
+            recProgs.programSelected("Программы пользователя", progName)
             recProgs.clickedButton(-1);
         }
     }

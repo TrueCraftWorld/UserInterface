@@ -93,7 +93,8 @@ void makeModes(QMap<int, SurgModePtr>& container,
                const QVariantList& progItem,
                int socketNum,
                bool isCoag,
-               const std::vector<int>& instrFilter = std::vector<int>()) {
+               const std::vector<int>& instrFilter = std::vector<int>(),
+               bool skipInstrFilter = false) {
     int start = isCoag ? 6 : 3;
 
     container.insert(1000, SurgModePtr::create(ESHF::modesNames.last(),
@@ -122,11 +123,13 @@ void makeModes(QMap<int, SurgModePtr>& container,
 
         std::map<int, InstrInfo> tmp = instrs->second;
 
-        // Используем переданный фильтр, если он не пуст, иначе берём из progItem
-        if (!instrFilter.empty()) {
-            filterMapByKey(tmp, instrFilter);
-        } else {
-            filterMapByKey(tmp, parseCommaSeparatedNumbers(progItem.at(start + 6*socketNum).toString()));
+        // Применяем фильтр только если skipInstrFilter = false
+        if (!skipInstrFilter) {
+            if (!instrFilter.empty()) {
+                filterMapByKey(tmp, instrFilter);
+            } else {
+                filterMapByKey(tmp, parseCommaSeparatedNumbers(progItem.at(start + 6*socketNum).toString()));
+            }
         }
 
         bool isEndo = item.size() > 6 ? item.at(6).toBool() : false;  // ENDO_REG
@@ -276,7 +279,7 @@ QString makeDbStringInstr( const QModelIndex& idx,
                                        ")");
     const   QString insertUserProgQuery = QString(
                                          "INSERT INTO Lists ("
-                                         "Num, User_ID, Prog_ID,"
+                                         "Num, Prog_ID,"
                                          "Bi1Cut_INSTR, Bi1Cut_MODE, Bi1Cut_POWER, "
                                          "Bi1Coag_INSTR, Bi1Coag_MODE, Bi1Coag_POWER, "
                                          "Bi2Cut_INSTR, Bi2Cut_MODE, Bi2Cut_POWER, "
@@ -287,7 +290,7 @@ QString makeDbStringInstr( const QModelIndex& idx,
                                          "Mono2Coag_INSTR, Mono2Coag_MODE, Mono2Coag_POWER, "
                                          "Pedal_1, Pedal_2, OutEnabled_MASK"
                                          ") VALUES ("
-                                         "%28, NULL, %29,"
+                                         "%28, %29,"
                                          "'%1', '%2', %3, "
                                          "'%4', '%5', %6, "
                                          "'%7', '%8', %9, "
@@ -556,6 +559,33 @@ bool ProgLoader::programmLoadSocketInit(int progId, bool clear)
         return false;
     }
     
+    qWarning() << "programmLoadSocketInit вызван с progId:" << progId;
+    
+    QList<QVariantList> progInfo = m_dbReaderPtr->slotSendSelectQuery(QStringList{"Progs"},
+                                                  QStringList{"Name_RU", "Scope_ID"},
+                                                  QString("id = %1").arg(progId));
+    qWarning() << "Получено строк:" << progInfo.size();
+    
+    if (!progInfo.isEmpty()) {
+        QString progName = progInfo.first().at(0).toString();
+        int scopeId = progInfo.first().at(1).toInt();
+        qWarning() << "Найдена программа:" << progName << "ScopeId:" << scopeId << "ProgId:" << progId;
+        
+        if (scopeId >= 1000) {
+            m_currentLoadedProgName = progName;
+            m_currentLoadedScopeId = scopeId;
+            qWarning() << "Это пользовательская программа (scopeId >= 1000), сохраняем название";
+        } else {
+            qWarning() << "Это рекомендованная программа (scopeId < 1000), сбрасываем saved name/scope";
+            m_currentLoadedProgName.clear();
+            m_currentLoadedScopeId = -1;
+        }
+    } else {
+        qWarning() << "Запрос не вернул данных для progId:" << progId;
+        m_currentLoadedProgName.clear();
+        m_currentLoadedScopeId = -1;
+    }
+    
     //начинаем прорабатывать прогрузку несекольких экранов
     std::vector<std::map<int, SockPtr>> socketMapVector;
     std::vector<std::map<int, InstrPtr >> instrMapVector;
@@ -763,7 +793,94 @@ bool ProgLoader::programmLoadSocketInit(int progId, bool clear)
     m_socketModelPtr->loadProgs(socketMapVector, instrMapVector, !clear);
     if (progId != 1000)
         slotSaveCurrentState();
+    m_currentLoadedProgId = progId;
     return (true);
+}
+
+bool ProgLoader::freeSettingsSocketInit(bool clear)
+{
+    if (m_dbReaderPtr.isNull()) {
+        return false;
+    }
+    
+    std::vector<std::map<int, SockPtr>> socketMapVector;
+    std::vector<std::map<int, InstrPtr >> instrMapVector;
+    
+    QList<QVariantList> modeNamesListV = m_dbReaderPtr->slotSendSelectQuery(QStringList{"Modes"},
+                                                                        QStringList{"Name_RU","id"},
+                                                                        "");
+    QStringList modeNamesList;
+    for (const auto& iter : modeNamesListV)
+        modeNamesList.append(iter.at(0).toString());
+    
+    socketMapVector.push_back(std::map<int, SockPtr>());
+    std::map<int, SockPtr>& socketMap = socketMapVector[socketMapVector.size() - 1];
+    
+    for (int i = 0; i < 4; ++i) {
+        Onyx::SocType type = Onyx::SocType(i+1);
+        SockPtr socket = SockPtr::create(type);
+        socketMap[i] = socket;
+        
+        socket->setSocketName(makeSocketName(type));
+        
+        for (int halfSocket = 0; halfSocket < 2; ++halfSocket) {
+            bool isCoag = (halfSocket == 0);
+            QMap<int, SurgModePtr> modes;
+            
+            QString queryConditionModes = "BI_MONO = %1 AND CUT_COAG = %2";
+            QList<QVariantList> modesList = m_dbReaderPtr->slotSendSelectQuery(
+                        QStringList{"Modes"},
+                        QStringList{"MaxPower","Name_RU", "id", "Num",
+                                    "Brief_RU", "Descript_RU", "ENDO_REG"},
+                        queryConditionModes
+                                    .arg(socket->socketType() <= Onyx::BIPOLAR_2 ? 0 : 1)
+                                    .arg(halfSocket));
+            
+            std::sort(modesList.begin(), modesList.end(),
+                [](const QVariantList& a, const QVariantList& b) {
+                    return a.at(3).toInt() < b.at(3).toInt();
+                });
+            
+            QList<int> allModesId;
+            for (const auto& mode : modesList) {
+                allModesId.append(mode.at(2).toInt());
+            }
+            
+            std::map<int, std::map<int, Onyx::InstrInfo>> instrumConstraints = getConstraints(allModesId);
+            
+            makeModes(modes, modesList, instrumConstraints, QVariantList(), i, isCoag, {}, true);
+            
+            if (i == 0 && modes.contains(7)) {
+                modes.remove(7);
+            }
+            
+            isCoag ? socket->setCoagModes(modes, modeNamesList)
+                   : socket->setCutModes(modes, modeNamesList);
+            
+            int firstModeId = 1000;
+            if (!modes.isEmpty() && modes.firstKey() != 1000) {
+                firstModeId = modes.firstKey();
+            }
+            
+            socket->setModeId(firstModeId, isCoag);
+            socket->setInstrumId(1000, isCoag);
+            isCoag ? socket->setCoagModePower(1) : socket->setCutModePower(1);
+        }
+        
+        socket->setAllowed(true);
+        socket->setDisplayMode(Onyx::S_COLLAPSED);
+    }
+    
+    instrMapVector.push_back(getInstrums());
+    
+    if (socketMapVector.empty())
+        return false;
+    
+    m_socketModelPtr->loadProgs(socketMapVector, instrMapVector, !clear);
+    m_currentLoadedProgId = -1;
+    m_currentLoadedProgName.clear();
+    m_currentLoadedScopeId = -1;
+    return true;
 }
 
 std::map<int, QString> ProgLoader::getProgs(int scopeID)
@@ -836,7 +953,10 @@ void ProgLoader::saveUserProg(const QString &scopeName, const QString &progName)
         // qWarning() << "Cannot save state: socket model not initialized";
         return;
     }
-    qDebug() << scopeName << progName;
+    qWarning() << "=== ProgLoader::saveUserProg начало ===" << scopeName << progName;
+    qWarning() << "currentLoadedProgId:" << m_currentLoadedProgId;
+    qWarning() << "m_currentLoadedProgName:" << m_currentLoadedProgName;
+    qWarning() << "m_currentLoadedScopeId:" << m_currentLoadedScopeId;
     int idToUse = -1;
     int biggestKnownId = -1;
 
@@ -878,41 +998,57 @@ void ProgLoader::saveUserProg(const QString &scopeName, const QString &progName)
         }
     }
 
-    const  QString insertUserProgNameQuery = QString(
-                                         "INSERT INTO Progs ("
-                                         "Prog_NUM, Argon, Name_RU, Name_EN, Name_ES, Scope_ID, Sub_NUM"
-                                         ") VALUES ("
-                                         "0, 0, '%1', '%1', '%1', %2, 0)");
+    qWarning() << "scopeId:" << scopeId << "saved name:" << m_currentLoadedProgName << "saved scopeId:" << m_currentLoadedScopeId;
 
-    if (!m_dbReaderPtr->executeUpdateQuery(insertUserProgNameQuery
-                                                    .arg(progName)
-                                                    .arg(scopeId))) {
-        qDebug() << "Failed to add Prog";
-    } else {
-        m_dbReaderPtr->commit();
-    }
+    // Логика обновления:
+    // 1. Для пользовательских областей (scopeId >= 1000) сначала ищем программу
+    //    с таким же именем и этим же scopeId в таблице Progs.
+    // 2. Если находим – обновляем её (idToUse = найденный id), независимо от того,
+    //    была ли она загружена из списка пользовательских или рекомендованных программ.
+    // 3. Если не находим – создаём новую программу.
+    if (scopeId >= 1000) {
+        QList<QVariantList> existingProg = m_dbReaderPtr->slotSendSelectQuery(
+                    QStringList{"Progs"},
+                    QStringList{"id"},
+                    QString("Name_RU = '%1' AND Scope_ID = %2").arg(progName).arg(scopeId));
 
-    QList<QVariantList> progListVariant = m_dbReaderPtr->slotSendSelectQuery(QStringList{"Progs"},
-                                                  QStringList{"id", "Name_RU"},
-                                                  QString("Scope_ID = %1").arg(scopeId));
-    if (progListVariant.isEmpty()) {
-        qDebug() << "нету таких прог";
-        return;
-    }
-    if (progListVariant.size() >= 1) {
-        int min = INT_MIN;
-        for (const auto& item : progListVariant) {
-            if (item.at(1).toString() != progName)
-                continue;
-            if (item.at(0).toInt() > min) {
-                min = item.at(0).toInt();
-                idToUse = min;
-            }
+        if (!existingProg.isEmpty()) {
+            idToUse = existingProg.first().at(0).toInt();
+            qWarning() << "ВНИМАНИЕ: будет перезаписана существующая пользовательская программа, ID:" << idToUse;
+        } else {
+            qWarning() << "Пользовательская программа с таким именем не найдена, создаем новую";
         }
+    } else {
+        qWarning() << "scopeId < 1000 (нерелевантно для пользовательских программ), создаем новую";
     }
+    
     if (idToUse == -1) {
-        qDebug() << "idToUse == -1";
-        return;
+        const QString insertUserProgNameQuery = QString(
+                                             "INSERT INTO Progs ("
+                                             "Prog_NUM, Argon, Name_RU, Name_EN, Name_ES, Scope_ID, Sub_NUM"
+                                             ") VALUES ("
+                                             "0, 0, '%1', '%1', '%1', %2, 0)");
+
+        if (!m_dbReaderPtr->executeUpdateQuery(insertUserProgNameQuery
+                                                        .arg(progName)
+                                                        .arg(scopeId))) {
+            qDebug() << "Failed to add Prog";
+            return;
+        } else {
+            m_dbReaderPtr->commit();
+        }
+
+        QList<QVariantList> progListVariant = m_dbReaderPtr->slotSendSelectQuery(QStringList{"Progs"},
+                                                      QStringList{"id", "Name_RU"},
+                                                      QString("Scope_ID = %1 AND Name_RU = '%2'").arg(scopeId).arg(progName));
+        
+        if (progListVariant.isEmpty()) {
+            qDebug() << "нету таких прог";
+            return;
+        }
+        
+        idToUse = progListVariant.first().at(0).toInt();
+        qWarning() << "Создана новая программа с ID:" << idToUse;
     }
 
     auto fillState = [this] (std::array<QString, 3>& cut,
@@ -976,7 +1112,16 @@ void ProgLoader::saveUserProg(const QString &scopeName, const QString &progName)
     // TODO: если нужно сохранять доступность, добавить логику
     int outEnabledMask = 11111111;  // По умолчанию все включены (11111111)
 
-    // Формируем SQL запрос для REPLACE (INSERT OR UPDATE)
+    // Удаляем старые записи для этой программы перед вставкой новых
+    QString deleteOldListsQuery = QString("DELETE FROM Lists WHERE Prog_ID = %1").arg(idToUse);
+    if (!m_dbReaderPtr->executeUpdateQuery(deleteOldListsQuery)) {
+        qWarning() << "Failed to delete old Lists entries for Prog_ID:" << idToUse;
+    } else {
+        m_dbReaderPtr->commit();
+        qWarning() << "Старые записи Lists удалены для Prog_ID:" << idToUse;
+    }
+
+    // Формируем SQL запрос для INSERT
 // using SocketStrings = std::array<std::array<QString, 3>, 8>; //instrId, modeId, power
 
     qDebug() << "saving N Upages - " << subCount;
@@ -1013,8 +1158,43 @@ void ProgLoader::saveUserProg(const QString &scopeName, const QString &progName)
 
         qDebug() <<query;
         if (!m_dbReaderPtr->executeUpdateQuery(query)) {
-            qDebug() << "Failed to save userProg";
+            qWarning() << "Failed to save userProg";
         }
+    }
+    
+    m_dbReaderPtr->commit();
+    qWarning() << "Программа сохранена с ID:" << idToUse;
+}
+
+void ProgLoader::deleteAllUserProgs()
+{
+    if (m_dbReaderPtr.isNull()) {
+        qWarning() << "Cannot delete user progs: database not initialized";
+        return;
+    }
+    
+    QList<QVariantList> userProgs = m_dbReaderPtr->slotSendSelectQuery(
+        QStringList{"Progs"},
+        QStringList{"id"},
+        "Scope_ID >= 1000");
+    
+    qWarning() << "Найдено пользовательских программ:" << userProgs.size();
+    
+    for (const auto& prog : userProgs) {
+        int progId = prog.at(0).toInt();
+        
+        QString deleteListsQuery = QString("DELETE FROM Lists WHERE Prog_ID = %1").arg(progId);
+        if (!m_dbReaderPtr->executeUpdateQuery(deleteListsQuery)) {
+            qWarning() << "Failed to delete Lists for prog ID:" << progId;
+        }
+    }
+    
+    QString deleteProgsQuery = "DELETE FROM Progs WHERE Scope_ID >= 1000";
+    if (!m_dbReaderPtr->executeUpdateQuery(deleteProgsQuery)) {
+        qWarning() << "Failed to delete user programs";
+    } else {
+        m_dbReaderPtr->commit();
+        qWarning() << "Все пользовательские программы удалены";
     }
 }
 
@@ -1073,7 +1253,11 @@ bool ProgLoader::loadCurrentState()
 {
     if (m_socketModelPtr.isNull())
         return false;
+    qWarning() << "loadCurrentState вызван, сбрасываем saved name/scope";
     bool res = programmLoadSocketInit(1000, true);
+    m_currentLoadedProgId = 1000;
+    m_currentLoadedProgName.clear();
+    m_currentLoadedScopeId = -1;
     return res;
 }
 

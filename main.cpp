@@ -41,6 +41,7 @@ int main(int argc, char *argv[])
     QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
 #endif
     QCoreApplication::setAttribute(Qt::AA_UseOpenGLES);
+    QCoreApplication::setAttribute(Qt::AA_SynthesizeMouseForUnhandledTouchEvents, true);
     
     // Настройки для Qt Multimedia
     qputenv("QT_GSTREAMER_USE_PLAYBIN_VOLUME", "1");
@@ -81,6 +82,14 @@ int main(int argc, char *argv[])
     qputenv("QT_IM_MODULE", QByteArray("cutekeyboard"));
     ///Отключаем курсор мыши на embedded-системе
     // qputenv("QT_QPA_EGLFS_HIDECURSOR", "1");
+    
+    // Оптимизация производительности QML
+    qputenv("QSG_RENDER_LOOP", "threaded");
+    qputenv("QML_DISABLE_DISK_CACHE", "0");
+    
+    // Настройки для touch-устройств
+    qputenv("QT_QPA_EVDEV_TOUCHSCREEN_PARAMETERS", "rotate=0");
+    qputenv("QT_LOGGING_RULES", "qt.qpa.input=false");
 
     OnyxApp app(argc, argv);
 
@@ -141,8 +150,8 @@ int main(int argc, char *argv[])
     engine.addImportPath("qrc:/");
     // Добавляем пути для поиска QML модулей на удалённой машине - c чего вдруг мы используем дефолтные qt?!
     //чтобы на классные баг нарваться связанные с разными qml файлами?!
-    // engine.addImportPath("/usr/lib/aarch64-linux-gnu/qt5/qml");//
-    // engine.addImportPath("/usr/lib/qt5/qml");
+     engine.addImportPath("/usr/lib/aarch64-linux-gnu/qt5/qml");//
+     engine.addImportPath("/usr/lib/qt5/qml");
     engine.load(url);
 
     // Сохраняемые значения лежат в json-файле
@@ -220,6 +229,6 @@ void messageHandler(QtMsgType type, const QMessageLogContext &context, const QSt
     }
 
     // Выводим в консоль
-    // QTextStream debugOut(stdout);
-    // debugOut << logLine << Qt::endl;
+    QTextStream debugOut(stdout);
+    debugOut << logLine << Qt::endl;
 }

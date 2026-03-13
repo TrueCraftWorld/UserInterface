@@ -24,6 +24,7 @@ public:
 
     // Q_INVOKABLE void loadSelected();
     Q_INVOKABLE void loadRecommendedProg(int recomProgId, bool clear = true);
+    Q_INVOKABLE void loadFreeSettings();
     Q_INVOKABLE void removeSubProg();
     // Q_INVOKABLE void loadUserProg(int recomProgId);
     Q_INVOKABLE void permitAll();
@@ -33,6 +34,7 @@ public:
                                 const QString& progName);
     Q_INVOKABLE void addEmptyDefault();
     Q_INVOKABLE void copyCurrent();
+    Q_INVOKABLE void deleteAllUserProgs();
     // Q_INVOKABLE void userProgs();
     Q_INVOKABLE QString readTextFile(const QString& filePath);
     Q_INVOKABLE QStringList scanVideoFiles(const QString& folderPath);
@@ -66,6 +68,8 @@ signals:
     void signalLoadRecommend(int scopeIdx, int progIdx, int subProgIdx);
 
     void signalRecomProgChosen(int progId, bool clear);
+    void signalFreeSettingsRequested();
+    void signalDeleteAllUserProgs();
 
     void signalRemoveSub();
     //может быть избыточно и проги сможем просто по id разделять

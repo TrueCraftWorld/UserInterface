@@ -13,6 +13,7 @@ Item {
     signal secretKeysButtonPressed()
     signal userProgsButtonPressed()
     signal freeSettingsButtonPressed()
+    signal serviceMenuButtonPressed()
     
     property bool videoPlayerVisible: false
     Rectangle {
@@ -44,80 +45,145 @@ Item {
     }
 
 
-    SColumn {
+    ColumnLayout {
         id: buttonGrid
         anchors {
             top: screenTitle.bottom
-            topMargin: 25
+            topMargin: 20
             horizontalCenter: parent.horizontalCenter
         }
-        columns: 2
-        rows: 3
-        columnSpacing: 20
-        rowSpacing: 20
-        clip: false  // Не обрезаем - позволяем теням отображаться
+        spacing: 20
 
-        width: parent.width
-        // rowSpacing: 15
-
-        SButton {
-            id: wifiButton
-            style: "btn-outline-primary lg"
-            Layout.alignment: Qt.AlignHCenter | Qt.AlignTop
-            Layout.preferredWidth: 320
-            Layout.preferredHeight: 120
-
-            text: qsTr("Рекомендованные программы")
-            onClicked: recommendButtonPressed()
-        }
-
-        SButton {
-            id: userProgButton
-            style: "btn-outline-primary lg"
-            Layout.alignment: Qt.AlignHCenter | Qt.AlignTop
-            Layout.preferredWidth: 320
-            Layout.preferredHeight: 120
-
-            onClicked: userButtonPressed()
-            text: qsTr("Пользовательские программы")
-
-        }
-
-        SButton {
-            id: updateButton
-            style: "btn-outline-primary lg"
-            Layout.alignment: Qt.AlignHCenter | Qt.AlignTop
-            Layout.preferredWidth: 320
-            Layout.preferredHeight: 120
-
-            onClicked: settingsButtonPressed()
-            text: qsTr("Настройки ...")
-        }
+        RowLayout {
+            Layout.alignment: Qt.AlignHCenter
+            spacing: 20
             
-        SButton {
-            id: videoButton
-            style: "btn-primary lg"           // Попробуйте: btn-primary, btn-secondary, btn-info, btn-light
-//                style: "btn-outline-primary lg"
-            width: parent.width
-            height: parent.height
-            onClicked: settinsScreen.videoPlayerVisible = true
-            text: qsTr("Видео 🎬")
-        }
+            SButton {
+                id: wifiButton
+                style: "btn-primary lg"
+                Layout.preferredWidth: 480
+                Layout.preferredHeight: 110
+                text: qsTr("Рекомендованные программы")
+                onClicked: recommendButtonPressed()
+                contentItem: Text {
+                    text: wifiButton.text
+                    font: wifiButton.font
+                    opacity: enabled ? 1.0 : 0.3
+                    color: "white"
+                    horizontalAlignment: Text.AlignHCenter
+                    verticalAlignment: Text.AlignVCenter
+                    wrapMode: Text.WordWrap
+                    elide: Text.ElideRight
+                }
+            }
 
-        SButton {
-            id: secretKeysButton
-            style: "btn-primary lg"
-            width: parent.width
-            height: parent.height
-            onClicked: secretKeysButtonPressed()
-            text: qsTr("Секретные ключи 🔐")
+            SButton {
+                id: userProgButton
+                style: "btn-primary lg"
+                Layout.preferredWidth: 480
+                Layout.preferredHeight: 110
+                text: qsTr("Пользовательские программы")
+                onClicked: userButtonPressed()
+                contentItem: Text {
+                    text: userProgButton.text
+                    font: userProgButton.font
+                    opacity: enabled ? 1.0 : 0.3
+                    color: "white"
+                    horizontalAlignment: Text.AlignHCenter
+                    verticalAlignment: Text.AlignVCenter
+                    wrapMode: Text.WordWrap
+                    elide: Text.ElideRight
+                }
+            }
         }
         
+        RowLayout {
+            Layout.alignment: Qt.AlignHCenter
+            spacing: 20
+            
+            SButton {
+                id: freeSettingsButton
+                style: "btn-primary lg"
+                Layout.preferredWidth: 480
+                Layout.preferredHeight: 110
+                text: qsTr("Свободные установки")
+                onClicked: {
+                    recomHandle.loadFreeSettings()
+                    freeSettingsButtonPressed()
+                }
+                contentItem: Text {
+                    text: freeSettingsButton.text
+                    font: freeSettingsButton.font
+                    opacity: enabled ? 1.0 : 0.3
+                    color: "white"
+                    horizontalAlignment: Text.AlignHCenter
+                    verticalAlignment: Text.AlignVCenter
+                    wrapMode: Text.WordWrap
+                    elide: Text.ElideRight
+                }
+            }
+            
+            SButton {
+                id: updateButton
+                style: "btn-primary lg"
+                Layout.preferredWidth: 480
+                Layout.preferredHeight: 110
+                text: qsTr("Настройки ...")
+                onClicked: settingsButtonPressed()
+                contentItem: Text {
+                    text: updateButton.text
+                    font: updateButton.font
+                    opacity: enabled ? 1.0 : 0.3
+                    color: "white"
+                    horizontalAlignment: Text.AlignHCenter
+                    verticalAlignment: Text.AlignVCenter
+                    wrapMode: Text.WordWrap
+                    elide: Text.ElideRight
+                }
+            }
+        }
         
-        Item {
-            id: filler
-            Layout.fillHeight: true
-            Layout.fillWidth: true
+        RowLayout {
+            Layout.alignment: Qt.AlignHCenter
+            spacing: 20
+            
+            SButton {
+                id: videoButton
+                style: "btn-primary lg"
+                Layout.preferredWidth: 480
+                Layout.preferredHeight: 110
+                text: qsTr("Видео 🎬")
+                onClicked: settinsScreen.videoPlayerVisible = true
+                contentItem: Text {
+                    text: videoButton.text
+                    font: videoButton.font
+                    opacity: enabled ? 1.0 : 0.3
+                    color: "white"
+                    horizontalAlignment: Text.AlignHCenter
+                    verticalAlignment: Text.AlignVCenter
+                    wrapMode: Text.WordWrap
+                    elide: Text.ElideRight
+                }
+            }
+            
+            SButton {
+                id: serviceMenuButton
+                style: "btn-primary lg"
+                Layout.preferredWidth: 480
+                Layout.preferredHeight: 110
+                text: qsTr("Сервисное меню")
+                onClicked: serviceMenuButtonPressed()
+                contentItem: Text {
+                    text: serviceMenuButton.text
+                    font: serviceMenuButton.font
+                    opacity: enabled ? 1.0 : 0.3
+                    color: "white"
+                    horizontalAlignment: Text.AlignHCenter
+                    verticalAlignment: Text.AlignVCenter
+                    wrapMode: Text.WordWrap
+                    elide: Text.ElideRight
+                }
+            }
         }
     }
     VideoPlayer {

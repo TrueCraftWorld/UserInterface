@@ -892,7 +892,6 @@ void SocketModel::pedalRemover(int socketToSkip, int pedalToRemove)
             qmlSetData(i, 0, "socketpedal");
             // break;
         }
-        ///TODO завершению должны бы отдавать в uart новые настройки педали
     }
 }
 
@@ -914,11 +913,11 @@ std::vector<SocketStrings> SocketModel::getDatabaseText()
 {
     std::vector<SocketStrings> progDesc;
     progDesc.resize(m_subProgCount);
-    for (int i = 0; i < m_itemsMapVect.size(); ++i) {
+    for (size_t i = 0; i < m_itemsMapVect.size(); ++i) {
         SocketStrings& listDesc = progDesc[i];
         const auto& list = m_itemsMapVect.at(i);
-        const auto& instrList = m_instrMapVect.at(i);
-        for (int j = 0; j < list.size(); ++j) {
+        // const auto& instrList = m_instrMapVect.at(i);
+        for (size_t j = 0; j < list.size(); ++j) {
             const auto& socket = list.at(j);
             auto& socketDescCut = listDesc.at(2*j);
             auto& socketDescCoag = listDesc.at(2*j + 1);
@@ -947,4 +946,32 @@ std::vector<SocketStrings> SocketModel::getDatabaseText()
 
         }
     }
+    return progDesc;
+}
+
+std::vector<std::map<int, SOCKET> > SocketModel::getSocketsCopy()
+{
+    std::vector<std::map<int, SOCKET>> sockMap;
+    //получаем именно копию мар и её данных без привязок к данным в модели
+    for (const auto& socketPtrMap : m_itemsMapVect) {
+        sockMap.emplace_back();
+        auto& curMap = sockMap.back();
+        for (const auto& sock : socketPtrMap) {
+            curMap.insert({sock.first, *sock.second});
+        }
+    }
+    return sockMap;
+}
+
+std::vector<std::map<int, Instrument> > SocketModel::getInstrCopy()
+{
+    std::vector<std::map<int, Instrument>> instrMap;
+    for (const auto& instrMapPtr : m_instrMapVect) {
+        instrMap.emplace_back();
+        auto& curInstr = instrMap.back();
+        for (const auto& instr : instrMapPtr) {
+            curInstr.insert({instr.first, *instr.second});
+        }
+    }
+    return instrMap;
 }

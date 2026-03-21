@@ -11,16 +11,6 @@
 
 constexpr int ENDO_MAX = 3;
 
-// struct SocketStrings {
-//     std::array<QString, 3> bi1Cut  = {"0","1000","1"};
-//     std::array<QString, 3> bi1Coag = {"0","1000","1"};
-//     std::array<QString, 3> bi2Cut  = {"0","1000","1"};
-//     std::array<QString, 3> bi2Coag = {"0","1000","1"};
-//     std::array<QString, 3> mono1Cut  = {"0","1000","1"};
-//     std::array<QString, 3> mono1Coag = {"0","1000","1"};
-//     std::array<QString, 3> mono2Cut  = {"0","1000","1"};
-//     std::array<QString, 3> mono2Coag = {"0","1000","1"};
-// };
 using SocketStrings = std::array<std::array<QString, 3>, 8>; //instrId, modeId, power
 
 class SocketModel : public QAbstractListModel
@@ -158,6 +148,9 @@ private:
      */
     void populateRoles();
     std::vector<SocketStrings> getDatabaseText();
+
+    std::vector<std::map<int, SOCKET >> getSocketsCopy();
+    std::vector<std::map<int, Instrument >> getInstrCopy();
 
 //поля
 private:

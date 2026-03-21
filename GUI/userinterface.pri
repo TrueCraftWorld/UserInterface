@@ -32,8 +32,7 @@ DISTFILES += \
     $$PWD/SocketRepeater.qml \
     $$PWD/StatesSocket.qml \
     $$PWD/SocketContainerV2.qml \
-    $$PWD/StatusBar.qml \
-    $$PWD/UserProgsSelector.qml
+    $$PWD/StatusBar.qml
     $$PWD/VideoPlayer.qml
 
 HEADERS +=

@@ -196,3 +196,18 @@ int HalfSocket::modeCount()
         return m_modes.size() - 1;
     return 0;
 }
+
+HalfSocket::HalfSocket(const HalfSocket &other)
+{
+    if (&other == this) {
+        return;
+    }
+    m_modeIndex = other.m_modeIndex;
+    m_modeNames = other.m_modeNames;
+    m_isCoag = other.m_isCoag;
+    m_state = other.m_state;
+    for (auto modeIter = other.m_modes.constBegin(); modeIter != other.m_modes.constEnd(); ++modeIter) {
+        //создаём копию режима и новый шаредптр уже на копию
+        m_modes.insert(modeIter.key(), SurgModePtr::create(*modeIter.value()));
+    }
+}

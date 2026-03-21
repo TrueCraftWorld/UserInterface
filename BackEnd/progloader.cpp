@@ -859,10 +859,10 @@ void ProgLoader::saveUserProg(const QString &scopeName, const QString &progName)
     if (scopeId == -1) {
         //тут добавить новый скоуп
         const   QString insertUserProgNameQuery = QString(
-                                         "INSERT INTO Scopes ("
-                                         "id, Num, Name_RU, Name_EN, Name_ES"
-                                         ") VALUES ("
-                                         "%1, %1, '%2', '%2', '%2')");
+                                         "INSERT INTO Scopes "
+                                         "(id, Num, Name_RU, Name_EN, Name_ES)"
+                                         " VALUES "
+                                         "(%1, %1, '%2', '%2', '%2')");
         int id = biggestKnownId > 1000 ? biggestKnownId + 1 : 1001;
         if (!m_dbReaderPtr->executeUpdateQuery(insertUserProgNameQuery
                                                 .arg(id)
@@ -876,10 +876,10 @@ void ProgLoader::saveUserProg(const QString &scopeName, const QString &progName)
     }
 
     const  QString insertUserProgNameQuery = QString(
-                                         "INSERT INTO Progs ("
-                                         "Prog_NUM, Argon, Name_RU, Name_EN, Name_ES, Scope_ID, Sub_NUM"
-                                         ") VALUES ("
-                                         "0, 0, '%1', '%1', '%1', %2, 0)");
+                                         "INSERT INTO Progs "
+                                         "(Prog_NUM, Argon, Name_RU, Name_EN, Name_ES, Scope_ID, Sub_NUM)"
+                                         " VALUES "
+                                         "(0, 0, '%1', '%1', '%1', %2, 0)");
 
     if (!m_dbReaderPtr->executeUpdateQuery(insertUserProgNameQuery
                                                     .arg(progName)

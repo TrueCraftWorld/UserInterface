@@ -46,7 +46,6 @@ SOURCES += \
     $$PWD/periphhandler.cpp \
     $$PWD/proghandle.cpp \
     $$PWD/progloader.cpp \
-    $$PWD/progloaderbase.cpp \
     $$PWD/recomprogloader.cpp \
     $$PWD/socket.cpp \
     $$PWD/socketmodeeditor.cpp \

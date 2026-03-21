@@ -3,6 +3,7 @@
 #include "BackEnd/userprogloader.h"
 #include "socket.h"
 #include "onyxapp.h"
+#include "EshfProgStringBuilder.h"
 
 // #include <iostream>
 #include <unordered_set>
@@ -194,26 +195,6 @@ void filterModeMap(QMap<int, SurgModePtr>& container, const std::vector<int>& al
     }
 }
 
-QString makeDbStringMode( const QModelIndex& idx,
-                                int listRole,
-                                int firstItemRole) {
-    QStringList list = idx.data(listRole).toStringList();
-    int firstItem = idx.data(firstItemRole).toInt();
-    list.removeOne(QString::number(firstItem));
-    list.removeOne(QString::number(1000));
-    list.prepend(QString::number(firstItem));
-    return list.join(',');
-}
-
-QString makeDbStringInstr( const QModelIndex& idx,
-                          int listRole,
-                          int firstItemRole) {
-    QStringList list = idx.data(listRole).toStringList();
-    int firstItem = idx.data(firstItemRole).toInt();
-    list.removeOne(QString::number(firstItem));
-    list.prepend(QString::number(firstItem));
-    return list.join(',');
-}
 
     const QString queryConditionRecom = "Prog_ID = %1";
     const QString queryConditionUser = "User_ID = %1";
@@ -321,78 +302,42 @@ void ProgLoader::slotSaveCurrentState()
         // qWarning() << "Cannot save state: socket model not initialized";
         return;
     }
+    EshfProgStringBuilder builder;
+    int pageCount = m_socketModelPtr->subProgCount();
+    builder.setState(m_socketModelPtr->getSocketsCopy(),
+                    m_socketModelPtr->getInstrCopy());
 
-    auto fillState = [this] (std::array<QString, 3>& cut,
-                            std::array<QString, 3>& coag,
-                            std::pair<int, int>& pedals,
-                            int _idx) {
-        QModelIndex idx = m_socketModelPtr->index(_idx);
-        if (idx.data(SocketModel::SocketStatus) == QVariant()
-            || idx.data(SocketModel::CutModeNum).toInt() == 0
-            || idx.data(SocketModel::CoagModeNum).toInt() == 0) {
-            return;
-        } else {
-            cut[0] = makeDbStringInstr(idx, SocketModel::CutInstrIdList, SocketModel::CutModeInstrID);
-            cut[1] = makeDbStringMode(idx, SocketModel::CutModeIdList, SocketModel::CutModeId);
-            if (!cut[0].isEmpty() && !cut[1].isEmpty())
-                cut[2] = QString::number(idx.data(SocketModel::CutModePower).toInt());
+    QList<QStringList> listsStr;
 
-            coag[0] = makeDbStringInstr(idx, SocketModel::CoagInstrIdList, SocketModel::CoagModeInstrID);
-            coag[1] = makeDbStringMode(idx, SocketModel::CoagModeIdList, SocketModel::CoagModeId);
-            if (!coag[0].isEmpty() && !coag[1].isEmpty())
-                coag[2] = QString::number(idx.data(SocketModel::CoagModePower).toInt());
+    listsStr.reserve(pageCount);
 
-            int ped = idx.data(SocketModel::SocketPedal).toInt();
-
-            if (ped == SINGLE_PED)
-                pedals.first = _idx + 1;
-            if (ped == DOUBLE_PED)
-                pedals.second = _idx + 1;
+    for (int i = 0; i < pageCount; ++i) {
+        listsStr.push_back({});
+        auto& curList = listsStr.back();
+        for (int j = 0; j < 4; ++j) {
+            curList.append(builder.makeSocketString(j,i));
         }
-    };
-
-    std::vector<SocketStrings> allStates;
-    std::vector<std::pair<int, int>> allPedals;
-    int subCount = m_socketModelPtr->subProgCount();
-    int curSubIndex = m_socketModelPtr->subProgIdx();
-    allStates.resize(subCount);
-    allPedals.resize(subCount, {0, 0});
-    m_socketModelPtr->blockSignals(true);
-    for (int list = 0; list < subCount; ++list) {
-        m_socketModelPtr->setSubProgIdx(list);
-        SocketStrings & state = allStates[list];
-        std::pair<int, int> & pedalState = allPedals[list];
-        //bi1cut bi1coag
-        fillState(state[0], state[1], pedalState, 0);
-        fillState(state[2], state[3], pedalState, 1);
-        fillState(state[4], state[5], pedalState, 2);
-        fillState(state[6], state[7], pedalState, 3);
+        curList.append(builder.makePedalString(i));
+        curList.append(builder.makeOutEnableMask(i));
     }
-    m_socketModelPtr->setSubProgIdx(curSubIndex);
-    m_socketModelPtr->blockSignals(false);
-
-    // OutEnabled_MASK - битовая маска доступности полусокетов
-    // TODO: если нужно сохранять доступность, добавить логику
-    int outEnabledMask = 11111111;  // По умолчанию все включены (11111111)
-
     // Формируем SQL запрос для REPLACE (INSERT OR UPDATE)
     QString removeQuerry = "DELETE FROM Lists WHERE Prog_ID = 1000";
     m_dbReaderPtr->executeUpdateQuery(removeQuerry);
     // qDebug() << "saving N pages - " << subCount;
-    for (int i = 0; i < subCount; ++i) {
-        const SocketStrings & state = allStates.at(i);
-        const std::pair<int, int> & pedalState = allPedals.at(i);
+    for (int i = 0; i < pageCount; ++i) {
+        const auto& curList = listsStr.at(i);
+
         QString query = insertCurQuery
         // QString query = saveCurQuery
-        .arg(state.at(0).at(0) == "-1" ? "" : state.at(0).at(0)).arg(state.at(0).at(1) == "1000" ? "" : state.at(0).at(1)).arg(state.at(0).at(2))
-        .arg(state.at(1).at(0) == "-1" ? "" : state.at(1).at(0)).arg(state.at(1).at(1) == "1000" ? "" : state.at(1).at(1)).arg(state.at(1).at(2))
-        .arg(state.at(2).at(0) == "-1" ? "" : state.at(2).at(0)).arg(state.at(2).at(1) == "1000" ? "" : state.at(2).at(1)).arg(state.at(2).at(2))
-        .arg(state.at(3).at(0) == "-1" ? "" : state.at(3).at(0)).arg(state.at(3).at(1) == "1000" ? "" : state.at(3).at(1)).arg(state.at(3).at(2))
-        .arg(state.at(4).at(0) == "-1" ? "" : state.at(4).at(0)).arg(state.at(4).at(1) == "1000" ? "" : state.at(4).at(1)).arg(state.at(4).at(2))
-        .arg(state.at(5).at(0) == "-1" ? "" : state.at(5).at(0)).arg(state.at(5).at(1) == "1000" ? "" : state.at(5).at(1)).arg(state.at(5).at(2))
-        .arg(state.at(6).at(0) == "-1" ? "" : state.at(6).at(0)).arg(state.at(6).at(1) == "1000" ? "" : state.at(6).at(1)).arg(state.at(6).at(2))
-        .arg(state.at(7).at(0) == "-1" ? "" : state.at(7).at(0)).arg(state.at(7).at(1) == "1000" ? "" : state.at(7).at(1)).arg(state.at(7).at(2))
-        .arg(pedalState.first).arg(pedalState.second).arg(outEnabledMask).arg(i+1);
+        .arg(curList.at(0)).arg(curList.at(1)).arg(curList.at(2))
+        .arg(curList.at(3)).arg(curList.at(4)).arg(curList.at(5))
+        .arg(curList.at(6)).arg(curList.at(7)).arg(curList.at(8))
+        .arg(curList.at(9)).arg(curList.at(10)).arg(curList.at(11))
+        .arg(curList.at(12)).arg(curList.at(13)).arg(curList.at(14))
+        .arg(curList.at(15)).arg(curList.at(16)).arg(curList.at(17))
+        .arg(curList.at(18)).arg(curList.at(19)).arg(curList.at(20))
+        .arg(curList.at(21)).arg(curList.at(22)).arg(curList.at(23))
+        .arg(curList.at(24)).arg(curList.at(25)).arg(curList.at(26));
 
         if (!m_dbReaderPtr->executeUpdateQuery(query)) {
             // qDebug() << "Failed to save current state";

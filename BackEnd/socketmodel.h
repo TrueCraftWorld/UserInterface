@@ -44,7 +44,7 @@ public:
         CoagModeInstrIndex,
         CoagModeInstrID,
         CoagModeInstrIdList,
-        CoagInstrIdList, //это список для всего сокета, а выше для конкретного режима
+        // CoagInstrIdList, //это список для всего сокета, а выше для конкретного режима
         CoagModeInstrNum,
         CoagModeIsEndo,
         CoagModesNames,
@@ -62,7 +62,7 @@ public:
         CutModeInstrImage,
         CutModeInstrIndex,
         CutModeInstrID,
-        CutModeInstrIdList,
+        // CutModeInstrIdList,
         CutInstrIdList,
         CutModeInstrNum,
         CutModeIsEndo,
@@ -120,6 +120,21 @@ public:
     int subProgIdx() const;
     int subProgCount() const;
     void setSubProgIdx(int newIndex);
+
+    /**
+     * @brief getSocketsCopy возвращает копию данных лежащих в модели
+     * @details да, и указатели тоже на копии объектов, так надо
+     * @return
+     */
+    std::vector<std::map<int, SockPtr >> getSocketsCopy();
+
+    /**
+     * @brief getInstrCopy возвращает копию данных лежащих в модели
+     * @details да, и указатели тоже на копии объектов, так надо
+     * @return
+     */
+    std::vector<std::map<int, InstrPtr >> getInstrCopy();
+
 signals:
     void subProgIdxChanged();
     void subProgCountChanged();
@@ -149,8 +164,6 @@ private:
     void populateRoles();
     std::vector<SocketStrings> getDatabaseText();
 
-    std::vector<std::map<int, SOCKET >> getSocketsCopy();
-    std::vector<std::map<int, Instrument >> getInstrCopy();
 
 //поля
 private:

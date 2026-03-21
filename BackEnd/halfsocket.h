@@ -13,6 +13,7 @@ class HalfSocket
 public:
     HalfSocket(bool isCoag, int state = 1);
     HalfSocket(const HalfSocket& other);
+    HalfSocket& operator=(const HalfSocket& other);
 
 public:
     // /*! Перечисление возможных состояний сокета */

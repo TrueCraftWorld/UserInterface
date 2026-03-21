@@ -387,3 +387,23 @@ SOCKET::SOCKET(const SOCKET &other)
     m_cutHalf = HalfSockPtr::create(*(other.m_cutHalf.data()));
     m_coagHalf = HalfSockPtr::create(*(other.m_coagHalf.data()));
 }
+
+SOCKET &SOCKET::operator =(const SOCKET &other)
+{
+    if (this == &other) {
+        return *this;
+    }
+    m_socketType = other.m_socketType;
+    m_socketStatus = other.m_socketStatus;
+    m_displayMode = other.m_displayMode;
+    m_pedal = other.m_pedal;
+    m_socketName = other.m_socketName;
+    m_allowedPedals.reserve(other.m_allowedPedals.size());
+    for (int allowed : qAsConst(other.m_allowedPedals)) {
+        m_allowedPedals.push_back(allowed);
+    }
+    //передаём копираванный объект в конструктор указателя
+    m_cutHalf = HalfSockPtr::create(*(other.m_cutHalf.data()));
+    m_coagHalf = HalfSockPtr::create(*(other.m_coagHalf.data()));
+    return *this;
+}

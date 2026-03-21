@@ -3,21 +3,21 @@
 #include <QTimer>
 // #include <algorithm>
 
-namespace {
-template<typename Key, typename Value>
-void uniteMaps(
-    std::map<Key, Value>& destination,
-    const std::map<Key, Value>& source) {
-    for (const auto& [key, value] : source) {
-        auto it = destination.find(key);
-        if (it != destination.end()) {
-            continue;
-        } else {
-            destination[key] = value;
-        }
-    }
-}
-}
+// namespace {
+// template<typename Key, typename Value>
+// void uniteMaps(
+//     std::map<Key, Value>& destination,
+//     const std::map<Key, Value>& source) {
+//     for (const auto& [key, value] : source) {
+//         auto it = destination.find(key);
+//         if (it != destination.end()) {
+//             continue;
+//         } else {
+//             destination[key] = value;
+//         }
+//     }
+// }
+// }
 
 SocketModel::SocketModel(QObject *parent)
     : QAbstractListModel{parent}
@@ -163,20 +163,20 @@ QVariant SocketModel::data(const QModelIndex &index, int role) const
         }
         return res;
     }
-    case CoagInstrIdList:
-    {
-        QStringList res;
-        std::map<int, Onyx::InstrInfo> all;
-        int lim = socketItem.coagModeCount();
-        for (int mode = 0; mode < lim; ++mode) {
-            const auto& modePtr = socketItem.getMode(mode, true);
-            uniteMaps(all, modePtr->InstrConstraints() );
-        }
-        for (const auto& [key, item] : all) {
-            res.append(QString::number(item.id));
-        }
-        return res;
-    }
+    // case CoagInstrIdList:
+    // {
+    //     QStringList res;
+    //     std::map<int, Onyx::InstrInfo> all;
+    //     int lim = socketItem.coagModeCount();
+    //     for (int mode = 0; mode < lim; ++mode) {
+    //         const auto& modePtr = socketItem.getMode(mode, true);
+    //         uniteMaps(all, modePtr->InstrConstraints() );
+    //     }
+    //     for (const auto& [key, item] : all) {
+    //         res.append(QString::number(item.id));
+    //     }
+    //     return res;
+    // }
     case CoagModeInstrNum:
     {
         if (socketItem.curCoagMode().isNull()
@@ -259,20 +259,20 @@ QVariant SocketModel::data(const QModelIndex &index, int role) const
         }
         return res;
     }
-    case CutInstrIdList:
-    {
-        QStringList res;
-        std::map<int, Onyx::InstrInfo> all;
-        int lim = socketItem.cutModeCount();
-        for (int mode = 0; mode < lim; ++mode) {
-            const auto& modePtr = socketItem.getMode(mode, false);
-            uniteMaps(all,modePtr->InstrConstraints() );
-        }
-        for (const auto& [key, item] : all) {
-            res.append(QString::number(item.id));
-        }
-        return res;
-    }
+    // case CutInstrIdList:
+    // {
+    //     QStringList res;
+    //     std::map<int, Onyx::InstrInfo> all;
+    //     int lim = socketItem.cutModeCount();
+    //     for (int mode = 0; mode < lim; ++mode) {
+    //         const auto& modePtr = socketItem.getMode(mode, false);
+    //         uniteMaps(all,modePtr->InstrConstraints() );
+    //     }
+    //     for (const auto& [key, item] : all) {
+    //         res.append(QString::number(item.id));
+    //     }
+    //     return res;
+    // }
     case CutModeInstrNum:
     {
         if (socketItem.curCutMode().isNull()
@@ -949,28 +949,28 @@ std::vector<SocketStrings> SocketModel::getDatabaseText()
     return progDesc;
 }
 
-std::vector<std::map<int, SOCKET> > SocketModel::getSocketsCopy()
+std::vector<std::map<int, SockPtr> > SocketModel::getSocketsCopy()
 {
-    std::vector<std::map<int, SOCKET>> sockMap;
+    std::vector<std::map<int, SockPtr>> sockMap;
     //получаем именно копию мар и её данных без привязок к данным в модели
     for (const auto& socketPtrMap : m_itemsMapVect) {
         sockMap.emplace_back();
         auto& curMap = sockMap.back();
         for (const auto& sock : socketPtrMap) {
-            curMap.insert({sock.first, *sock.second});
+            curMap.insert({sock.first, SockPtr::create(*sock.second)});
         }
     }
     return sockMap;
 }
 
-std::vector<std::map<int, Instrument> > SocketModel::getInstrCopy()
+std::vector<std::map<int, InstrPtr> > SocketModel::getInstrCopy()
 {
-    std::vector<std::map<int, Instrument>> instrMap;
+    std::vector<std::map<int, InstrPtr>> instrMap;
     for (const auto& instrMapPtr : m_instrMapVect) {
         instrMap.emplace_back();
         auto& curInstr = instrMap.back();
         for (const auto& instr : instrMapPtr) {
-            curInstr.insert({instr.first, *instr.second});
+            curInstr.insert({instr.first, InstrPtr::create(*instr.second)});
         }
     }
     return instrMap;

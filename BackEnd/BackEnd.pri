@@ -24,6 +24,7 @@ HEADERS += \
     $$PWD/socket.h \
     $$PWD/socketmodeeditor.h \
     $$PWD/socketmodel.h \
+    $$PWD/socketreader.h \
     $$PWD/stmupdater.h \
     $$PWD/surgicalmode.h \
     $$PWD/uartqmlbridge.h \
@@ -50,6 +51,7 @@ SOURCES += \
     $$PWD/socket.cpp \
     $$PWD/socketmodeeditor.cpp \
     $$PWD/socketmodel.cpp \
+    $$PWD/socketreader.cpp \
     $$PWD/stmupdater.cpp \
     $$PWD/surgicalmode.cpp \
     $$PWD/uartqmlbridge.cpp \

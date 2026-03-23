@@ -31,15 +31,15 @@ QStringList EshfProgStringBuilder::makeSocketString(size_t socketNum, size_t pag
 	if (pageNum >= m_sockets.size()) {
 		return res;
 	}
-	for (int i = 0; i < 4; ++i) {
-		SockPtr sock = m_sockets.at(pageNum).at(i);
+	// for (int i = 0; i < 4; ++i) {
+	    SockPtr sock = m_sockets.at(pageNum).at(socketNum);
 		res.append(makeInstrumString(sock, false));
 		res.append(makeModeString(sock, false));
 		res.append(makePowerString(sock, false));
 		res.append(makeInstrumString(sock, true));
 		res.append(makeModeString(sock, true));
 		res.append(makePowerString(sock, true));
-	}
+	// }
 
 	return res;
 }

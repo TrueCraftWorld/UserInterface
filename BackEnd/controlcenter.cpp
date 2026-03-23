@@ -219,7 +219,9 @@ void ControlCenter::setLinkStm(LinkStm* linkStm)
             int idxStart = topLeft.row();
             int idxStop = bottomRight.row();
             for (int i = idxStart; i <= idxStop; ++i) {
-            //вызовы data по доке reenterant так что мы можем предать в арги прям вызовы
+            //вызовы data по доке  reenterant так что мы можем предать в арги прям вызовы
+
+            //НУЖНА ЗАЩИТА ОТ ВЫЗОВОВ ВО ВРЕМЯ ОБНОВЛЕНИЯ МОДЕЛИ
                 QMetaObject::invokeMethod(  m_linkStm.data(),
                                         "updateSocketData",
                                         Qt::QueuedConnection,

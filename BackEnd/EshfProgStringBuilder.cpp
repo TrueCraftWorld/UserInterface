@@ -53,7 +53,8 @@ QStringList EshfProgStringBuilder::makePedalString(size_t pageNum)
 	if (pageNum >= m_sockets.size()) {
 		return res;
 	}
-	res.reserve(2);
+	res.append(QString::number(0));
+	res.append(QString::number(0));
 	const auto& page = m_sockets.at(pageNum);
 	for (int i = 0; i < 4; ++i) {
 		if (page.at(i)->pedal() == Onyx::DOUBLE_PED) {

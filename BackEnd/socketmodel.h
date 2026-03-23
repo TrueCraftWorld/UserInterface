@@ -5,6 +5,7 @@
 #include <QObject>
 #include <QSharedPointer>
 #include <map>
+#include <QMutex>
 #include "instrument.h"
 
 #include "socket.h"
@@ -44,7 +45,6 @@ public:
         CoagModeInstrIndex,
         CoagModeInstrID,
         CoagModeInstrIdList,
-        // CoagInstrIdList, //это список для всего сокета, а выше для конкретного режима
         CoagModeInstrNum,
         CoagModeIsEndo,
         CoagModesNames,
@@ -63,7 +63,6 @@ public:
         CutModeInstrIndex,
         CutModeInstrID,
         CutModeInstrIdList,
-        // CutInstrIdList,
         CutModeInstrNum,
         CutModeIsEndo,
         CutModesNames,
@@ -179,6 +178,8 @@ private:
     QStringList m_socketNames;
     QHash<int, QByteArray> m_roles;
     int m_subProgCount;
+
+    // QMutex removeSubMutex;
 };
 
 #endif // SOCKETMODEL_H

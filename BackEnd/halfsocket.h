@@ -136,7 +136,7 @@ private:
     int getModeIndex(const QString& name) const;
     int getModeIndex(int id) const;
 
-    CSurgModePtr m_curMode;
+    CSurgModePtr m_curMode = nullptr;
     int m_modeIndex = 0;
 
     QStringList m_modeNames;

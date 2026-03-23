@@ -56,20 +56,9 @@ void ProgHandle::removeSubProg()
     emit signalRemoveSub();
 }
 
-// void ProgHandle::saveProg(int id, const QString &name)
-// {
-//     emit signalSave(id, name);
-// }
-
-// void ProgHandle::saveProg(const QString &name)
-// {
-//     // emit signalSaveName(name);
-//     qDebug() << "saving" << name;
-// }
-
 void ProgHandle::saveProg(const QString &scopeName, const QString &progName)
 {
-    qDebug() << "saveProg" << scopeName << progName;
+    // qDebug() << "saveProg" << scopeName << progName;
     emit signalSaveName(scopeName, progName);
 }
 

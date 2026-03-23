@@ -74,10 +74,6 @@ public:
 	
 	std::map<int, QString> getCategories();
 	
-	// std::map<int, QString> getUserProgList();
-	// QMap<int, QString> getUserProgList();
-	
-	// void saveUserProg(const QString& name);
 	void saveUserProg(const QString& scopeName,
 	                    const QString& progName);
 	
@@ -96,19 +92,15 @@ public:
 	
 	void setCurLoaderType(progType newCurLoaderType);
 
-public slots:
-	// bool loadUserProg(int userProgId);
-	
 private:
-	// std::map<int, QString> getProgList(bool isUser = false);
+	QList<QStringList> prepSaveState();
+
 	std::map<int, InstrPtr> getInstrums();
 	void saveProg(const QString& name = "");
 	
 	QSharedPointer<DataBaseReader> m_dbReaderPtr;
 	QSharedPointer<SocketModel> m_socketModelPtr;
 
-	// std::map<int, QSharedPointer<ProgLoaderBase>> m_loaders;
-	// QPointer<ProgLoaderBase> loader = nullptr;
 	progType m_curLoaderType = ptRecom;
 
 	ProgLoaderBase* getLoader(progType type);

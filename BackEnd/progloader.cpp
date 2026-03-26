@@ -5,7 +5,6 @@
 #include "onyxapp.h"
 #include "EshfProgStringBuilder.h"
 
-// #include <iostream>
 #include <unordered_set>
 #include <cmath>
 #include <vector>
@@ -197,7 +196,6 @@ void filterModeMap(QMap<int, SurgModePtr>& container, const std::vector<int>& al
 
 
     const QString queryConditionRecom = "Prog_ID = %1";
-    const QString queryConditionUser = "User_ID = %1";
     const QStringList fields = {"id", "Num", "Prog_ID", /* 0 1 2*/
                           "Bi1Cut_INSTR", "Bi1Cut_MODE", "Bi1Cut_POWER", /* 3 4 5*/
                           "Bi1Coag_INSTR", "Bi1Coag_MODE", "Bi1Coag_POWER", /* 6 7 8*/
@@ -207,7 +205,7 @@ void filterModeMap(QMap<int, SurgModePtr>& container, const std::vector<int>& al
                           "Mono1Coag_INSTR", "Mono1Coag_MODE", "Mono1Coag_POWER", /* 18 19 20*/
                           "Mono2Cut_INSTR", "Mono2Cut_MODE", "Mono2Cut_POWER", /* 21 22 23*/
                           "Mono2Coag_INSTR", "Mono2Coag_MODE", "Mono2Coag_POWER", /* 24 25 26*/
-                          "Pedal_1", "Pedal_2", "OutEnabled_MASK", "User_ID"};/* 27 28 29 30*/
+                          "Pedal_1", "Pedal_2", "OutEnabled_MASK"};/* 27 28 29 30*/
     const   QString saveCurQuery = QString(
         "REPLACE INTO Lists ("
         "id, Num, Prog_ID, "
@@ -258,7 +256,7 @@ void filterModeMap(QMap<int, SurgModePtr>& container, const std::vector<int>& al
                                        ")");
     const   QString insertUserProgQuery = QString(
                                          "INSERT INTO Lists ("
-                                         "Num, User_ID, Prog_ID,"
+                                         "Num, Prog_ID,"
                                          "Bi1Cut_INSTR, Bi1Cut_MODE, Bi1Cut_POWER, "
                                          "Bi1Coag_INSTR, Bi1Coag_MODE, Bi1Coag_POWER, "
                                          "Bi2Cut_INSTR, Bi2Cut_MODE, Bi2Cut_POWER, "
@@ -269,7 +267,7 @@ void filterModeMap(QMap<int, SurgModePtr>& container, const std::vector<int>& al
                                          "Mono2Coag_INSTR, Mono2Coag_MODE, Mono2Coag_POWER, "
                                          "Pedal_1, Pedal_2, OutEnabled_MASK"
                                          ") VALUES ("
-                                         "%28, NULL, %29,"
+                                         "%28, %29,"
                                          "'%1', '%2', %3, "
                                          "'%4', '%5', %6, "
                                          "'%7', '%8', %9, "
@@ -366,8 +364,9 @@ void ProgLoader::defaultSocketInit(bool clear)
         QStringList{"id"},
         ""
     );
-    for (const auto& item : allModes)
+    for (const auto& item : allModes) {
         allowedModesId.append(item.at(0).toInt());
+    }
 
     // Получаем все инструменты из БД
     QList<QVariantList> allInstr = m_dbReaderPtr->slotSendSelectQuery(
@@ -511,14 +510,16 @@ bool ProgLoader::programmLoadSocketInit(int progId, bool clear)
                                                                         QStringList{"Name_RU","id"},
                                                                         "");
     QStringList modeNamesList;
-    for (const auto& iter : modeNamesListV)
+    for (const auto& iter : modeNamesListV) {
         modeNamesList.append(iter.at(0).toString());
+    }
 
-    for (const auto& progItem : progListVariant) {
+    for (const auto& progItem : qAsConst(progListVariant)) {
     //ограничения для каждого листа
         if (progItem.at(1).toInt() < 0
-            || progItem.at(1).toInt() >= 5)
+            || progItem.at(1).toInt() >= 4) {
             continue;
+        }
         QList<int> allowedModesId;
         std::vector<int> allowedInstrId;
 
@@ -527,7 +528,8 @@ bool ProgLoader::programmLoadSocketInit(int progId, bool clear)
             QList<QVariantList> allowedModes
                     = m_dbReaderPtr->slotSendSelectQuery(QStringList{"EnableModes"},
                                                          QStringList{"Mode_ID"},
-                                                         QString("List_ID = %1").arg(progItem.at(0).toUInt()));
+                                                         QString("Prog_ID = %1").arg(progItem.at(0).toUInt()));
+            // QString("List_ID = %1").arg(progItem.at(0).toUInt()));
             for (const auto& item : allowedModes)
                 allowedModesId.append(item.at(0).toInt());
         } else {
@@ -584,7 +586,7 @@ bool ProgLoader::programmLoadSocketInit(int progId, bool clear)
 
 
         socketMapVector.push_back(std::map<int, SockPtr>());
-        std::map<int, SockPtr>& socketMap = socketMapVector[socketMapVector.size() - 1];
+        std::map<int, SockPtr>& socketMap = socketMapVector.back();
         for (int i = 0; i < 4; ++i) {
             Onyx::SocType type = Onyx::SocType(i+1);
             SockPtr socket = SockPtr::create(type);
@@ -689,8 +691,10 @@ bool ProgLoader::programmLoadSocketInit(int progId, bool clear)
         return false;
 
     m_socketModelPtr->loadProgs(socketMapVector, instrMapVector, !clear);
-    if (progId != 1000)
+
+    if (progId != 1000) {
         slotSaveCurrentState();
+    }
     return (true);
 }
 

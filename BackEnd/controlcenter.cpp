@@ -87,9 +87,9 @@ void ControlCenter::makeHandleConnections()
 
     connect(m_handle, &ProgHandle::updateScopes,
             this, [this] (bool isRecom) {
-        // std::cout << "caught ProgHandle::updateScopes" << isRecom << std::endl;
         m_progLoader->setCurLoaderType(isRecom ? ProgLoader::ptRecom : ProgLoader::ptUser);
         m_handle->setScopeList(m_progLoader->getCategories());
+        m_handle->setProgList(m_progLoader->getProgs(-1));
     });
 
     // connect(m_handle, &ProgHandle::signalUserProgsRequest,

@@ -22,18 +22,13 @@ public:
 
     explicit ProgHandle(QObject *parent = nullptr);
 
-    // Q_INVOKABLE void loadSelected();
     Q_INVOKABLE void loadRecommendedProg(int recomProgId, bool clear = true);
     Q_INVOKABLE void removeSubProg();
-    // Q_INVOKABLE void loadUserProg(int recomProgId);
     Q_INVOKABLE void permitAll();
-    // Q_INVOKABLE void saveProg(int id, const QString& name);
-    // Q_INVOKABLE void saveProg(const QString& name);
     Q_INVOKABLE void saveProg(const QString& scopeName,
                                 const QString& progName);
     Q_INVOKABLE void addEmptyDefault();
     Q_INVOKABLE void copyCurrent();
-    // Q_INVOKABLE void userProgs();
     Q_INVOKABLE QString readTextFile(const QString& filePath);
     Q_INVOKABLE QStringList scanVideoFiles(const QString& folderPath);
 
@@ -48,9 +43,6 @@ public:
     void setProgList(const std::map<int, QString>& lst/*, bool isRecom = true*/);
 
     void setScopeList(const std::map<int, QString>& scopes/*, bool isRecom = true*/);
-
-    // QStringList userProgList() const;
-    // void setUserProgList(const std::map<int, QString>& progs);
 
     bool isRecomProgs() const;
     void setIsRecomProgs(bool newIsRecomProgs);

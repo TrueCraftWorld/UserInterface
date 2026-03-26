@@ -177,9 +177,6 @@ private:
 
     QStringList m_socketNames;
     QHash<int, QByteArray> m_roles;
-    int m_subProgCount;
-
-    // QMutex removeSubMutex;
 };
 
 #endif // SOCKETMODEL_H

@@ -44,8 +44,6 @@ Rectangle {
         progList.curIndex = -1
     }
     function init() {
-
-
         itemNameArr = recomHandle.scopeNameList
         itemIdArr = recomHandle.scopeIdList
         if (itemIdArr.length !== itemNameArr.length) {

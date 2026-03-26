@@ -5,7 +5,6 @@
 #include <QDebug>
 #include <QDir>
 #include <QStringList>
-// #include <iostream>
 
 #include "proghandle.h"
 
@@ -131,21 +130,13 @@ void ProgHandle::setScopeIdx(int newScopeIdx)
 
 void ProgHandle::setProgList(const std::map<int, QString>& lst/*, bool isRecom*/)
 {
-    // (m_isRecomProgs ? m_progs : m_userProgs) = lst;
     m_progs = lst;
     emit progNameListChanged();
 }
 
 void ProgHandle::setScopeList(const std::map<int, QString> &scopes/*, bool isRecom*/)
 {
-    // (m_isRecomProgs ? m_scopes : m_userScopes) = scopes;
-    // std::cout << "ProgHandle::setScopeList" << m_isRecomProgs << std::endl;
-    for (const auto& item : scopes) {
-        // std::cout << item.second.toStdString() << std::endl;
-    }
-
     m_scopes = scopes;
-    // m_scopeNameList = m_scopes.values();
     setScopeIdx(0);
     emit scopeNameListChanged();
 }
@@ -206,9 +197,6 @@ bool ProgHandle::isRecomProgs() const
 
 void ProgHandle::setIsRecomProgs(bool newIsRecomProgs)
 {
-    // if (m_isRecomProgs == newIsRecomProgs)
-    //     return;
     m_isRecomProgs = newIsRecomProgs;
-    // std::cout << "setIsRecomProgs" << newIsRecomProgs << std::endl;
     emit isRecomProgsChanged();
 }

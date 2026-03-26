@@ -297,9 +297,9 @@ Canvas {
             anchors.right: parent.right
             anchors.verticalCenter: parent.verticalCenter
             
-            // Локальная переменная для отслеживания текущего значения во время автоповтора
-            property int currentPowerValue: modePower
-            
+            // Локальные состояния для автоповтора
+            property bool held: false
+
             Label {
                 anchors {
                     margins: 10
@@ -315,42 +315,60 @@ Canvas {
             MouseArea {
                 anchors.fill: parent
                 onPressed: {
-                    // Инициализируем локальное значение текущим значением мощности
-                    powerPlusButton.currentPowerValue = modePower;
-                    // Вычисляем и отправляем новое значение
-                    var newValue = changePowerFromValue(powerPlusButton.currentPowerValue, "up");
-                    powerPlusButton.currentPowerValue = newValue;
-                    modePowerRect.newPower(newValue);
-                    delayPlusTimer.start();
+//                    console.log("PLUS PRESSED", mouse.x, mouse.y, "modePower =", modePower)
+                    powerPlusButton.color = "#40ffffff"
+                    powerPlusButton.held = true
+                    // первый шаг
+                    var newValue = changePowerFromValue(modePower, "up")
+                    modePowerRect.newPower(newValue)
+                    // запускаем таймеры автоповтора и страховки
+                    autoRepeatPlusTimer.start()
+                    plusSafetyTimer.restart()
                 }
                 onReleased: {
-                    delayPlusTimer.stop();
-                    autoRepeatPlusTimer.stop();
+//                    console.log("PLUS RELEASED", mouse.x, mouse.y, "modePower =", modePower)
+                    powerPlusButton.color = "transparent"
+                    powerPlusButton.held = false
+                    autoRepeatPlusTimer.stop()
+                    plusSafetyTimer.stop()
                 }
                 onCanceled: {
-                    delayPlusTimer.stop();
-                    autoRepeatPlusTimer.stop();
+//                    console.log("PLUS CANCELED")
+                    powerPlusButton.color = "transparent"
+                    powerPlusButton.held = false
+                    autoRepeatPlusTimer.stop()
+                    plusSafetyTimer.stop()
                 }
             }
 
-            // Таймер задержки перед началом автоповтора
-            Timer {
-                id: delayPlusTimer
-                interval: 500  // Задержка перед началом автоповтора (мс)
-                repeat: false
-                onTriggered: autoRepeatPlusTimer.start();
-            }
-
-            // Таймер автоповтора
+            // Таймер автоповтора при удержании
             Timer {
                 id: autoRepeatPlusTimer
-                interval: 150  // Интервал повторения в миллисекундах
+                interval: 200  // мс между шагами автоинкремента
                 repeat: true
                 onTriggered: {
-                    // Используем локальное значение для вычисления следующего
-                    var newValue = changePowerFromValue(powerPlusButton.currentPowerValue, "up");
-                    powerPlusButton.currentPowerValue = newValue;
-                    modePowerRect.newPower(newValue);
+                    if (!powerPlusButton.held) {
+                        stop()
+                        return
+                    }
+//                    console.log("PLUS AUTOREPEAT step, modePower =", modePower)
+                    var newValue = changePowerFromValue(modePower, "up")
+                    modePowerRect.newPower(newValue)
+                }
+            }
+
+            // Страховка: если release потерялся, через тайм-аут считаем, что кнопку отпустили
+            Timer {
+                id: plusSafetyTimer
+                interval: 2000
+                repeat: false
+                onTriggered: {
+                    if (powerPlusButton.held) {
+                        console.log("PLUS SAFETY TIMEOUT, force release, modePower =", modePower)
+                        powerPlusButton.held = false
+                        autoRepeatPlusTimer.stop()
+                        powerPlusButton.color = "transparent"
+                    }
                 }
             }
         }
@@ -369,9 +387,9 @@ Canvas {
             anchors.left: parent.left
             anchors.verticalCenter: parent.verticalCenter
             
-            // Локальная переменная для отслеживания текущего значения во время автоповтора
-            property int currentPowerValue: modePower
-            
+            // Локальные состояния для автоповтора
+            property bool held: false
+
             Label {
                 anchors {
                     margins: 10
@@ -387,44 +405,62 @@ Canvas {
             MouseArea {
                 anchors.fill: parent
                 onPressed: {
-                    // Инициализируем локальное значение текущим значением мощности
-                    powerMinusButton.currentPowerValue = modePower;
-                    // Вычисляем и отправляем новое значение
-                    var newValue = changePowerFromValue(powerMinusButton.currentPowerValue, "down");
-                    powerMinusButton.currentPowerValue = newValue;
-                    modePowerRect.newPower(newValue);
-                    delayMinusTimer.start();
+//                    console.log("MINUS PRESSED", mouse.x, mouse.y, "modePower =", modePower)
+                    powerMinusButton.color = "#40ffffff"
+                    powerMinusButton.held = true
+                    // первый шаг
+                    var newValue = changePowerFromValue(modePower, "down")
+                    modePowerRect.newPower(newValue)
+                    // запускаем таймеры автоповтора и страховки
+                    autoRepeatMinusTimer.start()
+                    minusSafetyTimer.restart()
                 }
                 onReleased: {
-                    delayMinusTimer.stop();
-                    autoRepeatMinusTimer.stop();
+//                    console.log("MINUS RELEASED", mouse.x, mouse.y, "modePower =", modePower)
+                    powerMinusButton.color = "transparent"
+                    powerMinusButton.held = false
+                    autoRepeatMinusTimer.stop()
+                    minusSafetyTimer.stop()
                 }
                 onCanceled: {
-                    delayMinusTimer.stop();
-                    autoRepeatMinusTimer.stop();
+//                    console.log("MINUS CANCELED")
+                    powerMinusButton.color = "transparent"
+                    powerMinusButton.held = false
+                    autoRepeatMinusTimer.stop()
+                    minusSafetyTimer.stop()
                 }
-            }
+           }
 
-            // Таймер задержки перед началом автоповтора
-            Timer {
-                id: delayMinusTimer
-                interval: 500  // Задержка перед началом автоповтора (мс)
-                repeat: false
-                onTriggered: autoRepeatMinusTimer.start();
-            }
+           // Таймер автоповтора при удержании
+           Timer {
+               id: autoRepeatMinusTimer
+               interval: 200  // мс между шагами автоинкремента
+               repeat: true
+               onTriggered: {
+                   if (!powerMinusButton.held) {
+                       stop()
+                       return
+                   }
+//                   console.log("MINUS AUTOREPEAT step, modePower =", modePower)
+                   var newValue = changePowerFromValue(modePower, "down")
+                   modePowerRect.newPower(newValue)
+               }
+           }
 
-            // Таймер автоповтора
-            Timer {
-                id: autoRepeatMinusTimer
-                interval: 150  // Интервал повторения в миллисекундах
-                repeat: true
-                onTriggered: {
-                    // Используем локальное значение для вычисления следующего
-                    var newValue = changePowerFromValue(powerMinusButton.currentPowerValue, "down");
-                    powerMinusButton.currentPowerValue = newValue;
-                    modePowerRect.newPower(newValue);
-                }
-            }
+           // Страховка: если release потерялся, через тайм-аут считаем, что кнопку отпустили
+           Timer {
+               id: minusSafetyTimer
+               interval: 2000
+               repeat: false
+               onTriggered: {
+                   if (powerMinusButton.held) {
+                       console.log("MINUS SAFETY TIMEOUT, force release, modePower =", modePower)
+                       powerMinusButton.held = false
+                       autoRepeatMinusTimer.stop()
+                       powerMinusButton.color = "transparent"
+                   }
+               }
+           }
         }
 
         Slider {

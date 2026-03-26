@@ -66,3 +66,15 @@ bool JsonStorage::read(QString key, QJsonValue* data)
 //    qDebug() << "в " << key << " лежит " << savedData.toInt();
     return true;
 }
+
+void JsonStorage::saveString(const QString& key, const QString& value)
+{
+    save(key, QJsonValue(value));
+}
+
+QString JsonStorage::readString(const QString& key, const QString& defaultValue) const
+{
+    if (!m_object.contains(key))
+        return defaultValue;
+    return m_object.value(key).toString(defaultValue);
+}

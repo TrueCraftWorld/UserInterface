@@ -7,6 +7,24 @@ Item {
     property bool shortcut : false
     property alias item : menuLoader.item
     readonly property var loader : menuLoader
+    focus: true
+
+    function hideKeyboardAndDropFocus() {
+        Qt.inputMethod.commit()
+        Qt.inputMethod.hide()
+        menuLoadRoot.focus = true
+    }
+
+    function navigateTo(sourcePath) {
+        hideKeyboardAndDropFocus()
+        menuLoader.source = sourcePath
+        Qt.callLater(function() {
+            hideKeyboardAndDropFocus()
+            if (menuLoader.item && menuLoader.item.forceActiveFocus) {
+                menuLoader.item.forceActiveFocus()
+            }
+        })
+    }
 
     signal returnButtonPressed()
     signal closeMe()
@@ -51,12 +69,12 @@ Item {
                     }
                     if (menuLoader.item.settingsButtonPressed) {
                         menuLoader.item.settingsButtonPressed.connect(function() {
-                            menuLoader.source = "qrc:/SettingsMain.qml"
+                            navigateTo("qrc:/SettingsMain.qml")
                         })
                     }
                     if (menuLoader.item.secretKeysButtonPressed) {
                         menuLoader.item.secretKeysButtonPressed.connect(function() {
-                            menuLoader.source = "qrc:/SecretKeysWindow.qml"
+                            navigateTo("qrc:/SecretKeysWindow.qml")
                         })
                     }
                     if (menuLoader.item.exitButtonPressed) {
@@ -77,7 +95,17 @@ Item {
                     }
                     if (menuLoader.item.serviceMenuButtonPressed) {
                         menuLoader.item.serviceMenuButtonPressed.connect(function() {
-                            menuLoader.source = "qrc:/ServiceMenu.qml"
+                            navigateTo("qrc:/ServiceMenu.qml")
+                        })
+                    }
+                    if (menuLoader.item.serialNumberButtonPressed) {
+                        menuLoader.item.serialNumberButtonPressed.connect(function() {
+                            navigateTo("qrc:/SerialNumberSettings.qml")
+                        })
+                    }
+                    if (menuLoader.item.softwareUpdateButtonPressed) {
+                        menuLoader.item.softwareUpdateButtonPressed.connect(function() {
+                            navigateTo("qrc:/updateWindow.qml")
                         })
                     }
                     if (menuLoader.item.returnButtonPressed) {
@@ -106,16 +134,20 @@ Item {
                                     if (menuLoader.item && menuLoader.item.loadClear !== undefined) {
                                         menuLoader.item.loadClear = true;
                                     }
-                                    menuLoader.source = "qrc:/MainMenu.qml"
+                                    navigateTo("qrc:/MainMenu.qml")
+                                } else if (menuLoader.source === "qrc:/SerialNumberSettings.qml") {
+                                    navigateTo("qrc:/ServiceMenu.qml")
+                                } else if (menuLoader.source === "qrc:/updateWindow.qml") {
+                                    navigateTo("qrc:/ServiceMenu.qml")
                                 } else {
-                                    menuLoader.source = "qrc:/MainMenu.qml"
+                                    navigateTo("qrc:/MainMenu.qml")
                                 }
                             })
                         }
                         if (menuLoader.item.clickedButton) {
                             menuLoader.item.clickedButton.connect(function(progId) {
                                 closeMe()
-                                menuLoader.source = "qrc:/MainMenu.qml"
+                                navigateTo("qrc:/MainMenu.qml")
                             })
                         }
                         if (menuLoader.item.programSelected) {

@@ -16,6 +16,9 @@ public:
 
     void save(QString key, QJsonValue data);
     bool read(QString key, QJsonValue* data);
+
+    Q_INVOKABLE void saveString(const QString& key, const QString& value);
+    Q_INVOKABLE QString readString(const QString& key, const QString& defaultValue = QString()) const;
 //    template <typename T> void save(QString key, T);
 //    template <typename T> bool read(QString key, T*);
 

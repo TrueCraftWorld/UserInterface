@@ -18,6 +18,7 @@ DISTFILES += \
     $$PWD/ModePowerRect.qml \
     $$PWD/NeutralButton.qml \
     $$PWD/NeutralEl.qml \
+    $$PWD/SerialNumberSettings.qml \
     $$PWD/Pedal.qml \
     $$PWD/PedalContainer.qml \
     $$PWD/PedalDrawer.qml \

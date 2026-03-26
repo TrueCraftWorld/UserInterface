@@ -3,6 +3,7 @@
 
 #include "SettingsScreen/wifimodule/NetworkDiscover.h"
 #include "SettingsScreen/updatemodule/updateclient.h"
+#include "SettingsScreen/updatemodule/remoteupdater.h"
 #include "BackEnd/controlcenter.h"
 #include "BackEnd/instrimageprovider.h"
 #include "BackEnd/systemmonitor.h"
@@ -41,6 +42,7 @@ int main(int argc, char *argv[])
     QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
 #endif
     QCoreApplication::setAttribute(Qt::AA_UseOpenGLES);
+    // Как было изначально: тач-события синтезируются в мышь
     QCoreApplication::setAttribute(Qt::AA_SynthesizeMouseForUnhandledTouchEvents, true);
     
     // Настройки для Qt Multimedia
@@ -87,7 +89,7 @@ int main(int argc, char *argv[])
     qputenv("QSG_RENDER_LOOP", "threaded");
     qputenv("QML_DISABLE_DISK_CACHE", "0");
     
-    // Настройки для touch-устройств
+    // Настройки для touch-устройств (как было до отладки)
     qputenv("QT_QPA_EVDEV_TOUCHSCREEN_PARAMETERS", "rotate=0");
     qputenv("QT_LOGGING_RULES", "qt.qpa.input=false");
 
@@ -112,6 +114,7 @@ int main(int argc, char *argv[])
 
     NetworkControl::registerNetworkControl();
     UpdateClient::registerUpdateClient();
+    RemoteUpdater::registerRemoteUpdater();
     ControlCenter::registerHandles();
 
     QSharedPointer<ControlCenter> ctrl  = QSharedPointer<ControlCenter>::create(nullptr);
@@ -157,7 +160,11 @@ int main(int argc, char *argv[])
     // Сохраняемые значения лежат в json-файле
     QVariantMap* initMap = new QVariantMap();
     initMap->insert("boot", 0);
+    initMap->insert("serialNumber", "");
+    initMap->insert("deviceType", "");
+    initMap->insert("featureNotes", "");
     m_savedJson = new JsonStorage(nullptr, initMap);
+    engine.rootContext()->setContextProperty("savedJson", m_savedJson);
     QJsonValue boot;
     m_savedJson->read("boot", &boot);
 

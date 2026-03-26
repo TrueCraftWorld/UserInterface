@@ -21,6 +21,7 @@
         <file>MainMenu.qml</file>
         <file>MenuLoader.qml</file>
         <file>ServiceMenu.qml</file>
+        <file>SerialNumberSettings.qml</file>
         <file>Pedal.qml</file>
         <file>PedalEditor.qml</file>
         <file>ProgAdditionPop.qml</file>

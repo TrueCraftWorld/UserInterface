@@ -8,6 +8,8 @@ Item {
     id: serviceMenuRoot
     signal returnButtonPressed()
     signal deleteAllUserProgsRequested()
+    signal serialNumberButtonPressed()
+    signal softwareUpdateButtonPressed()
     
     Rectangle {
         id: background
@@ -33,6 +35,30 @@ Item {
             horizontalCenter: parent.horizontalCenter
         }
         spacing: 30
+
+        SButton {
+            id: serialNumberButton
+            style: "btn-primary lg"
+            Layout.preferredWidth: 500
+            Layout.preferredHeight: 100
+            Layout.alignment: Qt.AlignHCenter
+            text: qsTr("Серийный номер")
+            onClicked: {
+                serviceMenuRoot.serialNumberButtonPressed()
+            }
+        }
+
+        SButton {
+            id: softwareUpdateButton
+            style: "btn-primary lg"
+            Layout.preferredWidth: 500
+            Layout.preferredHeight: 100
+            Layout.alignment: Qt.AlignHCenter
+            text: qsTr("Обновление ПО")
+            onClicked: {
+                serviceMenuRoot.softwareUpdateButtonPressed()
+            }
+        }
         
         SButton {
             id: deleteAllUserProgsButton

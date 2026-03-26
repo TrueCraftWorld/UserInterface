@@ -54,6 +54,8 @@ void LinkStm::argonBlow()
 
 void LinkStm::unpackRxCommand(const QByteArray &rxPacket)
 {
+//    qDebug() << "[LinkStm] unpackRxCommand, bytes:" << rxPacket.size();
+
     // Замеряем задержку от момента readyRead (readData) до входа в unpackRxCommand
     QTime now = QTime::currentTime();
     int delayFromReadyRead = m_uart->lastReadTime().msecsTo(now);
@@ -207,7 +209,7 @@ void LinkStm::sendCommand()
         if (!m_txCommandList.isEmpty()) {   // Какую-то спец команду надо передать
             m_txCommand = m_txCommandList.takeFirst();
             m_comState = SPECIAL;
-//            qDebug() << "txCom: " << m_txCommand.com << ": " << QString::number(m_txCommand.com, 16);
+            qDebug() << "txCom: " << m_txCommand.com << ": " << QString::number(m_txCommand.com, 16);
 
         }
 

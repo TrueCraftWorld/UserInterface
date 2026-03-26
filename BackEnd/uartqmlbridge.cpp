@@ -37,9 +37,9 @@ void UartToQmlBridge::openSerialPort()
     m_serial->setParity(QSerialPort::NoParity);
     m_serial->setStopBits(QSerialPort::OneStop);
     m_serial->setFlowControl(QSerialPort::NoFlowControl);
-    m_serial->close();
-    // if (!m_serial->open(QIODevice::ReadWrite))
-        // qDebug() << (QString("Can't open serial port ").append(m_portName));
+//    m_serial->close();
+     if (!m_serial->open(QIODevice::ReadWrite))
+         qDebug() << (QString("Can't open serial port ").append(m_portName));
 }
 
 void UartToQmlBridge::closeSerialPort()
@@ -78,9 +78,9 @@ QByteArray UartToQmlBridge::readData()
     const QByteArray data = m_serial->readAll();
     m_transmitDelay = m_writeTime.msecsTo(readTime);
     m_lastReadTime = readTime;
-    
-    // Отладочный вывод RX удалён
-    
+
+//    qDebug() << "[UartToQmlBridge] readyRead, bytes:" << data.size();
+
     // Сбрасываем флаг отправки
     m_waitForAnswer = false;
     if (data != m_rxData) {

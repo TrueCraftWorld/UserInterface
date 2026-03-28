@@ -56,7 +56,7 @@ std::vector<int> parseCommaSeparatedNumbers(const QString& input) {
     return result;
 }
 
-QString makeCommaSeparatedNumbers(QList<int> list) {
+QString makeCommaSeparatedNumbers(const std::vector<int>& list) {
     QString res;
     for (int a : list) {
         res += QString("%1,").arg(a);
@@ -278,6 +278,7 @@ void filterModeMap(QMap<int, SurgModePtr>& container, const std::vector<int>& al
                                          "'%22', '%23', %24, "
                                          "%25, %26, %27"
                                          ")");
+    const QString queryConditionModes = "BI_MONO = %1 AND CUT_COAG = %2 AND id IN (%3)";
 
 }
 
@@ -341,7 +342,7 @@ void ProgLoader::defaultSocketInit(bool clear)
     std::vector<std::map<int, InstrPtr >> instrMapVector;
     std::map<int, std::map<int, InstrInfo>>  instrumConstraints;
     QList<QVariantList> progListVariant;
-    QList<int> allowedModesId;
+    std::vector<int> allowedModesId;
     std::vector<int> allowedInstrId;
 
     // Создаём пустую запись с дефолтными значениями
@@ -364,8 +365,9 @@ void ProgLoader::defaultSocketInit(bool clear)
         QStringList{"id"},
         ""
     );
+    allowedModesId.reserve(allModes.size());
     for (const auto& item : allModes) {
-        allowedModesId.append(item.at(0).toInt());
+        allowedModesId.push_back(item.at(0).toInt());
     }
 
     // Получаем все инструменты из БД
@@ -388,6 +390,7 @@ void ProgLoader::defaultSocketInit(bool clear)
                                                                         QStringList{"Name_RU","id"},
                                                                         "");
     QStringList modeNamesList;
+    modeNamesList.reserve(modeNamesListV.size());
     for (const auto& iter : modeNamesListV) {
         modeNamesList.append(iter.at(0).toString());
     }
@@ -520,73 +523,20 @@ bool ProgLoader::programmLoadSocketInit(int progId, bool clear)
             || progItem.at(1).toInt() >= 4) {
             continue;
         }
-        QList<int> allowedModesId;
-        std::vector<int> allowedInstrId;
-
         //Шаг2---------------------------------------------------------
-        if (progId < 1000) {
-            QList<QVariantList> allowedModes
-                    = m_dbReaderPtr->slotSendSelectQuery(QStringList{"EnableModes"},
-                                                         QStringList{"Mode_ID"},
-                                                         QString("Prog_ID = %1").arg(progItem.at(0).toUInt()));
-            // QString("List_ID = %1").arg(progItem.at(0).toUInt()));
-            for (const auto& item : allowedModes)
-                allowedModesId.append(item.at(0).toInt());
-        } else {
-            std::vector<int> allowedModesId__;
-        //просто разрешаем все назначенные инструменты и режимы, если такие допустимы на сокетах, без дополнительных масок
-            for (int i = 0; i < 8; ++i) {
-                QString allowed = progItem.at(4 + 3*i).toString();
-                QStringList list = allowed.split(',');
-                for (const auto& mode : list) {
-                    allowedModesId__.push_back(mode.toInt());
-                }
-            }
-            std::sort(allowedModesId__.begin(), allowedModesId__.end());
-            if (allowedModesId__.size() > 1) {
-                // std::unordered_set<int> check;
-                auto last = std::unique(allowedModesId__.begin(), allowedModesId__.end());
-                allowedModesId__.erase(last, allowedModesId__.end());
-            }
-            allowedModesId = QList<int>::fromVector(QVector<int>(allowedModesId__.begin(), allowedModesId__.end()));
-        }
-        // allowedModes
+        std::vector<int> allowedModesId = getAllowedModes(progId, progItem);
 
         //Шаг3---------------------------------------------------------
-        if (progId < 1000) {
-            QList<QVariantList> allowedInstr
-                    = m_dbReaderPtr->slotSendSelectQuery(QStringList{"EnableInstr"},
-                                                           QStringList{"Instr_ID"},
-                                                           QString("List_ID = %1").arg(progItem.at(0).toUInt()));
-
-            for (const auto& item : allowedInstr) {
-                allowedInstrId.push_back(item.at(0).toInt());
-            }
-        } else {
-            std::vector<int> allowedInstrId__;
-            for (int i = 0; i < 8; ++i) {
-                // allowedInstrId__.push_back(progItem.at(3 + 3*i).toInt());
-                QString allowed = progItem.at(3 + 3*i).toString();
-                QStringList list = allowed.split(',');
-                for (const auto& instr : list) {
-                    allowedInstrId__.push_back(instr.toInt());
-                }
-            }
-            std::sort(allowedInstrId__.begin(), allowedInstrId__.end());
-            auto last = std::unique(allowedInstrId__.begin(), allowedInstrId__.end());
-            allowedInstrId__.erase(last, allowedInstrId__.end());
-            allowedInstrId = allowedInstrId__;
-        }
-
+        std::vector<int> allowedInstrId = getAllowedInstrs(progId, progItem);
 
         //Шаг4---------------------------------------------------------
-        QString queryConditionModes = "BI_MONO = %1 AND CUT_COAG = %2 AND id IN (%3)";
+
         instrumConstraints = getConstraints(allowedModesId);
-//--------------------------------------------------------------------------------------------------------------
 
-
+        //-------------------------------------------------------------
         socketMapVector.push_back(std::map<int, SockPtr>());
         std::map<int, SockPtr>& socketMap = socketMapVector.back();
+
         for (int i = 0; i < 4; ++i) {
             Onyx::SocType type = Onyx::SocType(i+1);
             SockPtr socket = SockPtr::create(type);
@@ -595,78 +545,13 @@ bool ProgLoader::programmLoadSocketInit(int progId, bool clear)
             socket->setSocketName(makeSocketName(type));
 
             for (int halfSocket = 0; halfSocket < 2; ++halfSocket ) {
-                bool isCoag = (halfSocket == 0);
-                QMap<int, SurgModePtr> modes;
-                QList<QVariantList> modesList = m_dbReaderPtr->slotSendSelectQuery(
-                            QStringList{"Modes"},
-                            QStringList{"MaxPower","Name_RU", "id", "Num",
-                                        "Brief_RU", "Descript_RU", "ENDO_REG"},
-                            queryConditionModes
-                                        .arg(socket->socketType() <= Onyx::BIPOLAR_2 ? 0 : 1)
-                                        .arg(halfSocket)
-                                        .arg(makeCommaSeparatedNumbers(allowedModesId)));
-
-                // Сортируем по Num (index 3)
-                std::sort(modesList.begin(), modesList.end(),
-                    [](const QVariantList& a, const QVariantList& b) {
-                        return a.at(3).toInt() < b.at(3).toInt();
-                    });
-
-                int start = isCoag ? 6 : 3;
-                std::vector<int> instIdLst;
-                std::vector<int> modeIdLst;
-
-                instIdLst = parseCommaSeparatedNumbers(progItem.at(start + 6*i).toString());
-                modeIdLst = parseCommaSeparatedNumbers(progItem.at(start + 1 + 6*i).toString());
-
-                makeModes(modes,
-                          modesList,
-                          instrumConstraints,
-                          progItem,
-                          i,
-                          isCoag,
-                          instIdLst);  // Передаём фильтр инструментов
-
-                filterModeMap(modes, modeIdLst);
-
-                // Исключаем режим "Термошов" (ID=7) для сокета БИ2 (i=0)
-                if (i == 0 && modes.contains(7)) {
-                    modes.remove(7);
-                }
-
-                isCoag ? socket->setCoagModes(modes, modeNamesList)
-                       : socket->setCutModes(modes, modeNamesList);
-
-                int firstInstrId;
-                int firstModeId;
-                int defaultPower;
-
-                firstInstrId = instIdLst.size() == 0 ? 0 : instIdLst.at(0);
-                firstModeId = modeIdLst.size() == 0 ? 1000 : modeIdLst.at(0);
-                defaultPower = progItem.at(start + 2 + 6*i).toInt();
-                defaultPower = std::max(1, defaultPower);
-
-                socket->setModeId(firstModeId, isCoag);
-                socket->setInstrumId(firstInstrId, isCoag);
-
-                // Проверка для эндоскопических режимов: если мощность = 1, устанавливаем 11
-                auto mode = isCoag ? socket->curCoagMode() : socket->curCutMode();
-                if (!mode.isNull() && mode->isEndo()) {
-                    int endoCut = defaultPower / 10;  // Целочисленное деление вместо floor
-                    int endoCoag = defaultPower % 10;
-                    if (endoCut < 1)
-                        endoCut = 1;
-                    else if (endoCut > ENDO_MAX)
-                        endoCut = ENDO_MAX;
-                    if (endoCoag < 1)
-                        endoCoag = 1;
-                    else if (endoCoag > ENDO_MAX)
-                        endoCoag = ENDO_MAX;
-                    defaultPower = endoCut * 10 + endoCoag;
-                }
-
-                isCoag ? socket->setCoagModePower(defaultPower)
-                       : socket->setCutModePower(defaultPower);
+                fillHalfSocket(halfSocket,
+                                i,
+                                socket,
+                                progItem,
+                                modeNamesList,
+                                allowedModesId,
+                                instrumConstraints);
             }
             bool coagEna = hasNonZeroDigit(progItem.at(29).toInt(), (8 - 2*i) - 1 );
             bool cutEna = hasNonZeroDigit(progItem.at(29).toInt(), (8 - 2*i) );
@@ -718,7 +603,7 @@ void ProgLoader::deleteUserProg(int id)
 
 }
 
-std::map<int, std::map<int, Onyx::InstrInfo> > ProgLoader::getConstraints(const QList<int>& idList)
+std::map<int, std::map<int, Onyx::InstrInfo> > ProgLoader::getConstraints(const std::vector<int>& idList)
 {
     std::map<int, std::map<int, Onyx::InstrInfo> > result;
     QString queryCondition = "Mode_ID = %1";
@@ -883,6 +768,152 @@ ProgLoaderBase *ProgLoader::getLoader(progType type)
         break;
     }
     return nullptr;
+}
+
+std::vector<int> ProgLoader::getAllowedInstrs(int progId, const QVariantList& progItem)
+{
+    std::vector<int> allowedInstrId;
+    if (progId < 1000) {
+        QList<QVariantList> allowedInstr
+                = m_dbReaderPtr->slotSendSelectQuery(QStringList{"EnableInstr"},
+                                                       QStringList{"Instr_ID"},
+                                                       QString("List_ID = %1").arg(progItem.at(0).toUInt()));
+
+        for (const auto& item : allowedInstr) {
+            allowedInstrId.push_back(item.at(0).toInt());
+        }
+    } else {
+        std::vector<int> allowedInstrId__;
+        for (int i = 0; i < 8; ++i) {
+            // allowedInstrId__.push_back(progItem.at(3 + 3*i).toInt());
+            QString allowed = progItem.at(3 + 3*i).toString();
+            QStringList list = allowed.split(',');
+            for (const auto& instr : list) {
+                allowedInstrId__.push_back(instr.toInt());
+            }
+        }
+        std::sort(allowedInstrId__.begin(), allowedInstrId__.end());
+        auto last = std::unique(allowedInstrId__.begin(), allowedInstrId__.end());
+        allowedInstrId__.erase(last, allowedInstrId__.end());
+        allowedInstrId = allowedInstrId__;
+    }
+    return allowedInstrId;
+
+}
+
+std::vector<int> ProgLoader::getAllowedModes(int progId, const QVariantList& progItem)
+{
+    std::vector<int> allowedModesId;
+    if (progId < 1000) {
+        QList<QVariantList> allowedModes
+                = m_dbReaderPtr->slotSendSelectQuery(QStringList{"EnableModes"},
+                                                     QStringList{"Mode_ID"},
+                                                     QString("Prog_ID = %1").arg(progItem.at(0).toUInt()));
+        // QString("List_ID = %1").arg(progItem.at(0).toUInt()));
+        allowedModesId.reserve(allowedModes.size());
+        for (const auto& item : allowedModes) {
+            allowedModesId.push_back(item.at(0).toInt());
+        }
+    } else {
+        // std::vector<int> allowedModesId__;
+    //просто разрешаем все назначенные инструменты и режимы, если такие допустимы на сокетах, без дополнительных масок
+        for (int i = 0; i < 8; ++i) {
+            QString allowed = progItem.at(4 + 3*i).toString();
+            QStringList list = allowed.split(',');
+            for (const auto& mode : list) {
+                allowedModesId.push_back(mode.toInt());
+            }
+        }
+        std::sort(allowedModesId.begin(), allowedModesId.end());
+        if (allowedModesId.size() > 1) {
+            // std::unordered_set<int> check;
+            auto last = std::unique(allowedModesId.begin(), allowedModesId.end());
+            allowedModesId.erase(last, allowedModesId.end());
+        }
+
+        // allowedModesId = QList<int>::fromVector(QVector<int>(allowedModesId__.begin(), allowedModesId__.end()));
+    }
+    return allowedModesId;
+
+}
+
+void ProgLoader::fillHalfSocket(int halfSocket,
+                                int socketNumber,
+                                SockPtr socket,
+                                const QVariantList& progItem,
+                                const QStringList& modeNamesList,
+                                const std::vector<int>& allowedModesId,
+                                const std::map<int, std::map<int, InstrInfo>>& instrumConstraints)
+{
+    bool isCoag = (halfSocket == 0);
+    QMap<int, SurgModePtr> modes;
+    QList<QVariantList> modesList = m_dbReaderPtr->slotSendSelectQuery(
+                QStringList{"Modes"},
+                QStringList{"MaxPower","Name_RU", "id", "Num",
+                            "Brief_RU", "Descript_RU", "ENDO_REG"},
+                queryConditionModes
+                            .arg(socket->socketType() <= Onyx::BIPOLAR_2 ? 0 : 1)
+                            .arg(halfSocket)
+                            .arg(makeCommaSeparatedNumbers(allowedModesId)));
+
+    // Сортируем по Num (index 3)
+    std::sort(modesList.begin(), modesList.end(),
+        [](const QVariantList& a, const QVariantList& b) {
+            return a.at(3).toInt() < b.at(3).toInt();
+        });
+
+    int start = isCoag ? 6 : 3;
+    std::vector<int> instIdLst = parseCommaSeparatedNumbers(progItem.at(start + 6*socketNumber).toString());;
+    std::vector<int> modeIdLst = parseCommaSeparatedNumbers(progItem.at(start + 1 + 6*socketNumber).toString());
+
+    makeModes(modes,
+              modesList,
+              instrumConstraints,
+              progItem,
+              socketNumber,
+              isCoag,
+              instIdLst);  // Передаём фильтр инструментов
+
+    filterModeMap(modes, modeIdLst);
+
+    // Исключаем режим "Термошов" (ID=7) для сокета БИ2 (i=0)
+    if (socketNumber == 0 && modes.contains(7)) {
+        modes.remove(7);
+    }
+
+    isCoag ? socket->setCoagModes(modes, modeNamesList)
+           : socket->setCutModes(modes, modeNamesList);
+
+    int firstInstrId;
+    int firstModeId;
+    int defaultPower;
+
+    firstInstrId = instIdLst.size() == 0 ? 0 : instIdLst.at(0);
+    firstModeId = modeIdLst.size() == 0 ? 1000 : modeIdLst.at(0);
+    defaultPower = progItem.at(start + 2 + 6*socketNumber).toInt();
+    defaultPower = std::max(1, defaultPower);
+
+    socket->setModeId(firstModeId, isCoag);
+    socket->setInstrumId(firstInstrId, isCoag);
+
+    // Проверка для эндоскопических режимов: если мощность = 1, устанавливаем 11
+    auto mode = isCoag ? socket->curCoagMode() : socket->curCutMode();
+    if (!mode.isNull() && mode->isEndo()) {
+        int endoCut = defaultPower / 10;  // Целочисленное деление вместо floor
+        int endoCoag = defaultPower % 10;
+        if (endoCut < 1)
+            endoCut = 1;
+        else if (endoCut > ENDO_MAX)
+            endoCut = ENDO_MAX;
+        if (endoCoag < 1)
+            endoCoag = 1;
+        else if (endoCoag > ENDO_MAX)
+            endoCoag = ENDO_MAX;
+        defaultPower = endoCut * 10 + endoCoag;
+    }
+
+    isCoag ? socket->setCoagModePower(defaultPower)
+           : socket->setCutModePower(defaultPower);
 }
 
 void ProgLoader::setSocketModelPtr(QSharedPointer<SocketModel> newSocketModelPtr)

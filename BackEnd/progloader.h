@@ -1,15 +1,17 @@
 #ifndef PROGLOADER_H
 #define PROGLOADER_H
 
-#include <QObject>
-#include <QPointer>
-#include <map>
 // #include <array>
 
 #include "BackEnd/progloaderbase.h"
 #include "instrument.h"
 #include "databasereader.h"
 #include "socketmodel.h"
+#include "Structures.h"
+
+#include <QObject>
+#include <QPointer>
+#include <map>
 // #include "userprogsloadmodel.h"
 // bi1CutInstr = "0", bi1CutMode = "1000", bi1CutPower = "1";
 
@@ -84,7 +86,7 @@ public:
 	 */
 	bool loadCurrentState();
 	
-	std::map<int, std::map<int, Onyx::InstrInfo>> getConstraints(const QList<int> &idList);
+	std::map<int, std::map<int, Onyx::InstrInfo>> getConstraints(const std::vector<int> &idList);
 	
 	void setSocketModelPtr(QSharedPointer<SocketModel> newSocketModelPtr);
 
@@ -94,16 +96,22 @@ public:
 
 private:
 	QList<QStringList> prepSaveState();
-
 	std::map<int, InstrPtr> getInstrums();
 	void saveProg(const QString& name = "");
-	
+	ProgLoaderBase* getLoader(progType type);
+	std::vector<int> getAllowedInstrs(int progId, const QVariantList& progItem);
+	std::vector<int> getAllowedModes(int progId, const QVariantList &progItem);
+	void fillHalfSocket(int halfSocket,
+	                    int socketNumber,
+	                    SockPtr socket,
+	                    const QVariantList& progItem,
+	                    const QStringList& modeNamesList,
+	                    const std::vector<int>& allowedModesId,
+	                    const std::map<int, std::map<int, Onyx::InstrInfo>>& instrumConstraints);
+
 	QSharedPointer<DataBaseReader> m_dbReaderPtr;
 	QSharedPointer<SocketModel> m_socketModelPtr;
-
-	progType m_curLoaderType = ptRecom;
-
-	ProgLoaderBase* getLoader(progType type);
+	progType m_curLoaderType = ptRecom;	
 };
 
 #endif // PROGLOADER_H

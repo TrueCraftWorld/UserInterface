@@ -94,6 +94,7 @@ int main(int argc, char *argv[])
     qputenv("QT_LOGGING_RULES", "qt.qpa.input=false");
 
     OnyxApp app(argc, argv);
+    QCoreApplication::setApplicationVersion("1.0.1.3");
 
     // Устанавливаем кастомный обработчик для вывода только имени файла (без пути)
     qInstallMessageHandler(messageHandler);
@@ -133,6 +134,7 @@ int main(int argc, char *argv[])
 
     engine.rootContext()->setContextProperty("sysMonitor", sysMonitor);
     engine.rootContext()->setContextProperty("keyGenerator", keyGen);
+    engine.rootContext()->setContextProperty("appVersion", QCoreApplication::applicationVersion());
 
     engine.addImageProvider(QLatin1String("instrums"), new InstrImageProvider);
     engine.addImageProvider(QLatin1String("instruments"), new InstrImageProvider);

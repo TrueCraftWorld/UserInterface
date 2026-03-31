@@ -6,6 +6,7 @@ Rectangle {
     signal drawerCalled()
     signal saveCalled()
     property alias text: mainText.text
+    property alias versionText: appVersionText.text
 
     border {
         width: 1
@@ -29,9 +30,18 @@ Rectangle {
         id: mainText
         height: parent.height
         anchors.left: drawerButton.right
-        anchors.right: saveButton.left
+        anchors.right: appVersionText.left
         horizontalAlignment: Text.AlignHCenter
         verticalAlignment: Text.AlignVCenter
+    }
+    SText {
+        id: appVersionText
+        height: parent.height
+        width: 220
+        anchors.right: saveButton.left
+        horizontalAlignment: Text.AlignRight
+        verticalAlignment: Text.AlignVCenter
+        text: ""
     }
     SButton {
         id: saveButton

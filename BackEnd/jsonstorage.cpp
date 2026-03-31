@@ -8,31 +8,27 @@ JsonStorage::JsonStorage(QObject *parent, QVariantMap* initMap)
     : QObject{parent}
 {
     QFileInfo info(JSON_FILE_NAME);
-
     QDir dir = info.absoluteDir();
     if (!dir.exists()) {
         dir.mkpath(dir.absolutePath());
     }
-    // if (info.absoluteDir())
+
+    // Одноразовая миграция со старого пути, если новый файл ещё не создан
+    if (!QFile::exists(JSON_FILE_NAME) && QFile::exists(LEGACY_JSON_FILE_NAME)) {
+        QFile::copy(LEGACY_JSON_FILE_NAME, JSON_FILE_NAME);
+    }
 
     QFile jsonFile(JSON_FILE_NAME);
-
-    // Читаем файл, если есть
-    if (QFile::exists(JSON_FILE_NAME)) {
-        if (!jsonFile.open(QIODevice::ReadOnly)) {
-            // qDebug() << "Ошибка чтения файла json";
-        }
-        else {
-            QByteArray jsonData = jsonFile.readAll();
-            m_document = QJsonDocument::fromJson(jsonData);
-            m_object = m_document.object();
-        }
+    if (QFile::exists(JSON_FILE_NAME) && jsonFile.open(QIODevice::ReadOnly)) {
+        const QByteArray jsonData = jsonFile.readAll();
+        m_document = QJsonDocument::fromJson(jsonData);
+        m_object = m_document.object();
+        jsonFile.close();
     } else {
-        // Если файла нет, заполняем его значениями по умолчанию
+        // Если файла нет или он не читается, создаём из дефолтной карты
         m_object = QJsonObject::fromVariantMap(*initMap);
         m_document.setObject(m_object);
     }
-    jsonFile.close();
 
 }
 

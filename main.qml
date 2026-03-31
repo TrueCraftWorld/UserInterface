@@ -41,6 +41,7 @@ Window {
       id: statusDummy
       //я искал панграммы для русского и хорошо так посмеялся с эфы
       text: qsTr("")
+      versionText: qsTr("Текущая версия: ") + appVersion
       width: parent.width
       height: 85
       anchors {
@@ -442,22 +443,22 @@ Window {
     }
 
     // Монитор системы в правом нижнем углу
-//    SystemMonitor {
-//        id: systemMonitor
-//        anchors {
-//            right: parent.right
-//            bottom: parent.bottom
-//            margins: 10
-//        }
-//        z: 9999  // Поверх всего
-//        monitoringActive: true
+    SystemMonitor {
+        id: systemMonitor
+        anchors {
+            right: parent.right
+            bottom: parent.bottom
+            margins: 10
+        }
+        z: 9999  // Поверх всего
+        monitoringActive: true
 
-//        // MouseArea для пропуска событий сквозь монитор
-//        MouseArea {
-//            anchors.fill: parent
-//            enabled: false  // Отключаем перехват событий - все проходят сквозь
-//        }
-//    }
+        // MouseArea для пропуска событий сквозь монитор
+        MouseArea {
+            anchors.fill: parent
+            enabled: false  // Отключаем перехват событий - все проходят сквозь
+        }
+    }
 
 
     // Область для свайпов и закрытия панелей

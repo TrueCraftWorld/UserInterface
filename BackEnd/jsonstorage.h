@@ -28,9 +28,10 @@ private:
     QJsonDocument m_document;
     QJsonObject m_object;
 
-    // путь, где лежит документ с сохранениями
-    // const QString JSON_FILE_NAME = "/home/kikorik/OnyxLog/save.json";
-    const QString JSON_FILE_NAME = "/home/kikorik/FOTEK/OnyxLog/save.json";
+    // Продакшен-путь настроек
+    const QString JSON_FILE_NAME = "/var/lib/qtpr/save.json";
+    // Легаси-путь для одноразовой миграции
+    const QString LEGACY_JSON_FILE_NAME = "/home/kikorik/FOTEK/OnyxLog/save.json";
 
 };
 

@@ -15,6 +15,7 @@ Rectangle {
     property var itemNameArr: []
     property bool loadClear: true
     required property bool recommended/*: true*/
+    property bool editable: false
 
     ListModel {
         id: scopeModel
@@ -114,6 +115,7 @@ Rectangle {
             anchors.fill: parent
             curIndex: recomHandle.scopeIdx
             noImage: false
+            editable: recProgs.editable
             imageSourceTemplate: "image://instrums/Scope%1"
         }
 
@@ -133,6 +135,7 @@ Rectangle {
             anchors.fill: parent
             id: progList
             noImage: true
+            editable: recProgs.editable
         }
     }
     Rectangle {

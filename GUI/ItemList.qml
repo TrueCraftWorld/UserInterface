@@ -3,6 +3,8 @@ import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
 import BackEnd 1.0
 
+import StratifyLabs.UI 2.0
+
 Rectangle {
     id: itemList
     property alias innerModel: theView.model
@@ -10,6 +12,7 @@ Rectangle {
     property alias curIndex: theView.currentIndex
     property bool noImage: false
     property int initialIndex: -1
+    property bool editable: false
     signal newIndexSelected(int newIndex)
 
     color: "transparent"
@@ -44,6 +47,7 @@ Rectangle {
             clip: true
 
             delegate: Rectangle {
+                id: itemRoot
                 property bool isSelected: (index === curIndex)
                 property bool isInitial: (index === initialIndex)
                 height: 100
@@ -120,7 +124,7 @@ Rectangle {
                         top:parent.top
                         bottom: parent.bottom
                         left: itemImageRect.right
-                        right:  parent.right
+                        right:  itemEditRect.left
                     }
                     Label {
                         anchors.fill: parent
@@ -132,7 +136,65 @@ Rectangle {
                         font.pixelSize: 18
                         color: "white"
                     }
+                    MouseArea {
+                        anchors.fill: parent
+                        onClicked: {
+                            theView.currentIndex = index
+                            itemList.newIndexSelected(index)
+                        }
+                    }
                 }
+                Rectangle {
+                    id: itemEditRect
+                    property bool engaged : false
+                    color: "transparent"
+                    width: engaged ? 3 * itemNameRect.height : itemNameRect.height
+                    visible: itemList.editable
+                    anchors {
+                        top: parent.top
+                        bottom: parent.bottom
+                        right:  parent.right
+                    }
+                    Button {
+                        id: engageEditButton
+                        visible: !itemEditRect.engaged
+                        anchors.fill: parent
+                        anchors.margins: 5
+                        onClicked: {
+                            itemEditRect.engaged = true;
+                        }
+                    }
+                    Rectangle {
+                        id: editVariantBox
+                        visible: itemEditRect.engaged
+                        anchors.fill: parent
+                        // anchors.margins: 5
+                        SRow {
+                            anchors.fill: parent
+                            rowSpacing: 4
+                            Button {
+                                id: deleteButton
+                                onClicked: {
+
+                                }
+                            }
+                            Button {
+                                id: renameButton
+                                onClicked: {
+
+                                }
+                            }
+                            Button {
+                                id: cancelButton
+                                onClicked: {
+                                    itemEditRect.engaged = false;
+                                }
+                            }
+                        }
+                    }
+                    // onClicked:
+                }
+
                 Rectangle {
                     id: spacer
                     height: 2
@@ -158,13 +220,6 @@ Rectangle {
                     border.color: (isInitial && !isSelected) ? "grey" : "white"
                 }
 
-                MouseArea {
-                    anchors.fill: parent
-                    onClicked: {
-                        theView.currentIndex = index
-                        itemList.newIndexSelected(index)
-                    }
-                }
             }
         }
     }

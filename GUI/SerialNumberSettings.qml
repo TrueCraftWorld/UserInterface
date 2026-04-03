@@ -94,6 +94,9 @@ Item {
                             if (typeof savedJson !== "undefined" && savedJson) {
                                 savedJson.saveString("serialNumber", text)
                             }
+                            if (typeof remoteUpdater !== "undefined" && remoteUpdater) {
+                                remoteUpdater.serialNumber = text
+                            }
                         } else {
                             serialRoot.serialSaveStatus = qsTr("Введите серийный номер в диапазоне 260000-1000000")
                         }

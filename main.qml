@@ -228,6 +228,7 @@ Window {
         }
         width: 200
         z: 10  // Выше других элементов
+        enabled: false
         propagateComposedEvents: true  // Ключевое свойство для пропуска событий
 
         property real startX: 0
@@ -300,6 +301,7 @@ Window {
         }
         width: 200
         z: 10  // Выше других элементов
+        enabled: false
         propagateComposedEvents: true
 
         property real startX: 0

@@ -10,6 +10,7 @@ Item {
     signal deleteAllUserProgsRequested()
     signal serialNumberButtonPressed()
     signal softwareUpdateButtonPressed()
+    signal networkSettingsButtonPressed()
     
     Rectangle {
         id: background
@@ -57,6 +58,18 @@ Item {
             text: qsTr("Обновление ПО")
             onClicked: {
                 serviceMenuRoot.softwareUpdateButtonPressed()
+            }
+        }
+
+        SButton {
+            id: networkSettingsButton
+            style: "btn-primary lg"
+            Layout.preferredWidth: 500
+            Layout.preferredHeight: 100
+            Layout.alignment: Qt.AlignHCenter
+            text: qsTr("Настройка сети")
+            onClicked: {
+                serviceMenuRoot.networkSettingsButtonPressed()
             }
         }
         

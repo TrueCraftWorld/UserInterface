@@ -136,6 +136,26 @@ int main(int argc, char *argv[])
     engine.rootContext()->setContextProperty("keyGenerator", keyGen);
     engine.rootContext()->setContextProperty("appVersion", QCoreApplication::applicationVersion());
 
+    QVariantMap *initMap = new QVariantMap();
+    initMap->insert("boot", 0);
+    initMap->insert("serialNumber", "");
+    initMap->insert("deviceType", "");
+    initMap->insert("featureNotes", "");
+    m_savedJson = new JsonStorage(nullptr, initMap);
+    engine.rootContext()->setContextProperty("savedJson", m_savedJson);
+
+    auto *globalRemoteUpdater = new RemoteUpdater(&app);
+    globalRemoteUpdater->setSerialNumber(m_savedJson->readString(QStringLiteral("serialNumber")));
+    const QString savedApiUrl = m_savedJson->readString(QStringLiteral("uiUpdaterApiBaseUrl"));
+    if (!savedApiUrl.isEmpty()) {
+        globalRemoteUpdater->setApiBaseUrl(savedApiUrl);
+    }
+    const QString savedTunnelHost = m_savedJson->readString(QStringLiteral("uiUpdaterTunnelHost"));
+    if (!savedTunnelHost.isEmpty()) {
+        globalRemoteUpdater->setTunnelUserHost(savedTunnelHost);
+    }
+    engine.rootContext()->setContextProperty(QStringLiteral("remoteUpdater"), globalRemoteUpdater);
+
     engine.addImageProvider(QLatin1String("instrums"), new InstrImageProvider);
     engine.addImageProvider(QLatin1String("instruments"), new InstrImageProvider);
     engine.addImageProvider(QLatin1String("modes"), new InstrImageProvider);
@@ -159,14 +179,6 @@ int main(int argc, char *argv[])
      engine.addImportPath("/usr/lib/qt5/qml");
     engine.load(url);
 
-    // Сохраняемые значения лежат в json-файле
-    QVariantMap* initMap = new QVariantMap();
-    initMap->insert("boot", 0);
-    initMap->insert("serialNumber", "");
-    initMap->insert("deviceType", "");
-    initMap->insert("featureNotes", "");
-    m_savedJson = new JsonStorage(nullptr, initMap);
-    engine.rootContext()->setContextProperty("savedJson", m_savedJson);
     QJsonValue boot;
     m_savedJson->read("boot", &boot);
 

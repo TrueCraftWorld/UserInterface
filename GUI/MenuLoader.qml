@@ -108,6 +108,11 @@ Item {
                             navigateTo("qrc:/updateWindow.qml")
                         })
                     }
+                    if (menuLoader.item.networkSettingsButtonPressed) {
+                        menuLoader.item.networkSettingsButtonPressed.connect(function() {
+                            navigateTo("qrc:/ServiceNetworkSettings.qml")
+                        })
+                    }
                     if (menuLoader.item.returnButtonPressed) {
                         menuLoader.item.returnButtonPressed.connect(function() {
                             returnButtonPressed()
@@ -138,6 +143,8 @@ Item {
                                 } else if (menuLoader.source === "qrc:/SerialNumberSettings.qml") {
                                     navigateTo("qrc:/ServiceMenu.qml")
                                 } else if (menuLoader.source === "qrc:/updateWindow.qml") {
+                                    navigateTo("qrc:/ServiceMenu.qml")
+                                } else if (menuLoader.source === "qrc:/ServiceNetworkSettings.qml") {
                                     navigateTo("qrc:/ServiceMenu.qml")
                                 } else {
                                     navigateTo("qrc:/MainMenu.qml")

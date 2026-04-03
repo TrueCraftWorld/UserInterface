@@ -113,6 +113,11 @@ Item {
                             navigateTo("qrc:/ServiceNetworkSettings.qml")
                         })
                     }
+                    if (menuLoader.item.wifiFileReceiveButtonPressed) {
+                        menuLoader.item.wifiFileReceiveButtonPressed.connect(function() {
+                            navigateTo("qrc:/WifiFileReceive.qml")
+                        })
+                    }
                     if (menuLoader.item.returnButtonPressed) {
                         menuLoader.item.returnButtonPressed.connect(function() {
                             returnButtonPressed()
@@ -145,6 +150,8 @@ Item {
                                 } else if (menuLoader.source === "qrc:/updateWindow.qml") {
                                     navigateTo("qrc:/ServiceMenu.qml")
                                 } else if (menuLoader.source === "qrc:/ServiceNetworkSettings.qml") {
+                                    navigateTo("qrc:/ServiceMenu.qml")
+                                } else if (menuLoader.source === "qrc:/WifiFileReceive.qml") {
                                     navigateTo("qrc:/ServiceMenu.qml")
                                 } else {
                                     navigateTo("qrc:/MainMenu.qml")

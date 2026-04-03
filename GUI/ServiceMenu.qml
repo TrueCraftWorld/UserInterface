@@ -11,6 +11,7 @@ Item {
     signal serialNumberButtonPressed()
     signal softwareUpdateButtonPressed()
     signal networkSettingsButtonPressed()
+    signal wifiFileReceiveButtonPressed()
     
     Rectangle {
         id: background
@@ -72,7 +73,19 @@ Item {
                 serviceMenuRoot.networkSettingsButtonPressed()
             }
         }
-        
+
+        SButton {
+            id: wifiFileReceiveButton
+            style: "btn-primary lg"
+            Layout.preferredWidth: 500
+            Layout.preferredHeight: 100
+            Layout.alignment: Qt.AlignHCenter
+            text: qsTr("Приём файлов по Wi‑Fi")
+            onClicked: {
+                serviceMenuRoot.wifiFileReceiveButtonPressed()
+            }
+        }
+
         SButton {
             id: deleteAllUserProgsButton
             style: "btn-danger lg"

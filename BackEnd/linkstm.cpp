@@ -1,15 +1,16 @@
 #include "linkstm.h"
 #include <QMetaType>
+#include <QVariantMap>
 #include <QElapsedTimer>
 //перенёс инициализатор в конструктор - так не происходит инициализация по умолчанию,
 // а затем присваивание новых значени1
 LinkStm::LinkStm(QObject *parent)
     : QObject{parent},
-    m_lastCommand({NoTxCommand, {}, MC_0}),
+    m_lastCommand({NoTxCommand, {}, MC_COM}),
     m_uartTimer(new QTimer(this)),
     m_uart(new UartToQmlBridge(this, "ttyS3", QSerialPort::Baud57600)),
     m_state(STATE_OK),
-    m_txCommand({Allright, {}, MC_0}),
+    m_txCommand({Allright, {}, MC_COM}),
     m_waitAnswer(false),
     m_autoSSmode(0),
     m_enableActivation(true),
@@ -35,6 +36,8 @@ LinkStm::LinkStm(QObject *parent)
     connect(m_uartTimer, &QTimer::timeout, [this]() {sendCommand();});
 
     connect(m_uart, &UartToQmlBridge::uartRecieve, this, &LinkStm::unpackRxCommand);
+
+    initMcVersions();
 
 }
 
@@ -442,7 +445,7 @@ void LinkStm::readRxCommand()
             UartTx command;
             command.com = StopActivation;
             command.data.clear();
-            command.mc = MC_0;
+            command.mc = MC_COM;
             m_txCommandList.append(command);
         }
     }
@@ -548,7 +551,7 @@ void LinkStm::readRxCommand()
     // Ответы на команды обновления ПО
     case RxUpdating:
         if (m_rxCommand.com == MyVersion) {
-            m_mcVersions = m_rxCommand.data;
+            setMcVersions(m_rxCommand);
             m_comState = IDLE;
         }
         else if (m_rxCommand.com == BootAck) {
@@ -705,7 +708,7 @@ void LinkStm::setTxCommandBoot()
 {
     UartTx bootCommand;
     bootCommand.data.clear();
-    bootCommand.mc = MC_0;
+    bootCommand.mc = MC_COM;
 
     if (m_boot == BOOT_0)           // Загрузчик
         bootCommand.com = GoBoot;
@@ -768,6 +771,93 @@ quint16 LinkStm::calculateCrc16(QByteArray &buffer, quint8 len)
         crc = (crc << 8) ^ crc16Table[(crc >> 8) ^ buffer.at(i++)];
     }
     return crc;													// Если данные были с CRC, на выходе должен быть 0
+}
+
+void LinkStm::initMcVersions()
+{
+    McVersions comVer, argVer, genVer, raskVer, nelVer;
+    comVer.mc = MC_COM;
+    comVer.bootVer = 1;
+    comVer.bootSubVer = 0;
+    comVer.app0Ver = 2;
+    comVer.app0SubVer = 1;
+    comVer.app1Ver = 3;
+    comVer.app1SubVer = 33;
+
+    argVer = {MC_ARG, 2, 1, 4, 44, 5, 55};
+    genVer = {MC_GEN, 3, 2, 6, 66, 7, 77};
+    raskVer = {MC_RAS, 0, 0, 8, 88, 0, 0};
+    nelVer = {MC_NEL, 0, 0, 9, 99, 0, 0};
+
+    mcVersions[0] = comVer;
+    mcVersions[1] = argVer;
+    mcVersions[2] = genVer;
+    mcVersions[3] = raskVer;
+    mcVersions[4] = nelVer;
+
+}
+
+void LinkStm::setMcVersions(const UartRx &rxCom)
+{
+    if (rxCom.mc == MC_COM) {        // Присланы версии ПО МУС
+        if (rxCom.data.size() == 6) {
+            mcVersions[0].bootVer = rxCom.data.at(0);
+            mcVersions[0].bootSubVer = rxCom.data.at(1);
+            mcVersions[0].app0Ver = rxCom.data.at(2);
+            mcVersions[0].app0SubVer = rxCom.data.at(3);
+            mcVersions[0].app1Ver = rxCom.data.at(4);
+            mcVersions[0].app1SubVer = rxCom.data.at(5);
+        }
+    }
+    if (rxCom.mc == MC_ARG) {        // Присланы версии ПО аргонника
+        if (rxCom.data.size() == 6) {
+            mcVersions[1].bootVer = rxCom.data.at(0);
+            mcVersions[1].bootSubVer = rxCom.data.at(1);
+            mcVersions[1].app0Ver = rxCom.data.at(2);
+            mcVersions[1].app0SubVer = rxCom.data.at(3);
+            mcVersions[1].app1Ver = rxCom.data.at(4);
+            mcVersions[1].app1SubVer = rxCom.data.at(5);
+        }
+    }
+    else if (rxCom.mc == MC_GEN) {        // Присланы версии ПО генератора
+        if (rxCom.data.size() == 8) {
+            mcVersions[2].bootVer = rxCom.data.at(0);
+            mcVersions[2].bootSubVer = rxCom.data.at(1);
+            mcVersions[2].app0Ver = rxCom.data.at(2);
+            mcVersions[2].app0SubVer = rxCom.data.at(3);
+            mcVersions[2].app1Ver = rxCom.data.at(4);
+            mcVersions[2].app1SubVer = rxCom.data.at(5);
+            mcVersions[3].app0Ver = rxCom.data.at(6);       // Версия раскачки (без подверсий)
+            mcVersions[4].app0Ver = rxCom.data.at(7);       // Версия НЭ
+        }
+    }
+    publishFirmwareVersions();
+}
+
+static QVariantList packMcVersionsForQml(const LinkStm::McVersions *vs, int count)
+{
+    QVariantList list;
+    list.reserve(count);
+    for (int i = 0; i < count; ++i) {
+        const LinkStm::McVersions &v = vs[i];
+        QVariantMap m;
+        m.insert(QStringLiteral("index"), i);
+        m.insert(QStringLiteral("mcUnit"), static_cast<int>(v.mc));
+        m.insert(QStringLiteral("bootMain"), static_cast<int>(v.bootVer));
+        m.insert(QStringLiteral("bootSub"), static_cast<int>(v.bootSubVer));
+        m.insert(QStringLiteral("app0Main"), static_cast<int>(v.app0Ver));
+        m.insert(QStringLiteral("app0Sub"), static_cast<int>(v.app0SubVer));
+        m.insert(QStringLiteral("app1Main"), static_cast<int>(v.app1Ver));
+        m.insert(QStringLiteral("app1Sub"), static_cast<int>(v.app1SubVer));
+        m.insert(QStringLiteral("reportsBootAndApp1"), i < 3);
+        list.append(m);
+    }
+    return list;
+}
+
+void LinkStm::publishFirmwareVersions()
+{
+    emit sigFirmwareVersionsChanged(packMcVersionsForQml(mcVersions, 5));
 }
 
 const LinkStm::UartState &LinkStm::state() const

@@ -23,6 +23,8 @@
 #include "BackEnd/loggingcategories.h"
 #include "BackEnd/linkstm.h"
 #include "BackEnd/jsonstorage.h"
+#include "BackEnd/HttpUploadController.h"
+#include "BackEnd/McFirmwareVersionsBridge.h"
 
 // Умный указатель на файл логирования
 QScopedPointer<QFile>   m_logFile;
@@ -156,6 +158,13 @@ int main(int argc, char *argv[])
     }
     engine.rootContext()->setContextProperty(QStringLiteral("remoteUpdater"), globalRemoteUpdater);
 
+    auto *httpUpload = new HttpUploadController(&app);
+    httpUpload->setJsonStorage(m_savedJson);
+    engine.rootContext()->setContextProperty(QStringLiteral("httpUpload"), httpUpload);
+
+    auto *mcFirmware = new McFirmwareVersionsBridge(&app);
+    engine.rootContext()->setContextProperty(QStringLiteral("mcFirmware"), mcFirmware);
+
     engine.addImageProvider(QLatin1String("instrums"), new InstrImageProvider);
     engine.addImageProvider(QLatin1String("instruments"), new InstrImageProvider);
     engine.addImageProvider(QLatin1String("modes"), new InstrImageProvider);
@@ -186,6 +195,11 @@ int main(int argc, char *argv[])
     m_linkStm = new LinkStm();
     // Откуда грузиться stm
     m_linkStm->setBoot(static_cast<LinkStm::BootChoice>(boot.toInt()));
+
+    QObject::connect(m_linkStm, &LinkStm::sigFirmwareVersionsChanged,
+                     mcFirmware, &McFirmwareVersionsBridge::setModules,
+                     Qt::QueuedConnection);
+    m_linkStm->publishFirmwareVersions();
 
     // Переносим LinkStm в отдельный поток для работы с UART
     QThread *linkStmThread = new QThread();

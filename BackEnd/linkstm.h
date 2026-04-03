@@ -7,6 +7,7 @@
 #include <QQueue>
 #include <QThread>
 #include <QDebug>
+#include <QVariant>
 #include "uartqmlbridge.h"
 #include "loggingcategories.h"
 #include "Structures.h"
@@ -98,11 +99,11 @@ public:
     Q_ENUM(BootChoice);
 
     enum McUnit : quint8 {
-        MC_0 = 0,                       // Модуль связи
-        MC_1 = 0x20,                    // Модуль индикации (1 << 5)
-        MC_2 = 0x40,                    // Модуль определителя (2 << 5)
-        MC_3 = 0x60,                    // Модуль  (3 << 5)
-        MC_4 = 0x80,                    // Модуль  (4 << 5)
+        MC_COM = 0,                       // Модуль управления и связи
+        MC_ARG = 0x20,                    // Модуль аргоновый (1 << 5)
+        MC_GEN = 0x40,                    // Модуль генератора (2 << 5)
+        MC_RAS = 0x60,                    // Модуль раскачки (3 << 5)
+        MC_NEL = 0x80                     // Модуль нейтральника (4 << 5)
     };
     Q_ENUM(McUnit);
 
@@ -116,6 +117,16 @@ public:
         RxCommand com;
         QByteArray data;
         McUnit mc;
+    };
+
+    struct McVersions {
+        McUnit mc;
+        quint8 bootVer;
+        quint8 bootSubVer;
+        quint8 app0Ver;
+        quint8 app0SubVer;
+        quint8 app1Ver;
+        quint8 app1SubVer;
     };
 
     struct HexString {
@@ -163,6 +174,9 @@ public:
 
     void setMc(const McUnit &newMc);
 
+    /// Упаковать mcVersions в QVariantList и отправить в sigFirmwareVersionsChanged.
+    void publishFirmwareVersions();
+
     // Методы для установки состояния из PeriphHandler
 public slots:
     void start();
@@ -193,6 +207,8 @@ signals:
     void sigPressed3rdKnob(quint8 socket);
     void sigStartActivation(quint8 socket, bool isCut);
     void sigStopActivation(quint8 stopReason);
+    /// Версии ПО модулей МК: список из 5 QVariantMap (числа для UI и сравнения с обновлениями).
+    void sigFirmwareVersionsChanged(const QVariantList &modules);
 
 private slots:
     void sendCommand();
@@ -202,6 +218,10 @@ private:
     QByteArray packTxCommand();
     // Вычисление контрольной суммы
     quint16 calculateCrc16(QByteArray &buffer, quint8 len);
+    // Инициализация версий ПО МК
+    void initMcVersions();
+    // Установка версий ПО МК
+    void setMcVersions(const UartRx &rxCom);
     // Расшифровка команды
     void unpackRxCommand(const QByteArray &rxPacket);
     // Проверка на соответствие
@@ -245,6 +265,7 @@ private:
     quint8 m_autoSSmode;
     BootChoice m_boot;
     McUnit m_mc;
+    McVersions mcVersions[5];
 
     // Переменные состояния из ControlCenter
     bool m_enableActivation;
@@ -254,7 +275,6 @@ private:
 
     UnitState m_unitState;
     Onyx::SocketState m_socketList[4];
-    QByteArray m_mcVersions;
     CommunicationState m_comState;
 
 };

@@ -1,4 +1,4 @@
-QT += core quick qml
+QT += core quick qml network
 QT += serialport multimedia sql concurrent
 
 CONFIG += c++17
@@ -9,11 +9,13 @@ LIBS += -lm
 HEADERS += \
     $$PWD/Structures.h \
     $$PWD/controlcenter.h \
+    $$PWD/HttpUploadController.h \
     $$PWD/databasereader.h \
     $$PWD/halfsocket.h \
     $$PWD/instrimageprovider.h \
     $$PWD/instrument.h \
     $$PWD/jsonstorage.h \
+    $$PWD/McFirmwareVersionsBridge.h \
     $$PWD/keygenerator.h \
     $$PWD/linkstm.h \
     $$PWD/loggingcategories.h \
@@ -36,11 +38,13 @@ HEADERS += \
 
 SOURCES += \
     $$PWD/controlcenter.cpp \
+    $$PWD/HttpUploadController.cpp \
     $$PWD/databasereader.cpp \
     $$PWD/halfsocket.cpp \
     $$PWD/instrimageprovider.cpp \
     $$PWD/instrument.cpp \
     $$PWD/jsonstorage.cpp \
+    $$PWD/McFirmwareVersionsBridge.cpp \
     $$PWD/keygenerator.cpp \
     $$PWD/linkstm.cpp \
     $$PWD/loggingcategories.cpp \

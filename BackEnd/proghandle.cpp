@@ -73,7 +73,34 @@ void ProgHandle::copyCurrent()
 
 void ProgHandle::deleteProgRequest(int index)
 {
+	if (m_isRecomProgs) {
+		return;
+	}
+	if (m_progs.size() <= index) {
+		return;
+	}
+	auto iter = m_progs.begin();
+	for (int i = 0; i < index; ++index) {
+		iter++;
+	}
+	int idToDelete = iter->first;
+	emit signalDeleteProg(idToDelete);
+}
 
+void ProgHandle::renameProgRequest(int index, const QString &name)
+{
+	if (m_isRecomProgs) {
+		return;
+	}
+	if (m_progs.size() <= index) {
+		return;
+	}
+	auto iter = m_progs.begin();
+	for (int i = 0; i < index; ++index) {
+		iter++;
+	}
+	int idToRename = iter->first;
+	emit signalRenameProg(idToRename, name);
 }
 
 void ProgHandle::permitAll()

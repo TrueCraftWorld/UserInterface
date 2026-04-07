@@ -79,7 +79,11 @@ public:
 	void saveUserProg(const QString& scopeName,
 	                    const QString& progName);
 	
+
+	///формально ничего не мешает удалить/переименовать рекоменд прогу
 	void deleteUserProg(int id);
+
+	void renameUserProg(int id, const QString& name);
 	
 	/**
 	 * @brief Загружает последнее сохранённое состояние из БД

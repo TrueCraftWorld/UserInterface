@@ -29,8 +29,11 @@ public:
 	                          const QString& progName);
 	Q_INVOKABLE void addEmptyDefault();
 	Q_INVOKABLE void copyCurrent();
+
+	Q_INVOKABLE void deleteProgRequest(int index);
+	Q_INVOKABLE void renameProgRequest(int index, const QString& name);
 	
-	///TODO:
+	///TODO: убрать видео из класса работы с программами
 	Q_INVOKABLE QString readTextFile(const QString& filePath);
 	Q_INVOKABLE QStringList scanVideoFiles(const QString& folderPath);
 	
@@ -43,7 +46,6 @@ public:
 	void setScopeIdx(int newScopeIdx);
 	
 	void setProgList(const std::map<int, QString>& lst/*, bool isRecom = true*/);
-	
 	void setScopeList(const std::map<int, QString>& scopes/*, bool isRecom = true*/);
 	
 	bool isRecomProgs() const;
@@ -54,16 +56,14 @@ signals:
 	// а редачить только через хендлеры для разграничения доступа
 	
 	void signalCopyCurrent();
-	
 	void signalAddEmptyDefault(bool clearLoad = true);
-	
 	void signalLoadRecommend(int scopeIdx, int progIdx, int subProgIdx);
-	
 	void signalRecomProgChosen(int progId, bool clear);
-	
 	void signalRemoveSub();
 	//может быть избыточно и проги сможем просто по id разделять
 	void signalUserProgChosen(int progId);
+	void signalDeleteProg(int progId);
+	void signalRenameProg(int progId, const QString& name);
 	
 	void signalLoadEmpty();
 	void signalSave(int id, const QString& name);
@@ -87,9 +87,6 @@ private:
 	int m_scopeIdx = 0;
 	std::map<int, QString> m_scopes;
 	std::map<int, QString> m_progs;
-	// QStringList m_userProgList;
-	// std::map<int, QString> m_userProgs;
-	// std::map<int, QString> m_userScopes;
 	bool m_isRecomProgs;
 };
 

@@ -13,8 +13,8 @@ Rectangle {
 	property bool noImage: false
 	property int initialIndex: -1
 	property bool editable: false
+	
 	signal newIndexSelected(int newIndex)
-
 	signal deleteItem(int index)
 	signal editItemName(int index, string name)
 
@@ -152,18 +152,20 @@ Rectangle {
 					id: itemEditRect
 					property bool engaged : false
 					color: "transparent"
-					width: engaged ? 3 * itemNameRect.height : itemNameRect.height
+					width: engaged ? 3 * height : height
 					visible: itemList.editable
 					anchors {
 						top: parent.top
 						bottom: parent.bottom
 						right:  parent.right
+						margins: 10
 					}
-					Button {
+					SButton {
 						id: engageEditButton
 						visible: !itemEditRect.engaged
 						anchors.fill: parent
 						anchors.margins: 5
+						iconString: Fa.Icon.chevron_left;
 						onClicked: {
 							itemEditRect.engaged = true;
 						}
@@ -171,49 +173,54 @@ Rectangle {
 					Rectangle {
 						id: editVariantBox
 						visible: itemEditRect.engaged
+						color: "transparent"
 						anchors.fill: parent
-						// anchors.margins: 5
-						SRow {
+						anchors.margins: 5
+						RowLayout {
 							anchors.fill: parent
-							rowSpacing: 4
+							// rowSpacing: 4
+							spacing: 5
 							anchors.margins: 0
-							Button {
-								Layout.fillHeight: true
+							SButton {
 								id: deleteButton
+								Layout.fillHeight: true
+								Layout.fillWidth: true
+								iconString: Fa.Icon.trash;
+								text: "";
 								onClicked: {
 									deleteItem(index)
 								}
 							}
-							Button {
+							SButton {
 								id: renameButton
 								Layout.fillHeight: true
+								Layout.fillWidth: true
+								iconString: Fa.Icon.pencil_square_o;
+								text: "";
 								onClicked: {
 									nameDialog.editingIndex = index
 									nameDialog.open()
 								}
 							}
-							Button {
+							SButton {
 								id: cancelButton
 								Layout.fillHeight: true
+								Layout.fillWidth: true
+								iconString: Fa.Icon.chevron_right;
+								text: "";
 								onClicked: {
 									itemEditRect.engaged = false;
 								}
 							}
 						}
 					}
-					// onClicked:
 				}
-
 				Rectangle {
 					id: spacer
 					height: 2
 					width: parent.width
-					gradient: Gradient.SolidStone/*Gradient {
-						GradientStop { position: 0.0; color: "transparent" }
-						GradientStop { position: 0.5; color: "white" }
-						GradientStop { position: 1.0; color: "transparent" }
-					}*/
-					z: 0
+					gradient: Gradient.SolidStone
+					// z: 0
 					opacity: 0.5
 					anchors.bottom: parent.bottom
 					anchors.bottomMargin: 0
@@ -254,13 +261,10 @@ Rectangle {
 					bottom: parent.verticalCenter
 					bottomMargin: 15
 				}
-
 				horizontalAlignment: Qt.AlignCenter
 				verticalAlignment: Qt.AlignBottom
 				text: "Укажите новое имя:"
 				color: "black"
-				// }
-
 			}
 			TextEdit {
 				id: edit
@@ -270,12 +274,8 @@ Rectangle {
 				anchors.top: parent.verticalCenter
 				color: "black"
 				horizontalAlignment: Qt.AlignCenter
-				// Text.color: "black"
-				// text: qsTr("Укажите новое имя:")
-
 			}
 		}
-
 		onAccepted: {
 			editItemName(editingIndex, edit.text)
 			close();
@@ -283,6 +283,5 @@ Rectangle {
 		onRejected: {
 			close()
 		}
-
 	}
 }

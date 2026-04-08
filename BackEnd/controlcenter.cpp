@@ -25,14 +25,14 @@ std::vector<int> m_rolesSaveTriggered = {
 
 ControlCenter::ControlCenter(QObject *parent)
     : QObject{parent},
+        m_socketModel(new SocketModel()),
+        m_editor(new SocketModeEditor(m_socketModel,this)),
+        m_handle(new ProgHandle(this)),
+        m_progLoader(new ProgLoader(this)),
+        m_periphery(new PeriphHandler(this)),
+        m_linkStm(nullptr),
+        m_saveTimer(new QTimer(this))
 
-      m_socketModel(new SocketModel()),
-      m_editor(new SocketModeEditor(m_socketModel,this)),
-      m_handle(new ProgHandle(this)),
-      m_progLoader(new ProgLoader(this)),
-      m_periphery(new PeriphHandler(this)),
-      m_linkStm(nullptr),
-      m_saveTimer(new QTimer(this))
 {
 	QQmlEngine::setObjectOwnership(m_socketModel.data(), QQmlEngine::CppOwnership);
 	QQmlEngine::setObjectOwnership(m_editor, QQmlEngine::CppOwnership);
@@ -92,15 +92,6 @@ void ControlCenter::makeHandleConnections()
 		m_handle->setProgList(m_progLoader->getProgs(-1));
 	});
 
-	// connect(m_handle, &ProgHandle::signalUserProgsRequest,
-	//         this, [this] () {
-	//     // qDebug() << " lamba signalUserProgsRequest";
-	//     m_handle->setUserProgList(m_progLoader->getUserProgList());
-	// });
-
-	// connect(m_handle, &ProgHandle::signalUserProgChosen,
-	//         m_progLoader, &ProgLoader::loadUserProg);
-
 	connect(m_handle, &ProgHandle::signalAddEmptyDefault,
 	        m_progLoader, &ProgLoader::defaultSocketInit);
 
@@ -112,6 +103,15 @@ void ControlCenter::makeHandleConnections()
 
 	connect(m_handle, &ProgHandle::signalDeleteProg,
 	        m_progLoader, &ProgLoader::deleteUserProg);
+
+	connect(m_handle, &ProgHandle::signalDeleteScope,
+	        m_progLoader, &ProgLoader::deleteUserScope);
+
+	connect(m_handle, &ProgHandle::signalRenameScope,
+	        m_progLoader, &ProgLoader::renameUserScope);
+
+	connect(m_handle, &ProgHandle::signalRenameProg,
+	        m_progLoader, &ProgLoader::renameUserProg);
 
 	// connect(m_)
 }
@@ -132,17 +132,19 @@ void ControlCenter::initSockets()
 void ControlCenter::prepareConnectios()
 {
 	makeHandleConnections();
-	if (m_progLoader && m_saveTimer)
+	if (m_progLoader && m_saveTimer) {
 		connect(m_saveTimer, &QTimer::timeout,
 		        m_progLoader, &ProgLoader::slotSaveCurrentState);
+	}
 
-	if (m_progLoader && m_editor)
+	if (m_progLoader && m_editor) {
 		connect(m_editor, &SocketModeEditor::editingFinished,
 		        this, [this] (bool success) {
 			if (success) {
 				scheduleSave();
 			}
 		});
+	}
 
 	connect(m_socketModel.data(), &SocketModel::dataChanged,
 	        this, [this] (const QModelIndex&, const QModelIndex&, const QVector<int>& roles) {
@@ -172,7 +174,8 @@ void ControlCenter::prepareConnectios()
 			}
 		}
 	});
-	connect(m_socketModel.data(), &SocketModel::subProgCountChanged, this, &ControlCenter::scheduleSave);
+	connect(m_socketModel.data(), &SocketModel::subProgCountChanged,
+	        this, &ControlCenter::scheduleSave);
 }
 
 QPointer<ProgHandle> ControlCenter::getHandle() const
@@ -207,9 +210,9 @@ void ControlCenter::setLinkStm(LinkStm* linkStm)
 
 	// Подключаем обработчик входящих данных
 	if (!m_linkStm.isNull()) {
-		//        connect(m_linkStm, &LinkStm::sigUnitStateChanged,
-		//                m_periphery, &PeriphHandler::unitStateHandler,
-		//                Qt::QueuedConnection);
+		//connect(m_linkStm, &LinkStm::sigUnitStateChanged,
+		//m_periphery, &PeriphHandler::unitStateHandler,
+		//Qt::QueuedConnection);
 
 		// Инициализируем текущие значения состояния в LinkStm
 		m_linkStm->setEnableActivation(m_periphery->enableActivation());
@@ -272,7 +275,7 @@ void ControlCenter::setLinkStm(LinkStm* linkStm)
 		// Инициализируем все сокеты текущими данными
 		initSocketsForPeriphery();
 
-		//        qDebug() << "LinkStm connected to ControlCenter";
+		//qDebug() << "LinkStm connected to ControlCenter";
 	}
 }
 
@@ -311,26 +314,26 @@ QPointer<PeriphHandler> ControlCenter::getPeripheryHandle() const
 // {
 //     switch (errorState) {
 //     case (LinkStm::STATE_OK + 32):
-//         // Все в порядке
-//         break;
+// // Все в порядке
+// break;
 //     case (LinkStm::STATE_TX_ERR + 32):
-//         // qWarning() << "UART TX Error";
-//         break;
+// // qWarning() << "UART TX Error";
+// break;
 //     case (LinkStm::STATE_NO_RX + 32):
-//         // qWarning() << "UART No RX";
-//         break;
+// // qWarning() << "UART No RX";
+// break;
 //     case (LinkStm::STATE_RX_ERR + 32):
-//         // qWarning() << "UART RX Error";
-//         break;
+// // qWarning() << "UART RX Error";
+// break;
 //     case (LinkStm::STATE_RX_LEN_ERR + 32):
-//         // qWarning() << "UART RX Length Error";
-//         break;
+// // qWarning() << "UART RX Length Error";
+// break;
 //     case (LinkStm::STATE_RX_CRC_ERR + 32):
-//         // qWarning() << "UART RX CRC Error";
-//         break;
+// // qWarning() << "UART RX CRC Error";
+// break;
 //     default:
-//         // qWarning() << "Some error: " << errorState;
-//         break;
+// // qWarning() << "Some error: " << errorState;
+// break;
 //     }
 // }
 

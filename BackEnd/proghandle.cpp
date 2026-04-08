@@ -111,24 +111,20 @@ void ProgHandle::permitAll()
 QStringList ProgHandle::scopeNameList() const
 {
 	return values(m_scopes);
-	// return m_isRecomProgs ? values(m_scopes) : values(m_userScopes);
 }
 
 QStringList ProgHandle::progNameList() const
 {
 	return values(m_progs);
-	// return m_isRecomProgs ? values(m_progs) : values(m_userProgs);
 }
 
 QList<int> ProgHandle::scopeIdList() const
 {
 	return keys(m_scopes);
-	// return m_isRecomProgs ? keys(m_scopes) : keys(m_userProgs);
 }
 
 QList<int> ProgHandle::progIdList() const
 {
-	// auto& progs = m_isRecomProgs ? m_progs : m_userScopes;
 	const auto& progs = m_progs;
 	QList<int> res;
 	res.reserve(progs.size());
@@ -171,6 +167,49 @@ void ProgHandle::setScopeList(const std::map<int, QString> &scopes/*, bool isRec
 	m_scopes = scopes;
 	setScopeIdx(0);
 	emit scopeNameListChanged();
+}
+
+bool ProgHandle::isRecomProgs() const
+{
+	return m_isRecomProgs;
+}
+
+void ProgHandle::setIsRecomProgs(bool newIsRecomProgs)
+{
+	m_isRecomProgs = newIsRecomProgs;
+	emit isRecomProgsChanged();
+}
+
+void ProgHandle::deleteScopeRequest(int index)
+{
+	if (m_isRecomProgs) {
+		return;
+	}
+	if (m_scopes.size() <= index) {
+		return;
+	}
+	auto iter = m_scopes.begin();
+	for (int i = 0; i < index; ++index) {
+		iter++;
+	}
+	int idToDelete = iter->first;
+	emit signalDeleteScope(idToDelete);
+}
+
+void ProgHandle::renameScopeRequest(int index, const QString &name)
+{
+	if (m_isRecomProgs) {
+		return;
+	}
+	if (m_scopes.size() <= index) {
+		return;
+	}
+	auto iter = m_scopes.begin();
+	for (int i = 0; i < index; ++index) {
+		iter++;
+	}
+	int idToRename = iter->first;
+	emit signalRenameScope(idToRename, name);
 }
 
 QString ProgHandle::readTextFile(const QString& filePath)
@@ -222,13 +261,4 @@ QStringList ProgHandle::scanVideoFiles(const QString& folderPath)
 	return videoFiles;
 }
 
-bool ProgHandle::isRecomProgs() const
-{
-	return m_isRecomProgs;
-}
 
-void ProgHandle::setIsRecomProgs(bool newIsRecomProgs)
-{
-	m_isRecomProgs = newIsRecomProgs;
-	emit isRecomProgsChanged();
-}

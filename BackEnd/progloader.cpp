@@ -207,29 +207,29 @@ const QStringList fields = {"id", "Num", "Prog_ID", /* 0 1 2*/
                             "Mono2Coag_INSTR", "Mono2Coag_MODE", "Mono2Coag_POWER", /* 24 25 26*/
                             "Pedal_1", "Pedal_2", "OutEnabled_MASK"};/* 27 28 29 30*/
 const   QString saveCurQuery = QString(
-                                   "REPLACE INTO Lists ("
-                                   "id, Num, Prog_ID, "
-                                   "Bi1Cut_INSTR, Bi1Cut_MODE, Bi1Cut_POWER, "
-                                   "Bi1Coag_INSTR, Bi1Coag_MODE, Bi1Coag_POWER, "
-                                   "Bi2Cut_INSTR, Bi2Cut_MODE, Bi2Cut_POWER, "
-                                   "Bi2Coag_INSTR, Bi2Coag_MODE, Bi2Coag_POWER, "
-                                   "Mono1Cut_INSTR, Mono1Cut_MODE, Mono1Cut_POWER, "
-                                   "Mono1Coag_INSTR, Mono1Coag_MODE, Mono1Coag_POWER, "
-                                   "Mono2Cut_INSTR, Mono2Cut_MODE, Mono2Cut_POWER, "
-                                   "Mono2Coag_INSTR, Mono2Coag_MODE, Mono2Coag_POWER, "
-                                   "Pedal_1, Pedal_2, OutEnabled_MASK"
-                                   ") VALUES ("
-                                   "1000, %28, 1000, "
-                                   "'%1', '%2', %3, "
-                                   "'%4', '%5', %6, "
-                                   "'%7', '%8', %9, "
-                                   "'%10', '%11', %12, "
-                                   "'%13', '%14', %15, "
-                                   "'%16', '%17', %18, "
-                                   "'%19', '%20', %21, "
-                                   "'%22', '%23', %24, "
-                                   "%25, %26, %27"
-                                   ")");
+                                       "REPLACE INTO Lists ("
+                                       "id, Num, Prog_ID, "
+                                       "Bi1Cut_INSTR, Bi1Cut_MODE, Bi1Cut_POWER, "
+                                       "Bi1Coag_INSTR, Bi1Coag_MODE, Bi1Coag_POWER, "
+                                       "Bi2Cut_INSTR, Bi2Cut_MODE, Bi2Cut_POWER, "
+                                       "Bi2Coag_INSTR, Bi2Coag_MODE, Bi2Coag_POWER, "
+                                       "Mono1Cut_INSTR, Mono1Cut_MODE, Mono1Cut_POWER, "
+                                       "Mono1Coag_INSTR, Mono1Coag_MODE, Mono1Coag_POWER, "
+                                       "Mono2Cut_INSTR, Mono2Cut_MODE, Mono2Cut_POWER, "
+                                       "Mono2Coag_INSTR, Mono2Coag_MODE, Mono2Coag_POWER, "
+                                       "Pedal_1, Pedal_2, OutEnabled_MASK"
+                                       ") VALUES ("
+                                       "1000, %28, 1000, "
+                                       "'%1', '%2', %3, "
+                                       "'%4', '%5', %6, "
+                                       "'%7', '%8', %9, "
+                                       "'%10', '%11', %12, "
+                                       "'%13', '%14', %15, "
+                                       "'%16', '%17', %18, "
+                                       "'%19', '%20', %21, "
+                                       "'%22', '%23', %24, "
+                                       "%25, %26, %27"
+                                       ")");
 const   QString insertCurQuery = QString(
                                      "INSERT INTO Lists ("
                                      "Num, Prog_ID, "
@@ -255,29 +255,29 @@ const   QString insertCurQuery = QString(
                                      "%25, %26, %27"
                                      ")");
 const   QString insertUserProgQuery = QString(
-                                          "INSERT INTO Lists ("
-                                          "Num, Prog_ID,"
-                                          "Bi1Cut_INSTR, Bi1Cut_MODE, Bi1Cut_POWER, "
-                                          "Bi1Coag_INSTR, Bi1Coag_MODE, Bi1Coag_POWER, "
-                                          "Bi2Cut_INSTR, Bi2Cut_MODE, Bi2Cut_POWER, "
-                                          "Bi2Coag_INSTR, Bi2Coag_MODE, Bi2Coag_POWER, "
-                                          "Mono1Cut_INSTR, Mono1Cut_MODE, Mono1Cut_POWER, "
-                                          "Mono1Coag_INSTR, Mono1Coag_MODE, Mono1Coag_POWER, "
-                                          "Mono2Cut_INSTR, Mono2Cut_MODE, Mono2Cut_POWER, "
-                                          "Mono2Coag_INSTR, Mono2Coag_MODE, Mono2Coag_POWER, "
-                                          "Pedal_1, Pedal_2, OutEnabled_MASK"
-                                          ") VALUES ("
-                                          "%28, %29,"
-                                          "'%1', '%2', %3, "
-                                          "'%4', '%5', %6, "
-                                          "'%7', '%8', %9, "
-                                          "'%10', '%11', %12, "
-                                          "'%13', '%14', %15, "
-                                          "'%16', '%17', %18, "
-                                          "'%19', '%20', %21, "
-                                          "'%22', '%23', %24, "
-                                          "%25, %26, %27"
-                                          ")");
+                                      "INSERT INTO Lists ("
+                                      "Num, Prog_ID,"
+                                      "Bi1Cut_INSTR, Bi1Cut_MODE, Bi1Cut_POWER, "
+                                      "Bi1Coag_INSTR, Bi1Coag_MODE, Bi1Coag_POWER, "
+                                      "Bi2Cut_INSTR, Bi2Cut_MODE, Bi2Cut_POWER, "
+                                      "Bi2Coag_INSTR, Bi2Coag_MODE, Bi2Coag_POWER, "
+                                      "Mono1Cut_INSTR, Mono1Cut_MODE, Mono1Cut_POWER, "
+                                      "Mono1Coag_INSTR, Mono1Coag_MODE, Mono1Coag_POWER, "
+                                      "Mono2Cut_INSTR, Mono2Cut_MODE, Mono2Cut_POWER, "
+                                      "Mono2Coag_INSTR, Mono2Coag_MODE, Mono2Coag_POWER, "
+                                      "Pedal_1, Pedal_2, OutEnabled_MASK"
+                                      ") VALUES ("
+                                      "%28, %29,"
+                                      "'%1', '%2', %3, "
+                                      "'%4', '%5', %6, "
+                                      "'%7', '%8', %9, "
+                                      "'%10', '%11', %12, "
+                                      "'%13', '%14', %15, "
+                                      "'%16', '%17', %18, "
+                                      "'%19', '%20', %21, "
+                                      "'%22', '%23', %24, "
+                                      "%25, %26, %27"
+                                      ")");
 const QString queryConditionModes = "BI_MONO = %1 AND CUT_COAG = %2 AND id IN (%3)";
 
 }
@@ -330,12 +330,6 @@ void ProgLoader::slotSaveCurrentState()
 	}
 }
 
-bool ProgLoader::readPreviousSocketSettings()
-{
-	///todo REALIZE
-	return false;
-}
-
 void ProgLoader::defaultSocketInit(bool clear)
 {
 	std::vector<std::map<int, SockPtr>> socketMapVector;
@@ -363,8 +357,7 @@ void ProgLoader::defaultSocketInit(bool clear)
 	QList<QVariantList> allModes = m_dbReaderPtr->slotSendSelectQuery(
 	                                   QStringList{"Modes"},
 	                                   QStringList{"id"},
-	                                   ""
-	                                   );
+	                                   "");
 	allowedModesId.reserve(allModes.size());
 	for (const auto& item : allModes) {
 		allowedModesId.push_back(item.at(0).toInt());
@@ -374,8 +367,7 @@ void ProgLoader::defaultSocketInit(bool clear)
 	QList<QVariantList> allInstr = m_dbReaderPtr->slotSendSelectQuery(
 	                                   QStringList{"Instruments"},
 	                                   QStringList{"id"},
-	                                   ""
-	                                   );
+	                                   "");
 	for (const auto& item : allInstr)
 		allowedInstrId.push_back(item.at(0).toInt());
 
@@ -470,7 +462,7 @@ void ProgLoader::defaultSocketInit(bool clear)
 				}
 
 				isCoag ? socket->setCoagModePower(defaultPower)
-				       : socket->setCutModePower(defaultPower);
+				        : socket->setCutModePower(defaultPower);
 			}
 			//МОНО2 КОАГ = 1, БИ1РЕЗ 8
 			bool coagEna = hasNonZeroDigit(progItem.at(29).toInt(), (8 - 2*i) - 1 );
@@ -546,12 +538,12 @@ bool ProgLoader::programmLoadSocketInit(int progId, bool clear)
 
 			for (int halfSocket = 0; halfSocket < 2; ++halfSocket ) {
 				fillHalfSocket(halfSocket,
-				               i,
-				               socket,
-				               progItem,
-				               modeNamesList,
-				               allowedModesId,
-				               instrumConstraints);
+				                i,
+				                socket,
+				                progItem,
+				                modeNamesList,
+				                allowedModesId,
+				                instrumConstraints);
 			}
 			bool coagEna = hasNonZeroDigit(progItem.at(29).toInt(), (8 - 2*i) - 1 );
 			bool cutEna = hasNonZeroDigit(progItem.at(29).toInt(), (8 - 2*i) );
@@ -598,8 +590,11 @@ std::map<int, QString> ProgLoader::getCategories()
 
 void ProgLoader::deleteUserProg(int id)
 {
-	QString removeQuery = "DELETE FROM Lists WHERE Prog_ID = %1";
+	const QString removeQuery = "DELETE FROM Lists WHERE Prog_ID = %1";
 	m_dbReaderPtr->executeUpdateQuery(removeQuery.arg(id));
+
+	const QString removeProgQuery = "DELETE FROM Progs WHERE id = %1";
+	m_dbReaderPtr->executeUpdateQuery(removeProgQuery.arg(id));
 
 }
 
@@ -615,10 +610,46 @@ void ProgLoader::renameUserProg(int id, const QString &name)
 	m_dbReaderPtr->executeUpdateQuery(query.arg(name).arg(id));
 }
 
+void ProgLoader::deleteUserScope(int id)
+{
+	const QString removeScopeQuery = "DELETE FROM Scopes WHERE id = %1";
+	m_dbReaderPtr->executeUpdateQuery(removeScopeQuery.arg(id));
+
+	const QString queryCondition = "Scope_ID = %1";
+	QList<QVariantList> progListVariant =
+	        m_dbReaderPtr->slotSendSelectQuery(QStringList{"Progs"},
+	                                          QStringList{"id"},
+	                                          queryCondition.arg(id));
+	QStringList progIds;
+	progIds.reserve(progListVariant.size());
+	for (const auto& item : progListVariant) {
+		progIds.append(QString::number(item.at(0).toInt()));
+	}
+
+	const QString removeProgsQuery = "DELETE FROM Progs WHERE Scope_ID = %1";
+	m_dbReaderPtr->executeUpdateQuery(removeProgsQuery.arg(id));
+
+	const QString removeListsQuery = "DELETE FROM Lists WHERE Prog_ID IN (%1)";
+	m_dbReaderPtr->executeUpdateQuery(removeScopeQuery.arg(progIds.join(", ")));
+
+}
+
+void ProgLoader::renameUserScope(int id, const QString &name)
+{
+	const QString query = "UPDATE Scopes "
+	                      "SET "
+	                      "Name_RU = %1,"
+	                      "Name_ES = %1,"
+	                      "Name_EN = %1,"
+	                      "WHERE id = %2";
+
+	m_dbReaderPtr->executeUpdateQuery(query.arg(name).arg(id));
+}
+
 std::map<int, std::map<int, Onyx::InstrInfo> > ProgLoader::getConstraints(const std::vector<int>& idList)
 {
 	std::map<int, std::map<int, Onyx::InstrInfo> > result;
-	QString queryCondition = "Mode_ID = %1";
+	const QString queryCondition = "Mode_ID = %1";
 
 	for (int i : idList) {
 		QList<QVariantList> intstrListForMode = m_dbReaderPtr->slotSendSelectQuery(QStringList{"ModInstr"},

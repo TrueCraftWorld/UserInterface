@@ -32,6 +32,9 @@ public:
 
 	Q_INVOKABLE void deleteProgRequest(int index);
 	Q_INVOKABLE void renameProgRequest(int index, const QString& name);
+
+	Q_INVOKABLE void deleteScopeRequest(int index);
+	Q_INVOKABLE void renameScopeRequest(int index, const QString& name);
 	
 	///TODO: убрать видео из класса работы с программами
 	Q_INVOKABLE QString readTextFile(const QString& filePath);
@@ -64,6 +67,8 @@ signals:
 	void signalUserProgChosen(int progId);
 	void signalDeleteProg(int progId);
 	void signalRenameProg(int progId, const QString& name);
+	void signalDeleteScope(int scopeId);
+	void signalRenameScope(int scopeId, const QString& name);
 	
 	void signalLoadEmpty();
 	void signalSave(int id, const QString& name);

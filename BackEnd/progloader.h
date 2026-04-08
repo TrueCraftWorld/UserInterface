@@ -39,10 +39,7 @@ public slots:
 	
 signals:
 	
-public:
-	
-	bool readPreviousSocketSettings();
-	
+public:	
 	void defaultSocketInit(bool clear = true);
 	// void removeSubProg(int index);
 	/**
@@ -84,6 +81,10 @@ public:
 	void deleteUserProg(int id);
 
 	void renameUserProg(int id, const QString& name);
+
+	void deleteUserScope(int id);
+
+	void renameUserScope(int id, const QString& name);
 	
 	/**
 	 * @brief Загружает последнее сохранённое состояние из БД

@@ -8,10 +8,10 @@
 #include <QThread>
 #include <QDebug>
 #include <QVariant>
+#include <QElapsedTimer>
 #include "uartqmlbridge.h"
 #include "loggingcategories.h"
 #include "Structures.h"
-
 
 using namespace Onyx;
 
@@ -22,64 +22,102 @@ public:
     explicit LinkStm(QObject *parent = nullptr);
     enum TxCommand : quint8 {           // Передаваемые команды
         Allright = 0x00,                // Базовый запрос
-        Activation = 0x20,              // Активация
-        StopActivation = 0x40,          // Остановка активации
-        ArgonBlow = 0x3F,               // Продувка газового тракта
-        Signal = 0x80,                  // Выдача звукового сигнала (аварии)
 
-        ErrorMU = 0x80,                 // Ошибка модуля управления
-        CurrentVersion = 0xF0,          // Запрос версий ПО
-        Erase_1 = 0xF1,                 // Стереть банк 1
-        Erase_2 = 0xF2,                 // Стереть банк 2
-        StartUpdate_1 = 0xF3,           // Начало передачи ПО для банка 1
-        StartUpdate_2 = 0xF4,           // Начало передачи ПО для банка 2
-        UpdateFinish = 0xF5,            // ПО передано - версия ПО
-        SoftData = 0xF6,                // Данные прошивки
-        GoBoot = 0xF7,                  // Переключение на загрузчик
-        GoBank_1 = 0xF8,                // Переключение на банк 1
-        GoBank_2 = 0xF9,                // Переключение на банк 2
-        Reboot = 0xFA,                  // Перезагрузка stm
-        NoTxCommand = 0xFF,
+        Activation = 0x20,              // Активация
+
+        StopActivation = 0x40,          // Остановка активации
+
+        AckNeutralResist = 0x61,        // Запрос сопротивления НЭ
+        AckMonoHandleResist = 0x62,     // Запрос сопр. моно держателя
+        AckBiHandleResist = 0x63,       // Запрос сопр. би держателя
+        ReadMono2Id = 0x64,             // Прочитать данные в определителе Моно2
+        ReadBi2Id = 0x65,               // Прочитать данные в определителе Би2
+        WriteMono2Id = 0x66,            // Запись данных в определитель Моно2
+        WriteBi2Id = 0x67,              // Запись данных в определитель Би2
+        WirelessSearch = 0x68,          // Поиск беспроводных устройств
+        TxAddrWireless = 0x69,          // Передача адреса для беспроводных устройств
+        TxDataWireless = 0x6A,          // Передача данных для беспроводных устройств
+        ArgonBlow = 0x6F,               // Продувка газового тракта
+
+        SignalAlarm = 0x80,             // Выдача звукового сигнала (аварии)
+
+        CurrentVersion = 0xE0,          // Запрос версий ПО
+        Erase_1 = 0xE3,                 // Стереть банк 1
+        Erase_2 = 0xE4,                 // Стереть банк 2
+        StartUpdate_1 = 0xE5,           // Начало передачи ПО для банка 1
+        StartUpdate_2 = 0xE6,           // Начало передачи ПО для банка 2
+        SoftData = 0xE7,                // Данные прошивки
+        UpdateFinish = 0xE8,            // ПО передано - версия ПО
+        GoBoot = 0xE9,                  // Переключение на загрузчик
+        GoBank_1 = 0xEA,                // Переключение на банк 1
+        GoBank_2 = 0xEB,                // Переключение на банк 2
+        Reboot = 0xEC,                  // Перезагрузка stm
+
+        NoTxCommand = 0xFF
     };
     Q_ENUM(TxCommand);
 
     enum RxCommand : quint8 {           // Принимаемые команды
-        Whatsup = 0x00,                 // Стандартный запрос
+        Whatsup = 0x00,                 // Стандартная посылка
+
         GenActivation = 0x20,           // Посылка во время активации
+
         GenStop = 0x40,                 // Остановка активации
+        GenStopХХ = 0x41,               // Остановка активации по холостому ходу в автостопе
+        GenStopShort = 0x42,            // Остановка активации по короткому замыканию бранш
+        GenStopNeBreak = 0x43,          // Остановка активации из-за обрыва НЭ
+        GenStopNoArgon = 0x44,          // Остановка активации - закончился аргон
+        GenStopBlockedArg = 0x45,       // Остановка активации - непроходимость газового тракта
+        GenStopErr = 0x4F,              // Остановка активации из-за других ошибок
+
         SpecAnswer = 0x60,
-        ErrRecieve = 0x80,              // Модуль связи не принимает сигналы
-        ErrCrc = 0x81,                  // Ошибка CRC
-        ErrGenRx = 0x82,                // Генератор не отвечает
-        ErrArgRx = 0x83,                // Газовый модуль не отвечает
-        ErrNeRx = 0x84,                 // Нейтральник не отвечает
-        ErrSwingRx = 0x84,              // Раскачка не отвечает
-        MyVersion = 0xF0,               // Версии ПО
-        Erased_1 = 0xF1,                // Банк 1 стёрт
-        Erased_2 = 0xF2,                // Банк 2 стёрт
-        ReadyToUpdate_1 = 0xF3,         // Готов принять новую прошивку в банк 1
-        ReadyToUpdate_2 = 0xF4,         // Готов принять новую прошивку в банк 2
-        UpdateResult = 0xF5,            // Результаты обновления
-        SoftDataAck = 0xF6,             // Принял данные прошивки
-        BootAck = 0xF7,                 // Стандартный ответ загрузчика
-        Start = 0xFA,                   // Запуск МК
-//        NoRxCommand = 0xFB,
-        RxErrData = 0xFC,               // Ошибка: не те данные для прошивки
+        NeutralResist = 0x61,           // Сопротивление НЭ
+        MonoHandleResist = 0x62,        // Сопротивление моно держателя
+        BiHandleResist = 0x63,          // Сопротивление би держателя
+        DataMono2Id = 0x64,             // Данные из определителя Моно2
+        DataBi2Id = 0x65,               // Данные из определителя Би2
+        ConfirmMono2Id = 0x66,          // Подтверждение записи данных в определитель Моно2
+        ConfirmBi2Id = 0x67,            // Подтверждение записи данных в определитель Би2
+        WirelessDetected = 0x68,        // Обнаружено беспроводное устройство
+        ConfirmAddrWireless = 0x69,     // Подтверждение приёма адреса для беспроводных устройств
+        DataWireless = 0x6A,            // Данные от беспроводного устройства
+
+        ErrComm = 0x80,                 // Модуль связи не принимает сигналы от МИФ
+        ErrGenComm = 0x81,              // Генератор не отвечает
+        ErrArgComm = 0x82,              // Газовый модуль не отвечает
+        ErrRadioModule = 0x83,          // Не отвечает радиомодуль
+        ErrStuckButtons = 0x84,         // Кнопки или педали зажаты до старта
+        ErrNeController = 0x85,         // МК НЭ не отвечает
+        ErrRaskController = 0x86,       // МК раскачки не отвечает
+        ErrPowerNe5V = 0x87,            // Питание НЭ 5В не соответствует норме
+        ErrPowerNe3V3 = 0x88,           // Питание НЭ 3,3В не соответствует норме
+        ErrNeOverheat = 0x89,           // Перегрев контроллера НЭ (выше 80)
+
+        CritIsnStart = 0x90,            // Критичные ошибки - ИСН при включении
+        CritAdc1Ucont = 0x91,           // Ошибка АЦП1 - напряжение контура
+        CritAdc2Icont = 0x92,           // Ошибка АЦП2 - ток контура
+        CritAdc3Igen = 0x93,            // Ошибка АЦП3 - ток генератора
+        CritAdc4Uisn = 0x94,            // Ошибка АЦП4 - напряжение ИСН
+        CritRelay = 0x95,               // Ошибка реле
+        CritIsnWork = 0x96,             // Ошибка ИСН при нормальной работе
+        CritNeResonance = 0x97,         // Не найден резонанс при калибровке НЭ
+        CritAdcNe = 0x98,               // Ошибка АЦП схемы НЭ
+
+        Version_0 = 0xE0,               // Версии ПО, рабочих прошивок нет
+        Version_1 = 0xE1,               // Версии ПО, основная прошивка в банке 1
+        Version_3 = 0xE2,               // Версии ПО, основная прошивка в банке 2
+        Erased_1 = 0xE3,                // Банк 1 стёрт
+        Erased_2 = 0xE4,                // Банк 2 стёрт
+        ReadyToUpdate_1 = 0xE5,         // Готов принять новую прошивку в банк 1
+        ReadyToUpdate_2 = 0xE6,         // Готов принять новую прошивку в банк 2
+        SoftDataAck = 0xE7,             // Принял данные прошивки
+        UpdateResult = 0xE8,            // Результаты обновления
+        BootAck = 0xE9,                 // Стандартный ответ загрузчика
+        Start = 0xEC,                   // Запуск МК
+        UpdateError = 0xEF              // Ошибка обновления
+
     };
     Q_ENUM(RxCommand);
-
-    enum MC : quint8 {                  // Микроконтроллеры (старшие три бита)
-        MAIN = 0x00,                    // Основной (модуль связи)
-        SUB1 = 0x20,                    // Подчинённый (модуль генератора, например)
-        SUB2 = 0x40,                    // Подчинённый (модуль генератора, например)
-        SUB3 = 0x60,                    // Подчинённый (модуль генератора, например)
-        SUB4 = 0x80,                    // Подчинённый (модуль генератора, например)
-        SUB5 = 0xA0,                    // Подчинённый (модуль генератора, например)
-        SUB6 = 0xC0,                    // Подчинённый (модуль генератора, например)
-        SUB7 = 0xE0,                    // Подчинённый (модуль генератора, например)
-
-    };
-    Q_ENUM(MC);
 
     enum UartState : quint8 {
         STATE_OK = 0,
@@ -180,6 +218,8 @@ public:
     // Методы для установки состояния из PeriphHandler
 public slots:
     void start();
+    /// Загрузка hex из файла (вызов из потока LinkStm). bankOrZero: 0 — неактивный банк относительно m_boot, иначе 1 или 2.
+    void startFirmwareUpdateFromFile(const QString &filePath, int bankOrZero, const QString &versionStr, int mcUnitRaw);
     void argonBlow();
     void setEnableActivation(bool enable);
     void setNeutralElDivided(bool divided);
@@ -209,6 +249,7 @@ signals:
     void sigStopActivation(quint8 stopReason);
     /// Версии ПО модулей МК: список из 5 QVariantMap (числа для UI и сравнения с обновлениями).
     void sigFirmwareVersionsChanged(const QVariantList &modules);
+    void firmwareUpdateParseError(const QString &message);
 
 private slots:
     void sendCommand();
@@ -230,6 +271,7 @@ private:
     void setNextCommand();
 
     void readRxCommand();
+    void abortFirmwareUpdate(const QString &message);
 
     ActiveSocket determineSocket(const PedalKnobPressed &pedalKnob);
 
@@ -254,7 +296,8 @@ private:
     UartState m_state;
     UartTx m_txCommand;
     UartRx m_rxCommand;
-    bool m_update;
+    /// Пока ждём ReadyToUpdate после StartUpdate — не подменять m_txCommand на Allright.
+    bool m_fwUpdateAwaitingReady = false;
     int m_softSize;
     int m_transferredSize;
     QList<HexString> m_hexList;
@@ -277,6 +320,9 @@ private:
     Onyx::SocketState m_socketList[4];
     CommunicationState m_comState;
 
+    bool m_fwUpdateSessionActive = false;
+    QElapsedTimer m_fwRxErrStreakTimer;
+    bool m_abortFirmwareUpdatePending = false;
 };
 
 #endif // LINKSTM_H

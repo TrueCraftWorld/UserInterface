@@ -45,8 +45,8 @@ int main(int argc, char *argv[])
 #endif
     QCoreApplication::setAttribute(Qt::AA_UseOpenGLES);
     // Как было изначально: тач-события синтезируются в мышь
-    QCoreApplication::setAttribute(Qt::AA_SynthesizeMouseForUnhandledTouchEvents, true);
-    
+    QCoreApplication::setAttribute(Qt::AA_SynthesizeMouseForUnhandledTouchEvents, false);
+
     // Настройки для Qt Multimedia
     qputenv("QT_GSTREAMER_USE_PLAYBIN_VOLUME", "1");
     // qputenv("GST_DEBUG", "1");  // Минимальная отладка (1=ERROR, 2=WARNING, 3=INFO)
@@ -96,7 +96,7 @@ int main(int argc, char *argv[])
     qputenv("QT_LOGGING_RULES", "qt.qpa.input=false");
 
     OnyxApp app(argc, argv);
-    QCoreApplication::setApplicationVersion("1.0.1.3");
+    QCoreApplication::setApplicationVersion("1.0");
 
     // Устанавливаем кастомный обработчик для вывода только имени файла (без пути)
     qInstallMessageHandler(messageHandler);
@@ -200,6 +200,12 @@ int main(int argc, char *argv[])
                      mcFirmware, &McFirmwareVersionsBridge::setModules,
                      Qt::QueuedConnection);
     m_linkStm->publishFirmwareVersions();
+
+    httpUpload->setLinkStm(m_linkStm);
+    QObject::connect(m_linkStm, &LinkStm::firmwareUpdateParseError,
+                     httpUpload, &HttpUploadController::onMcFirmwareParseError, Qt::QueuedConnection);
+    QObject::connect(m_linkStm, &LinkStm::sigUpdateProgress,
+                     httpUpload, &HttpUploadController::setMcFirmwareUpdateProgress, Qt::QueuedConnection);
 
     // Переносим LinkStm в отдельный поток для работы с UART
     QThread *linkStmThread = new QThread();

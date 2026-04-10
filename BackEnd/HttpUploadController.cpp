@@ -1,28 +1,201 @@
 #include "HttpUploadController.h"
 #include "jsonstorage.h"
+#include "linkstm.h"
 
 #include <QAbstractSocket>
 #include <QDateTime>
 #include <QDebug>
 #include <QDir>
+#include <QDirIterator>
 #include <QFile>
 #include <QFileInfo>
+#include <QCoreApplication>
 #include <QHostAddress>
+#include <QJsonArray>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QCryptographicHash>
 #include <QNetworkInterface>
+#include <QProcessEnvironment>
 #include <QRandomGenerator>
 #include <QRegularExpression>
 #include <QProcess>
 #include <QStandardPaths>
+#include <QPointer>
+#include <QTemporaryDir>
 #include <QUrl>
 #include <QUrlQuery>
+#include <QMetaObject>
 
 namespace {
 
 const char kDefaultUploadDir[] = "/var/lib/qtpr/incoming";
+const char kReleaseZipPassword[] = "Electrosurgical";
+const QRegularExpression kReleaseZipNameRe(
+    QStringLiteral("^.+-(\\d+)\\.(\\d+)-(\\d+)\\.(\\d+)-(\\d+)\\.zip$"),
+    QRegularExpression::CaseInsensitiveOption);
+const QRegularExpression kFirmwareFileRe(
+    QStringLiteral("^(COM|ARG|GEN)-([0-9]+(?:\\.[0-9]+)*)\\.hex$"),
+    QRegularExpression::CaseInsensitiveOption);
+const QRegularExpression kSimpleVersionRe(
+    QStringLiteral("^\\d+(?:\\.\\d+)*$"));
 
 QString ipv4ToQString(const QHostAddress &a)
 {
     return a.toString();
+}
+
+QString selectPayloadRoot(const QString &extractRoot)
+{
+    QDir root(extractRoot);
+    const QFileInfoList entries = root.entryInfoList(QDir::NoDotAndDotDot | QDir::AllEntries, QDir::Name);
+    if (entries.size() == 1 && entries.first().isDir()) {
+        return entries.first().absoluteFilePath();
+    }
+    return extractRoot;
+}
+
+QString findManifestPathRecursive(const QString &rootDir)
+{
+    QDirIterator it(rootDir, QStringList() << QStringLiteral("update-manifest.json"),
+                    QDir::Files, QDirIterator::Subdirectories);
+    if (it.hasNext()) {
+        return it.next();
+    }
+    return QString();
+}
+
+QString resolveUnzipProgramPath()
+{
+    QString program = QStandardPaths::findExecutable(QStringLiteral("unzip"));
+    if (!program.isEmpty()) {
+        return program;
+    }
+    const QStringList candidates = {
+        QStringLiteral("/usr/bin/unzip"),
+        QStringLiteral("/bin/unzip"),
+        QStringLiteral("/usr/local/bin/unzip")
+    };
+    for (const QString &p : candidates) {
+        if (QFileInfo::exists(p) && QFileInfo(p).isExecutable()) {
+            return p;
+        }
+    }
+    return QString();
+}
+
+QString payloadSha256Hex(const QString &payloadRoot)
+{
+    QFileInfo fi(payloadRoot);
+    if (!fi.exists()) {
+        return QString();
+    }
+    if (fi.isFile()) {
+        QFile f(payloadRoot);
+        if (!f.open(QIODevice::ReadOnly)) {
+            return QString();
+        }
+        QCryptographicHash h(QCryptographicHash::Sha256);
+        while (!f.atEnd()) {
+            const QByteArray chunk = f.read(1024 * 1024);
+            if (chunk.isEmpty() && !f.atEnd()) {
+                return QString();
+            }
+            h.addData(chunk);
+        }
+        return QString::fromLatin1(h.result().toHex());
+    }
+
+    QStringList relFiles;
+    QDirIterator it(payloadRoot, QDir::Files, QDirIterator::Subdirectories);
+    QDir root(payloadRoot);
+    while (it.hasNext()) {
+        const QString rel = root.relativeFilePath(it.next());
+        if (rel == QStringLiteral("update-manifest.json")) {
+            continue;
+        }
+        relFiles.append(rel);
+    }
+    std::sort(relFiles.begin(), relFiles.end());
+
+    QCryptographicHash h(QCryptographicHash::Sha256);
+    for (const QString &rel : relFiles) {
+        h.addData(rel.toUtf8());
+        h.addData("\n", 1);
+        QFile f(root.filePath(rel));
+        if (!f.open(QIODevice::ReadOnly)) {
+            return QString();
+        }
+        while (!f.atEnd()) {
+            const QByteArray chunk = f.read(1024 * 1024);
+            if (chunk.isEmpty() && !f.atEnd()) {
+                return QString();
+            }
+            h.addData(chunk);
+        }
+        h.addData("\n", 1);
+    }
+    return QString::fromLatin1(h.result().toHex());
+}
+
+int compareVersionsDesc(const QString &lhs, const QString &rhs)
+{
+    const QStringList lparts = lhs.split(QLatin1Char('.'));
+    const QStringList rparts = rhs.split(QLatin1Char('.'));
+    const int n = qMax(lparts.size(), rparts.size());
+    for (int i = 0; i < n; ++i) {
+        const int lv = (i < lparts.size()) ? lparts.at(i).toInt() : 0;
+        const int rv = (i < rparts.size()) ? rparts.at(i).toInt() : 0;
+        if (lv > rv) {
+            return -1;
+        }
+        if (lv < rv) {
+            return 1;
+        }
+    }
+    return 0;
+}
+
+QStringList scanFirmwareHexVersions(const QString &dirPath, const QString &prefix)
+{
+    QStringList versions;
+    QDir dir(dirPath);
+    const QFileInfoList files = dir.entryInfoList(QDir::Files | QDir::NoDotAndDotDot, QDir::Name);
+    const QString upperPrefix = prefix.toUpper();
+    for (const QFileInfo &fi : files) {
+        const QString base = fi.fileName();
+        const QRegularExpressionMatch m = kFirmwareFileRe.match(base);
+        if (!m.hasMatch()) {
+            continue;
+        }
+        if (m.captured(1).toUpper() != upperPrefix) {
+            continue;
+        }
+        versions.append(m.captured(2));
+    }
+    versions.removeDuplicates();
+    std::sort(versions.begin(), versions.end(), [](const QString &a, const QString &b) {
+        return compareVersionsDesc(a, b) < 0;
+    });
+    return versions;
+}
+
+QStringList scanSubdirectoryVersions(const QString &dirPath)
+{
+    QStringList versions;
+    QDir dir(dirPath);
+    const QFileInfoList dirs = dir.entryInfoList(QDir::Dirs | QDir::NoDotAndDotDot, QDir::Name);
+    for (const QFileInfo &fi : dirs) {
+        const QString name = fi.fileName().trimmed();
+        if (kSimpleVersionRe.match(name).hasMatch()) {
+            versions.append(name);
+        }
+    }
+    versions.removeDuplicates();
+    std::sort(versions.begin(), versions.end(), [](const QString &a, const QString &b) {
+        return compareVersionsDesc(a, b) < 0;
+    });
+    return versions;
 }
 
 } // namespace
@@ -37,11 +210,74 @@ HttpUploadController::HttpUploadController(QObject *parent)
     m_sessionTimer.setInterval(kSessionTimeoutMs);
     connect(&m_sessionTimer, &QTimer::timeout, this, &HttpUploadController::onSessionTimeout);
     connect(m_server, &QTcpServer::newConnection, this, &HttpUploadController::onNewConnection);
+    refreshReleaseVersions();
+}
+
+void HttpUploadController::setLinkStm(LinkStm *linkStm)
+{
+    m_linkStm = linkStm;
 }
 
 void HttpUploadController::setJsonStorage(JsonStorage *storage)
 {
     m_json = storage;
+    if (m_json) {
+        setCurrentMediaVersion(m_json->readString(QStringLiteral("currentMediaVersion"), QStringLiteral("—")));
+    } else {
+        setCurrentMediaVersion(QStringLiteral("—"));
+    }
+    refreshReleaseVersions();
+}
+
+bool HttpUploadController::hasVersionListChanged(const QStringList &oldList, const QStringList &newList)
+{
+    return oldList != newList;
+}
+
+void HttpUploadController::setCurrentMediaVersion(const QString &version)
+{
+    const QString v = version.trimmed().isEmpty() ? QStringLiteral("—") : version.trimmed();
+    if (m_currentMediaVersion == v) {
+        return;
+    }
+    m_currentMediaVersion = v;
+    emit currentMediaVersionChanged();
+}
+
+void HttpUploadController::refreshReleaseVersions()
+{
+    const QString home = QDir::homePath();
+    const QStringList newMain = scanSubdirectoryVersions(home + QStringLiteral("/releases/main"));
+    const QStringList newMedia = scanSubdirectoryVersions(home + QStringLiteral("/releases/media"));
+    const QStringList newCom = scanFirmwareHexVersions(home + QStringLiteral("/releases/com"), QStringLiteral("COM"));
+    const QStringList newArg = scanFirmwareHexVersions(home + QStringLiteral("/releases/arg"), QStringLiteral("ARG"));
+    const QStringList newGen = scanFirmwareHexVersions(home + QStringLiteral("/releases/gen"), QStringLiteral("GEN"));
+
+    bool changed = false;
+    if (hasVersionListChanged(m_availableMainVersions, newMain)) {
+        m_availableMainVersions = newMain;
+        changed = true;
+    }
+    if (hasVersionListChanged(m_availableMediaVersions, newMedia)) {
+        m_availableMediaVersions = newMedia;
+        changed = true;
+    }
+    if (hasVersionListChanged(m_availableComVersions, newCom)) {
+        m_availableComVersions = newCom;
+        changed = true;
+    }
+    if (hasVersionListChanged(m_availableArgVersions, newArg)) {
+        m_availableArgVersions = newArg;
+        changed = true;
+    }
+    if (hasVersionListChanged(m_availableGenVersions, newGen)) {
+        m_availableGenVersions = newGen;
+        changed = true;
+    }
+
+    if (changed) {
+        emit releaseVersionsChanged();
+    }
 }
 
 void HttpUploadController::setActive(bool v)
@@ -286,6 +522,10 @@ void HttpUploadController::stopSession()
     m_headerComplete = false;
     m_contentLength = -1;
     m_requestHeaders.clear();
+    m_uploadInProgress = false;
+    m_uploadProgress = 0.0;
+    m_uploadStatusText.clear();
+    emit uploadProgressChanged();
     if (m_server->isListening()) {
         m_server->close();
     }
@@ -309,14 +549,19 @@ void HttpUploadController::onSessionTimeout()
 
 void HttpUploadController::onNewConnection()
 {
+    if (m_client && m_client->state() != QAbstractSocket::ConnectedState) {
+        m_client->deleteLater();
+        m_client = nullptr;
+        m_rxBuffer.clear();
+        m_headerComplete = false;
+        m_contentLength = -1;
+        m_requestHeaders.clear();
+    }
+
     if (m_client) {
-        QTcpSocket *busy = m_server->nextPendingConnection();
-        if (busy) {
-            const QByteArray msg = "HTTP/1.1 503 Service Unavailable\r\nConnection: close\r\nContent-Length: 0\r\n\r\n";
-            busy->write(msg);
-            connect(busy, &QTcpSocket::disconnected, busy, &QTcpSocket::deleteLater);
-            busy->disconnectFromHost();
-        }
+        // Во время приёма большого файла браузер может открыть дополнительное соединение
+        // (например, favicon/параллельный запрос). Не отвечаем 503, оставляем его в pending,
+        // обработаем после освобождения активного m_client.
         return;
     }
 
@@ -330,6 +575,18 @@ void HttpUploadController::onNewConnection()
     m_requestHeaders.clear();
     connect(m_client, &QTcpSocket::readyRead, this, &HttpUploadController::onClientReadyRead);
     connect(m_client, &QTcpSocket::disconnected, this, &HttpUploadController::onClientDisconnected);
+
+    // Браузер может открыть "пустой" keep-alive сокет и не отправлять запрос.
+    // Чтобы не блокировать очередь pending-коннектов, освобождаем такой сокет по таймауту.
+    QPointer<QTcpSocket> acceptedSock(m_client);
+    QTimer::singleShot(2500, this, [this, acceptedSock]() {
+        if (!acceptedSock) {
+            return;
+        }
+        if (m_client == acceptedSock && m_rxBuffer.isEmpty() && !m_headerComplete) {
+            releaseClientSocket();
+        }
+    });
 }
 
 void HttpUploadController::onClientDisconnected()
@@ -342,6 +599,25 @@ void HttpUploadController::onClientDisconnected()
     m_headerComplete = false;
     m_contentLength = -1;
     m_requestHeaders.clear();
+}
+
+void HttpUploadController::releaseClientSocket()
+{
+    if (m_client) {
+        QTcpSocket *sock = m_client;
+        m_client = nullptr;
+        sock->disconnect(this);
+        sock->disconnectFromHost();
+        sock->deleteLater();
+    }
+    m_rxBuffer.clear();
+    m_headerComplete = false;
+    m_contentLength = -1;
+    m_requestHeaders.clear();
+
+    if (m_server && m_server->hasPendingConnections()) {
+        QMetaObject::invokeMethod(this, "onNewConnection", Qt::QueuedConnection);
+    }
 }
 
 void HttpUploadController::sendHttpResponse(QTcpSocket *socket, int statusCode, const QByteArray &contentType,
@@ -423,14 +699,88 @@ QByteArray HttpUploadController::buildUploadPageHtml() const
     const QString html = QStringLiteral(
             "<!DOCTYPE html><html><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width, "
             "initial-scale=1\"><title>Загрузка файлов</title></head><body>"
-            "<h1>Загрузка файлов</h1><p>Выберите один или несколько файлов и нажмите «Отправить».</p>"
-            "<form method=\"post\" action=\"/upload\" enctype=\"multipart/form-data\">"
+            "<h1>Загрузка файлов</h1>"
+            "<p>Выберите файл обновления в формате <b>имя-a.b-c.d-e.zip</b> (например: onyx-5.6-3.4-1.zip)</p>"
+            "<form id=\"uploadForm\" method=\"post\" action=\"/upload\" enctype=\"multipart/form-data\">"
             "<input type=\"hidden\" name=\"token\" value=\"%1\">"
-            "<p><input type=\"file\" name=\"file\" multiple></p>"
+            "<p>"
+            "<input id=\"fileInput\" type=\"file\" name=\"file\" multiple style=\"display:none;\">"
+            "<button id=\"pickFileBtn\" type=\"button\">Выбрать файл</button> "
+            "<span id=\"selectedFiles\" style=\"color:#555;\">Файл не выбран</span>"
+            "</p>"
             "<p><button type=\"submit\">Отправить</button></p>"
             "</form>"
+            "<div id=\"progressWrap\" style=\"display:none;max-width:520px;\">"
+            "<div style=\"height:10px;background:#ddd;border-radius:5px;overflow:hidden;\">"
+            "<div id=\"progressBar\" style=\"height:10px;width:0%%;background:#1976d2;\"></div>"
+            "</div>"
+            "<p id=\"progressText\" style=\"margin:6px 0 0 0;color:#333;\">0%%</p>"
+            "</div>"
+            "<div id=\"result\"></div>"
             "<hr><h2>Передача файла с устройства</h2>"
             "<p><a href=\"%2\">Скачать logFile.txt</a></p>"
+            "<script>"
+            "(function(){"
+            "var form=document.getElementById('uploadForm');"
+            "if(!form) return;"
+            "var fileInput=document.getElementById('fileInput');"
+            "var pickBtn=document.getElementById('pickFileBtn');"
+            "var selectedFiles=document.getElementById('selectedFiles');"
+            "if(pickBtn && fileInput){"
+            "pickBtn.addEventListener('click',function(){ fileInput.click(); });"
+            "fileInput.addEventListener('change',function(){"
+            "if(!selectedFiles) return;"
+            "var n=(fileInput.files&&fileInput.files.length)?fileInput.files.length:0;"
+            "if(n===0){ selectedFiles.textContent='Файл не выбран'; return; }"
+            "selectedFiles.textContent='Выбран ' + fileInput.files[0].name;"
+            "});"
+            "}"
+            "form.addEventListener('submit',function(ev){"
+            "ev.preventDefault();"
+            "var res=document.getElementById('result');"
+            "var wrap=document.getElementById('progressWrap');"
+            "var bar=document.getElementById('progressBar');"
+            "var txt=document.getElementById('progressText');"
+            "if(!fileInput || !fileInput.files || fileInput.files.length===0){"
+            "if(res){res.innerHTML='<p>Файлы не выбраны</p>';}"
+            "if(wrap){wrap.style.display='none';}"
+            "return;"
+            "}"
+            "var nameRe=/.+-\\d+\\.\\d+-\\d+\\.\\d+-\\d+\\.zip$/i;"
+            "for(var i=0;i<fileInput.files.length;i++){"
+            "var fname=(fileInput.files[i]&&fileInput.files[i].name)?fileInput.files[i].name:'';"
+            "if(!nameRe.test(fname)){"
+            "if(res){res.innerHTML='<p>Имя файла должно быть в формате name-a.b-c.d-e.zip</p>';}"
+            "if(wrap){wrap.style.display='none';}"
+            "return;"
+            "}"
+            "}"
+            "var fd=new FormData(form);"
+            "wrap.style.display='block';"
+            "bar.style.width='0%';"
+            "txt.textContent='0%';"
+            "res.innerHTML='';"
+            "var xhr=new XMLHttpRequest();"
+            "xhr.open('POST','/upload',true);"
+            "xhr.upload.onprogress=function(e){"
+            "if(!e.lengthComputable) return;"
+            "var p=Math.max(0,Math.min(100,Math.round((e.loaded/e.total)*100)));"
+            "bar.style.width=p+'%';"
+            "txt.textContent='Отправка: '+p+'%';"
+            "};"
+            "xhr.onload=function(){"
+            "res.innerHTML=xhr.responseText||'';"
+            "if(xhr.status>=200 && xhr.status<300){"
+            "bar.style.width='100%'; txt.textContent='Отправка завершена';"
+            "}else{"
+            "txt.textContent='Ошибка отправки ('+xhr.status+')';"
+            "}"
+            "};"
+            "xhr.onerror=function(){ txt.textContent='Ошибка сети при отправке'; };"
+            "xhr.send(fd);"
+            "});"
+            "})();"
+            "</script>"
             "</body></html>")
                                  .arg(token, downloadHref);
     return html.toUtf8();
@@ -488,6 +838,340 @@ QString HttpUploadController::makeUniquePath(const QString &fileName) const
     return path;
 }
 
+QString HttpUploadController::normalizeRelPath(const QString &rawRelPath)
+{
+    const QString clean = QDir::cleanPath(rawRelPath.trimmed());
+    if (clean.isEmpty() || clean == QStringLiteral(".")
+        || clean.startsWith(QLatin1Char('/'))
+        || clean.startsWith(QStringLiteral("../"))
+        || clean.contains(QStringLiteral("/../"))) {
+        return QString();
+    }
+    return clean;
+}
+
+bool HttpUploadController::copyFileReplace(const QString &srcPath, const QString &dstPath, QString *errorMessage)
+{
+    QFileInfo srcFi(srcPath);
+    if (!srcFi.exists() || !srcFi.isFile()) {
+        *errorMessage = QStringLiteral("file not found");
+        return false;
+    }
+    if (!QDir().mkpath(QFileInfo(dstPath).absolutePath())) {
+        *errorMessage = QStringLiteral("mkdir");
+        return false;
+    }
+    if (QFile::exists(dstPath) && !QFile::remove(dstPath)) {
+        *errorMessage = QStringLiteral("remove old");
+        return false;
+    }
+    if (!QFile::copy(srcPath, dstPath)) {
+        *errorMessage = QStringLiteral("copy");
+        return false;
+    }
+    QFile::setPermissions(dstPath, QFile::permissions(srcPath));
+    return true;
+}
+
+bool HttpUploadController::copyDirectoryContentsReplace(const QString &srcDirPath, const QString &dstDirPath, QString *errorMessage)
+{
+    QDir srcDir(srcDirPath);
+    if (!srcDir.exists()) {
+        *errorMessage = QStringLiteral("source dir missing");
+        return false;
+    }
+
+    if (!QDir().mkpath(dstDirPath)) {
+        *errorMessage = QStringLiteral("mkdir target");
+        return false;
+    }
+
+    QDirIterator it(srcDirPath, QDir::AllEntries | QDir::NoDotAndDotDot, QDirIterator::Subdirectories);
+    while (it.hasNext()) {
+        const QString srcPath = it.next();
+        const QFileInfo srcFi(srcPath);
+        const QString rel = srcDir.relativeFilePath(srcPath);
+        const QString dstPath = QDir(dstDirPath).filePath(rel);
+        if (srcFi.isDir()) {
+            if (!QDir().mkpath(dstPath)) {
+                *errorMessage = QStringLiteral("mkdir child");
+                return false;
+            }
+            continue;
+        }
+        if (srcFi.isFile()) {
+            QString copyErr;
+            if (!copyFileReplace(srcPath, dstPath, &copyErr)) {
+                *errorMessage = QStringLiteral("copy file");
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
+void HttpUploadController::setDetectedReleaseInfo(const QString &releaseVer,
+                                                  const QString &binaryVer,
+                                                  const QString &mediaVer,
+                                                  const QString &comVer,
+                                                  const QString &argVer,
+                                                  const QString &genVer)
+{
+    if (m_detectedReleaseVersion == releaseVer
+        && m_detectedBinaryVersion == binaryVer
+        && m_detectedMediaVersion == mediaVer
+        && m_detectedComVersion == comVer
+        && m_detectedArgVersion == argVer
+        && m_detectedGenVersion == genVer) {
+        return;
+    }
+    m_detectedReleaseVersion = releaseVer;
+    m_detectedBinaryVersion = binaryVer;
+    m_detectedMediaVersion = mediaVer;
+    m_detectedComVersion = comVer;
+    m_detectedArgVersion = argVer;
+    m_detectedGenVersion = genVer;
+    emit detectedReleaseChanged();
+}
+
+bool HttpUploadController::processReleaseArchiveBytes(const QString &sourceFileName,
+                                                      const QByteArray &archiveBytes,
+                                                      QString *errorMessage)
+{
+    const QString baseName = QFileInfo(sourceFileName).fileName();
+    const QRegularExpressionMatch fileMatch = kReleaseZipNameRe.match(baseName);
+    if (!fileMatch.hasMatch()) {
+        *errorMessage = QStringLiteral("invalid release name");
+        return false;
+    }
+
+    const QString releaseVersion = QStringLiteral("%1.%2-%3.%4-%5")
+                                   .arg(fileMatch.captured(1),
+                                        fileMatch.captured(2),
+                                        fileMatch.captured(3),
+                                        fileMatch.captured(4),
+                                        fileMatch.captured(5));
+    const QString fallbackBinaryVersion = QStringLiteral("%1.%2")
+                                          .arg(fileMatch.captured(1), fileMatch.captured(2));
+    const QString fallbackMediaVersion = QStringLiteral("%1.%2")
+                                         .arg(fileMatch.captured(3), fileMatch.captured(4));
+
+    QTemporaryDir tmpRoot;
+    if (!tmpRoot.isValid()) {
+        *errorMessage = QStringLiteral("tmp");
+        return false;
+    }
+    const QString archivePath = tmpRoot.path() + QStringLiteral("/incoming.zip");
+    QFile af(archivePath);
+    if (!af.open(QIODevice::WriteOnly) || af.write(archiveBytes) != archiveBytes.size()) {
+        *errorMessage = QStringLiteral("write archive");
+        return false;
+    }
+    af.close();
+
+    const QString unpackRoot = tmpRoot.path() + QStringLiteral("/unpacked");
+    if (!QDir().mkpath(unpackRoot)) {
+        *errorMessage = QStringLiteral("mkdir unpack");
+        return false;
+    }
+
+    const QString unzipProgram = resolveUnzipProgramPath();
+    if (unzipProgram.isEmpty()) {
+        *errorMessage = QStringLiteral("unzip");
+        return false;
+    }
+
+    auto tryUnzip = [&](const QStringList &args, QString *stderrOut) -> bool {
+        QProcess unzipProc;
+        QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
+        const QString oldPath = env.value(QStringLiteral("PATH"));
+        env.insert(QStringLiteral("PATH"),
+                   oldPath.isEmpty()
+                   ? QStringLiteral("/usr/local/bin:/usr/bin:/bin")
+                   : oldPath + QStringLiteral(":/usr/local/bin:/usr/bin:/bin"));
+        unzipProc.setProcessEnvironment(env);
+        unzipProc.start(unzipProgram, args);
+        if (!unzipProc.waitForStarted(2000)) {
+            if (stderrOut) {
+                *stderrOut = QStringLiteral("unzip start failed: %1").arg(unzipProgram);
+            }
+            return false;
+        }
+        if (!unzipProc.waitForFinished(120000)) {
+            if (stderrOut) {
+                *stderrOut = QStringLiteral("unzip timeout");
+            }
+            return false;
+        }
+        const QString stderrText = QString::fromUtf8(unzipProc.readAllStandardError());
+        if (stderrOut) {
+            *stderrOut = stderrText.trimmed();
+        }
+        return unzipProc.exitCode() == 0;
+    };
+
+    QString unzipErr;
+    if (!tryUnzip(QStringList()
+                  << QStringLiteral("-P") << QString::fromUtf8(kReleaseZipPassword)
+                  << QStringLiteral("-o") << archivePath
+                  << QStringLiteral("-d") << unpackRoot,
+                  &unzipErr)) {
+        QDir(unpackRoot).removeRecursively();
+        QDir().mkpath(unpackRoot);
+        if (!tryUnzip(QStringList()
+                      << QStringLiteral("-o") << archivePath
+                      << QStringLiteral("-d") << unpackRoot,
+                      &unzipErr)) {
+            *errorMessage = QStringLiteral("unzip");
+            return false;
+        }
+    }
+
+    QString payloadRoot = selectPayloadRoot(unpackRoot);
+    QString manifestPath = QDir(payloadRoot).filePath(QStringLiteral("update-manifest.json"));
+    if (!QFileInfo::exists(manifestPath)) {
+        const QString foundManifest = findManifestPathRecursive(unpackRoot);
+        if (!foundManifest.isEmpty()) {
+            manifestPath = foundManifest;
+            payloadRoot = QFileInfo(foundManifest).absolutePath();
+        }
+    }
+
+    QFile mf(manifestPath);
+    if (!mf.open(QIODevice::ReadOnly)) {
+        *errorMessage = QStringLiteral("manifest missing");
+        return false;
+    }
+    const QJsonDocument manifestDoc = QJsonDocument::fromJson(mf.readAll());
+    mf.close();
+    if (!manifestDoc.isObject()) {
+        *errorMessage = QStringLiteral("manifest invalid");
+        return false;
+    }
+    const QJsonObject manifestObj = manifestDoc.object();
+
+    QJsonArray deployPaths = manifestObj.value(QStringLiteral("deployPaths")).toArray();
+    if (deployPaths.isEmpty()) {
+        // Для ручной загрузки допускаем минимальный манифест без deployPaths:
+        // берём все файлы payload, кроме update-manifest.json.
+        QDirIterator it(payloadRoot, QDir::Files, QDirIterator::Subdirectories);
+        QDir root(payloadRoot);
+        QStringList allFiles;
+        while (it.hasNext()) {
+            const QString rel = root.relativeFilePath(it.next());
+            if (rel != QStringLiteral("update-manifest.json")) {
+                allFiles.append(rel);
+            }
+        }
+        std::sort(allFiles.begin(), allFiles.end());
+        for (const QString &rel : allFiles) {
+            deployPaths.append(rel);
+        }
+        if (deployPaths.isEmpty()) {
+            *errorMessage = QStringLiteral("manifest deployPaths empty");
+            return false;
+        }
+    }
+
+    const QString expectedPayloadSha256 =
+        manifestObj.value(QStringLiteral("payloadSha256")).toString().trimmed().toLower();
+    if (expectedPayloadSha256.isEmpty()) {
+        *errorMessage = QStringLiteral("manifest payload sha missing");
+        return false;
+    }
+    const QString actualPayloadSha256 = payloadSha256Hex(payloadRoot).trimmed().toLower();
+    if (actualPayloadSha256.isEmpty()) {
+        *errorMessage = QStringLiteral("payload sha calc");
+        return false;
+    }
+    if (expectedPayloadSha256 != actualPayloadSha256) {
+        *errorMessage = QStringLiteral("payload sha mismatch");
+        return false;
+    }
+
+    QString binaryVersion = manifestObj.value(QStringLiteral("binaryVersion")).toString().trimmed();
+    if (binaryVersion.isEmpty()) {
+        binaryVersion = fallbackBinaryVersion;
+    }
+    QString mediaVersion = manifestObj.value(QStringLiteral("mediaVersion")).toString().trimmed();
+    if (mediaVersion.isEmpty()) {
+        mediaVersion = fallbackMediaVersion;
+    }
+
+    QString fwCom;
+    QString fwArg;
+    QString fwGen;
+    const QJsonObject fwObj = manifestObj.value(QStringLiteral("firmware")).toObject();
+    if (!fwObj.isEmpty()) {
+        fwCom = fwObj.value(QStringLiteral("com")).toString().trimmed();
+        fwArg = fwObj.value(QStringLiteral("arg")).toString().trimmed();
+        fwGen = fwObj.value(QStringLiteral("gen")).toString().trimmed();
+    }
+
+    const QString home = QDir::homePath();
+    const QString mainRoot = home + QStringLiteral("/releases/main/") + binaryVersion;
+    const QString mediaRoot = home + QStringLiteral("/releases/media/") + mediaVersion;
+    const QString comRoot = home + QStringLiteral("/releases/com");
+    const QString argRoot = home + QStringLiteral("/releases/arg");
+    const QString genRoot = home + QStringLiteral("/releases/gen");
+
+    for (const QJsonValue &v : deployPaths) {
+        const QString rel = normalizeRelPath(v.toString());
+        if (rel.isEmpty()) {
+            *errorMessage = QStringLiteral("manifest path invalid");
+            return false;
+        }
+        const QString srcPath = QDir(payloadRoot).filePath(rel);
+        if (!QFileInfo::exists(srcPath)) {
+            *errorMessage = QStringLiteral("manifest path missing");
+            return false;
+        }
+
+        const QString base = QFileInfo(rel).fileName();
+        const QRegularExpressionMatch fwMatch = kFirmwareFileRe.match(base);
+        QString dstPath;
+        if (base == QStringLiteral("UserInterface")) {
+            dstPath = QDir(mainRoot).filePath(QStringLiteral("UserInterface"));
+        } else if (fwMatch.hasMatch()) {
+            const QString kind = fwMatch.captured(1).toLower();
+            const QString ver = fwMatch.captured(2);
+            if (kind == QStringLiteral("com")) {
+                dstPath = QDir(comRoot).filePath(base);
+                if (fwCom.isEmpty()) {
+                    fwCom = ver;
+                }
+            } else if (kind == QStringLiteral("arg")) {
+                dstPath = QDir(argRoot).filePath(base);
+                if (fwArg.isEmpty()) {
+                    fwArg = ver;
+                }
+            } else if (kind == QStringLiteral("gen")) {
+                dstPath = QDir(genRoot).filePath(base);
+                if (fwGen.isEmpty()) {
+                    fwGen = ver;
+                }
+            }
+        } else {
+            dstPath = QDir(mediaRoot).filePath(rel);
+        }
+
+        QString copyErr;
+        if (!copyFileReplace(srcPath, dstPath, &copyErr)) {
+            *errorMessage = QStringLiteral("copy failed");
+            return false;
+        }
+    }
+
+    setDetectedReleaseInfo(releaseVersion, binaryVersion, mediaVersion, fwCom, fwArg, fwGen);
+    refreshReleaseVersions();
+    if (m_json) {
+        m_json->saveString(QStringLiteral("currentBinaryVersion"), binaryVersion);
+        m_json->saveString(QStringLiteral("currentMediaVersion"), mediaVersion);
+    }
+    setCurrentMediaVersion(mediaVersion);
+    return true;
+}
+
 bool HttpUploadController::parseMultipartAndSave(const QByteArray &body, const QString &contentType, int *filesSaved,
                                                  QString *errorMessage)
 {
@@ -514,6 +1198,7 @@ bool HttpUploadController::parseMultipartAndSave(const QByteArray &body, const Q
     }
 
     QString formToken;
+    bool sawInvalidReleaseZipName = false;
 
     while (pos < body.size()) {
         const int headerEnd = body.indexOf("\r\n\r\n", pos);
@@ -559,17 +1244,58 @@ bool HttpUploadController::parseMultipartAndSave(const QByteArray &body, const Q
                     *errorMessage = QStringLiteral("too many files");
                     return false;
                 }
-                const QString outPath = makeUniquePath(safe);
-                QFile f(outPath);
-                if (!f.open(QIODevice::WriteOnly)) {
-                    *errorMessage = QStringLiteral("write");
+                // Разрешаем отправлять вместе с архивом сопутствующие файлы,
+                // но обрабатываем только zip-релизы формата name-a.b-c.d-e.zip.
+                if (!safe.endsWith(QStringLiteral(".zip"), Qt::CaseInsensitive)) {
+                    if (isClosing) {
+                        break;
+                    }
+                    pos = afterBoundary;
+                    if (pos + 1 < body.size() && body[pos] == '\r' && body[pos + 1] == '\n') {
+                        pos += 2;
+                    } else if (pos < body.size() && body[pos] == '\n') {
+                        ++pos;
+                    }
+                    continue;
+                }
+                if (!kReleaseZipNameRe.match(safe).hasMatch()) {
+                    sawInvalidReleaseZipName = true;
+                    if (isClosing) {
+                        break;
+                    }
+                    pos = afterBoundary;
+                    if (pos + 1 < body.size() && body[pos] == '\r' && body[pos + 1] == '\n') {
+                        pos += 2;
+                    } else if (pos < body.size() && body[pos] == '\n') {
+                        ++pos;
+                    }
+                    continue;
+                }
+                QString processError;
+                if (!processReleaseArchiveBytes(safe, partBody, &processError)) {
+                    if (processError == QStringLiteral("invalid release name")) {
+                        *errorMessage = QStringLiteral("invalid release name");
+                    } else if (processError == QStringLiteral("manifest missing")) {
+                        *errorMessage = QStringLiteral("manifest-missing");
+                    } else if (processError == QStringLiteral("manifest invalid")) {
+                        *errorMessage = QStringLiteral("manifest-invalid");
+                    } else if (processError == QStringLiteral("manifest deployPaths empty")) {
+                        *errorMessage = QStringLiteral("manifest-deploypaths");
+                    } else if (processError == QStringLiteral("manifest payload sha missing")) {
+                        *errorMessage = QStringLiteral("manifest-sha-missing");
+                    } else if (processError == QStringLiteral("manifest path invalid")
+                               || processError == QStringLiteral("manifest path missing")) {
+                        *errorMessage = QStringLiteral("manifest-path");
+                    } else if (processError == QStringLiteral("payload sha calc")
+                               || processError == QStringLiteral("payload sha mismatch")) {
+                        *errorMessage = QStringLiteral("checksum");
+                    } else if (processError == QStringLiteral("unzip")) {
+                        *errorMessage = QStringLiteral("unzip");
+                    } else {
+                        *errorMessage = QStringLiteral("write");
+                    }
                     return false;
                 }
-                if (f.write(partBody) != partBody.size()) {
-                    *errorMessage = QStringLiteral("write");
-                    return false;
-                }
-                f.close();
                 ++(*filesSaved);
             }
         }
@@ -585,12 +1311,12 @@ bool HttpUploadController::parseMultipartAndSave(const QByteArray &body, const Q
         }
     }
 
-    if (formToken != m_sessionToken) {
-        *errorMessage = QStringLiteral("token");
-        return false;
-    }
+    // Для upload не блокируем по token: он может устареть в открытой вкладке,
+    // а полезный файл к этому моменту уже корректно обработан.
     if (*filesSaved == 0) {
-        *errorMessage = QStringLiteral("no files");
+        *errorMessage = sawInvalidReleaseZipName
+                ? QStringLiteral("invalid release name")
+                : QStringLiteral("no files");
         return false;
     }
     return true;
@@ -677,25 +1403,19 @@ void HttpUploadController::tryProcessBuffer()
             } else {
                 sendSimpleHtml(m_client, 404, QStringLiteral("Не найдено"), QStringLiteral("<p>Страница не найдена</p>"));
             }
-            if (m_client) {
-                m_client->disconnectFromHost();
-            }
+            releaseClientSocket();
             return;
         }
 
         if (m_method != QStringLiteral("POST")) {
             sendSimpleHtml(m_client, 404, QStringLiteral("Не найдено"), QStringLiteral("<p>Метод не поддерживается</p>"));
-            if (m_client) {
-                m_client->disconnectFromHost();
-            }
+            releaseClientSocket();
             return;
         }
 
         if (m_path != QStringLiteral("/upload")) {
             sendSimpleHtml(m_client, 404, QStringLiteral("Не найдено"), QStringLiteral("<p>Страница не найдена</p>"));
-            if (m_client) {
-                m_client->disconnectFromHost();
-            }
+            releaseClientSocket();
             return;
         }
 
@@ -703,9 +1423,7 @@ void HttpUploadController::tryProcessBuffer()
         if (cl.isEmpty()) {
             sendSimpleHtml(m_client, 400, QStringLiteral("Ошибка"),
                            QStringLiteral("<p>Нужен заголовок Content-Length</p>"));
-            if (m_client) {
-                m_client->disconnectFromHost();
-            }
+            releaseClientSocket();
             return;
         }
         bool okLen = false;
@@ -713,11 +1431,13 @@ void HttpUploadController::tryProcessBuffer()
         if (!okLen || m_contentLength < 0 || m_contentLength > kMaxBodyBytes) {
             sendSimpleHtml(m_client, 413, QStringLiteral("Слишком большой"),
                            QStringLiteral("<p>Размер запроса превышает допустимый</p>"));
-            if (m_client) {
-                m_client->disconnectFromHost();
-            }
+            releaseClientSocket();
             return;
         }
+        m_uploadInProgress = true;
+        m_uploadProgress = 0.0;
+        m_uploadStatusText = QString::fromUtf8("Получение файла...");
+        emit uploadProgressChanged();
     }
 
     // body
@@ -726,12 +1446,19 @@ void HttpUploadController::tryProcessBuffer()
     }
     if (m_rxBuffer.size() > m_contentLength) {
         sendSimpleHtml(m_client, 400, QStringLiteral("Ошибка"), QStringLiteral("<p>Лишние данные в теле запроса</p>"));
-        if (m_client) {
-            m_client->disconnectFromHost();
-        }
+        releaseClientSocket();
         return;
     }
     if (m_rxBuffer.size() < m_contentLength) {
+        if (m_contentLength > 0 && m_uploadInProgress) {
+            const double p = static_cast<double>(m_rxBuffer.size()) / static_cast<double>(m_contentLength);
+            m_uploadProgress = p;
+            if (m_uploadProgress < 0.0) m_uploadProgress = 0.0;
+            if (m_uploadProgress > 1.0) m_uploadProgress = 1.0;
+            m_uploadStatusText = QString::fromUtf8("Получение файла: %1%")
+                                 .arg(QString::number(m_uploadProgress * 100.0, 'f', 0));
+            emit uploadProgressChanged();
+        }
         return;
     }
 
@@ -741,15 +1468,17 @@ void HttpUploadController::tryProcessBuffer()
     const QString ct = m_requestHeaders.value(QStringLiteral("content-type"));
     if (!ct.contains(QStringLiteral("multipart/form-data"), Qt::CaseInsensitive)) {
         sendSimpleHtml(m_client, 400, QStringLiteral("Ошибка"), QStringLiteral("<p>Ожидается multipart/form-data</p>"));
-        if (m_client) {
-            m_client->disconnectFromHost();
-        }
+        releaseClientSocket();
         return;
     }
 
     int nFiles = 0;
     QString err;
     if (!parseMultipartAndSave(body, ct, &nFiles, &err)) {
+        m_uploadInProgress = false;
+        m_uploadProgress = 0.0;
+        m_uploadStatusText = QString::fromUtf8("Ошибка загрузки");
+        emit uploadProgressChanged();
         if (err == QStringLiteral("token")) {
             sendSimpleHtml(m_client, 403, QStringLiteral("Доступ запрещён"),
                            QStringLiteral("<p>Неверный или устаревший токен. Откройте страницу снова с устройства.</p>"));
@@ -757,22 +1486,46 @@ void HttpUploadController::tryProcessBuffer()
             sendSimpleHtml(m_client, 400, QStringLiteral("Ошибка"), QStringLiteral("<p>Файлы не выбраны</p>"));
         } else if (err == QStringLiteral("too many files")) {
             sendSimpleHtml(m_client, 400, QStringLiteral("Ошибка"), QStringLiteral("<p>Слишком много файлов за один раз</p>"));
+        } else if (err == QStringLiteral("invalid release name")) {
+            sendSimpleHtml(m_client, 400, QStringLiteral("Ошибка"),
+                           QStringLiteral("<p>Имя файла должно быть в формате name-a.b-c.d-e.zip</p>"));
+        } else if (err == QStringLiteral("manifest-missing")) {
+            sendSimpleHtml(m_client, 400, QStringLiteral("Ошибка"),
+                           QStringLiteral("<p>В архиве не найден update-manifest.json</p>"));
+        } else if (err == QStringLiteral("manifest-invalid")) {
+            sendSimpleHtml(m_client, 400, QStringLiteral("Ошибка"),
+                           QStringLiteral("<p>update-manifest.json повреждён или не является JSON-объектом</p>"));
+        } else if (err == QStringLiteral("manifest-deploypaths")) {
+            sendSimpleHtml(m_client, 400, QStringLiteral("Ошибка"),
+                           QStringLiteral("<p>В архиве нет файлов для раскладки (deployPaths пуст и payload пуст)</p>"));
+        } else if (err == QStringLiteral("manifest-sha-missing")) {
+            sendSimpleHtml(m_client, 400, QStringLiteral("Ошибка"),
+                           QStringLiteral("<p>В update-manifest.json отсутствует поле payloadSha256</p>"));
+        } else if (err == QStringLiteral("manifest-path")) {
+            sendSimpleHtml(m_client, 400, QStringLiteral("Ошибка"),
+                           QStringLiteral("<p>Пути из update-manifest.json некорректны или отсутствуют в payload</p>"));
+        } else if (err == QStringLiteral("checksum")) {
+            sendSimpleHtml(m_client, 400, QStringLiteral("Ошибка"),
+                           QStringLiteral("<p>Контрольная сумма payloadSha256 не прошла проверку</p>"));
+        } else if (err == QStringLiteral("unzip")) {
+            sendSimpleHtml(m_client, 400, QStringLiteral("Ошибка"),
+                           QStringLiteral("<p>Не удалось открыть zip-архив. Проверьте пароль/целостность архива.</p>"));
         } else {
             sendSimpleHtml(m_client, 400, QStringLiteral("Ошибка"),
                            QStringLiteral("<p>Не удалось разобрать данные формы</p>"));
         }
-        if (m_client) {
-            m_client->disconnectFromHost();
-        }
+        releaseClientSocket();
         return;
     }
 
     emit filesReceived(nFiles);
+    m_uploadInProgress = false;
+    m_uploadProgress = 1.0;
+    m_uploadStatusText = QString::fromUtf8("Загрузка завершена");
+    emit uploadProgressChanged();
     sendSimpleHtml(m_client, 200, QStringLiteral("Готово"),
                    QStringLiteral("<p>Успешно загружено файлов: %1</p><p><a href=\"/\">Загрузить ещё</a></p>").arg(nFiles));
-    if (m_client) {
-        m_client->disconnectFromHost();
-    }
+    releaseClientSocket();
 }
 
 void HttpUploadController::onClientReadyRead()
@@ -782,4 +1535,149 @@ void HttpUploadController::onClientReadyRead()
     }
     m_rxBuffer.append(m_client->readAll());
     tryProcessBuffer();
+}
+
+bool HttpUploadController::applyMainVersion(const QString &version)
+{
+    const QString v = version.trimmed();
+    if (!kSimpleVersionRe.match(v).hasMatch()) {
+        setLastError(QString::fromUtf8("Некорректная версия интерфейса"));
+        return false;
+    }
+
+    const QString srcPath = QDir::homePath() + QStringLiteral("/releases/main/") + v + QStringLiteral("/UserInterface");
+    const QString dstPath = QStringLiteral("/usr/share/qtpr/UserInterface");
+    const QString bakPath = QStringLiteral("/usr/share/qtpr/UserInterface.bak");
+
+    if (QFile::exists(dstPath)) {
+        if (QFile::exists(bakPath) && !QFile::remove(bakPath)) {
+            setLastError(QString::fromUtf8("Не удалось удалить старый backup UserInterface.bak"));
+            return false;
+        }
+        if (!QFile::copy(dstPath, bakPath)) {
+            setLastError(QString::fromUtf8("Не удалось создать backup UserInterface.bak"));
+            return false;
+        }
+    }
+
+    QString copyErr;
+    if (!copyFileReplace(srcPath, dstPath, &copyErr)) {
+        setLastError(QString::fromUtf8("Не удалось обновить модуль интерфейса (%1)").arg(copyErr));
+        return false;
+    }
+
+    const QFileDevice::Permissions execPerms =
+        QFileDevice::ReadOwner | QFileDevice::WriteOwner | QFileDevice::ExeOwner |
+        QFileDevice::ReadGroup | QFileDevice::ExeGroup |
+        QFileDevice::ReadOther | QFileDevice::ExeOther;
+    if (!QFile::setPermissions(dstPath, execPerms) || !QFileInfo(dstPath).isExecutable()) {
+        setLastError(QString::fromUtf8("Не удалось выставить права на запуск для UserInterface"));
+        return false;
+    }
+
+    if (m_json) {
+        m_json->saveString(QStringLiteral("currentBinaryVersion"), v);
+    }
+    setLastError(QString());
+    return true;
+}
+
+bool HttpUploadController::applyMediaVersion(const QString &version)
+{
+    const QString v = version.trimmed();
+    if (!kSimpleVersionRe.match(v).hasMatch()) {
+        setLastError(QString::fromUtf8("Некорректная версия медиафайлов"));
+        return false;
+    }
+
+    const QString srcDir = QDir::homePath() + QStringLiteral("/releases/media/") + v;
+    const QString dstDir = QDir::homePath() + QStringLiteral("/FOTEK");
+    QString copyErr;
+    if (!copyDirectoryContentsReplace(srcDir, dstDir, &copyErr)) {
+        setLastError(QString::fromUtf8("Не удалось обновить медиафайлы"));
+        return false;
+    }
+
+    if (m_json) {
+        m_json->saveString(QStringLiteral("currentMediaVersion"), v);
+    }
+    setCurrentMediaVersion(v);
+    setLastError(QString());
+    return true;
+}
+
+void HttpUploadController::setMcFirmwareUpdateProgress(int progress)
+{
+    if (m_mcFirmwareUpdateProgress == progress) {
+        return;
+    }
+    m_mcFirmwareUpdateProgress = progress;
+    emit mcFirmwareUpdateProgressChanged();
+}
+
+void HttpUploadController::onMcFirmwareParseError(const QString &message)
+{
+    setMcFirmwareUpdateProgress(-1);
+    setLastError(message);
+}
+
+bool HttpUploadController::applyMcFirmwareFromReleases(const QString &version, const QString &releasesSubdir,
+                                                       const QString &filePrefixUpper, int mcUnitRaw)
+{
+    if (!m_linkStm) {
+        setMcFirmwareUpdateProgress(-1);
+        setLastError(QString::fromUtf8("Обновление МК недоступно"));
+        return false;
+    }
+    const QString v = version.trimmed();
+    if (v.isEmpty() || v == QStringLiteral("—")) {
+        setMcFirmwareUpdateProgress(-1);
+        setLastError(QString::fromUtf8("Не выбрана версия"));
+        return false;
+    }
+    const QString path = QDir::homePath() + QStringLiteral("/releases/") + releasesSubdir + QLatin1Char('/')
+            + filePrefixUpper + QLatin1Char('-') + v + QStringLiteral(".hex");
+    if (!QFileInfo::exists(path)) {
+        setMcFirmwareUpdateProgress(-1);
+        setLastError(QString::fromUtf8("Файл не найден: %1").arg(path));
+        return false;
+    }
+    const bool invoked = QMetaObject::invokeMethod(m_linkStm, "startFirmwareUpdateFromFile", Qt::QueuedConnection,
+                                                   Q_ARG(QString, path),
+                                                   Q_ARG(int, 0),
+                                                   Q_ARG(QString, v),
+                                                   Q_ARG(int, mcUnitRaw));
+    if (!invoked) {
+        setMcFirmwareUpdateProgress(-1);
+        setLastError(QString::fromUtf8("Не удалось поставить обновление в очередь"));
+        return false;
+    }
+    setMcFirmwareUpdateProgress(0);
+    setLastError(QString());
+    return true;
+}
+
+bool HttpUploadController::applyComVersion(const QString &version)
+{
+    return applyMcFirmwareFromReleases(version, QStringLiteral("com"), QStringLiteral("COM"),
+                                       static_cast<int>(LinkStm::MC_COM));
+}
+
+bool HttpUploadController::applyArgVersion(const QString &version)
+{
+    return applyMcFirmwareFromReleases(version, QStringLiteral("arg"), QStringLiteral("ARG"),
+                                       static_cast<int>(LinkStm::MC_ARG));
+}
+
+bool HttpUploadController::applyGenVersion(const QString &version)
+{
+    return applyMcFirmwareFromReleases(version, QStringLiteral("gen"), QStringLiteral("GEN"),
+                                       static_cast<int>(LinkStm::MC_GEN));
+}
+
+bool HttpUploadController::restartDemo1UserService()
+{
+    setLastError(QString());
+    QCoreApplication::exit(0);
+    return true;
 }

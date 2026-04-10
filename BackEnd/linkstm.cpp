@@ -1,4 +1,7 @@
 #include "linkstm.h"
+#include "stmupdater.h"
+
+#include <QFileInfo>
 #include <QMetaType>
 #include <QVariantMap>
 #include <QElapsedTimer>
@@ -74,7 +77,7 @@ void LinkStm::unpackRxCommand(const QByteArray &rxPacket)
 
     m_rxCommand.data.clear();
 
-//    qDebug() << "Rx: " << getHexStr(rxPacket) << "ms: " << m_uart->transmitDelay();
+    qDebug() << "Rx: " << getHexStr(rxPacket) << "ms: " << m_uart->transmitDelay();
     emit sigReportRx(getHexStr(rxPacket), m_uart->transmitDelay());
 
     // Проверка длины посылки
@@ -131,11 +134,23 @@ void LinkStm::unpackRxCommand(const QByteArray &rxPacket)
 
     if (checkRxCommand()) {
         m_state = STATE_OK;
+        m_fwRxErrStreakTimer.invalidate();
+        if (m_fwUpdateSessionActive && m_lastCommand.com == UpdateFinish
+            && static_cast<quint8>(m_rxCommand.com) == static_cast<quint8>(UpdateFinish)) {
+            m_fwUpdateSessionActive = false;
+        }
     }
     // Повторяем команду, если ответ не подходящий
     else {
         m_state = STATE_RX_ERR;
         qDebug() << "не тот ответ от stm";
+        if (m_fwUpdateSessionActive) {
+            if (!m_fwRxErrStreakTimer.isValid()) {
+                m_fwRxErrStreakTimer.start();
+            } else if (m_fwRxErrStreakTimer.elapsed() >= 4000) {
+                abortFirmwareUpdate(QStringLiteral("Не удалось обновить модуль"));
+            }
+        }
     }
 
     m_waitAnswer = false;
@@ -183,6 +198,12 @@ void LinkStm::sendCommand()
     static int updateProgr = 0;
     static UartState preState = STATE_OK;   // Предыдущее состояние
     static int errCounter = 0;
+
+    if (m_abortFirmwareUpdatePending) {
+        updateCounter = 0;
+        updateProgr = 0;
+        m_abortFirmwareUpdatePending = false;
+    }
 
     m_comState = IDLE;
 
@@ -262,7 +283,7 @@ void LinkStm::sendCommand()
         }
 
         //__________________Команда по умолчанию_________________
-        if (m_comState == IDLE) {
+        if (m_comState == IDLE && !m_fwUpdateAwaitingReady) {
             if (m_unitState.pedalKnob != PRESS_NONE) {
                 activeSocket = determineSocket(m_unitState.pedalKnob);
                 if (activeSocket.is3rdKnob && activeSocket.id < 4) {
@@ -354,7 +375,8 @@ void LinkStm::sendCommand()
         m_uartTimer->setInterval(200);
         break;
     default:
-        m_uartTimer->setInterval(50);
+        m_uartTimer->setInterval(500);
+//        m_uartTimer->setInterval(50);
     }
 
 //    qDebug() << "txCom: " << m_txCommand.com << ": " << QString::number(m_txCommand.com, 16);
@@ -370,7 +392,7 @@ void LinkStm::sendCommand()
    }
    else {
         txStr = getHexStr(txPacket);
-//        qDebug() << "Tx: " << getHexStr(txPacket);
+        qDebug() << "Tx: " << getHexStr(txPacket);
     }
     
     // Отладочный замер времени от таймера до reportTx удалён
@@ -483,7 +505,8 @@ void LinkStm::readRxCommand()
 //                qDebug() << "Pressed pedal: " << unitState.pedalKnob << "current m_comState:" << m_comState;
                 if (m_comState != ACTIVATION) {
                     m_comState = START_ACTIVATION;
-//                    qDebug() << "Set m_comState to START_ACTIVATION";
+                    qDebug() << "Set m_comState to START_ACTIVATION";
+                    qDebug() << m_rxCommand.com << " " << getHexStr(m_rxCommand.data);
                 } else {
 //                    qDebug() << "m_comState is ACTIVATION, not setting START_ACTIVATION";
                 }
@@ -557,8 +580,10 @@ void LinkStm::readRxCommand()
         else if (m_rxCommand.com == BootAck) {
             m_comState = IDLE;
         }
-        else
+        else {
             m_comState = UPDATING;
+            m_fwUpdateAwaitingReady = false;
+        }
         break;
     default:
         // Что-то странное пришло
@@ -684,15 +709,78 @@ void LinkStm::updateTransfer(QList<HexString> hexList, int bank, QString version
     m_softSize = hexList.size();
     m_transferredSize = 0;
     m_hexList = hexList;
+    m_fwUpdateSessionActive = true;
+    m_fwRxErrStreakTimer.invalidate();
     // Организуем отправку
     UartTx txCom;
     txCom.com = bank == 1 ? LinkStm::StartUpdate_1 : LinkStm::StartUpdate_2;
     // Отправляем, в какой банк надо будет писать прошивку (т.е. его стереть в начале)
     txCom.data.clear();
-    m_update = true;
+    txCom.mc = m_mc;
+    m_fwUpdateAwaitingReady = true;
     m_txCommand = txCom;
     m_versionStr = versionStr;
     qDebug() << "startUpdate_" << bank;
+}
+
+void LinkStm::abortFirmwareUpdate(const QString &message)
+{
+    m_fwUpdateSessionActive = false;
+    m_fwRxErrStreakTimer.invalidate();
+    m_fwUpdateAwaitingReady = false;
+    m_hexList.clear();
+    m_softSize = 0;
+    m_transferredSize = 0;
+    m_versionStr.clear();
+    m_abortFirmwareUpdatePending = true;
+    m_state = STATE_OK;
+    m_comState = IDLE;
+    m_waitAnswer = false;
+    m_mc = MC_COM;
+    m_txCommand.com = Allright;
+    m_txCommand.data.clear();
+    m_txCommand.mc = MC_COM;
+    emit firmwareUpdateParseError(message);
+}
+
+void LinkStm::startFirmwareUpdateFromFile(const QString &filePath, int bankOrZero, const QString &versionStr,
+                                          int mcUnitRaw)
+{
+    QFileInfo fi(filePath);
+    if (!fi.exists() || !fi.isFile()) {
+        emit firmwareUpdateParseError(QStringLiteral("Файл прошивки не найден"));
+        return;
+    }
+
+    StmUpdater parser(nullptr, &fi);
+    QString parseErr;
+    QObject::connect(&parser, &StmUpdater::updateError, this,
+                     [&parseErr](const QString &e) { parseErr = e; },
+                     Qt::DirectConnection);
+
+    const QList<HexString> hexList = parser.getHexList();
+    if (!parseErr.isEmpty()) {
+        emit firmwareUpdateParseError(parseErr);
+        return;
+    }
+    if (hexList.isEmpty()) {
+        emit firmwareUpdateParseError(QStringLiteral("Пустой или некорректный hex"));
+        return;
+    }
+
+    int bank = bankOrZero;
+    if (bankOrZero <= 0 || bankOrZero > 2) {
+        if (m_boot == BOOT_APP_1) {
+            bank = 2;
+        } else if (m_boot == BOOT_APP_2) {
+            bank = 1;
+        } else {
+            bank = 1;
+        }
+    }
+
+    setMc(static_cast<McUnit>(static_cast<quint8>(mcUnitRaw)));
+    updateTransfer(hexList, bank, versionStr);
 }
 
 // Ставим новую команду в очередь

@@ -334,13 +334,51 @@ Item {
     // Виртуальная клавиатура CuteKeyboard
     InputPanel {
         id: inputPanel
+
+        function tuneKeyboardTree(node) {
+            if (!node)
+                return
+            if (node.autoRepeat !== undefined) {
+                node.autoRepeat = false
+            }
+            if (node.alternativeKeys !== undefined) {
+                node.alternativeKeys = []
+            }
+            if (!node.children)
+                return
+            for (var i = 0; i < node.children.length; ++i) {
+                tuneKeyboardTree(node.children[i])
+            }
+        }
+
+        function applyTouchTuning() {
+            tuneKeyboardTree(inputPanel)
+        }
         
         z: 999
         y: secretKeysRoot.height
         availableLanguageLayouts: ["Ru","En"]
         anchors.left: parent.left
         anchors.right: parent.right
-        
+
+        onActiveChanged: {
+            if (active) {
+                keyboardTuningTimer.restart()
+            }
+        }
+
+        onLanguageLayoutChanged: keyboardTuningTimer.restart()
+
+        Timer {
+            id: keyboardTuningTimer
+            interval: 40
+            repeat: false
+            onTriggered: {
+                inputPanel.applyTouchTuning()
+                Qt.callLater(inputPanel.applyTouchTuning)
+            }
+        }
+
         states: State {
             name: "visible"
             when: Qt.inputMethod.visible

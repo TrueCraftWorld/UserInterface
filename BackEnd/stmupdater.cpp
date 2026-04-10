@@ -83,6 +83,7 @@ QList<LinkStm::HexString> StmUpdater::getHexList()
     if (!endOfHex) {
         emit updateError("Ошибка завершения hex-файла");
     }
+    qDebug() << "hexList is ready, strings: " << hexList.length();
     return hexList;
 }
 

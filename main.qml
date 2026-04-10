@@ -105,16 +105,52 @@ Window {
     // Глобальный отладочный индикатор тача временно отключён,
     // чтобы гарантированно не влиять на обработку событий в приложении.
 
-    Drawer {
+    Item {
         id: leftDrawer
         width: container.width
-        //      width: 0.8 * container.width
         height: container.height
-        edge: Qt.LeftEdge
+        x: -container.width
+        y: 0
+        z: 9998
+        visible: opened || slideMenuAnimation.running
 
-        // Отключаем встроенную модальность, используем свою
-        modal: false
-        closePolicy: Popup.NoAutoClose
+        property bool opened: false
+
+        function open() {
+            opened = true
+            slideMenuAnimation.to = 0
+            slideMenuAnimation.start()
+        }
+
+        function close() {
+            slideMenuAnimation.to = -container.width
+            slideMenuAnimation.start()
+        }
+
+        NumberAnimation {
+            id: slideMenuAnimation
+            target: leftDrawer
+            property: "x"
+            duration: container.panelAnimationDuration
+            easing.type: container.panelAnimationEasing
+            onFinished: {
+                if (leftDrawer.x <= -container.width) {
+                    leftDrawer.opened = false
+                }
+            }
+        }
+
+        // Блокируем прохождение событий к элементам за панелью.
+        // z: -1 гарантирует, что область всегда ниже контента MenuLoader (z:0)
+        // и получает только те события, которые не были приняты кнопками.
+        MouseArea {
+            anchors.fill: parent
+            z: -1
+            onPressed: mouse.accepted = true
+            onReleased: mouse.accepted = true
+            onClicked: mouse.accepted = true
+            onPositionChanged: mouse.accepted = true
+        }
 
         MenuLoader {
             id: menuLoad
@@ -196,7 +232,7 @@ Window {
         id: drawerOverlay
         anchors.fill: parent
         z: 1  // Выше основного контента, но drawer'ы будут иметь z намного выше (по умолчанию 10000)
-        visible: argNeutDrawer.opened || pedDrawer.opened || leftDrawer.opened
+        visible: argNeutDrawer.opened || pedDrawer.opened
 
         Rectangle {
             anchors.fill: parent
@@ -211,7 +247,6 @@ Window {
                 onReleased: {
                     if (argNeutDrawer.opened) argNeutDrawer.close()
                     if (pedDrawer.opened) pedDrawer.close()
-                    if (leftDrawer.opened) leftDrawer.close()
                     mouse.accepted = true
                 }
             }
@@ -585,13 +620,53 @@ Window {
    // Виртуальная клавиатура CuteKeyboard
    InputPanel {
       id: inputPanel
+     
+      function tuneKeyboardTree(node) {
+         if (!node)
+            return
+         if (node.autoRepeat !== undefined) {
+            node.autoRepeat = false
+         }
+         if (node.alternativeKeys !== undefined) {
+            node.alternativeKeys = []
+         }
+         if (!node.children)
+            return
+         for (var i = 0; i < node.children.length; ++i) {
+            tuneKeyboardTree(node.children[i])
+         }
+      }
+
+      function applyTouchTuning() {
+         tuneKeyboardTree(inputPanel)
+      }
       
       z: 9999
       y: container.height
       availableLanguageLayouts: ["Ru","En"]
       anchors.left: parent.left
       anchors.right: parent.right
-      
+
+      onActiveChanged: {
+         if (active) {
+            keyboardTuningTimer.restart()
+         }
+      }
+
+      onLanguageLayoutChanged: {
+         keyboardTuningTimer.restart()
+      }
+
+      Timer {
+         id: keyboardTuningTimer
+         interval: 40
+         repeat: false
+         onTriggered: {
+            inputPanel.applyTouchTuning()
+            Qt.callLater(inputPanel.applyTouchTuning)
+         }
+      }
+
       states: State {
          name: "visible"
          when: Qt.inputMethod.visible

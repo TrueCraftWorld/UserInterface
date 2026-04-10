@@ -12,6 +12,11 @@ Item {
     signal softwareUpdateButtonPressed()
     signal networkSettingsButtonPressed()
     signal wifiFileReceiveButtonPressed()
+    signal wifiSettingsButtonPressed()
+    signal aboutButtonPressed()
+    readonly property int menuButtonWidth: 410
+    readonly property int menuButtonHeight: 96
+    readonly property int menuColumnsSpacing: 24
     
     Rectangle {
         id: background
@@ -30,72 +35,81 @@ Item {
         }
     }
     
-    ColumnLayout {
+    GridLayout {
         anchors {
             top: screenTitle.bottom
-            topMargin: 50
+            topMargin: 36
             horizontalCenter: parent.horizontalCenter
         }
-        spacing: 30
+        columns: 2
+        columnSpacing: serviceMenuRoot.menuColumnsSpacing
+        rowSpacing: 20
+        width: serviceMenuRoot.menuButtonWidth * 2 + serviceMenuRoot.menuColumnsSpacing
 
         SButton {
             id: serialNumberButton
             style: "btn-primary lg"
-            Layout.preferredWidth: 500
-            Layout.preferredHeight: 100
-            Layout.alignment: Qt.AlignHCenter
+            Layout.preferredWidth: serviceMenuRoot.menuButtonWidth
+            Layout.preferredHeight: serviceMenuRoot.menuButtonHeight
             text: qsTr("Серийный номер")
-            onClicked: {
-                serviceMenuRoot.serialNumberButtonPressed()
-            }
+            onPressed: serviceMenuRoot.serialNumberButtonPressed()
         }
 
         SButton {
             id: softwareUpdateButton
             style: "btn-primary lg"
-            Layout.preferredWidth: 500
-            Layout.preferredHeight: 100
-            Layout.alignment: Qt.AlignHCenter
+            Layout.preferredWidth: serviceMenuRoot.menuButtonWidth
+            Layout.preferredHeight: serviceMenuRoot.menuButtonHeight
             text: qsTr("Обновление ПО")
-            onClicked: {
-                serviceMenuRoot.softwareUpdateButtonPressed()
-            }
+            onPressed: serviceMenuRoot.softwareUpdateButtonPressed()
         }
 
         SButton {
             id: networkSettingsButton
             style: "btn-primary lg"
-            Layout.preferredWidth: 500
-            Layout.preferredHeight: 100
-            Layout.alignment: Qt.AlignHCenter
+            Layout.preferredWidth: serviceMenuRoot.menuButtonWidth
+            Layout.preferredHeight: serviceMenuRoot.menuButtonHeight
             text: qsTr("Настройка сети")
-            onClicked: {
-                serviceMenuRoot.networkSettingsButtonPressed()
-            }
+            onPressed: serviceMenuRoot.networkSettingsButtonPressed()
         }
 
         SButton {
             id: wifiFileReceiveButton
             style: "btn-primary lg"
-            Layout.preferredWidth: 500
-            Layout.preferredHeight: 100
-            Layout.alignment: Qt.AlignHCenter
+            Layout.preferredWidth: serviceMenuRoot.menuButtonWidth
+            Layout.preferredHeight: serviceMenuRoot.menuButtonHeight
             text: qsTr("Приём файлов по Wi‑Fi")
-            onClicked: {
-                serviceMenuRoot.wifiFileReceiveButtonPressed()
-            }
+            onPressed: serviceMenuRoot.wifiFileReceiveButtonPressed()
+        }
+
+        SButton {
+            id: wifiSettingsButton
+            style: "btn-primary lg"
+            Layout.preferredWidth: serviceMenuRoot.menuButtonWidth
+            Layout.preferredHeight: serviceMenuRoot.menuButtonHeight
+            text: qsTr("Настройки WiFi")
+            onPressed: serviceMenuRoot.wifiSettingsButtonPressed()
+        }
+
+        SButton {
+            id: aboutButton
+            style: "btn-primary lg"
+            Layout.preferredWidth: serviceMenuRoot.menuButtonWidth
+            Layout.preferredHeight: serviceMenuRoot.menuButtonHeight
+            text: qsTr("О программе")
+            onPressed: serviceMenuRoot.aboutButtonPressed()
         }
 
         SButton {
             id: deleteAllUserProgsButton
             style: "btn-danger lg"
-            Layout.preferredWidth: 500
-            Layout.preferredHeight: 120
+            Layout.columnSpan: 2
             Layout.alignment: Qt.AlignHCenter
-            text: qsTr("Удалить все\nпользовательские программы")
-            onClicked: {
-                confirmDeleteDialog.open()
-            }
+            Layout.topMargin: 4
+            Layout.preferredWidth: serviceMenuRoot.menuButtonWidth * 2 + serviceMenuRoot.menuColumnsSpacing
+            Layout.preferredHeight: 106
+            text: qsTr("Удалить все пользовательские программы")
+            onPressed: confirmDeleteDialog.open()
         }
     }
     
@@ -103,21 +117,21 @@ Item {
         id: retButton
         style: "btn-secondary"
         text: qsTr("Назад")
-        onClicked: returnButtonPressed()
+        onPressed: returnButtonPressed()
         anchors {
             left: parent.left
             bottom: parent.bottom
             margins: 15
         }
-        contentItem: Text {
-            text: retButton.text
-            font: retButton.font
-            opacity: enabled ? 1.0 : 0.3
-            color: "white"
-            horizontalAlignment: Text.AlignHCenter
-            verticalAlignment: Text.AlignVCenter
-            elide: Text.ElideRight
-        }
+//        contentItem: Text {
+//            text: retButton.text
+//            font: retButton.font
+//            opacity: enabled ? 1.0 : 0.3
+//            color: "white"
+//            horizontalAlignment: Text.AlignHCenter
+//            verticalAlignment: Text.AlignVCenter
+//            elide: Text.ElideRight
+//        }
     }
     
     Dialog {

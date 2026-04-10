@@ -36,7 +36,7 @@ Item {
         id: exitButton
         style: "btn-secondary"
         text: qsTr("Выход")
-        onClicked: settinsScreen.exitButtonPressed()
+        onPressed: settinsScreen.exitButtonPressed()
         anchors {
             left:parent.left
             bottom: parent.bottom
@@ -64,7 +64,7 @@ Item {
                 Layout.preferredWidth: 480
                 Layout.preferredHeight: 110
                 text: qsTr("Рекомендованные программы")
-                onClicked: recommendButtonPressed()
+                onPressed: recommendButtonPressed()
                 contentItem: Text {
                     text: wifiButton.text
                     font: wifiButton.font
@@ -83,7 +83,7 @@ Item {
                 Layout.preferredWidth: 480
                 Layout.preferredHeight: 110
                 text: qsTr("Пользовательские программы")
-                onClicked: userButtonPressed()
+                onPressed: userButtonPressed()
                 contentItem: Text {
                     text: userProgButton.text
                     font: userProgButton.font
@@ -107,7 +107,7 @@ Item {
                 Layout.preferredWidth: 480
                 Layout.preferredHeight: 110
                 text: qsTr("Свободные установки")
-                onClicked: {
+                onPressed: {
                     recomHandle.loadFreeSettings()
                     freeSettingsButtonPressed()
                 }
@@ -123,24 +123,6 @@ Item {
                 }
             }
             
-            SButton {
-                id: updateButton
-                style: "btn-primary lg"
-                Layout.preferredWidth: 480
-                Layout.preferredHeight: 110
-                text: qsTr("Настройки ...")
-                onClicked: settingsButtonPressed()
-                contentItem: Text {
-                    text: updateButton.text
-                    font: updateButton.font
-                    opacity: enabled ? 1.0 : 0.3
-                    color: "white"
-                    horizontalAlignment: Text.AlignHCenter
-                    verticalAlignment: Text.AlignVCenter
-                    wrapMode: Text.WordWrap
-                    elide: Text.ElideRight
-                }
-            }
         }
         
         RowLayout {
@@ -153,7 +135,7 @@ Item {
                 Layout.preferredWidth: 480
                 Layout.preferredHeight: 110
                 text: qsTr("Видео 🎬")
-                onClicked: settinsScreen.videoPlayerVisible = true
+                onPressed: settinsScreen.videoPlayerVisible = true
                 contentItem: Text {
                     text: videoButton.text
                     font: videoButton.font
@@ -172,7 +154,7 @@ Item {
                 Layout.preferredWidth: 480
                 Layout.preferredHeight: 110
                 text: qsTr("Сервисное меню")
-                onClicked: serviceMenuButtonPressed()
+                onPressed: serviceMenuButtonPressed()
                 contentItem: Text {
                     text: serviceMenuButton.text
                     font: serviceMenuButton.font

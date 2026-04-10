@@ -26,6 +26,29 @@ Item {
         })
     }
 
+    function loaderSourceString() {
+        var s = menuLoader.source
+        if (s === undefined || s === null)
+            return ""
+        return (typeof s === "string") ? s : s.toString()
+    }
+
+    function loaderSourceBaseName() {
+        var src = loaderSourceString()
+        var slash = src.lastIndexOf("/")
+        return slash >= 0 ? src.substring(slash + 1) : src
+    }
+
+    function isServiceFlowScreenBaseName(base) {
+        return base === "ServiceMenu.qml"
+                || base === "SerialNumberSettings.qml"
+                || base === "updateWindow.qml"
+                || base === "ServiceNetworkSettings.qml"
+                || base === "WifiFileReceive.qml"
+                || base === "WiFiConnector.qml"
+                || base === "AboutScreen.qml"
+    }
+
     signal returnButtonPressed()
     signal closeMe()
     signal programSelected(string scopeName, string progName)
@@ -45,9 +68,6 @@ Item {
                     }
                     if (menuLoader.item.settingsButtonPressed) {
                         menuLoader.item.settingsButtonPressed.disconnect()
-                    }
-                    if (menuLoader.item.returnButtonPressed) {
-                        menuLoader.item.returnButtonPressed.disconnect()
                     }
                     if (menuLoader.item.clickedButton) {
                         menuLoader.item.clickedButton.disconnect()
@@ -69,7 +89,7 @@ Item {
                     }
                     if (menuLoader.item.settingsButtonPressed) {
                         menuLoader.item.settingsButtonPressed.connect(function() {
-                            navigateTo("qrc:/SettingsMain.qml")
+                            navigateTo("qrc:/ServiceMenu.qml")
                         })
                     }
                     if (menuLoader.item.secretKeysButtonPressed) {
@@ -118,10 +138,14 @@ Item {
                             navigateTo("qrc:/WifiFileReceive.qml")
                         })
                     }
-                    if (menuLoader.item.returnButtonPressed) {
-                        menuLoader.item.returnButtonPressed.connect(function() {
-                            returnButtonPressed()
-                            // closeMe()
+                    if (menuLoader.item.wifiSettingsButtonPressed) {
+                        menuLoader.item.wifiSettingsButtonPressed.connect(function() {
+                            navigateTo("qrc:/WiFiConnector.qml")
+                        })
+                    }
+                    if (menuLoader.item.aboutButtonPressed) {
+                        menuLoader.item.aboutButtonPressed.connect(function() {
+                            navigateTo("qrc:/AboutScreen.qml")
                         })
                     }
                     if (menuLoader.item.deleteAllUserProgsRequested) {
@@ -136,28 +160,6 @@ Item {
                 // Подключаемся к сигналам, которых нет в MainMenu
                 if (menuLoader.source !== "qrc:/MainMenu.qml") {
                     try {
-                        if (menuLoader.item.returnButtonPressed) {
-                            menuLoader.item.returnButtonPressed.connect(function() {
-                                if (shortcut) {
-                                    shortcut = false
-                                    closeMe()
-                                    if (menuLoader.item && menuLoader.item.loadClear !== undefined) {
-                                        menuLoader.item.loadClear = true;
-                                    }
-                                    navigateTo("qrc:/MainMenu.qml")
-                                } else if (menuLoader.source === "qrc:/SerialNumberSettings.qml") {
-                                    navigateTo("qrc:/ServiceMenu.qml")
-                                } else if (menuLoader.source === "qrc:/updateWindow.qml") {
-                                    navigateTo("qrc:/ServiceMenu.qml")
-                                } else if (menuLoader.source === "qrc:/ServiceNetworkSettings.qml") {
-                                    navigateTo("qrc:/ServiceMenu.qml")
-                                } else if (menuLoader.source === "qrc:/WifiFileReceive.qml") {
-                                    navigateTo("qrc:/ServiceMenu.qml")
-                                } else {
-                                    navigateTo("qrc:/MainMenu.qml")
-                                }
-                            })
-                        }
                         if (menuLoader.item.clickedButton) {
                             menuLoader.item.clickedButton.connect(function(progId) {
                                 closeMe()
@@ -173,6 +175,30 @@ Item {
                         // Игнорируем ошибки подключения
                     }
                 }
+            }
+        }
+    }
+
+    Connections {
+        target: menuLoader.item
+        ignoreUnknownSignals: true
+        enabled: loaderSourceBaseName() !== "MainMenu.qml"
+        function onReturnButtonPressed() {
+            var base = loaderSourceBaseName()
+            var inServiceFlow = isServiceFlowScreenBaseName(base)
+            if (inServiceFlow && base !== "ServiceMenu.qml") {
+                navigateTo("qrc:/ServiceMenu.qml")
+            } else if (inServiceFlow && base === "ServiceMenu.qml") {
+                navigateTo("qrc:/MainMenu.qml")
+            } else if (shortcut) {
+                shortcut = false
+                closeMe()
+                if (menuLoader.item && menuLoader.item.loadClear !== undefined) {
+                    menuLoader.item.loadClear = true
+                }
+                navigateTo("qrc:/MainMenu.qml")
+            } else {
+                navigateTo("qrc:/MainMenu.qml")
             }
         }
     }

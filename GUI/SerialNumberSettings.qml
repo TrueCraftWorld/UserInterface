@@ -15,6 +15,24 @@ Item {
     readonly property int maxSerialNumber: 1000000
     property bool serialValid: false
     property string serialSaveStatus: ""
+    function saveSettings() {
+        if (!serialRoot.serialValid) {
+            serialRoot.serialSaveStatus = qsTr("Введите серийный номер в диапазоне 260000-1000000")
+            return
+        }
+
+        if (typeof savedJson !== "undefined" && savedJson) {
+            savedJson.saveString("serialNumber", serialRoot.serialNumber)
+            savedJson.saveString("deviceType", serialRoot.deviceType)
+            savedJson.saveString("featureNotes", serialRoot.featureNotes)
+        }
+
+        if (typeof remoteUpdater !== "undefined" && remoteUpdater) {
+            remoteUpdater.serialNumber = serialRoot.serialNumber
+        }
+
+        serialRoot.serialSaveStatus = qsTr("Сохранено")
+    }
 
     Component.onCompleted: {
         if (typeof savedJson !== "undefined" && savedJson) {
@@ -90,13 +108,7 @@ Item {
                         serialRoot.serialNumber = text
                         serialRoot.serialValid = serialRoot.isSerialValid(text)
                         if (serialRoot.serialValid) {
-                            serialRoot.serialSaveStatus = qsTr("Сохранено")
-                            if (typeof savedJson !== "undefined" && savedJson) {
-                                savedJson.saveString("serialNumber", text)
-                            }
-                            if (typeof remoteUpdater !== "undefined" && remoteUpdater) {
-                                remoteUpdater.serialNumber = text
-                            }
+                            serialRoot.serialSaveStatus = qsTr("Не сохранено")
                         } else {
                             serialRoot.serialSaveStatus = qsTr("Введите серийный номер в диапазоне 260000-1000000")
                         }
@@ -135,8 +147,8 @@ Item {
                 text: serialRoot.deviceType
                 onTextChanged: {
                     serialRoot.deviceType = text
-                    if (typeof savedJson !== "undefined" && savedJson) {
-                        savedJson.saveString("deviceType", text)
+                    if (serialRoot.serialValid) {
+                        serialRoot.serialSaveStatus = qsTr("Не сохранено")
                     }
                 }
                 color: "white"
@@ -165,8 +177,8 @@ Item {
                 wrapMode: Text.Wrap
                 onTextChanged: {
                     serialRoot.featureNotes = text
-                    if (typeof savedJson !== "undefined" && savedJson) {
-                        savedJson.saveString("featureNotes", text)
+                    if (serialRoot.serialValid) {
+                        serialRoot.serialSaveStatus = qsTr("Не сохранено")
                     }
                 }
                 color: "white"
@@ -178,13 +190,29 @@ Item {
                 }
             }
         }
+
+    }
+
+    SButton {
+        id: saveButton
+        style: "btn-primary"
+        text: qsTr("Сохранить")
+        enabled: serialRoot.serialValid
+        onPressed: {
+            serialRoot.saveSettings()
+        }
+        anchors {
+            right: parent.right
+            bottom: parent.bottom
+            margins: 15
+        }
     }
 
     SButton {
         id: retButton
         style: "btn-secondary"
         text: qsTr("Назад")
-        onClicked: {
+        onPressed: {
             serialInput.focus = false
             typeInput.focus = false
             featuresInput.focus = false

@@ -250,6 +250,12 @@ void ControlCenter::setLinkStm(LinkStm* linkStm)
         connect(m_linkStm, &LinkStm::sigStopActivation,
                 m_socketModel.data(), &SocketModel::stopActivation,
                 Qt::QueuedConnection);
+        connect(m_linkStm, &LinkStm::sigStopActivation,
+                m_periphery, &PeriphHandler::showWarningCode,
+                Qt::QueuedConnection);
+        connect(m_linkStm, &LinkStm::sigError,
+                m_periphery, &PeriphHandler::showWarningCode,
+                Qt::QueuedConnection);
         
 //-----------Коннекты получения перифейрийной информации
         connect(m_linkStm, &LinkStm::sigUnitStateChanged,

@@ -37,6 +37,70 @@ Window {
                                           | socketsDummy.instrDialogOpened)
     }
 
+    function warningColorForCode(code) {
+        switch (code) {
+        case 0x41:
+            return "#fff176"
+        case 0x44:
+        case 0x45:
+            return "#ffb74d"
+        case 0x4F:
+            return "#ff5252"
+        case 0x90:
+        case 0x91:
+        case 0x92:
+        case 0x93:
+        case 0x94:
+        case 0x95:
+        case 0x96:
+        case 0x97:
+        case 0x98:
+            return "#ff5252"
+        default:
+            return "#ff8a80"
+        }
+    }
+
+    function warningTextForCode(code) {
+        switch (code) {
+        case 0x41: return qsTr("Активация остановлена: холостой ход (автостоп)")
+        case 0x42: return qsTr("Активация остановлена: короткое замыкание бранш")
+        case 0x43: return qsTr("Активация остановлена: обрыв нейтрального электрода")
+        case 0x44: return qsTr("Активация остановлена: закончился аргон")
+        case 0x45: return qsTr("Активация остановлена: непроходимость газового тракта")
+        case 0x4F: return qsTr("Активация остановлена: ошибка генератора")
+
+        case 0x80: return qsTr("Ошибка: модуль связи не принимает сигналы от МИФ")
+        case 0x81: return qsTr("Ошибка: генератор не отвечает")
+        case 0x82: return qsTr("Ошибка: газовый модуль не отвечает")
+        case 0x83: return qsTr("Ошибка: не отвечает радиомодуль")
+        case 0x84: return qsTr("Ошибка: кнопки или педали зажаты до старта")
+        case 0x85: return qsTr("Ошибка: МК НЭ не отвечает")
+        case 0x86: return qsTr("Ошибка: МК раскачки не отвечает")
+        case 0x87: return qsTr("Ошибка: питание НЭ 5В не соответствует норме")
+        case 0x88: return qsTr("Ошибка: питание НЭ 3,3В не соответствует норме")
+        case 0x89: return qsTr("Ошибка: перегрев контроллера НЭ")
+
+        case 0x90: return qsTr("Критичная ошибка: ИСН при включении")
+        case 0x91: return qsTr("Критичная ошибка: АЦП1 (напряжение контура)")
+        case 0x92: return qsTr("Критичная ошибка: АЦП2 (ток контура)")
+        case 0x93: return qsTr("Критичная ошибка: АЦП3 (ток генератора)")
+        case 0x94: return qsTr("Критичная ошибка: АЦП4 (напряжение ИСН)")
+        case 0x95: return qsTr("Критичная ошибка: реле")
+        case 0x96: return qsTr("Критичная ошибка: ИСН при нормальной работе")
+        case 0x97: return qsTr("Критичная ошибка: не найден резонанс при калибровке НЭ")
+        case 0x98: return qsTr("Критичная ошибка: АЦП схемы НЭ")
+
+        case 32: return qsTr("Ошибка UART: передача не выполнена")
+        case 33: return qsTr("Ошибка UART: нет ответа")
+        case 34: return qsTr("Ошибка UART: неверный ответ")
+        case 35: return qsTr("Ошибка UART: неверная длина пакета")
+        case 36: return qsTr("Ошибка UART: CRC не совпадает")
+        default:
+            return qsTr("Ошибка устройства (код 0x") + code.toString(16).toUpperCase() + ")"
+        }
+    }
+
    StatusBar {
       id: statusDummy
       //я искал панграммы для русского и хорошо так посмеялся с эфы
@@ -48,6 +112,47 @@ Window {
          top: parent.top
       }
    }
+
+    Rectangle {
+        id: activationStopWarningBanner
+        anchors.horizontalCenter: parent.horizontalCenter
+        anchors.top: statusDummy.bottom
+        anchors.topMargin: 8
+        width: Math.min(parent.width - 80, warningText.implicitWidth + 32)
+        height: warningText.implicitHeight + 20
+        radius: 8
+        z: 12000
+        visible: periphHandle.activationStopWarningVisible
+        color: warningColorForCode(periphHandle.activationStopWarningCode)
+        border.color: "#212121"
+        border.width: 1
+
+        Text {
+            id: warningText
+            anchors.centerIn: parent
+            text: warningTextForCode(periphHandle.activationStopWarningCode)
+            color: "#111111"
+            font.pixelSize: 22
+            font.bold: true
+            wrapMode: Text.WordWrap
+            horizontalAlignment: Text.AlignHCenter
+        }
+
+        Timer {
+            id: activationStopWarningTimer
+            interval: 4500
+            repeat: false
+            onTriggered: periphHandle.clearActivationStopWarning()
+        }
+
+        onVisibleChanged: {
+            if (visible) {
+                activationStopWarningTimer.restart()
+            } else {
+                activationStopWarningTimer.stop()
+            }
+        }
+    }
 
     SocketContainerV2 {
         id: socketsDummy

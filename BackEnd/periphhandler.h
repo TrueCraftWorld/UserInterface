@@ -19,6 +19,8 @@ class PeriphHandler : public QObject
 	Q_PROPERTY(bool activCylinderFirst READ activCylinderFirst WRITE setActivCylinderFirst NOTIFY activCylinderFirstChanged)
 	Q_PROPERTY(bool enableActivation READ enableActivation WRITE setEnableActivation NOTIFY enableActivationChanged)
 	Q_PROPERTY(bool activation READ activation NOTIFY activationChanged)
+	Q_PROPERTY(bool activationStopWarningVisible READ activationStopWarningVisible NOTIFY activationStopWarningChanged)
+	Q_PROPERTY(int activationStopWarningCode READ activationStopWarningCode NOTIFY activationStopWarningChanged)
 public:
 	explicit PeriphHandler(QObject * parent = nullptr);
 
@@ -111,16 +113,21 @@ public:
 	//  * @return true если активация выполняется, false если нет
 	//  */
 	bool activation() const;
+	bool activationStopWarningVisible() const;
+	int activationStopWarningCode() const;
 
 	/**
 	 * @brief Запускает продувку аргона
 	 * Отправляет команду на выполнение продувки через UART
 	 */
 	Q_INVOKABLE void argonBlow();
+	Q_INVOKABLE void clearActivationStopWarning();
 
 public slots:
 	void unitStateHandler(Onyx::UnitState state);
 	void setArgonRealRate(quint8 rate);
+	void showActivationStopWarning(quint8 stopReason);
+	void showWarningCode(quint8 warningCode);
 
 private:
 	bool m_argonCylinder1Connected;         // Подключение баллона 1
@@ -136,6 +143,8 @@ private:
 	quint8 m_wirelessPedalCharge;           // Заряд беспроводной педали
 	bool m_enableActivation;                // Запрет активации (открыты popup)
 	bool m_activation;                      // Активация выполняется
+	bool m_activationStopWarningVisible;
+	int m_activationStopWarningCode;
 
 signals:
 	void neutralElConnectedChanged(bool connected);
@@ -149,6 +158,7 @@ signals:
 	void activCylinderFirstChanged(bool first);
 	void enableActivationChanged(bool enable);
 	void activationChanged(bool active);
+	void activationStopWarningChanged();
 
 };
 

@@ -16,7 +16,9 @@ PeriphHandler::PeriphHandler(QObject *parent)
     m_activCylinderFirst(true),  // По умолчанию активен первый баллон
     m_wirelessPedalCharge(0),
     m_enableActivation(true),
-    m_activation(false)
+    m_activation(false),
+    m_activationStopWarningVisible(false),
+    m_activationStopWarningCode(-1)
 {
 
 }
@@ -145,6 +147,16 @@ bool PeriphHandler::activation() const
 	return m_activation;
 }
 
+bool PeriphHandler::activationStopWarningVisible() const
+{
+    return m_activationStopWarningVisible;
+}
+
+int PeriphHandler::activationStopWarningCode() const
+{
+    return m_activationStopWarningCode;
+}
+
 bool PeriphHandler::neutralElDivided() const
 {
 	return m_neutralElDivided;
@@ -185,4 +197,34 @@ void PeriphHandler::setArgonRealRate(quint8 rate)
 
 	m_argonRealRate = rate;
 	emit argonRealRateChanged(rate);
+}
+
+void PeriphHandler::showActivationStopWarning(quint8 stopReason)
+{
+    showWarningCode(stopReason);
+}
+
+void PeriphHandler::showWarningCode(quint8 warningCode)
+{
+    // 0x40 — штатная остановка активации без спец.причины, баннер не показываем.
+    if (warningCode == 0x40) {
+        return;
+    }
+    const bool changed = (m_activationStopWarningVisible != true)
+                         || (m_activationStopWarningCode != static_cast<int>(warningCode));
+    m_activationStopWarningVisible = true;
+    m_activationStopWarningCode = static_cast<int>(warningCode);
+    if (changed) {
+        emit activationStopWarningChanged();
+    }
+}
+
+void PeriphHandler::clearActivationStopWarning()
+{
+    if (!m_activationStopWarningVisible && m_activationStopWarningCode < 0) {
+        return;
+    }
+    m_activationStopWarningVisible = false;
+    m_activationStopWarningCode = -1;
+    emit activationStopWarningChanged();
 }

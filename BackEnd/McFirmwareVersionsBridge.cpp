@@ -22,6 +22,7 @@ bool McFirmwareVersionsBridge::modulesDataEqual(const QVariantList &a, const QVa
         QStringLiteral("app1Main"),
         QStringLiteral("app1Sub"),
         QStringLiteral("reportsBootAndApp1"),
+        QStringLiteral("hasWorkingApp"),
     };
     for (int i = 0; i < a.size(); ++i) {
         const QVariantMap ma = a.at(i).toMap();

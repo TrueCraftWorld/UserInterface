@@ -105,7 +105,7 @@ public:
 
         Version_0 = 0xE0,               // Версии ПО, рабочих прошивок нет
         Version_1 = 0xE1,               // Версии ПО, основная прошивка в банке 1
-        Version_3 = 0xE2,               // Версии ПО, основная прошивка в банке 2
+        Version_2 = 0xE2,               // Версии ПО, основная прошивка в банке 2
         Erased_1 = 0xE3,                // Банк 1 стёрт
         Erased_2 = 0xE4,                // Банк 2 стёрт
         ReadyToUpdate_1 = 0xE5,         // Готов принять новую прошивку в банк 1
@@ -260,7 +260,7 @@ private:
     // Вычисление контрольной суммы
     quint16 calculateCrc16(QByteArray &buffer, quint8 len);
     // Инициализация версий ПО МК
-    void initMcVersions();
+    void mcVersRequest();
     // Установка версий ПО МК
     void setMcVersions(const UartRx &rxCom);
     // Расшифровка команды
@@ -323,6 +323,7 @@ private:
     bool m_fwUpdateSessionActive = false;
     QElapsedTimer m_fwRxErrStreakTimer;
     bool m_abortFirmwareUpdatePending = false;
+    bool m_moduleHasWorkingApp[5] = {true, true, true, true, true};
 };
 
 #endif // LINKSTM_H

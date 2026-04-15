@@ -15,24 +15,24 @@ class DataBaseReader : public QObject
 public:
     DataBaseReader(const QString& pathToDb);
 
-    void slotSendQuery(const QString& queryStr, int valueNumbersAwaited = 1);
+    void slotSendQuery(const QString& queryStr, int valueNumbersAwaited = 1) const;
 
     QList<QVariantList> slotSendSelectQuery(const QStringList &tables,
                              const QStringList& columns,
-                             const QString& conditions);
+                             const QString& conditions) const;
     
     /**
      * @brief Выполняет UPDATE/INSERT/DELETE запрос
      * @param queryStr SQL запрос
      * @return true если успешно, false если ошибка
      */
-    bool executeUpdateQuery(const QString& queryStr);
+    bool executeUpdateQuery(const QString& queryStr) const;
 
-    void commit();
+    void commit() const;
 
 signals:
 
-    void signalResultReady(const QString& query, const QList<QVariantList> res);
+    void signalResultReady(const QString& query, const QList<QVariantList> res) const;
 
 private:
 

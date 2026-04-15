@@ -6,6 +6,7 @@ Item {
     property alias source : menuLoader.source
     property bool shortcut : false
     property alias item : menuLoader.item
+    readonly property var loader : menuLoader
 
     signal returnButtonPressed()
     signal closeMe()
@@ -16,6 +17,10 @@ Item {
         
         onItemChanged: {
             // Отключаем все предыдущие подключения
+            /// TODO: даже учитывая пользу от коннекта таким образом, в виде отсутствия варнингов
+            /// необходимо вернуться к коннектам как обхъектам т.к. у нас много динамики и коннект как функция может уронить приложение
+            /// т.к. может оставаться жив после удаление объекта на который использовался
+
             if (menuLoader.item) {
                 try {
                     if (menuLoader.item.recommendButtonPressed) {
@@ -41,7 +46,8 @@ Item {
                 try {
                     if (menuLoader.item.recommendButtonPressed) {
                         menuLoader.item.recommendButtonPressed.connect(function() {
-                            menuLoader.source = "qrc:/ProgItemList.qml"
+
+                             menuLoader.setSource("qrc:/ProgItemList.qml", {"recommended" : true})
                         })
                     }
                     if (menuLoader.item.settingsButtonPressed) {
@@ -61,12 +67,14 @@ Item {
                     }
                     if (menuLoader.item.userButtonPressed) {
                         menuLoader.item.userButtonPressed.connect(function() {
-                            menuLoader.source = "qrc:/UserProgsSelector.qml"
+                            menuLoader.setSource("qrc:/ProgItemList.qml", {"recommended" : false,
+                                                                            "editable" : true})
                         })
                     }
                     if (menuLoader.item.returnButtonPressed) {
                         menuLoader.item.returnButtonPressed.connect(function() {
-                            closeMe()
+                            returnButtonPressed()
+                            // closeMe()
                         })
                     }
                 } catch(e) {

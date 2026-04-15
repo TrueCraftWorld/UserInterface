@@ -5,7 +5,7 @@ import QtQuick.Layouts 1.15
 Dialog {
     id: addTypeSelector
 
-    signal typeChosen(int buttonType)
+    signal progLoaderSelected(int buttonType)
     parent: Overlay.overlay
     anchors.centerIn: parent
 
@@ -36,7 +36,7 @@ Dialog {
         MouseArea {
             anchors.fill: parent
             onClicked: {
-                addTypeSelector.typeChosen(someRect.buttonType)
+                addTypeSelector.progLoaderSelected(someRect.buttonType)
                 addTypeSelector.close()
             }
         }
@@ -86,6 +86,11 @@ Dialog {
                 VariantRect{
                     title: qsTr("ЗАГРУЗИТЬ РЕКОМЕНДОВАННЫЙ")
                     buttonType: 1
+                    Layout.alignment: Qt.AlignCenter
+                }
+                VariantRect{
+                    title: qsTr("ЗАГРУЗИТЬ ПОЛЬЗОВАТЕЛЬСКИЙ")
+                    buttonType: 3
                     Layout.alignment: Qt.AlignCenter
                 }
                 VariantRect{

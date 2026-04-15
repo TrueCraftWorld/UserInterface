@@ -1,15 +1,18 @@
 #ifndef PROGLOADER_H
 #define PROGLOADER_H
 
-#include <QObject>
-#include <QPointer>
-#include <map>
-#include <array>
+// #include <array>
 
+#include "BackEnd/progloaderbase.h"
 #include "instrument.h"
 #include "databasereader.h"
 #include "socketmodel.h"
-#include "userprogsloadmodel.h"
+#include "Structures.h"
+
+#include <QObject>
+#include <QPointer>
+#include <map>
+// #include "userprogsloadmodel.h"
 // bi1CutInstr = "0", bi1CutMode = "1000", bi1CutPower = "1";
 
 
@@ -18,20 +21,25 @@ class ProgLoader : public QObject
 {
 	Q_OBJECT
 public:
+
+	enum progType {
+		ptRecom = 0,
+		ptUser,
+		ptService,
+		ptCount
+	};
+
 	explicit ProgLoader(QObject *parent = nullptr);
 	/**
 	 * @brief Сохраняет текущее состояние всех сокетов в БД (таблица Lists, id=1000)
 	 */
-
+	
 public slots:
 	void slotSaveCurrentState();
-
+	
 signals:
-
-public:
-
-	bool readPreviousSocketSettings();
-
+	
+public:	
 	void defaultSocketInit(bool clear = true);
 	// void removeSubProg(int index);
 	/**
@@ -55,42 +63,60 @@ public:
 	 *         6.4 установка режима, мощностии и инструмента по умолчанию
 	 */
 	bool programmLoadSocketInit(int progId, bool clear = true);
-
+	
 	/**
-	 * @brief getListOfPrograms получение списка доспуных программ в категории
+	 * @brief getCategories получение списка доспуных программ в категории
 	 * @param scopeID
 	 * @return
 	 */
-	QMap<int, QString> getListOfPrograms(int scopeID);
+	std::map<int, QString> getProgs(int scopeID);
+	
+	std::map<int, QString> getCategories();
+	
+	void saveUserProg(const QString& scopeName,
+	                    const QString& progName);
+	
 
-	QMap<int, QString> getScopes();
-
-	std::map<int, QString> getUserProgList();
-	// QMap<int, QString> getUserProgList();
-
-	void saveUserProg(const QString& name);
-
+	///формально ничего не мешает удалить/переименовать рекоменд прогу
 	void deleteUserProg(int id);
 
+	void renameUserProg(int id, const QString& name);
+
+	void deleteUserScope(int id);
+
+	void renameUserScope(int id, const QString& name);
+	
 	/**
 	 * @brief Загружает последнее сохранённое состояние из БД
 	 */
 	bool loadCurrentState();
-
-	std::map<int, std::map<int, Onyx::InstrInfo>> getConstraints(const QList<int> &idList);
-
+	
+	std::map<int, std::map<int, Onyx::InstrInfo>> getConstraints(const std::vector<int> &idList);
+	
 	void setSocketModelPtr(QSharedPointer<SocketModel> newSocketModelPtr);
 
-public slots:
-	 bool loadUserProg(int userProgId);
+	int addUserScope(const QString& name);
+	
+	void setCurLoaderType(progType newCurLoaderType);
 
 private:
+	QList<QStringList> prepSaveState();
 	std::map<int, InstrPtr> getInstrums();
 	void saveProg(const QString& name = "");
+	ProgLoaderBase* getLoader(progType type);
+	std::vector<int> getAllowedInstrs(int progId, const QVariantList& progItem);
+	std::vector<int> getAllowedModes(int progId, const QVariantList &progItem);
+	void fillHalfSocket(int halfSocket,
+	                    int socketNumber,
+	                    SockPtr socket,
+	                    const QVariantList& progItem,
+	                    const QStringList& modeNamesList,
+	                    const std::vector<int>& allowedModesId,
+	                    const std::map<int, std::map<int, Onyx::InstrInfo>>& instrumConstraints);
 
-	QPointer<DataBaseReader> m_dbReaderPtr;
+	QSharedPointer<DataBaseReader> m_dbReaderPtr;
 	QSharedPointer<SocketModel> m_socketModelPtr;
-	QSharedPointer<UserProgsLoadModel> m_userProgModelPtr;
+	progType m_curLoaderType = ptRecom;	
 };
 
 #endif // PROGLOADER_H

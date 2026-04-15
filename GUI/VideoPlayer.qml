@@ -98,13 +98,13 @@ Rectangle {
         
         // Логирование для отладки аудио
         Component.onCompleted: {
-            console.log("MediaPlayer - hasAudio:", mediaPlayer.hasAudio)
-            console.log("MediaPlayer - volume:", mediaPlayer.volume)
-            console.log("MediaPlayer - muted:", mediaPlayer.muted)
+            // console.log("MediaPlayer - hasAudio:", mediaPlayer.hasAudio)
+            // console.log("MediaPlayer - volume:", mediaPlayer.volume)
+            // console.log("MediaPlayer - muted:", mediaPlayer.muted)
         }
         
         onHasAudioChanged: {
-            console.log("Audio track detected:", hasAudio)
+            // console.log("Audio track detected:", hasAudio)
         }
         
         property bool isBuffering: {
@@ -128,7 +128,7 @@ Rectangle {
         onStatusChanged: {
             // Логирование загрузки медиа
             if (status === MediaPlayer.Loaded) {
-                console.log("Media loaded - hasAudio:", hasAudio, "hasVideo:", hasVideo)
+                // console.log("Media loaded - hasAudio:", hasAudio, "hasVideo:", hasVideo)
             }
             
             // Обработка окончания воспроизведения

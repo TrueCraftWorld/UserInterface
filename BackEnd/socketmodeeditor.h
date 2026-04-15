@@ -122,6 +122,7 @@ public:
     Q_INVOKABLE void setCurrentModeIndex(int index);
 
     Q_INVOKABLE bool hasChanges() const;
+    Q_INVOKABLE void setAutoModeDirty(bool dirty);
 
     int currentInstrIndex() const;
 
@@ -176,10 +177,12 @@ private:
     int m_currentModeIndex = -1;
     int m_originalModeIndex = -1;
     int m_currentInstrIndex = -1;
+    int m_preferredInstrId = -1;
     QVariantMap m_originalParameters;
     QSharedPointer<SocketModel> m_model;
 
     bool m_hasChanges;
+    bool m_autoModeDirty = false;
     bool m_isCoag;
     int m_lowPowerBound;
     int m_midPowerBound;

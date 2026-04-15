@@ -39,7 +39,7 @@ const QStringList modesNames = { /*QObject::tr("РЕЖИМ РЕЗ НЕ ВЫБР�
                                  QObject::tr("МЯГКАЯ"), QObject::tr("СПРЕЙ"),
                                  QObject::tr("ФУЛЬГУР АРГОН"), QObject::tr("СПРЕЙ АРГОН"),
                                  QObject::tr("ФУЛЬГУР ПУЛЬС АРГОН"), QObject::tr("СПРЕЙ ПУЛЬС АРГОН"),
-                                 QObject::tr("РЕЖИМ НЕ ВЫБРАН")
+                                 QObject::tr("НЕ ВЫБРАН")
                                 };
 
 const QList<int> modesMaxPowers	{ /*1,*/ /*1,*/ 75,

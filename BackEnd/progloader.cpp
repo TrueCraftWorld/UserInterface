@@ -98,7 +98,7 @@ void makeModes(QMap<int, SurgModePtr>& container,
     int start = isCoag ? 6 : 3;
 
     container.insert(1000, SurgModePtr::create(ESHF::modesNames.last(),
-                                                                   false,
+                                                                   isCoag,
                                                                    1,
                                                                    1,
                                                                    1000,

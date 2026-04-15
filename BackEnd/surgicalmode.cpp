@@ -23,7 +23,7 @@ SurgicalMode::SurgicalMode(const QString& name,
     m_isEndo(isEndo),
     m_InstrConstraints(_instrs)
 {
-    // Устанавливаем "Инструмент не выбран" (индекс = размер списка, ID = 1000)
+    // Устанавливаем "НЕ ВЫБРАН" (индекс = размер списка, ID = 1000)
     setSelectedInstrIndex(m_InstrConstraints.size());
 }
 
@@ -80,7 +80,7 @@ bool SurgicalMode::setSelectedInstrIndex(int newSelectedInstrIndex)
     if (newSelectedInstrIndex < 0)
         return false;
     
-    // Если индекс равен размеру списка, это "Инструмент не выбран" (ID = 1000)
+    // Если индекс равен размеру списка, это "НЕ ВЫБРАН" (ID = 1000)
     if (static_cast<size_t>(newSelectedInstrIndex) == m_InstrConstraints.size()) {
         m_selectedInstrIndex = newSelectedInstrIndex;
         m_selectedInstrId = 1000;  // Специальный ID для "не выбран"
@@ -210,6 +210,8 @@ QVariantMap SurgicalMode::params() const
     res["modebrief"] = m_brief;
     res["modedescript"] = m_descript;
     res["isendo"] = m_isEndo;
+    res["id"] = m_id;
+    res["num"] = m_num;
     return res;
 }
 

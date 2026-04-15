@@ -64,13 +64,13 @@ Rectangle {
         z: 1000  // Очень высокий z
         onPressed: {
 //            console.log("PeripheryPanel PRESSED at", mouse.x, mouse.y)
+            peripheryPanelRoot.openPeriphDrawer()
         }
         onReleased: {
 //            console.log("PeripheryPanel RELEASED")
         }
         onClicked: {
 //            console.log("PeripheryPanel CLICKED - opening drawer")
-            peripheryPanelRoot.openPeriphDrawer()
         }
     }
 }

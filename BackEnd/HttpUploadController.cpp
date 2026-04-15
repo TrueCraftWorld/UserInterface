@@ -696,10 +696,23 @@ QByteArray HttpUploadController::buildUploadPageHtml() const
 {
     const QString token = m_sessionToken.toHtmlEscaped();
     const QString downloadHref = QStringLiteral("/download/logFile.txt?token=%1").arg(token);
+    QString serialHtml = QStringLiteral("—");
+    QString typeHtml = QStringLiteral("—");
+    if (m_json) {
+        const QString s = m_json->readString(QStringLiteral("serialNumber"), QString()).trimmed();
+        if (!s.isEmpty()) {
+            serialHtml = s.toHtmlEscaped();
+        }
+        const QString t = m_json->readString(QStringLiteral("deviceType"), QString()).trimmed();
+        if (!t.isEmpty()) {
+            typeHtml = t.toHtmlEscaped();
+        }
+    }
     const QString html = QStringLiteral(
             "<!DOCTYPE html><html><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width, "
             "initial-scale=1\"><title>Загрузка файлов</title></head><body>"
             "<h1>Загрузка файлов</h1>"
+            "<p><strong>Серийный номер:</strong> %3<br><strong>Тип аппарата:</strong> %4</p>"
             "<p>Выберите файл обновления в формате <b>имя-a.b-c.d-e.zip</b> (например: onyx-5.6-3.4-1.zip)</p>"
             "<form id=\"uploadForm\" method=\"post\" action=\"/upload\" enctype=\"multipart/form-data\">"
             "<input type=\"hidden\" name=\"token\" value=\"%1\">"
@@ -782,7 +795,7 @@ QByteArray HttpUploadController::buildUploadPageHtml() const
             "})();"
             "</script>"
             "</body></html>")
-                                 .arg(token, downloadHref);
+                                 .arg(token, downloadHref, serialHtml, typeHtml);
     return html.toUtf8();
 }
 

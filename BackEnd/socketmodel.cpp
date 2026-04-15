@@ -184,7 +184,7 @@ QVariant SocketModel::data(const QModelIndex &index, int role) const
             return -1;
         
         int instrId = socketItem.curCoagMode()->selectedInstrId();
-        // Если выбран "Инструмент не выбран" (ID = 1000), возвращаем 1000
+        // Если выбран пункт "НЕ ВЫБРАН" (ID = 1000), возвращаем 1000
         if (instrId == 1000)
             return 1000;
         
@@ -280,7 +280,7 @@ QVariant SocketModel::data(const QModelIndex &index, int role) const
             return -1;
         
         int instrId = socketItem.curCutMode()->selectedInstrId();
-        // Если выбран "Инструмент не выбран" (ID = 1000), возвращаем 1000
+        // Если выбран пункт "НЕ ВЫБРАН" (ID = 1000), возвращаем 1000
         if (instrId == 1000)
             return 1000;
         
@@ -446,8 +446,8 @@ QStringList SocketModel::instrumNames(int socketId, int modeIndex, bool isCoag) 
         if (instIter != m_instrMapPtr->end())
             names.append(instIter->second->name());
     }
-    // Добавляем "Инструмент не выбран" в конец списка
-    names.append(QObject::tr("Инструмент не выбран"));
+    // Добавляем пункт "не выбран" в конец списка
+    names.append(QObject::tr("НЕ ВЫБРАН"));
     return names;
 }
 
@@ -481,7 +481,7 @@ QStringList SocketModel::instrumNamesIds(int socketId, int modeIndex, bool isCoa
         if (instIter != m_instrMapPtr->end())
             names.append(QString("%1").arg(instIter->second->id()));
     }
-    // Добавляем ID для "Инструмент не выбран"
+    // Добавляем ID для пункта "НЕ ВЫБРАН"
     names.append("1000");
     return names;
 }
@@ -505,7 +505,7 @@ QStringList SocketModel::instrumNamesNums(int socketId, int modeIndex, bool isCo
         if (instIter != m_instrMapPtr->end())
             nums.append(QString("%1").arg(instIter->second->legacyNumber()));
     }
-    // Добавляем Num для "Инструмент не выбран"
+    // Добавляем Num для пункта "НЕ ВЫБРАН"
     nums.append("1000");
     return nums;
 }
@@ -626,6 +626,13 @@ bool SocketModel::commitModeChange(int socketId, int modeIndex, const QVariantMa
     QModelIndex idx = createIndex(socketId, 0);
 
     bool isModeCoag = param.value("iscoag").toBool();
+    qDebug() << "[commitModeChange]"
+             << "socketId=" << socketId
+             << "modeIndex=" << modeIndex
+             << "isModeCoag=" << isModeCoag
+             << "modeName=" << param.value("name").toString()
+             << "instrIndex=" << param.value("instrindex").toInt()
+             << "currentPower=" << param.value("currentpower").toInt();
     bool res = false;
     QVector<int> roles;
 

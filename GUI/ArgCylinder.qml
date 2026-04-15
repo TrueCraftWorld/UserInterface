@@ -9,53 +9,59 @@ Rectangle {
     property bool interactive: true  // Разрешить клики по баллону
     signal cylClicked()
 
-    readonly property int step: 16
+    // Размеры баллона рассчитываются от габаритов компонента,
+    // чтобы корректно масштабироваться в узкой боковой панели.
+    readonly property real compactScale: width < 60 ? 0.9 : 0.78
+    readonly property real bodyWidth: Math.max(20, width * compactScale)
+    readonly property real bodyHeight: Math.max(40, height * 0.88)
+    readonly property real unit: bodyWidth / 4
+    readonly property real borderSize: Math.max(2, bodyWidth * 0.09)
 
     id: cylinderRoot
     color: "transparent"
 
     Rectangle {
         id: cylinderBody
-        width: step * 4
-        height: step * 11
+        width: bodyWidth
+        height: bodyHeight
         radius: width / 2
         color: cylConnected ? (cylSelected ? "#30f020" : "#80f070") : "gray"
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.bottom: parent.bottom
         border.color: "#d9d9d9"
-        border.width: 6
+        border.width: borderSize
     }
     Rectangle {
         id: cylinderNeck
-        width: step
-        height: step * 2
+        width: unit
+        height: unit * 2
         radius: width / 2
         color: "#d9d9d9"
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.bottom: cylinderBody.top
-        anchors.bottomMargin: -(step / 2)
+        anchors.bottomMargin: -(unit / 2)
     }
     Rectangle {
         id: cylinderValve
-        width: step * 3
-        height: step
+        width: unit * 3
+        height: unit
         radius: height / 2
         color: "#d9d9d9"
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.top: cylinderNeck.top
-        anchors.topMargin: 3
+        anchors.topMargin: Math.max(1, unit * 0.2)
     }
     Text {
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.bottom: parent.bottom
-        anchors.bottomMargin: 20
+        anchors.bottomMargin: bodyHeight * 0.11
         text: isFirst ? "1" : "2"
         font.pixelSize: {
             if (cylConnected) {
-                if (cylSelected) return step * 2.5
-                else return step * 2
+                if (cylSelected) return bodyWidth * 0.62
+                else return bodyWidth * 0.5
             }
-            else return step * 2
+            else return bodyWidth * 0.5
         }
         font.bold: true
         color: "black"
@@ -64,7 +70,7 @@ Rectangle {
         id: empty1
         text: "X"
         anchors.fill: parent
-        font.pixelSize: step * 5
+        font.pixelSize: Math.min(width, height) * 0.8
         font.bold: true
         color: "yellow"
         visible: !cylConnected

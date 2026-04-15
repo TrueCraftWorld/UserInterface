@@ -278,9 +278,27 @@ void ControlCenter::setLinkStm(LinkStm* linkStm)
         connect(m_periphery, &PeriphHandler::sigArgonBlow,
                 m_linkStm, &LinkStm::argonBlow,
                 Qt::QueuedConnection);
+        connect(m_periphery, &PeriphHandler::autoModeChanged,
+                this, [this](int socketId, int mode) {
+            if (m_linkStm.isNull() || m_periphery.isNull()) {
+                return;
+            }
+            QMetaObject::invokeMethod(m_linkStm.data(), "setSocketAutoMode", Qt::QueuedConnection,
+                                      Q_ARG(int, socketId), Q_ARG(quint8, static_cast<quint8>(mode)));
+        }, Qt::QueuedConnection);
+        connect(m_periphery, &PeriphHandler::autoDelayMsChanged,
+                this, [this](int delayMs) {
+            m_autoDelay = delayMs;
+        }, Qt::QueuedConnection);
 
         // Инициализируем все сокеты текущими данными
         initSocketsForPeriphery();
+        m_autoDelay = m_periphery->autoDelayMs();
+        for (int socketId = 0; socketId < 4; ++socketId) {
+            QMetaObject::invokeMethod(m_linkStm.data(), "setSocketAutoMode", Qt::QueuedConnection,
+                                      Q_ARG(int, socketId),
+                                      Q_ARG(quint8, static_cast<quint8>(m_periphery->autoMode(socketId))));
+        }
         
 //        qDebug() << "LinkStm connected to ControlCenter";
     }

@@ -77,7 +77,7 @@ void LinkStm::unpackRxCommand(const QByteArray &rxPacket)
 
     m_rxCommand.data.clear();
 
-    qDebug() << "Rx: " << getHexStr(rxPacket) << "ms: " << m_uart->transmitDelay();
+//    qDebug() << "Rx: " << getHexStr(rxPacket) << "ms: " << m_uart->transmitDelay();  // DEBUG
     emit sigReportRx(getHexStr(rxPacket), m_uart->transmitDelay());
 
     // Проверка длины посылки
@@ -126,7 +126,7 @@ void LinkStm::unpackRxCommand(const QByteArray &rxPacket)
     // Выбираем команду
     m_rxCommand.com = static_cast<RxCommand>(destuffedBuffer.at(1));
 
-//    qDebug() << "rxCom: " << m_rxCommand.com << ": " << QString::number(destuffedBuffer.at(1), 16);
+//    qDebug() << "rxCom: " << m_rxCommand.com << ": " << QString::number(destuffedBuffer.at(1), 16); // DEBUG
     m_rxCommand.data.clear();
     for (int i = 2; i < destuffedBuffer.size() - 2; i++)
         m_rxCommand.data.append(destuffedBuffer.at(i));
@@ -143,7 +143,7 @@ void LinkStm::unpackRxCommand(const QByteArray &rxPacket)
     // Повторяем команду, если ответ не подходящий
     else {
         m_state = STATE_RX_ERR;
-        qDebug() << "не тот ответ от stm";
+//        qDebug() << "не тот ответ от stm";      // DEBUG
         if (m_fwUpdateSessionActive) {
             if (!m_fwRxErrStreakTimer.isValid()) {
                 m_fwRxErrStreakTimer.start();
@@ -156,7 +156,7 @@ void LinkStm::unpackRxCommand(const QByteArray &rxPacket)
     m_waitAnswer = false;
 
     // Логируем время обработки входящего пакета
-//    qDebug() << "unpackRxCommand+checkRxCommand took" << processTimer.elapsed() << "ms";
+//    qDebug() << "unpackRxCommand+checkRxCommand took" << processTimer.elapsed() << "ms";  // DEBUG
 }
 
 // Первичная проверка, то пришло, или нет
@@ -392,7 +392,7 @@ void LinkStm::sendCommand()
    }
    else {
         txStr = getHexStr(txPacket);
-        qDebug() << "Tx: " << getHexStr(txPacket);
+//        qDebug() << "Tx: " << getHexStr(txPacket);   // DEBUG
     }
     
     // Отладочный замер времени от таймера до reportTx удалён
@@ -1037,6 +1037,22 @@ void LinkStm::setAutoSSmode(quint8 mode)
     m_autoSSmode = mode;
 }
 
+void LinkStm::setSocketAutoMode(int socketIndex, quint8 mode)
+{
+    if (socketIndex < 0 || socketIndex > 3) {
+        return;
+    }
+    if (mode > 2) {
+        mode = 2;
+    }
+    m_socketList[socketIndex].autoMode = mode;
+}
+
+void LinkStm::setBiAutoMode(int socketIndex, quint8 mode)
+{
+    setSocketAutoMode(socketIndex, mode);
+}
+
 void LinkStm::setActivCylinderFirst(bool first)
 {
     m_activCylinderFirst = first;
@@ -1068,7 +1084,9 @@ void LinkStm::updateSocketData(int socketIndex, quint16 cutModeNum, quint16 coag
 void LinkStm::updateSocketData(int socketIndex, const Onyx::SocketState& info)
 {
     if (socketIndex >= 0 && socketIndex < 4) {
+        const quint8 savedAutoMode = m_socketList[socketIndex].autoMode;
         m_socketList[socketIndex] = info;
+        m_socketList[socketIndex].autoMode = savedAutoMode;
     }
 }
 

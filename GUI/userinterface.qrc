@@ -4,6 +4,7 @@
         <file>DummySocket.qml</file>
         <file>StatusBar.qml</file>
         <file>SocketEditor.qml</file>
+        <file>EndoChart.qml</file>
         <file>SocketView.qml</file>
         <file>HalfSocket.qml</file>
         <file>InstrumRect.qml</file>

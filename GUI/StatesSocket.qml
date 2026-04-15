@@ -28,25 +28,37 @@ Rectangle {
     property string coagModeName
     property int coagModePower
     property int coagModeId
+    property int _coagAutoDisplayRev: 0
     property int coagMaxPower
     property int coagInstrumNum
     property string coagInstrumName: qsTr("не выбран")
     property bool coagIsEndo: false
 
-    signal modeEditDialogRequest(int socketId, bool isCoag)
-    signal instrumEditDialogRequest(int socketId, bool isCoag)
-    signal newPower(int socketId, int pwr, bool isCoag)
-    signal socketExpandRequest()
-    signal socketCollapseRequest()
+    signal socketEditorRequest(int socketId, bool isCoag)
 
-    state: "expanded"
+    readonly property string coagModeNameForDisplay: {
+        var _ = _coagAutoDisplayRev
+        var a = periphHandle.autoMode(socketId)
+        var base = coagModeName
+        if (coagModeId === 5) {
+            if (a === 1)
+                return base + qsTr(" АВТОСТОП")
+            if (a === 2)
+                return base + qsTr(" АВТОСТАРТ/СТОП")
+        }
+        if (coagModeId === 21 && socketId >= 2 && socketId <= 3 && a === 1)
+            return base + qsTr(" АВТОСТОП")
+        return base
+    }
+
+    state: "collapsed"
 
     onSocketStateChanged: {
 //        console.log("socketState", socketState)
         if (socketState === socketStateActiveCoag) {
             activationIndicator.socketName = title
             activationIndicator.isCoag = true
-            activationIndicator.modeName = coagModeName
+            activationIndicator.modeName = coagModeNameForDisplay
             activationIndicator.power = coagModePower
             activationIndicator.isEndo = coagIsEndo
 //            console.log("Activation: socketName=", title, "modeName=", coagModeName, "power=", coagModePower, "isEndo=", coagIsEndo)
@@ -64,20 +76,6 @@ Rectangle {
         }
     }
 
-    // MouseArea для всего сокета - переход в expanded
-   MouseArea {
-       id: socketMouseArea
-       anchors.fill: parent
-       onClicked: {
-           if (socketRoot.state === "collapsed") {
-               socketRoot.socketExpandRequest()
-           }
-       }
-       // Не перехватываем события от дочерних элементов
-       propagateComposedEvents: true
-       enabled: socketRoot.state === "collapsed"
-   }
-
     HalfSocket {
         id:         leftRect
         isCoag:     false
@@ -90,28 +88,16 @@ Rectangle {
         instrumName:socketRoot.cutInstrumName
         isEndo:     socketRoot.cutIsEndo
 
-        // Перехватываем события от HalfSocket только для разворачивания
         MouseArea {
-            id: leftOverlayMouseArea
             anchors.fill: parent
-            propagateComposedEvents: true
-            onClicked: {
-                if (socketRoot.state === "collapsed") {
-                    socketRoot.socketExpandRequest()
-                    mouse.accepted = true // Останавливаем распространение события
-                } else {
-                    mouse.accepted = false // Пропускаем событие дальше
-                }
-            }
-            // Не перехватываем события, если сокет уже развернут
-            enabled: socketRoot.state === "collapsed"
+            onClicked: socketRoot.socketEditorRequest(socketRoot.socketId, false)
         }
     }
     HalfSocket {
         id:         rightRect
         isCoag:     true
         state:      socketRoot.state
-        modeName:   socketRoot.coagModeName
+        modeName:   socketRoot.coagModeNameForDisplay
         modePower:  socketRoot.coagModePower
         modeId:     socketRoot.coagModeId
         maxPower:   socketRoot.coagMaxPower
@@ -119,120 +105,48 @@ Rectangle {
         instrumName:socketRoot.coagInstrumName
         isEndo:     socketRoot.coagIsEndo
 
-        // Перехватываем события от HalfSocket только для разворачивания
         MouseArea {
-            id: rightOverlayMouseArea
             anchors.fill: parent
-            propagateComposedEvents: true
-            onClicked: {
-                if (socketRoot.state === "collapsed") {
-                    socketRoot.socketExpandRequest()
-                    mouse.accepted = true // Останавливаем распространение события
-                } else {
-                    mouse.accepted = false // Пропускаем событие дальше
-                }
-            }
-            // Не перехватываем события, если сокет уже развернут
-            enabled: socketRoot.state === "collapsed"
+            onClicked: socketRoot.socketEditorRequest(socketRoot.socketId, true)
         }
     }
 
-    Rectangle {
-        id: middleRect
-        color: "green"
-        width: fontMetrics.advanceWidth("MONO 22")
-        height: 60
+//    Rectangle {
+//        id: middleRect
+//        color: "green"
+//        width: fontMetrics.advanceWidth("MONO 22")
+//        height: 60
 
-        Label {
-            id: socketNameLabel
-            anchors.fill: parent
-            anchors.margins: 10
-            text: title
-            color: "white"
-            font.pixelSize: 24
-            font.bold: true
-            horizontalAlignment: Qt.AlignHCenter
-            verticalAlignment: Qt.AlignTop
-        }
-        FontMetrics {
-            id: fontMetrics
-            font: socketNameLabel.font
-        }
-        MouseArea {
-            anchors.fill: parent
-            onClicked: {
-                if (socketRoot.state === "collapsed") {
-                    socketRoot.socketExpandRequest()
-                } else {
-                    socketRoot.socketCollapseRequest()
-                }
-            }
-        }
+//        Label {
+//            id: socketNameLabel
+//            anchors.fill: parent
+//            anchors.margins: 10
+//            text: title
+//            color: "white"
+//            font.pixelSize: 24
+//            font.bold: true
+//            horizontalAlignment: Qt.AlignHCenter
+//            verticalAlignment: Qt.AlignTop
+//        }
+//        FontMetrics {
+//            id: fontMetrics
+//            font: socketNameLabel.font
+//        }
+//        MouseArea {
+//            anchors.fill: parent
+//            onClicked: socketRoot.socketEditorRequest(socketRoot.socketId, false)
+//        }
 
-        // Треугольник, указывающий вверх (для сворачивания)
-        Canvas {
-            id: collapseTriangle
-            width: 60
-            height: 30
-            anchors.bottom: parent.bottom
-            anchors.horizontalCenter: parent.horizontalCenter
-            anchors.bottomMargin: 20
-            visible: socketRoot.state === "expanded"
-
-            onPaint: {
-                var ctx = getContext("2d")
-                ctx.reset()
-                ctx.fillStyle = "lightgray"
-                ctx.beginPath()
-                // Треугольник, направленный вверх
-                ctx.moveTo(width / 2, 0)           // Верхняя точка (середина)
-                ctx.lineTo(width, height)           // Правая нижняя точка
-                ctx.lineTo(0, height)               // Левая нижняя точка
-                ctx.closePath()
-                ctx.fill()
-            }
-        }
-    }
+//    }
     Activation {
         id: activationIndicator
         parent: socketRoot
     }
-    
 
     Connections {
-        target: rightRect
-        function onNewPower(pwr) {
-            socketRoot.newPower(socketRoot.socketId, pwr, true)
-        }
-    }
-    Connections {
-        target: rightRect
-        function onModeEditDialogRequest() {
-            socketRoot.modeEditDialogRequest(socketRoot.socketId, true)
-        }
-    }
-    Connections {
-        target: rightRect
-        function onInstrumEditDialogRequest() {
-            socketRoot.instrumEditDialogRequest(socketRoot.socketId, true)
-        }
-    }
-    Connections {
-        target: leftRect
-        function onNewPower(pwr) {
-            socketRoot.newPower(socketRoot.socketId, pwr, false)
-        }
-    }
-    Connections {
-        target: leftRect
-        function onModeEditDialogRequest() {
-            socketRoot.modeEditDialogRequest(socketRoot.socketId, false)
-        }
-    }
-    Connections {
-        target: leftRect
-        function onInstrumEditDialogRequest() {
-            socketRoot.instrumEditDialogRequest(socketRoot.socketId, false)
+        target: periphHandle
+        function onAutoModeChanged(socketId, mode) {
+            socketRoot._coagAutoDisplayRev++
         }
     }
 
@@ -264,42 +178,6 @@ Rectangle {
             AnchorChanges {
                 target: rightRect
                 anchors.left: middleRect.right
-                anchors.right: parent.right
-                anchors.top: parent.top
-                anchors.bottom: parent.bottom
-            }
-        },
-        // Развернутое состояние
-        State {
-            name: "expanded"
-            AnchorChanges {
-                target: middleRect
-                anchors.horizontalCenter: undefined
-                anchors.left: undefined
-                anchors.right: undefined
-//                anchors.left: parent.left
-//                anchors.right: parent.right
-                anchors.top: parent.top
-                anchors.bottom: undefined
-            }
-            PropertyChanges {
-                target: middleRect
-                color: "transparent"
-                height: rightRect.height * .4
-//                height: fontMetrics.height + socketNameLabel.anchors.margins
-            }
-
-            AnchorChanges {
-                target: leftRect
-                anchors.left: parent.left
-                anchors.right: parent.horizontalCenter
-                anchors.top: parent.top
-                anchors.bottom: parent.bottom
-            }
-
-            AnchorChanges {
-                target: rightRect
-                anchors.left: parent.horizontalCenter
                 anchors.right: parent.right
                 anchors.top: parent.top
                 anchors.bottom: parent.bottom

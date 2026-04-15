@@ -18,7 +18,9 @@ PeriphHandler::PeriphHandler(QObject *parent)
     m_enableActivation(true),
     m_activation(false),
     m_activationStopWarningVisible(false),
-    m_activationStopWarningCode(-1)
+    m_activationStopWarningCode(-1),
+    m_socketAutoModes{0, 0, 0, 0},
+    m_autoDelayMs(0)
 {
 
 }
@@ -157,6 +159,21 @@ int PeriphHandler::activationStopWarningCode() const
     return m_activationStopWarningCode;
 }
 
+int PeriphHandler::bi1AutoMode() const
+{
+    return m_socketAutoModes[0];
+}
+
+int PeriphHandler::bi2AutoMode() const
+{
+    return m_socketAutoModes[1];
+}
+
+int PeriphHandler::autoDelayMs() const
+{
+    return m_autoDelayMs;
+}
+
 bool PeriphHandler::neutralElDivided() const
 {
 	return m_neutralElDivided;
@@ -227,4 +244,80 @@ void PeriphHandler::clearActivationStopWarning()
     m_activationStopWarningVisible = false;
     m_activationStopWarningCode = -1;
     emit activationStopWarningChanged();
+}
+
+int PeriphHandler::biAutoMode(int socketId) const
+{
+    if (socketId < 0 || socketId > 1) {
+        return 0;
+    }
+    return m_socketAutoModes[socketId];
+}
+
+void PeriphHandler::setBiAutoMode(int socketId, int mode)
+{
+    if (socketId < 0 || socketId > 1) {
+        return;
+    }
+    setAutoMode(socketId, mode);
+}
+
+int PeriphHandler::autoMode(int socketId) const
+{
+    if (socketId < 0 || socketId > 3) {
+        return 0;
+    }
+    return m_socketAutoModes[socketId];
+}
+
+void PeriphHandler::setAutoMode(int socketId, int mode)
+{
+    if (socketId < 0 || socketId > 3) {
+        return;
+    }
+    int bounded = mode;
+    if (bounded < 0) {
+        bounded = 0;
+    } else if (bounded > 2) {
+        bounded = 2;
+    }
+    const quint8 clamped = static_cast<quint8>(bounded);
+    if (m_socketAutoModes[socketId] == clamped) {
+        return;
+    }
+    m_socketAutoModes[socketId] = clamped;
+    emit autoModeChanged(socketId, static_cast<int>(clamped));
+
+    if (socketId <= 1 && clamped == 2) {
+        const int otherBiSocket = socketId == 0 ? 1 : 0;
+        if (m_socketAutoModes[otherBiSocket] == 2) {
+            m_socketAutoModes[otherBiSocket] = 0;
+            emit autoModeChanged(otherBiSocket, 0);
+        }
+    }
+
+    if (socketId <= 1) {
+        emit biAutoModeChanged();
+    }
+}
+
+void PeriphHandler::setAutoDelayMs(int delayMs)
+{
+    int normalized = delayMs;
+    if (normalized < 0) {
+        normalized = 0;
+    } else if (normalized > 1500) {
+        normalized = 1500;
+    }
+    if (normalized == 0 || normalized == 500 || normalized == 1000 || normalized == 1500) {
+        // valid values
+    } else {
+        normalized = 0;
+    }
+
+    if (m_autoDelayMs == normalized) {
+        return;
+    }
+    m_autoDelayMs = normalized;
+    emit autoDelayMsChanged(m_autoDelayMs);
 }

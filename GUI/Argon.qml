@@ -132,22 +132,22 @@ Rectangle {
         Text {
             id: arLabel
             anchors.top: parent.top
-            anchors.topMargin: 5
+            anchors.topMargin: showControls ? 5 : 7
             anchors.horizontalCenter: parent.horizontalCenter
-            text: showControls ? qsTr("РАСХОД АРГОНА") : "Ar"
-            font.pixelSize: 24
+            text: showControls ? qsTr("РАСХОД АРГОНА") : qsTr("АРГОН")
+            font.pixelSize: showControls ? 24 : 18
             font.bold: true
-            color: "#2c2c2c"
+            color: showControls ? "#2c2c2c" : "white"
         }
 
         ArgCylinder {
             id: firstCylinder
             isFirst: true;
-            width: 85
-            height: step * 12.5
+            width: showControls ? 85 : Math.min(44, (parent.width - 8) / 2)
+            height: showControls ? (step * 12.5) : (step * 9.5)
             anchors.top: arLabel.bottom
-            anchors.topMargin: 8
-            x: showControls ? 100 : (parent.width - width) / 2
+            anchors.topMargin: showControls ? 8 : 7
+            x: showControls ? 100 : 2
             cylConnected: cylinder1Connected
             cylSelected: activCylinderFirst
             interactive: showControls  // Баллоны кликабельны только в развернутом состоянии
@@ -163,47 +163,66 @@ Rectangle {
             }
         }
 
-        // Кнопки увеличения над индикатором расхода
-        Row {
-            id: increaseButtons
+        // Кнопка +10
+        CustomButton {
+            id: plus10BtnNew
+            width: buttonStep * 6
+            height: buttonStep * 3.5
             anchors.bottom: argonFlowRect.top
             anchors.bottomMargin: 5
             anchors.horizontalCenter: parent.horizontalCenter
-            spacing: 10
+            delta: 10
+            iconText: "▲"
             visible: showControls
-//            z: 100
-            
-            // Кнопка +10
-            CustomButton {
-                id: plus10BtnNew
-                width: buttonStep * 6
-                height: buttonStep * 3.5
-                delta: 10
-                iconText: "▲"
-                onClicked: {
-                    var newRate = flowRate + delta
-                    if (newRate <= maxFlowRate) {
-                        isUserChange = true  // Устанавливаем флаг перед изменением
-                        flowRate = newRate
-                    }
-                }
-            }
-            CustomButton {
-                id: plus1BtnNew
-                width: buttonStep * 6
-                height: buttonStep * 3.5
-                delta: 1
-                iconText: "▲"
-                onClicked: {
-                    var newRate = flowRate + delta
-                    if (newRate <= maxFlowRate) {
-                        isUserChange = true  // Устанавливаем флаг перед изменением
-                        flowRate = newRate
-                    }
-//                    console.log("Argon flowrate: ", flowRate, " ▲ 1");
+            onClicked: {
+                var newRate = flowRate + delta
+                if (newRate <= maxFlowRate) {
+                    isUserChange = true  // Устанавливаем флаг перед изменением
+                    flowRate = newRate
                 }
             }
         }
+//        // Кнопки увеличения над индикатором расхода
+//        Row {
+//            id: increaseButtons
+//            anchors.bottom: argonFlowRect.top
+//            anchors.bottomMargin: 5
+//            anchors.horizontalCenter: parent.horizontalCenter
+//            spacing: 10
+//            visible: showControls
+////            z: 100
+            
+//            // Кнопка +10
+//            CustomButton {
+//                id: plus10BtnNew
+//                width: buttonStep * 6
+//                height: buttonStep * 3.5
+//                delta: 10
+//                iconText: "▲"
+//                onClicked: {
+//                    var newRate = flowRate + delta
+//                    if (newRate <= maxFlowRate) {
+//                        isUserChange = true  // Устанавливаем флаг перед изменением
+//                        flowRate = newRate
+//                    }
+//                }
+//            }
+//            CustomButton {
+//                id: plus1BtnNew
+//                width: buttonStep * 6
+//                height: buttonStep * 3.5
+//                delta: 1
+//                iconText: "▲"
+//                onClicked: {
+//                    var newRate = flowRate + delta
+//                    if (newRate <= maxFlowRate) {
+//                        isUserChange = true  // Устанавливаем флаг перед изменением
+//                        flowRate = newRate
+//                    }
+////                    console.log("Argon flowrate: ", flowRate, " ▲ 1");
+//                }
+//            }
+//        }
 
         // Расход
         Rectangle {
@@ -212,7 +231,7 @@ Rectangle {
             height: step * 4
             // anchors.top: showControls ? arLabel.bottom : firstCylinderRect.bottom
             anchors.top: showControls ? arLabel.bottom : firstCylinder.bottom
-            anchors.topMargin: showControls ? (step * 4) : 0
+            anchors.topMargin: showControls ? (step * 4) : 4
             anchors.left: showControls ? undefined : parent.left
             anchors.horizontalCenter: showControls ? parent.horizontalCenter : undefined
             color: "transparent"
@@ -223,7 +242,8 @@ Rectangle {
                 anchors.horizontalCenter: parent.horizontalCenter
                 // Во время активации показываем реальный расход, иначе установленный
                 property int displayRate: isActivation ? realFlowRate : flowRate
-                text: Math.floor(displayRate / 10) + "." + (displayRate % 10)
+                text: Math.floor(displayRate / 10)
+//                text: Math.floor(displayRate / 10) + "." + (displayRate % 10)
                 font.pixelSize: step * 3
                 font.bold: true
                 // В развернутом виде — тёмный текст, в свернутом (PeripheryPanel) — светлый для тёмного фона
@@ -241,57 +261,78 @@ Rectangle {
                 color: argonRoot.showControls ? "#2c2c2c" : "white"
             }
         }
-        
-        // Кнопки уменьшения под индикатором расхода
-        Row {
-            id: decreaseButtons
+
+        // Кнопка -10
+        CustomButton {
+            id: minus10BtnNew
+            width: buttonStep * 6
+            height: buttonStep * 3.5
             anchors.top: argonFlowRect.bottom
             anchors.topMargin: 25
             anchors.horizontalCenter: parent.horizontalCenter
-            spacing: 10
+            delta: -10
+            iconText: "▼"
             visible: showControls
-//            z: 100
-            
-            // Кнопка -10
-            CustomButton {
-                id: minus10BtnNew
-                width: buttonStep * 6
-                height: buttonStep * 3.5
-                delta: -10
-                iconText: "▼"
-                onClicked: {
-                    var newRate = flowRate + delta
-                    if (newRate >= 0) {
-                        isUserChange = true  // Устанавливаем флаг перед изменением
-                        flowRate = newRate
-                    }
+            onClicked: {
+                var newRate = flowRate + delta
+                if (newRate > 0) {
+                    isUserChange = true  // Устанавливаем флаг перед изменением
+                    flowRate = newRate
+                }
 //                    console.log("Argon flowrate: ", flowRate, " ▼ 10");
-                }
-            }
-            CustomButton {
-                id: minus1BtnNew
-                width: buttonStep * 6
-                height: buttonStep * 3.5
-                delta: -1
-                iconText: "▼"
-                onClicked: {
-                    var newRate = flowRate + delta
-                    if (newRate >= 0) {
-                        isUserChange = true  // Устанавливаем флаг перед изменением
-                        flowRate = newRate
-                    }
-//                    console.log("Argon flowrate: ", flowRate, " ▼ 1");
-                }
             }
         }
+        
+//        // Кнопки уменьшения под индикатором расхода
+//        Row {
+//            id: decreaseButtons
+//            anchors.top: argonFlowRect.bottom
+//            anchors.topMargin: 25
+//            anchors.horizontalCenter: parent.horizontalCenter
+//            spacing: 10
+//            visible: showControls
+////            z: 100
+            
+//            // Кнопка -10
+//            CustomButton {
+//                id: minus10BtnNew
+//                width: buttonStep * 6
+//                height: buttonStep * 3.5
+//                delta: -10
+//                iconText: "▼"
+//                onClicked: {
+//                    var newRate = flowRate + delta
+//                    if (newRate >= 0) {
+//                        isUserChange = true  // Устанавливаем флаг перед изменением
+//                        flowRate = newRate
+//                    }
+////                    console.log("Argon flowrate: ", flowRate, " ▼ 10");
+//                }
+//            }
+//            CustomButton {
+//                id: minus1BtnNew
+//                width: buttonStep * 6
+//                height: buttonStep * 3.5
+//                delta: -1
+//                iconText: "▼"
+//                onClicked: {
+//                    var newRate = flowRate + delta
+//                    if (newRate >= 0) {
+//                        isUserChange = true  // Устанавливаем флаг перед изменением
+//                        flowRate = newRate
+//                    }
+////                    console.log("Argon flowrate: ", flowRate, " ▼ 1");
+//                }
+//            }
+//        }
 
         ArgCylinder {
             id: secondCylinder
-            width: showControls ? (step * 7) : parent.width
-            height: step * 12.5
-            anchors.top: showControls ? arLabel.bottom : argonFlowRect.bottom
-            anchors.topMargin: showControls ? 8 : 25
-            x: showControls ? (parent.width - width - 100) : (parent.width - width) / 2
+            width: firstCylinder.width
+            height: firstCylinder.height
+            anchors.top: arLabel.bottom
+            anchors.topMargin: showControls ? 8 : 7
+            x: showControls ? (parent.width - width - 100) : (parent.width - width - 2)
             isFirst: false;
             cylConnected: cylinder2Connected
             cylSelected: !activCylinderFirst

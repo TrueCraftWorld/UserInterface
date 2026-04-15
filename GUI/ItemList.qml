@@ -16,14 +16,16 @@ Rectangle {
     
     // Функции для прокрутки списка
     function scrollUp() {
-        if (theView.currentIndex > 3) {
-            theView.currentIndex -= 3
+        if (theView.currentIndex > 0) {
+            theView.currentIndex -= 1
+            theView.positionViewAtIndex(theView.currentIndex, ListView.Beginning)
         }
     }
     
     function scrollDown() {
-        if (theView.currentIndex < theView.count - 3) {
-            theView.currentIndex += 2
+        if (theView.currentIndex < theView.count - 1) {
+            theView.currentIndex += 1
+            theView.positionViewAtIndex(theView.currentIndex, ListView.Beginning)
         }
     }
     ColumnLayout {
@@ -42,14 +44,19 @@ Rectangle {
             displayMarginEnd: 15
             spacing: 10
             clip: true
+            onCurrentIndexChanged: {
+                if (currentIndex >= 0 && currentIndex < count) {
+                    positionViewAtIndex(currentIndex, ListView.Beginning)
+                    itemList.newIndexSelected(currentIndex)
+                }
+            }
 
             delegate: Rectangle {
                 property bool isSelected: (index === curIndex)
-                property bool isInitial: (index === initialIndex)
                 height: 100
                 width: ListView.view.width
                 radius: 8
-                color: "transparent"
+                color: isSelected ? "white" : "transparent"
                 Rectangle {
                     id: itemImageRectBorder
                     width: 10
@@ -130,7 +137,7 @@ Rectangle {
                         wrapMode: Text.WordWrap
                         font.bold: true
                         font.pixelSize: 18
-                        color: "white"
+                        color: isSelected ? "black" : "white"
                     }
                 }
                 Rectangle {
@@ -151,18 +158,14 @@ Rectangle {
                     id: selectionBorder
                     anchors.fill: parent
                     color: "transparent"
-                    border.width: (isSelected || (isInitial && !isSelected)) ? 3 : 0
+                    border.width: 0
                     radius: 8
-                    // Розовая рамка только для изначального элемента, если он не выбран сейчас
-                    // Белая рамка для текущего выбранного элемента
-                    border.color: (isInitial && !isSelected) ? "grey" : "white"
                 }
 
                 MouseArea {
                     anchors.fill: parent
                     onClicked: {
                         theView.currentIndex = index
-                        itemList.newIndexSelected(index)
                     }
                 }
             }

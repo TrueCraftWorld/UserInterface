@@ -6,33 +6,33 @@ Rectangle {
 
     signal progAddRequest(int type)
     property var innerModel
-    property alias modeDialogOpened: modeDialog.opened
-    property alias instrDialogOpened: instrDialog.opened
+    property alias socketEditorOpened: socketEditor.opened
     color: "gray"
     
     ColumnLayout {
         id: layout
         anchors.fill: parent
-        anchors.topMargin: 10
+        anchors.topMargin: 5
         anchors.bottomMargin: 0
         anchors.leftMargin: 5
         anchors.rightMargin: 5
         spacing: 10
         Rectangle {
             id: progPage
-            height: 30
+            height: 50
             Layout.fillWidth: true
             color: "transparent"
             RowLayout {
                 anchors.fill: parent
+                spacing: 20
                 Item {
                     Layout.fillWidth: true
                 }
                 Repeater {
                     model: theModel.subProgCount
                     delegate: Rectangle {
-                        height: 27
-                        width: 40
+                        height: parent.height
+                        width: 60
                         color: index === theModel.subProgIdx ? "white" : "black"
                         border.color: "white"
                         border.width: 1
@@ -53,8 +53,8 @@ Rectangle {
                 }
                 Rectangle {
                     id: progAddSign
-                    height: 27
-                    width: 40
+                    height: parent.height
+                    width: 60
                     color: "black"
                     border.color: "white"
                     border.width: 1
@@ -82,7 +82,7 @@ Rectangle {
                 }
                 Rectangle {
                     id: progDeleteSign
-                    height: 27
+                    height: parent.height
                     width: 40*5
                     color: "black"
                     border.color: "red"
@@ -117,11 +117,8 @@ Rectangle {
         }
     }
 
-    InstrumEditor {
-        id: instrDialog
-    }
-    ModeEditor {
-        id: modeDialog
+    SocketEditor {
+        id: socketEditor
     }
     ProgAdditionPop {
         id: progSelector
@@ -138,19 +135,13 @@ Rectangle {
         }
     }
     Connections {
-        target: instrDialog
-        function onClosed() {
-            periphHandle.enableActivation = true;
-        }
-    }
-    Connections {
         target: progSelector
         function onClosed() {
             periphHandle.enableActivation = true;
         }
     }
     Connections {
-        target: modeDialog
+        target: socketEditor
         function onClosed() {
             periphHandle.enableActivation = true;
         }
@@ -158,19 +149,12 @@ Rectangle {
 
     Connections {
         target: repeat
-        function onInstrumDialogRequest(soc, mod, iscoag) {
-            instrDialog.socId = soc
-            instrDialog.modeIndex = mod
-            instrDialog.isCoag = iscoag
+        function onSocketEditorRequest(soc, mod, iscoag) {
+            socketEditor.socId = soc
+            socketEditor.modeIndex = mod
+            socketEditor.isCoag = iscoag
             periphHandle.enableActivation = false;
-            instrDialog.open()
-        }
-        function onModeDialogRequest(soc, mod, iscoag) {
-            modeDialog.socId = soc
-            modeDialog.modeIndex = mod
-            modeDialog.isCoag = iscoag
-            periphHandle.enableActivation = false;
-            modeDialog.open()
+            socketEditor.open()
         }
     }
 }

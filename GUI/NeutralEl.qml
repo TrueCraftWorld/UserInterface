@@ -95,7 +95,7 @@ Rectangle {
 
     NeutralButton {
         id: neutralImage
-
+        visible: !showControls
         borderColor: "purple"
         borderWidth: 3
         divided: neutralDivided
@@ -104,9 +104,10 @@ Rectangle {
 
         anchors.left: parent.left
         anchors.bottom: parent.bottom
-        anchors.bottomMargin: showControls ? 10 : 0  // Отступ только в режиме с контролами
+//        anchors.bottomMargin: showControls ? 10 : 0  // Отступ только в режиме с контролами
         height: parent.height
-        width: showControls ? 160 : parent.width
+        width: parent.width
+//        width: showControls ? 160 : parent.width
         button: false
         innerTextFontSize: showControls ? 18 : 14  // Меньший шрифт в компактном режиме (PeripheryPanel)
         innerText: {
@@ -124,8 +125,8 @@ Rectangle {
     Rectangle {
         id: neutralControlContainer
         anchors {
-            left: neutralImage.right
-            bottom: neutralImage.bottom
+            left: parent.left
+            bottom: parent.bottom
             right: parent.right
             leftMargin: 5
             rightMargin: 5

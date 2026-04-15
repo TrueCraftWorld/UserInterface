@@ -72,6 +72,7 @@ private:
 	QPointer<ProgLoader> m_progLoader;
 	QPointer<PeriphHandler> m_periphery;
 	QPointer<LinkStm> m_linkStm;
+    int m_autoDelay = 0; // Задержка автозапуска в мс (runtime)
 
 	QTimer* m_saveTimer = nullptr;  // Таймер для отложенного сохранения
 

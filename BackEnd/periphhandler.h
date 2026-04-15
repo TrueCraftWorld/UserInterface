@@ -21,6 +21,9 @@ class PeriphHandler : public QObject
 	Q_PROPERTY(bool activation READ activation NOTIFY activationChanged)
 	Q_PROPERTY(bool activationStopWarningVisible READ activationStopWarningVisible NOTIFY activationStopWarningChanged)
 	Q_PROPERTY(int activationStopWarningCode READ activationStopWarningCode NOTIFY activationStopWarningChanged)
+    Q_PROPERTY(int bi1AutoMode READ bi1AutoMode NOTIFY biAutoModeChanged)
+    Q_PROPERTY(int bi2AutoMode READ bi2AutoMode NOTIFY biAutoModeChanged)
+    Q_PROPERTY(int autoDelayMs READ autoDelayMs WRITE setAutoDelayMs NOTIFY autoDelayMsChanged)
 public:
 	explicit PeriphHandler(QObject * parent = nullptr);
 
@@ -115,6 +118,9 @@ public:
 	bool activation() const;
 	bool activationStopWarningVisible() const;
 	int activationStopWarningCode() const;
+    int bi1AutoMode() const;
+    int bi2AutoMode() const;
+    int autoDelayMs() const;
 
 	/**
 	 * @brief Запускает продувку аргона
@@ -122,6 +128,11 @@ public:
 	 */
 	Q_INVOKABLE void argonBlow();
 	Q_INVOKABLE void clearActivationStopWarning();
+    Q_INVOKABLE int biAutoMode(int socketId) const;
+    Q_INVOKABLE void setBiAutoMode(int socketId, int mode);
+    Q_INVOKABLE int autoMode(int socketId) const;
+    Q_INVOKABLE void setAutoMode(int socketId, int mode);
+    Q_INVOKABLE void setAutoDelayMs(int delayMs);
 
 public slots:
 	void unitStateHandler(Onyx::UnitState state);
@@ -145,6 +156,8 @@ private:
 	bool m_activation;                      // Активация выполняется
 	bool m_activationStopWarningVisible;
 	int m_activationStopWarningCode;
+    quint8 m_socketAutoModes[4];
+    int m_autoDelayMs;
 
 signals:
 	void neutralElConnectedChanged(bool connected);
@@ -159,6 +172,9 @@ signals:
 	void enableActivationChanged(bool enable);
 	void activationChanged(bool active);
 	void activationStopWarningChanged();
+    void biAutoModeChanged();
+    void autoModeChanged(int socketId, int mode);
+    void autoDelayMsChanged(int delayMs);
 
 };
 

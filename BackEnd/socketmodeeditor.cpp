@@ -19,6 +19,15 @@ void SocketModeEditor::initialize(int socket, int mode, bool isCoag)
     m_modeNameIds = m_model->modeNamesIds(socket, isCoag);
     // m_modeNameNums = m_model->
 
+    const int modelModeIndex = m_model->index(socket, 0).data(
+                                   m_isCoag ? SocketModel::CoagModeIndex
+                                            : SocketModel::CutModeIndex).toInt();
+    if (modelModeIndex >= 0 && modelModeIndex < m_modeNames.size()) {
+        mode = modelModeIndex;
+    } else if (mode >= m_modeNames.size()) {
+        mode = 0;
+    }
+
     m_originalParameters =  m_model->modeParam(socket, mode, isCoag);
     m_instrList =           m_model->instrumNames(socket, mode, isCoag);
     m_instrListIds =        m_model->instrumNamesIds(socket, mode, isCoag);
@@ -29,12 +38,17 @@ void SocketModeEditor::initialize(int socket, int mode, bool isCoag)
 
     m_currentModeIndex = m_originalModeIndex;
     m_currentParameters = m_originalParameters;
+    m_preferredInstrId = m_model->selectedInstrumIdByMode(m_socketID, m_currentModeIndex, m_isCoag);
+    if (m_preferredInstrId <= 0 || m_preferredInstrId == 1000) {
+        m_preferredInstrId = -1;
+    }
 
     setCurrentInstrIndex(m_model->index(socket,0).data(m_isCoag ? SocketModel::CoagModeInstrIndex
                                                                : SocketModel::CutModeInstrIndex).toInt());
 
     m_hasChanges = false;
-    // emit currentModeIndexChanged();  // Уведомляем об изменении режима (включая isEndo)
+    m_autoModeDirty = false;
+    emit currentModeIndexChanged();
     emit parametersLoaded();
     emit currentParamsChanged();
 }
@@ -75,15 +89,23 @@ void SocketModeEditor::updateParameter(const QString &paramName, const QVariant 
 
 void SocketModeEditor::commitChanges()
 {
-    const bool success =
-            (m_model->commitModeChange(m_socketID,
-                                       m_currentModeIndex,
-                                       m_currentParameters));
+    const bool modelOk = m_model->commitModeChange(m_socketID,
+                                                   m_currentModeIndex,
+                                                   m_currentParameters);
+    const bool success = modelOk || m_autoModeDirty;
+    if (success) {
+        m_hasChanges = false;
+        m_autoModeDirty = false;
+        emit hasChangesChanged();
+    }
     emit editingFinished(success);
 }
 
 void SocketModeEditor::rollBack()
 {
+    m_hasChanges = false;
+    m_autoModeDirty = false;
+    emit hasChangesChanged();
     emit editingFinished(false);
 }
 
@@ -109,9 +131,26 @@ int SocketModeEditor::currentModeIndex() const
 
 void SocketModeEditor::setCurrentModeIndex(int index)
 {
-    if (m_modeNames.size() >= index) {
+    if (index >= 0 && index < m_modeNames.size()) {
+        int prevInstrId = -1;
+        if (m_currentInstrIndex >= 0 && m_currentInstrIndex < m_instrListIds.size()) {
+            bool ok = false;
+            const int parsedId = m_instrListIds.at(m_currentInstrIndex).toInt(&ok);
+            if (ok) {
+                prevInstrId = parsedId;
+            }
+        }
+        if (prevInstrId <= 0 || prevInstrId == 1000) {
+            prevInstrId = m_preferredInstrId;
+        }
         m_currentModeIndex = index;
         loadModeParameters(index);
+        if (prevInstrId > 0 && prevInstrId != 1000) {
+            const int sameInstrIndex = m_instrListIds.indexOf(QString::number(prevInstrId));
+            if (sameInstrIndex >= 0) {
+                setCurrentInstrIndex(sameInstrIndex);
+            }
+        }
         checkChanges();
         emit currentModeIndexChanged();
         emit currentParamsChanged();
@@ -216,7 +255,16 @@ bool SocketModeEditor::isCoag() const
 
 bool SocketModeEditor::hasChanges() const
 {
-    return m_hasChanges;
+    return m_hasChanges || m_autoModeDirty;
+}
+
+void SocketModeEditor::setAutoModeDirty(bool dirty)
+{
+    if (m_autoModeDirty == dirty) {
+        return;
+    }
+    m_autoModeDirty = dirty;
+    emit hasChangesChanged();
 }
 
 int SocketModeEditor::currentInstrIndex() const
@@ -227,6 +275,13 @@ int SocketModeEditor::currentInstrIndex() const
 void SocketModeEditor::setCurrentInstrIndex(int newCurrentInstrIndex)
 {
     m_currentInstrIndex = newCurrentInstrIndex;
+    if (m_currentInstrIndex >= 0 && m_currentInstrIndex < m_instrListIds.size()) {
+        bool ok = false;
+        const int selectedInstrId = m_instrListIds.at(m_currentInstrIndex).toInt(&ok);
+        if (ok && selectedInstrId > 0 && selectedInstrId != 1000) {
+            m_preferredInstrId = selectedInstrId;
+        }
+    }
     updateParameter("instrindex", m_currentInstrIndex);
     CSurgModePtr mode = m_model->socketById(m_socketID)->getMode(m_currentModeIndex, m_isCoag);
     if (mode.isNull())

@@ -224,6 +224,8 @@ public slots:
     void setEnableActivation(bool enable);
     void setNeutralElDivided(bool divided);
     void setAutoSSmode(quint8 mode);
+    void setSocketAutoMode(int socketIndex, quint8 mode);
+    void setBiAutoMode(int socketIndex, quint8 mode);
     void setActivCylinderFirst(bool first);
     void setArgonFlowRate(quint8 rate);
     void updateSocketData(int socketIndex, quint16 cutModeNum, quint16 coagModeNum, 

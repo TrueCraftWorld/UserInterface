@@ -33,6 +33,7 @@ Popup {
     property int socketAutoModeState: 0
     readonly property int controlButtonHeight: 72
     readonly property int recommendedButtonHeight: 90
+    readonly property int recommendedEndoButtonHeight: 70
     readonly property color powerStepButtonBg: isCoag ? "#1565C0" : "#F9D648"
     readonly property color powerStepButtonText: isCoag ? "white" : "#111111"
     readonly property int powerStepButtonWidth: 96
@@ -367,9 +368,10 @@ Popup {
             anchors.left: parent.left
             anchors.right: parent.right
             anchors.margins: 16
-            spacing: 18
+            spacing: 9
 
             Rectangle {
+                id: modeRect
                 Layout.fillHeight: true
                 Layout.preferredWidth: 320
                 color: "transparent"
@@ -449,6 +451,97 @@ Popup {
             }
 
             Rectangle {
+                Layout.fillHeight: true
+                Layout.preferredWidth: 1
+                color: "#55FFFFFF"
+            }
+
+            Rectangle {
+                Layout.fillHeight: true
+                Layout.preferredWidth: 320
+                color: "transparent"
+
+                Label {
+                    text: previewRect.visible ? qsTr("Выберите инструмент") : qsTr("Инструмент")
+                    anchors.top: parent.top
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    font.pixelSize: 20
+                    font.bold: true
+                    color: previewRect.visible ? "white" : uiMidGray
+                }
+
+                ItemList {
+                    id: instrListView
+                    anchors.top: parent.top
+                    anchors.topMargin: 28
+                    anchors.left: parent.left
+                    anchors.right: parent.right
+                    anchors.bottom: instrButtons.top
+                    curIndex: modeEditor.currentInstrIndex
+                    initialIndex: initiallySelectedInstr
+                    imageSourceTemplate: "image://instruments/minstr%1"
+                }
+
+                RowLayout {
+                    id: instrButtons
+                    height: 56
+                    anchors.left: parent.left
+                    anchors.right: parent.right
+                    anchors.bottom: parent.bottom
+                    spacing: 10
+
+                    Button {
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+                        text: qsTr("▼")
+                        font.pixelSize: 24
+                        background: Rectangle {
+                            radius: 10
+                            color: "#22000000"
+                            border.color: "#66ffffff"
+                            border.width: 1
+                        }
+                        contentItem: Text {
+                            text: parent.text
+                            color: "#BDBDBD"
+                            font.pixelSize: 24
+                            font.bold: true
+                            horizontalAlignment: Text.AlignHCenter
+                            verticalAlignment: Text.AlignVCenter
+                        }
+                        onPressed: instrListView.scrollDown()
+                    }
+                    Button {
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+                        text: qsTr("▲")
+                        font.pixelSize: 24
+                        background: Rectangle {
+                            radius: 10
+                            color: "#22000000"
+                            border.color: "#66ffffff"
+                            border.width: 1
+                        }
+                        contentItem: Text {
+                            text: parent.text
+                            color: "#BDBDBD"
+                            font.pixelSize: 24
+                            font.bold: true
+                            horizontalAlignment: Text.AlignHCenter
+                            verticalAlignment: Text.AlignVCenter
+                        }
+                        onPressed: instrListView.scrollUp()
+                    }
+                }
+            }
+
+            Rectangle {
+                Layout.fillHeight: true
+                Layout.preferredWidth: 1
+                color: "#55FFFFFF"
+            }
+
+            Rectangle {
                 id: centerPanel
                 Layout.fillWidth: true
                 Layout.fillHeight: true
@@ -457,7 +550,7 @@ Popup {
                 ColumnLayout {
                     anchors.fill: parent
                     anchors.margins: 10
-                    spacing: 14
+                    spacing: modeEditor.isEndo ? 11 : 14
                     opacity: centerView === "power" ? 1.0 : 0.2
 
                     Label {
@@ -470,7 +563,10 @@ Popup {
                         color: "white"
                     }
 
-                    Item { height: 30 }
+                    Item {
+                        height: 50
+                        visible: !modeEditor.isEndo
+                    }
 
                     Label {
                         Layout.fillWidth: true
@@ -701,12 +797,12 @@ Popup {
 
                     RowLayout {
                         Layout.fillWidth: true
-                        Layout.preferredHeight: recommendedButtonHeight
+                        Layout.preferredHeight: modeEditor.isEndo ? recommendedEndoButtonHeight : recommendedButtonHeight
                         visible: modeSelected()
                         spacing: 8
                         PowerRect {
                             Layout.fillWidth: true
-                            Layout.preferredHeight: recommendedButtonHeight
+                            Layout.preferredHeight: modeEditor.isEndo ? recommendedEndoButtonHeight : recommendedButtonHeight
                             borderColor: "#A5D6A7"
                             power: modeEditor.lowPowerBound
                             selected: modeEditor.currentPower === power
@@ -715,7 +811,7 @@ Popup {
                         }
                         PowerRect {
                             Layout.fillWidth: true
-                            Layout.preferredHeight: recommendedButtonHeight
+                            Layout.preferredHeight: modeEditor.isEndo ? recommendedEndoButtonHeight : recommendedButtonHeight
                             borderColor: "#78D87C"
                             power: modeEditor.midPowerBound
                             selected: modeEditor.currentPower === power
@@ -724,7 +820,7 @@ Popup {
                         }
                         PowerRect {
                             Layout.fillWidth: true
-                            Layout.preferredHeight: recommendedButtonHeight
+                            Layout.preferredHeight: modeEditor.isEndo ? recommendedEndoButtonHeight : recommendedButtonHeight
                             borderColor: "#51D456"
                             power: modeEditor.highPowerBound
                             selected: modeEditor.currentPower === power
@@ -1020,7 +1116,10 @@ Popup {
                                     width: descriptionContainer.width
                                     text: centerView === "modePreview"
                                           ? ("<b>" + modeEditor.modeBrief + "</b><br><br>" + modeEditor.modeDescript)
-                                          : ("<b>" + modeEditor.instrBrief + "</b>")
+                                          : ("<b>" +
+                                                (modeEditor.instrBrief === currentInstrName()
+                                                 ? ""
+                                                 : modeEditor.instrBrief)  + "</b>")  // Если описание совпадает с названием, то не выводим
                                     textFormat: Text.RichText
                                     wrapMode: Text.WordWrap
                                     color: "#263238"
@@ -1075,85 +1174,6 @@ Popup {
                                 onPressed: applyPreviewSelection()
                             }
                         }
-                    }
-                }
-            }
-
-            Rectangle {
-                Layout.fillHeight: true
-                Layout.preferredWidth: 320
-                color: "transparent"
-
-                Label {
-                    text: previewRect.visible ? qsTr("Выберите инструмент") : qsTr("Инструмент")
-                    anchors.top: parent.top
-                    anchors.horizontalCenter: parent.horizontalCenter
-                    font.pixelSize: 20
-                    font.bold: true
-                    color: previewRect.visible ? "white" : uiMidGray
-                }
-
-                ItemList {
-                    id: instrListView
-                    anchors.top: parent.top
-                    anchors.topMargin: 28
-                    anchors.left: parent.left
-                    anchors.right: parent.right
-                    anchors.bottom: instrButtons.top
-                    curIndex: modeEditor.currentInstrIndex
-                    initialIndex: initiallySelectedInstr
-                    imageSourceTemplate: "image://instruments/minstr%1"
-                }
-
-                RowLayout {
-                    id: instrButtons
-                    height: 56
-                    anchors.left: parent.left
-                    anchors.right: parent.right
-                    anchors.bottom: parent.bottom
-                    spacing: 10
-
-                    Button {
-                        Layout.fillWidth: true
-                        Layout.fillHeight: true
-                        text: qsTr("▼")
-                        font.pixelSize: 24
-                        background: Rectangle {
-                            radius: 10
-                            color: "#22000000"
-                            border.color: "#66ffffff"
-                            border.width: 1
-                        }
-                        contentItem: Text {
-                            text: parent.text
-                            color: "#BDBDBD"
-                            font.pixelSize: 24
-                            font.bold: true
-                            horizontalAlignment: Text.AlignHCenter
-                            verticalAlignment: Text.AlignVCenter
-                        }
-                        onPressed: instrListView.scrollDown()
-                    }
-                    Button {
-                        Layout.fillWidth: true
-                        Layout.fillHeight: true
-                        text: qsTr("▲")
-                        font.pixelSize: 24
-                        background: Rectangle {
-                            radius: 10
-                            color: "#22000000"
-                            border.color: "#66ffffff"
-                            border.width: 1
-                        }
-                        contentItem: Text {
-                            text: parent.text
-                            color: "#BDBDBD"
-                            font.pixelSize: 24
-                            font.bold: true
-                            horizontalAlignment: Text.AlignHCenter
-                            verticalAlignment: Text.AlignVCenter
-                        }
-                        onPressed: instrListView.scrollUp()
                     }
                 }
             }

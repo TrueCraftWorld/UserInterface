@@ -161,7 +161,9 @@ bool SocketModeEditor::checkChanges()
 {
     bool tmp = ( m_currentModeIndex != m_originalModeIndex
             || m_currentParameters.value("currentpower").toInt()
-                != m_originalParameters.value("currentpower").toInt());
+                != m_originalParameters.value("currentpower").toInt()
+            || m_currentParameters.value("instrindex").toInt()
+                != m_originalParameters.value("instrindex").toInt());
 
     if (tmp && m_hasChanges != tmp) {
         m_hasChanges = tmp;

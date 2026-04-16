@@ -4,6 +4,9 @@
 #include "Structures.h"
 
 #include <QObject>
+#include <QHash>
+#include <QTimer>
+#include <QVariantList>
 
 class PeriphHandler : public QObject
 {
@@ -21,6 +24,7 @@ class PeriphHandler : public QObject
 	Q_PROPERTY(bool activation READ activation NOTIFY activationChanged)
 	Q_PROPERTY(bool activationStopWarningVisible READ activationStopWarningVisible NOTIFY activationStopWarningChanged)
 	Q_PROPERTY(int activationStopWarningCode READ activationStopWarningCode NOTIFY activationStopWarningChanged)
+    Q_PROPERTY(QVariantList activationStopWarningCodes READ activationStopWarningCodes NOTIFY activationStopWarningChanged)
     Q_PROPERTY(int bi1AutoMode READ bi1AutoMode NOTIFY biAutoModeChanged)
     Q_PROPERTY(int bi2AutoMode READ bi2AutoMode NOTIFY biAutoModeChanged)
     Q_PROPERTY(int autoDelayMs READ autoDelayMs WRITE setAutoDelayMs NOTIFY autoDelayMsChanged)
@@ -118,6 +122,7 @@ public:
 	bool activation() const;
 	bool activationStopWarningVisible() const;
 	int activationStopWarningCode() const;
+    QVariantList activationStopWarningCodes() const;
     int bi1AutoMode() const;
     int bi2AutoMode() const;
     int autoDelayMs() const;
@@ -153,11 +158,17 @@ private:
 	bool m_activCylinderFirst;              // Активный баллон (true - первый, false - второй)
 	quint8 m_wirelessPedalCharge;           // Заряд беспроводной педали
 	bool m_enableActivation;                // Запрет активации (открыты popup)
+    bool m_uiEnableActivation;             // Разрешение от UI (drawers/popups)
 	bool m_activation;                      // Активация выполняется
 	bool m_activationStopWarningVisible;
 	int m_activationStopWarningCode;
+    QList<int> m_activeWarningCodes;
+    QHash<int, QTimer *> m_warningTimers;
     quint8 m_socketAutoModes[4];
     int m_autoDelayMs;
+
+    void recomputeEnableActivation();
+    void clearWarningCode(int warningCode);
 
 signals:
 	void neutralElConnectedChanged(bool connected);

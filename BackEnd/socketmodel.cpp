@@ -626,13 +626,13 @@ bool SocketModel::commitModeChange(int socketId, int modeIndex, const QVariantMa
     QModelIndex idx = createIndex(socketId, 0);
 
     bool isModeCoag = param.value("iscoag").toBool();
-    qDebug() << "[commitModeChange]"
-             << "socketId=" << socketId
-             << "modeIndex=" << modeIndex
-             << "isModeCoag=" << isModeCoag
-             << "modeName=" << param.value("name").toString()
-             << "instrIndex=" << param.value("instrindex").toInt()
-             << "currentPower=" << param.value("currentpower").toInt();
+//    qDebug() << "[commitModeChange]"
+//             << "socketId=" << socketId
+//             << "modeIndex=" << modeIndex
+//             << "isModeCoag=" << isModeCoag
+//             << "modeName=" << param.value("name").toString()
+//             << "instrIndex=" << param.value("instrindex").toInt()
+//             << "currentPower=" << param.value("currentpower").toInt();
     bool res = false;
     QVector<int> roles;
 

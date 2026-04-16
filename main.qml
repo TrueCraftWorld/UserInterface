@@ -22,8 +22,8 @@ Window {
     // Свойства для управления панелями
     property bool leftPanelExpanded: false
     property bool rightPanelExpanded: false
-    readonly property int pedalPanelWidth: 100
-    readonly property int argNeutralPanelWidth: 100
+    readonly property int pedalPanelWidth: 85
+    readonly property int argNeutralPanelWidth: 85
 
     // Свойство для нейтрального электрода
     property bool neutralConnected: false
@@ -108,49 +108,47 @@ Window {
       text: qsTr("")
       versionText: qsTr("Текущая версия: ") + appVersion
       width: parent.width
-      height: 70
+      height: 85
       anchors {
          top: parent.top
       }
    }
 
-    Rectangle {
-        id: activationStopWarningBanner
+    Column {
+        id: activationStopWarningList
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.top: statusDummy.bottom
         anchors.topMargin: 8
-        width: Math.min(parent.width - 80, warningText.implicitWidth + 32)
-        height: warningText.implicitHeight + 20
-        radius: 8
+        spacing: 8
         z: 12000
         visible: periphHandle.activationStopWarningVisible
-        color: warningColorForCode(periphHandle.activationStopWarningCode)
-        border.color: "#212121"
-        border.width: 1
 
-        Text {
-            id: warningText
-            anchors.centerIn: parent
-            text: warningTextForCode(periphHandle.activationStopWarningCode)
-            color: "#111111"
-            font.pixelSize: 22
-            font.bold: true
-            wrapMode: Text.WordWrap
-            horizontalAlignment: Text.AlignHCenter
-        }
+        Repeater {
+            model: periphHandle.activationStopWarningCodes
 
-        Timer {
-            id: activationStopWarningTimer
-            interval: 4500
-            repeat: false
-            onTriggered: periphHandle.clearActivationStopWarning()
-        }
+            delegate: Rectangle {
+                required property var modelData
 
-        onVisibleChanged: {
-            if (visible) {
-                activationStopWarningTimer.restart()
-            } else {
-                activationStopWarningTimer.stop()
+                readonly property int warningCode: Number(modelData)
+                readonly property string warningText: warningTextForCode(warningCode)
+
+                width: Math.min(container.width - 80, warningTextLabel.implicitWidth + 32)
+                height: warningTextLabel.implicitHeight + 20
+                radius: 8
+                color: warningColorForCode(warningCode)
+                border.color: "#212121"
+                border.width: 1
+
+                Text {
+                    id: warningTextLabel
+                    anchors.centerIn: parent
+                    text: parent.warningText
+                    color: "#111111"
+                    font.pixelSize: 22
+                    font.bold: true
+                    wrapMode: Text.WordWrap
+                    horizontalAlignment: Text.AlignHCenter
+                }
             }
         }
     }
@@ -184,7 +182,7 @@ Window {
     }
     PeripheryDrawer {
         id: argNeutDrawer
-        width: .4 * container.width
+        width: .5 * container.width
         height: container.height
         edge: Qt.LeftEdge
     }
@@ -353,172 +351,172 @@ Window {
         }
     }
 
-//    // MouseArea для обработки свайпов в области PeripheryPanel
-//    MouseArea {
-//        id: peripherySwipeArea
-//        anchors {
-//            left: parent.left
-//            top: statusDummy.bottom
-//            bottom: parent.bottom
-//        }
-//        width: 200
-//        z: 10  // Выше других элементов
-//        enabled: false
-//        propagateComposedEvents: true  // Ключевое свойство для пропуска событий
+    // MouseArea для обработки свайпов в области PeripheryPanel
+    MouseArea {
+        id: peripherySwipeArea
+        anchors {
+            left: parent.left
+            top: statusDummy.bottom
+            bottom: parent.bottom
+        }
+        width: 200
+        z: 10  // Выше других элементов
+        enabled: false
+        propagateComposedEvents: true  // Ключевое свойство для пропуска событий
 
-//        property real startX: 0
-//        property real startY: 0
-//        property bool isSwipeGesture: false
-//        property bool hadSwipeGesture: false
-//        property real minSwipeDistance: 50
+        property real startX: 0
+        property real startY: 0
+        property bool isSwipeGesture: false
+        property bool hadSwipeGesture: false
+        property real minSwipeDistance: 50
 
-//        onPressed: {
-//            startX = mouse.x
-//            startY = mouse.y
-//            isSwipeGesture = false
-//            hadSwipeGesture = false
-//        }
+        onPressed: {
+            startX = mouse.x
+            startY = mouse.y
+            isSwipeGesture = false
+            hadSwipeGesture = false
+        }
 
-//        onPositionChanged: {
-//            if (pressed) {
-//                var deltaX = mouse.x - startX
-//                var deltaY = Math.abs(mouse.y - startY)
-//                // Если горизонтальное движение больше вертикального и больше 30px вправо
-//                if (deltaX > 30 && Math.abs(deltaX) > deltaY) {
-//                    isSwipeGesture = true
-//                    hadSwipeGesture = true
-//                    mouse.accepted = true
-//                } else if (isSwipeGesture) {
-//                    mouse.accepted = true
-//                } else {
-//                    mouse.accepted = false
-//                }
-//            }
-//        }
+        onPositionChanged: {
+            if (pressed) {
+                var deltaX = mouse.x - startX
+                var deltaY = Math.abs(mouse.y - startY)
+                // Если горизонтальное движение больше вертикального и больше 30px вправо
+                if (deltaX > 30 && Math.abs(deltaX) > deltaY) {
+                    isSwipeGesture = true
+                    hadSwipeGesture = true
+                    mouse.accepted = true
+                } else if (isSwipeGesture) {
+                    mouse.accepted = true
+                } else {
+                    mouse.accepted = false
+                }
+            }
+        }
 
-//        onReleased: {
-//            if (isSwipeGesture) {
-//                var deltaX = mouse.x - startX
-//                // Если свайп вправо больше порога, открываем drawer
-//                if (deltaX > minSwipeDistance) {
-//                    argNeutDrawer.open()
-//                    mouse.accepted = true
-//                    isSwipeGesture = false
-//                    hadSwipeGesture = false
-//                    return
-//                }
-//            }
-//            // Если был свайп, но не достиг порога, блокируем событие
-//            if (hadSwipeGesture) {
-//                mouse.accepted = true
-//            } else {
-//                // Если не было свайпа, пропускаем событие для клика
-//                mouse.accepted = false
-//            }
-//            isSwipeGesture = false
-//        }
+        onReleased: {
+            if (isSwipeGesture) {
+                var deltaX = mouse.x - startX
+                // Если свайп вправо больше порога, открываем drawer
+                if (deltaX > minSwipeDistance) {
+                    argNeutDrawer.open()
+                    mouse.accepted = true
+                    isSwipeGesture = false
+                    hadSwipeGesture = false
+                    return
+                }
+            }
+            // Если был свайп, но не достиг порога, блокируем событие
+            if (hadSwipeGesture) {
+                mouse.accepted = true
+            } else {
+                // Если не было свайпа, пропускаем событие для клика
+                mouse.accepted = false
+            }
+            isSwipeGesture = false
+        }
 
-//        onClicked: {
-//            // Если это был свайп (даже не завершенный), принимаем событие, чтобы оно не проходило дальше
-//            // Если это обычный клик, пропускаем событие (propagateComposedEvents сработает)
-//            mouse.accepted = hadSwipeGesture
-//            hadSwipeGesture = false
-//        }
-//    }
+        onClicked: {
+            // Если это был свайп (даже не завершенный), принимаем событие, чтобы оно не проходило дальше
+            // Если это обычный клик, пропускаем событие (propagateComposedEvents сработает)
+            mouse.accepted = hadSwipeGesture
+            hadSwipeGesture = false
+        }
+    }
 
-//    // MouseArea для обработки свайпов в области PedalContainer
-//    MouseArea {
-//        id: pedalSwipeArea
-//        anchors {
-//            right: parent.right
-//            top: statusDummy.bottom
-//            bottom: parent.bottom
-//        }
-//        width: 200
-//        z: 10  // Выше других элементов
-//        enabled: false
-//        propagateComposedEvents: true
+    // MouseArea для обработки свайпов в области PedalContainer
+    MouseArea {
+        id: pedalSwipeArea
+        anchors {
+            right: parent.right
+            top: statusDummy.bottom
+            bottom: parent.bottom
+        }
+        width: 200
+        z: 10  // Выше других элементов
+        enabled: false
+        propagateComposedEvents: true
 
-//        property real startX: 0
-//        property real startY: 0
-//        property bool isSwipeGesture: false
-//        property bool hadSwipeGesture: false  // Сохраняем информацию о свайпе для onClicked
-//        property real minSwipeDistance: 50
+        property real startX: 0
+        property real startY: 0
+        property bool isSwipeGesture: false
+        property bool hadSwipeGesture: false  // Сохраняем информацию о свайпе для onClicked
+        property real minSwipeDistance: 50
 
-//        onPressed: {
-//            startX = mouse.x
-//            startY = mouse.y
-//            isSwipeGesture = false
-//            hadSwipeGesture = false
-//        }
+        onPressed: {
+            startX = mouse.x
+            startY = mouse.y
+            isSwipeGesture = false
+            hadSwipeGesture = false
+        }
 
-//        onPositionChanged: {
-//            if (pressed) {
-//                var deltaX = mouse.x - startX
-//                var deltaY = Math.abs(mouse.y - startY)
-//                // Если горизонтальное движение больше вертикального и больше 30px влево
-//                if (deltaX < -30 && Math.abs(deltaX) > deltaY) {
-//                    isSwipeGesture = true
-//                    hadSwipeGesture = true
-//                    // Принимаем событие, чтобы оно не проходило дальше
-//                    mouse.accepted = true
-//                } else if (isSwipeGesture) {
-//                    // Если уже был свайп, продолжаем принимать события
-//                    mouse.accepted = true
-//                } else {
-//                    mouse.accepted = false
-//                }
-//            }
-//        }
+        onPositionChanged: {
+            if (pressed) {
+                var deltaX = mouse.x - startX
+                var deltaY = Math.abs(mouse.y - startY)
+                // Если горизонтальное движение больше вертикального и больше 30px влево
+                if (deltaX < -30 && Math.abs(deltaX) > deltaY) {
+                    isSwipeGesture = true
+                    hadSwipeGesture = true
+                    // Принимаем событие, чтобы оно не проходило дальше
+                    mouse.accepted = true
+                } else if (isSwipeGesture) {
+                    // Если уже был свайп, продолжаем принимать события
+                    mouse.accepted = true
+                } else {
+                    mouse.accepted = false
+                }
+            }
+        }
 
-//        onReleased: {
-//            if (isSwipeGesture) {
-//                var deltaX = mouse.x - startX
-//                // Если свайп влево больше порога, открываем drawer
-//                if (deltaX < -minSwipeDistance) {
-//                    // Ищем expanded сокет
-//                    var expandedSocketId = -1
-//                    if (theModel) {
-//                        for (var i = 0; i < theModel.rowCount(); i++) {
-//                            var socketIndex = theModel.index(i, 0)
-//                            if (socketIndex.valid) {
-//                                var displayMode = theModel.data(socketIndex, SocketModel.SocketDisplayMode)
-//                                if (displayMode === "expanded") {
-//                                    expandedSocketId = i
-//                                    break
-//                                }
-//                            }
-//                        }
-//                        if (expandedSocketId < 0 && theModel.rowCount() > 0) {
-//                            expandedSocketId = 0
-//                        }
-//                    }
-//                    pedDrawer.socketId = expandedSocketId
-//                    pedDrawer.open()
-//                    mouse.accepted = true  // Блокируем событие при успешном свайпе
-//                    isSwipeGesture = false
-//                    hadSwipeGesture = false
-//                    return
-//                }
-//            }
-//            // Если был свайп, но не достиг порога, все равно блокируем событие
-//            if (hadSwipeGesture) {
-//                mouse.accepted = true
-//            } else {
-//                // Если не было свайпа, пропускаем событие для клика
-//                mouse.accepted = false
-//            }
-//            isSwipeGesture = false
-//            // hadSwipeGesture сохраняем для onClicked
-//        }
+        onReleased: {
+            if (isSwipeGesture) {
+                var deltaX = mouse.x - startX
+                // Если свайп влево больше порога, открываем drawer
+                if (deltaX < -minSwipeDistance) {
+                    // Ищем expanded сокет
+                    var expandedSocketId = -1
+                    if (theModel) {
+                        for (var i = 0; i < theModel.rowCount(); i++) {
+                            var socketIndex = theModel.index(i, 0)
+                            if (socketIndex.valid) {
+                                var displayMode = theModel.data(socketIndex, SocketModel.SocketDisplayMode)
+                                if (displayMode === "expanded") {
+                                    expandedSocketId = i
+                                    break
+                                }
+                            }
+                        }
+                        if (expandedSocketId < 0 && theModel.rowCount() > 0) {
+                            expandedSocketId = 0
+                        }
+                    }
+                    pedDrawer.socketId = expandedSocketId
+                    pedDrawer.open()
+                    mouse.accepted = true  // Блокируем событие при успешном свайпе
+                    isSwipeGesture = false
+                    hadSwipeGesture = false
+                    return
+                }
+            }
+            // Если был свайп, но не достиг порога, все равно блокируем событие
+            if (hadSwipeGesture) {
+                mouse.accepted = true
+            } else {
+                // Если не было свайпа, пропускаем событие для клика
+                mouse.accepted = false
+            }
+            isSwipeGesture = false
+            // hadSwipeGesture сохраняем для onClicked
+        }
 
-//        onClicked: {
-//            // Если это был свайп (даже не завершенный), принимаем событие, чтобы оно не проходило дальше
-//            // Если это обычный клик, пропускаем событие для клика по педалям
-//            mouse.accepted = hadSwipeGesture
-//            hadSwipeGesture = false
-//        }
-//    }
+        onClicked: {
+            // Если это был свайп (даже не завершенный), принимаем событие, чтобы оно не проходило дальше
+            // Если это обычный клик, пропускаем событие для клика по педалям
+            mouse.accepted = hadSwipeGesture
+            hadSwipeGesture = false
+        }
+    }
 
     Connections {
         target: statusDummy

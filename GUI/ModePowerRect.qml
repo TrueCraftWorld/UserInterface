@@ -9,6 +9,7 @@ Canvas {
     property int modeId
     property int modePower
     property int maxPower
+    property int instrumNum: 1000
     property bool isEndo: false
 
     signal modeEditDialogRequest()
@@ -175,6 +176,70 @@ Canvas {
         target: modePowerRect
         function onIsEndoChanged() {
             modePowerRect.requestPaint()
+        }
+    }
+
+    Item {
+        id: collapsedSummary
+        anchors.fill: parent
+        visible: modePowerRect.state === "collapsed"
+        z: 20
+
+        readonly property bool hasInstrImage: modePowerRect.instrumNum > 0
+                                             && modePowerRect.instrumNum !== 1000
+        readonly property int imageBlockWidth: hasInstrImage ? 62 : 0
+
+        Image {
+            id: collapsedInstrImage
+            visible: collapsedSummary.hasInstrImage
+            asynchronous: true
+            fillMode: Image.PreserveAspectFit
+            width: 54
+            height: 54
+            source: "image://instruments/"
+                    + (modePowerRect.isCoag ? "coaginstr" : "cutinstr")
+                    + modePowerRect.instrumNum
+            anchors.verticalCenter: parent.verticalCenter
+            anchors.left: modePowerRect.isCoag ? parent.left : undefined
+            anchors.leftMargin: modePowerRect.isCoag ? 4 : undefined
+            anchors.right: modePowerRect.isCoag ? undefined : parent.right
+            anchors.rightMargin: modePowerRect.isCoag ? undefined : 4
+        }
+
+        Column {
+            id: collapsedTextColumn
+            spacing: 2
+            anchors.top: parent.top
+            anchors.topMargin: 8
+            anchors.left: modePowerRect.isCoag ? collapsedInstrImage.right : parent.left
+            anchors.leftMargin: modePowerRect.isCoag ? 6 : 8
+            anchors.right: modePowerRect.isCoag ? parent.right : collapsedInstrImage.left
+            anchors.rightMargin: modePowerRect.isCoag ? 8 : 6
+
+            Label {
+                id: collapsedModeLabel
+                text: modePowerRect.modeName
+                color: modePowerRect.isCoag ? "white" : "black"
+                font.pixelSize: 20
+                font.bold: true
+                wrapMode: Text.Wrap
+                maximumLineCount: 2
+                elide: Text.ElideRight
+                width: parent.width
+                horizontalAlignment: modePowerRect.isCoag ? Text.AlignRight : Text.AlignLeft
+                verticalAlignment: Text.AlignTop
+            }
+
+            Label {
+                id: collapsedPowerLabel
+                text: modePowerRect.modePower
+                visible: modePowerRect.modeId !== 1000
+                color: modePowerRect.isCoag ? "white" : "black"
+                font.pixelSize: 46
+                font.bold: true
+                width: parent.width
+                horizontalAlignment: modePowerRect.isCoag ? Text.AlignRight : Text.AlignLeft
+            }
         }
     }
 
@@ -758,6 +823,8 @@ Canvas {
     states: [
         State {
             name: "collapsed"
+            PropertyChanges { target: mode; visible: false }
+            PropertyChanges { target: power; visible: false }
             PropertyChanges { target: powerPlusButton;  visible: false }
             PropertyChanges { target: powerMinusButton; visible: false }
             PropertyChanges { target: powerSlider;      visible: false }
@@ -827,6 +894,8 @@ Canvas {
         },
         State {
             name: "expanded"
+            PropertyChanges { target: mode; visible: true }
+            PropertyChanges { target: power; visible: true }
             PropertyChanges { target: powerPlusButton;  visible: (modeId != 1000) }
             PropertyChanges { target: powerMinusButton; visible: (modeId != 1000) }
             PropertyChanges { target: powerSlider;      visible: (modeId != 1000) }

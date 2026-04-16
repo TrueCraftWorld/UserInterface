@@ -14,7 +14,7 @@ Rectangle {
     property int flowRate: 5               // Уровень расхода (л/мин) - установленный
     property int realFlowRate: 0           // Реальный расход аргона во время активации
     property bool isActivation: false      // Активация в данный момент
-    property int minFlowRate: 0
+    property int minFlowRate: 1
     property int maxFlowRate: 80
     property bool showControls: true       // Показывать элементы управления (в развернутом состоянии)
     property bool activCylinderFirst: true // Активный баллон 1 (или 2)
@@ -24,6 +24,9 @@ Rectangle {
 
     // Внутреннее свойства для размеров кнопок
     readonly property int  buttonStep: 16
+    readonly property int  flowButtonHeight: 56
+    readonly property int  flowButtonMinWidth: 52
+    readonly property int  flowButtonMaxWidth: 80
     
     // Сигналы
     signal flowRateUpdated(int newRate)
@@ -61,19 +64,19 @@ Rectangle {
         
         signal clicked()
 
-        radius: 6
-        color: pressed ? "#9EFE9E" : "#BDBDBD"
+        radius: 16
+        color: pressed ? "#66BB6A" : "#8BC34A"
         border {
-            color: "#757575"
-            width: 2
+            color: "#00000030"
+            width: 1
         }
         
         Text {
             anchors.centerIn: parent
             text: iconText
-            font.pixelSize: buttonStep * 2
+            font.pixelSize: 44
             font.bold: true
-            color: "#2c2c2c"
+            color: "#111111"
         }
         
         MouseArea {
@@ -163,23 +166,35 @@ Rectangle {
             }
         }
 
-        // Кнопка +10
+        Item {
+            id: flowControlsArea
+            anchors.left: firstCylinder.right
+            anchors.right: secondCylinder.left
+            anchors.leftMargin: 10
+            anchors.rightMargin: 10
+            anchors.verticalCenter: firstCylinder.verticalCenter
+            height: flowButtonHeight
+            visible: showControls
+        }
+
+        // Кнопка -10
         CustomButton {
-            id: plus10BtnNew
-            width: buttonStep * 6
-            height: buttonStep * 3.5
-            anchors.bottom: argonFlowRect.top
-            anchors.bottomMargin: 5
-            anchors.horizontalCenter: parent.horizontalCenter
-            delta: 10
-            iconText: "▲"
+            id: minus10BtnNew
+            width: Math.max(flowButtonMinWidth,
+                            Math.min(flowButtonMaxWidth, (flowControlsArea.width - argonFlowRect.width - 24) / 2))
+            height: flowButtonHeight
+            anchors.left: flowControlsArea.left
+            anchors.verticalCenter: flowControlsArea.verticalCenter
+            delta: -10
+            iconText: "−"
             visible: showControls
             onClicked: {
-                var newRate = flowRate + delta
-                if (newRate <= maxFlowRate) {
+                var newRate = Math.max(minFlowRate, flowRate + delta)
+                if (newRate !== flowRate) {
                     isUserChange = true  // Устанавливаем флаг перед изменением
                     flowRate = newRate
                 }
+//                    console.log("Argon flowrate: ", flowRate, " ▼ 10");
             }
         }
 //        // Кнопки увеличения над индикатором расхода
@@ -198,10 +213,10 @@ Rectangle {
 //                width: buttonStep * 6
 //                height: buttonStep * 3.5
 //                delta: 10
-//                iconText: "▲"
+//                iconText: "−"
 //                onClicked: {
 //                    var newRate = flowRate + delta
-//                    if (newRate <= maxFlowRate) {
+//                    if (newRate >= 0) {
 //                        isUserChange = true  // Устанавливаем флаг перед изменением
 //                        flowRate = newRate
 //                    }
@@ -212,10 +227,10 @@ Rectangle {
 //                width: buttonStep * 6
 //                height: buttonStep * 3.5
 //                delta: 1
-//                iconText: "▲"
+//                iconText: "−"
 //                onClicked: {
 //                    var newRate = flowRate + delta
-//                    if (newRate <= maxFlowRate) {
+//                    if (newRate >= 0) {
 //                        isUserChange = true  // Устанавливаем флаг перед изменением
 //                        flowRate = newRate
 //                    }
@@ -227,13 +242,14 @@ Rectangle {
         // Расход
         Rectangle {
             id: argonFlowRect
-            width: showControls ? (step * 7) : parent.width
+            width: showControls ? (step * 5) : parent.width
             height: step * 4
             // anchors.top: showControls ? arLabel.bottom : firstCylinderRect.bottom
-            anchors.top: showControls ? arLabel.bottom : firstCylinder.bottom
-            anchors.topMargin: showControls ? (step * 4) : 4
+            anchors.top: showControls ? undefined : firstCylinder.bottom
+            anchors.topMargin: showControls ? 0 : 4
             anchors.left: showControls ? undefined : parent.left
-            anchors.horizontalCenter: showControls ? parent.horizontalCenter : undefined
+            anchors.horizontalCenter: showControls ? flowControlsArea.horizontalCenter : undefined
+            anchors.verticalCenter: showControls ? flowControlsArea.verticalCenter : undefined
             color: "transparent"
 
             Text {
@@ -262,24 +278,22 @@ Rectangle {
             }
         }
 
-        // Кнопка -10
+        // Кнопка +10
         CustomButton {
-            id: minus10BtnNew
-            width: buttonStep * 6
-            height: buttonStep * 3.5
-            anchors.top: argonFlowRect.bottom
-            anchors.topMargin: 25
-            anchors.horizontalCenter: parent.horizontalCenter
-            delta: -10
-            iconText: "▼"
+            id: plus10BtnNew
+            width: minus10BtnNew.width
+            height: flowButtonHeight
+            anchors.right: flowControlsArea.right
+            anchors.verticalCenter: flowControlsArea.verticalCenter
+            delta: 10
+            iconText: "+"
             visible: showControls
             onClicked: {
-                var newRate = flowRate + delta
-                if (newRate > 0) {
+                var newRate = Math.min(maxFlowRate, flowRate + delta)
+                if (newRate !== flowRate) {
                     isUserChange = true  // Устанавливаем флаг перед изменением
                     flowRate = newRate
                 }
-//                    console.log("Argon flowrate: ", flowRate, " ▼ 10");
             }
         }
         
@@ -299,10 +313,10 @@ Rectangle {
 //                width: buttonStep * 6
 //                height: buttonStep * 3.5
 //                delta: -10
-//                iconText: "▼"
+//                iconText: "+"
 //                onClicked: {
 //                    var newRate = flowRate + delta
-//                    if (newRate >= 0) {
+//                    if (newRate <= maxFlowRate) {
 //                        isUserChange = true  // Устанавливаем флаг перед изменением
 //                        flowRate = newRate
 //                    }
@@ -314,10 +328,10 @@ Rectangle {
 //                width: buttonStep * 6
 //                height: buttonStep * 3.5
 //                delta: -1
-//                iconText: "▼"
+//                iconText: "+"
 //                onClicked: {
 //                    var newRate = flowRate + delta
-//                    if (newRate >= 0) {
+//                    if (newRate <= maxFlowRate) {
 //                        isUserChange = true  // Устанавливаем флаг перед изменением
 //                        flowRate = newRate
 //                    }

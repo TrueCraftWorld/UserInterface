@@ -16,6 +16,7 @@ PeriphHandler::PeriphHandler(QObject *parent)
     m_activCylinderFirst(true),  // По умолчанию активен первый баллон
     m_wirelessPedalCharge(0),
     m_enableActivation(true),
+    m_uiEnableActivation(true),
     m_activation(false),
     m_activationStopWarningVisible(false),
     m_activationStopWarningCode(-1),
@@ -137,11 +138,11 @@ bool PeriphHandler::enableActivation() const
 void PeriphHandler::setEnableActivation(bool enable)
 {
 //	qDebug() << "setEnableActivation(bool enable)" << enable;
-	if (m_enableActivation == enable)
+	if (m_uiEnableActivation == enable)
 		return;
 
-	m_enableActivation = enable;
-	emit enableActivationChanged(enable);
+    m_uiEnableActivation = enable;
+    recomputeEnableActivation();
 }
 
 bool PeriphHandler::activation() const
@@ -157,6 +158,16 @@ bool PeriphHandler::activationStopWarningVisible() const
 int PeriphHandler::activationStopWarningCode() const
 {
     return m_activationStopWarningCode;
+}
+
+QVariantList PeriphHandler::activationStopWarningCodes() const
+{
+    QVariantList result;
+    result.reserve(m_activeWarningCodes.size());
+    for (int code : m_activeWarningCodes) {
+        result.append(code);
+    }
+    return result;
 }
 
 int PeriphHandler::bi1AutoMode() const
@@ -227,22 +238,82 @@ void PeriphHandler::showWarningCode(quint8 warningCode)
     if (warningCode == 0x40) {
         return;
     }
-    const bool changed = (m_activationStopWarningVisible != true)
-                         || (m_activationStopWarningCode != static_cast<int>(warningCode));
-    m_activationStopWarningVisible = true;
-    m_activationStopWarningCode = static_cast<int>(warningCode);
+    const int code = static_cast<int>(warningCode);
+    bool changed = false;
+
+    if (!m_activeWarningCodes.contains(code)) {
+        m_activeWarningCodes.append(code);
+        changed = true;
+    }
+
+    QTimer *timer = m_warningTimers.value(code, nullptr);
+    if (!timer) {
+        timer = new QTimer(this);
+        timer->setSingleShot(true);
+        connect(timer, &QTimer::timeout, this, [this, code]() {
+            clearWarningCode(code);
+        });
+        m_warningTimers.insert(code, timer);
+    }
+    timer->start(5000);
+
+    if (m_activeWarningCodes.isEmpty()) {
+        m_activationStopWarningVisible = false;
+        m_activationStopWarningCode = -1;
+    } else {
+        m_activationStopWarningVisible = true;
+        m_activationStopWarningCode = m_activeWarningCodes.first();
+    }
+
     if (changed) {
+        recomputeEnableActivation();
         emit activationStopWarningChanged();
     }
 }
 
 void PeriphHandler::clearActivationStopWarning()
 {
-    if (!m_activationStopWarningVisible && m_activationStopWarningCode < 0) {
+    if (m_activeWarningCodes.isEmpty() && !m_activationStopWarningVisible && m_activationStopWarningCode < 0) {
         return;
     }
+    for (QTimer *timer : m_warningTimers) {
+        if (timer) {
+            timer->stop();
+        }
+    }
+    m_activeWarningCodes.clear();
     m_activationStopWarningVisible = false;
     m_activationStopWarningCode = -1;
+    recomputeEnableActivation();
+    emit activationStopWarningChanged();
+}
+
+void PeriphHandler::recomputeEnableActivation()
+{
+    const bool hasWarnings = !m_activeWarningCodes.isEmpty();
+    const bool effectiveEnable = m_uiEnableActivation && !hasWarnings;
+    if (m_enableActivation == effectiveEnable) {
+        return;
+    }
+    m_enableActivation = effectiveEnable;
+    emit enableActivationChanged(m_enableActivation);
+}
+
+void PeriphHandler::clearWarningCode(int warningCode)
+{
+    const int index = m_activeWarningCodes.indexOf(warningCode);
+    if (index < 0) {
+        return;
+    }
+    m_activeWarningCodes.removeAt(index);
+    if (m_activeWarningCodes.isEmpty()) {
+        m_activationStopWarningVisible = false;
+        m_activationStopWarningCode = -1;
+    } else {
+        m_activationStopWarningVisible = true;
+        m_activationStopWarningCode = m_activeWarningCodes.first();
+    }
+    recomputeEnableActivation();
     emit activationStopWarningChanged();
 }
 

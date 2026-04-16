@@ -51,8 +51,6 @@ Rectangle {
         return base
     }
 
-    state: "collapsed"
-
     onSocketStateChanged: {
 //        console.log("socketState", socketState)
         if (socketState === socketStateActiveCoag) {
@@ -79,7 +77,6 @@ Rectangle {
     HalfSocket {
         id:         leftRect
         isCoag:     false
-        state:      socketRoot.state
         modeName:   socketRoot.cutModeName
         modePower:  socketRoot.cutModePower
         modeId:     socketRoot.cutModeId
@@ -87,6 +84,10 @@ Rectangle {
         instrumNum: socketRoot.cutInstrumNum
         instrumName:socketRoot.cutInstrumName
         isEndo:     socketRoot.cutIsEndo
+        anchors.left: parent.left
+        anchors.right: centerSeparator.left
+        anchors.top: parent.top
+        anchors.bottom: parent.bottom
 
         MouseArea {
             anchors.fill: parent
@@ -96,7 +97,6 @@ Rectangle {
     HalfSocket {
         id:         rightRect
         isCoag:     true
-        state:      socketRoot.state
         modeName:   socketRoot.coagModeNameForDisplay
         modePower:  socketRoot.coagModePower
         modeId:     socketRoot.coagModeId
@@ -104,6 +104,10 @@ Rectangle {
         instrumNum: socketRoot.coagInstrumNum
         instrumName:socketRoot.coagInstrumName
         isEndo:     socketRoot.coagIsEndo
+        anchors.left: centerSeparator.right
+        anchors.right: parent.right
+        anchors.top: parent.top
+        anchors.bottom: parent.bottom
 
         MouseArea {
             anchors.fill: parent
@@ -111,33 +115,15 @@ Rectangle {
         }
     }
 
-//    Rectangle {
-//        id: middleRect
-//        color: "green"
-//        width: fontMetrics.advanceWidth("MONO 22")
-//        height: 60
-
-//        Label {
-//            id: socketNameLabel
-//            anchors.fill: parent
-//            anchors.margins: 10
-//            text: title
-//            color: "white"
-//            font.pixelSize: 24
-//            font.bold: true
-//            horizontalAlignment: Qt.AlignHCenter
-//            verticalAlignment: Qt.AlignTop
-//        }
-//        FontMetrics {
-//            id: fontMetrics
-//            font: socketNameLabel.font
-//        }
-//        MouseArea {
-//            anchors.fill: parent
-//            onClicked: socketRoot.socketEditorRequest(socketRoot.socketId, false)
-//        }
-
-//    }
+    Rectangle {
+        id: centerSeparator
+        width: 2
+        color: "#202020"
+        anchors.horizontalCenter: parent.horizontalCenter
+        anchors.top: parent.top
+        anchors.bottom: parent.bottom
+        z: 2
+    }
     Activation {
         id: activationIndicator
         parent: socketRoot
@@ -150,38 +136,4 @@ Rectangle {
         }
     }
 
-    states: [
-        // Свернутое состояние
-        State {
-            name: "collapsed"
-            AnchorChanges {
-                target: middleRect
-                anchors.horizontalCenter: parent.horizontalCenter
-                anchors.left: undefined
-                anchors.right: undefined
-                anchors.top: parent.top
-                anchors.bottom: parent.bottom
-            }
-            PropertyChanges {
-                target: middleRect
-                color: "black"
-                width: fontMetrics.advanceWidth("MONO 22")
-            }
-            AnchorChanges {
-                target: leftRect
-                anchors.left: parent.left
-                anchors.right: middleRect.left
-                anchors.top: parent.top
-                anchors.bottom: parent.bottom
-            }
-
-            AnchorChanges {
-                target: rightRect
-                anchors.left: middleRect.right
-                anchors.right: parent.right
-                anchors.top: parent.top
-                anchors.bottom: parent.bottom
-            }
-        }
-    ]
 }

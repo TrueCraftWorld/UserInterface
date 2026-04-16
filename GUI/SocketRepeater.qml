@@ -32,7 +32,6 @@ Repeater {
         Layout.alignment: Qt.AlignTop
         Layout.preferredHeight: repeatRoot.calculateCollapsedHeight()
 
-        state: "collapsed"
         title: model.socketname
         socketId: index
         socketState: model.socketstatus

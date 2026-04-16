@@ -36,10 +36,11 @@ Button {
         spacing: 10
 
         Text {
-            text: qsTr("эф.рез. %1").arg(Math.floor(power / 10))
+            text: qsTr("рез-%1 коаг-%2").arg(Math.floor(power / 10)).arg(power % 10)
+//            text: qsTr("эф.рез. %1").arg(Math.floor(power / 10))
             horizontalAlignment: Qt.AlignHCenter
             verticalAlignment: Qt.AlignVCenter
-            font.pixelSize: 26
+            font.pixelSize: 32
             color: selected ? "black" : "white"
         }
 //        Text {
@@ -49,13 +50,13 @@ Button {
 //            font.pixelSize: 48
 //            color: selected ? "black" : "white"
 //        }
-        Text {
-            text: qsTr("эф.коаг. %1").arg(power % 10)
-            horizontalAlignment: Qt.AlignHCenter
-            verticalAlignment: Qt.AlignVCenter
-            font.pixelSize: 26
-            color: selected ? "black" : "white"
-        }
+//        Text {
+//            text: qsTr("эф.коаг. %1").arg(power % 10)
+//            horizontalAlignment: Qt.AlignHCenter
+//            verticalAlignment: Qt.AlignVCenter
+//            font.pixelSize: 26
+//            color: selected ? "black" : "white"
+//        }
 //        Text {
 //            text: (power % 10)
 //            horizontalAlignment: Qt.AlignHCenter

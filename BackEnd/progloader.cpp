@@ -799,8 +799,35 @@ bool ProgLoader::programmLoadSocketInit(int progId, bool clear)
 
 bool ProgLoader::freeSettingsSocketInit(bool clear)
 {
-    if (m_dbReaderPtr.isNull()) {
+    if (m_dbReaderPtr.isNull() || m_socketModelPtr.isNull()) {
         return false;
+    }
+
+    struct HalfSelectionState {
+        int modeId = 1000;
+        int instrId = 1000;
+        int power = 1;
+    };
+
+    struct SocketSelectionState {
+        HalfSelectionState cut;
+        HalfSelectionState coag;
+    };
+
+    std::array<SocketSelectionState, 4> previousSelections;
+    for (int i = 0; i < 4; ++i) {
+        const QModelIndex currentIndex = m_socketModelPtr->index(i, 0);
+        if (!currentIndex.isValid()) {
+            continue;
+        }
+
+        previousSelections[i].coag.modeId = currentIndex.data(SocketModel::CoagModeId).toInt();
+        previousSelections[i].coag.instrId = currentIndex.data(SocketModel::CoagModeInstrID).toInt();
+        previousSelections[i].coag.power = currentIndex.data(SocketModel::CoagModePower).toInt();
+
+        previousSelections[i].cut.modeId = currentIndex.data(SocketModel::CutModeId).toInt();
+        previousSelections[i].cut.instrId = currentIndex.data(SocketModel::CutModeInstrID).toInt();
+        previousSelections[i].cut.power = currentIndex.data(SocketModel::CutModePower).toInt();
     }
     
     std::vector<std::map<int, SockPtr>> socketMapVector;
@@ -861,10 +888,21 @@ bool ProgLoader::freeSettingsSocketInit(bool clear)
             if (!modes.isEmpty() && modes.firstKey() != 1000) {
                 firstModeId = modes.firstKey();
             }
-            
-            socket->setModeId(firstModeId, isCoag);
-            socket->setInstrumId(1000, isCoag);
-            isCoag ? socket->setCoagModePower(1) : socket->setCutModePower(1);
+
+            const HalfSelectionState& halfState = isCoag
+                    ? previousSelections[i].coag
+                    : previousSelections[i].cut;
+
+            if (!socket->setModeId(halfState.modeId, isCoag)) {
+                socket->setModeId(firstModeId, isCoag);
+            }
+
+            if (halfState.instrId > 0 && halfState.instrId != 1000) {
+                socket->setInstrumId(halfState.instrId, isCoag);
+            }
+
+            const int powerValue = std::max(1, halfState.power);
+            isCoag ? socket->setCoagModePower(powerValue) : socket->setCutModePower(powerValue);
         }
         
         socket->setAllowed(true);

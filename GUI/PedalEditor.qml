@@ -12,6 +12,7 @@ Rectangle {
     signal pedSelected(int index)
 
     id: pedalSelectRoot
+    color: "#6a6a6a"
 
     // function calcDimensions() {
     //     var rowMargins = 30  //
@@ -142,7 +143,7 @@ Rectangle {
             
             MouseArea {
                 anchors.fill: parent
-                onClicked: pedalSelectRoot.pedSelected(0)
+                onPressed: pedalSelectRoot.pedSelected(0)
             }
         }
         Rectangle {
@@ -171,7 +172,7 @@ Rectangle {
             }
             MouseArea {
                 anchors.fill: parent
-                onClicked: pedalSelectRoot.pedSelected(1)
+                onPressed: pedalSelectRoot.pedSelected(1)
             }
         }
         Rectangle {
@@ -216,7 +217,7 @@ Rectangle {
             }
             MouseArea {
                 anchors.fill: parent
-                onClicked: pedalSelectRoot.pedSelected(2)
+                onPressed: pedalSelectRoot.pedSelected(2)
             }
         }
         Rectangle {
@@ -243,7 +244,7 @@ Rectangle {
 
             MouseArea {
                 anchors.fill: parent
-                onClicked: pedalSelectRoot.pedSelected(3)
+                onPressed: pedalSelectRoot.pedSelected(3)
             }
         }
         Rectangle {
@@ -288,7 +289,7 @@ Rectangle {
             }
             MouseArea {
                 anchors.fill: parent
-                onClicked: pedalSelectRoot.pedSelected(4)
+                onPressed: pedalSelectRoot.pedSelected(4)
             }
         }
     }

@@ -223,6 +223,8 @@ Canvas {
                 font.pixelSize: 20
                 font.bold: true
                 wrapMode: Text.Wrap
+                lineHeight: 0.75
+                lineHeightMode: Text.ProportionalHeight
                 maximumLineCount: 2
                 elide: Text.ElideRight
                 width: parent.width
@@ -260,6 +262,8 @@ Canvas {
             font.pixelSize: 22
             font.bold: true
             wrapMode: Text.Wrap
+            lineHeight: 0.9
+            lineHeightMode: Text.ProportionalHeight
             height: 60
             color: isCoag ? "white" : "black"
             // verticalAlignment: Qt.AlignVCenter

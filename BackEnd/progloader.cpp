@@ -72,16 +72,16 @@ QString makeSocketName(Onyx::SocType type) {
         socketName = QString("EMPTY");
         break;
     case Onyx::BIPOLAR_1:
-        socketName = QString("БИ 1");
+        socketName = QString("БИ1");
         break;
     case Onyx::BIPOLAR_2:
-        socketName = QString("БИ 2");
+        socketName = QString("БИ2");
         break;
     case Onyx::MONOPOLAR_1:
-        socketName = QString("МОНО 1");
+        socketName = QString("МОНО1");
         break;
     case Onyx::MONOPOLAR_2:
-        socketName = QString("МОНО 2");
+        socketName = QString("МОНО2");
         break;
     }
     return socketName;

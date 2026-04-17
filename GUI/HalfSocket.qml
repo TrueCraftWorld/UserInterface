@@ -104,6 +104,8 @@ Rectangle {
         font.pixelSize:  modeId === 1000 ? 24 : 36
         font.bold: true
         wrapMode: Text.Wrap
+        lineHeight: 0.82
+        lineHeightMode: Text.ProportionalHeight
         maximumLineCount: 2
         elide: Text.ElideRight
         horizontalAlignment: halfSocketRoot.isCoag ? Text.AlignRight : Text.AlignLeft

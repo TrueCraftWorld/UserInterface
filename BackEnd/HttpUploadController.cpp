@@ -39,10 +39,32 @@ const QRegularExpression kFirmwareFileRe(
     QRegularExpression::CaseInsensitiveOption);
 const QRegularExpression kSimpleVersionRe(
     QStringLiteral("^\\d+(?:\\.\\d+)*$"));
+const char kUploadFirewallGuardPath[] = "/usr/local/sbin/upload-fw-guard";
 
 QString ipv4ToQString(const QHostAddress &a)
 {
     return a.toString();
+}
+
+QString normalizedBaseUrl(QString value)
+{
+    value = value.trimmed();
+    if (value.isEmpty()) {
+        return QString();
+    }
+    if (!value.endsWith(QLatin1Char('/'))) {
+        value += QLatin1Char('/');
+    }
+    return value;
+}
+
+bool parseBoolString(const QString &value)
+{
+    const QString v = value.trimmed().toLower();
+    return v == QStringLiteral("1")
+            || v == QStringLiteral("true")
+            || v == QStringLiteral("yes")
+            || v == QStringLiteral("on");
 }
 
 QString selectPayloadRoot(const QString &extractRoot)
@@ -221,6 +243,7 @@ void HttpUploadController::setLinkStm(LinkStm *linkStm)
 void HttpUploadController::setJsonStorage(JsonStorage *storage)
 {
     m_json = storage;
+    loadNetworkSettings();
     if (m_json) {
         setCurrentMediaVersion(m_json->readString(QStringLiteral("currentMediaVersion"), QStringLiteral("—")));
     } else {
@@ -336,14 +359,96 @@ QStringList HttpUploadController::localIpv4Addresses() const
 
 void HttpUploadController::updateBaseUrl()
 {
-    const QStringList ips = localIpv4Addresses();
-    const QString ip = ips.isEmpty() ? QStringLiteral("127.0.0.1") : ips.first();
-    const QString url = QStringLiteral("http://%1:%2/").arg(ip).arg(m_port);
+    const QString url = !m_publicBaseUrl.isEmpty()
+            ? normalizedBaseUrl(m_publicBaseUrl)
+            : QStringLiteral("http://%1:%2/")
+                  .arg(m_listenAddress.isNull() ? QStringLiteral("127.0.0.1") : ipv4ToQString(m_listenAddress))
+                  .arg(m_port);
     if (m_baseUrl == url) {
         return;
     }
     m_baseUrl = url;
     emit baseUrlChanged();
+}
+
+QHostAddress HttpUploadController::preferredListenAddress() const
+{
+    if (m_json) {
+        const QString configured = m_json->readString(QStringLiteral("httpUploadListenAddress")).trimmed();
+        if (!configured.isEmpty()) {
+            const QHostAddress configuredAddr(configured);
+            if (!configuredAddr.isNull()) {
+                return configuredAddr;
+            }
+        }
+    }
+    const QStringList ips = localIpv4Addresses();
+    if (ips.isEmpty()) {
+        return QHostAddress(QHostAddress::LocalHost);
+    }
+    return QHostAddress(ips.first());
+}
+
+void HttpUploadController::loadNetworkSettings()
+{
+    m_publicBaseUrl.clear();
+    m_trustProxyHeaders = false;
+    if (!m_json) {
+        return;
+    }
+    m_publicBaseUrl = normalizedBaseUrl(m_json->readString(QStringLiteral("httpUploadPublicBaseUrl")));
+    m_trustProxyHeaders = parseBoolString(m_json->readString(QStringLiteral("httpUploadTrustProxyHeaders")));
+}
+
+bool HttpUploadController::invokeUploadFirewallGuard(const QString &action, QString *errorText) const
+{
+    const QFileInfo helper(QString::fromLatin1(kUploadFirewallGuardPath));
+    if (!helper.exists()) {
+        return true;
+    }
+    if (!helper.isExecutable()) {
+        const QString msg = QString::fromUtf8("Скрипт управления firewall найден, но не исполняемый: %1")
+                                    .arg(QString::fromLatin1(kUploadFirewallGuardPath));
+        if (errorText) {
+            *errorText = msg;
+        }
+        return false;
+    }
+
+    QProcess proc;
+    const QStringList args = {
+        QStringLiteral("-n"),
+        QString::fromLatin1(kUploadFirewallGuardPath),
+        action
+    };
+    proc.start(QStringLiteral("sudo"), args);
+    if (!proc.waitForStarted(1000)) {
+        const QString msg = QString::fromUtf8("Не удалось запустить helper firewall.");
+        if (errorText) {
+            *errorText = msg;
+        }
+        return false;
+    }
+    if (!proc.waitForFinished(5000)) {
+        proc.kill();
+        proc.waitForFinished(1000);
+        const QString msg = QString::fromUtf8("Timeout вызова helper firewall.");
+        if (errorText) {
+            *errorText = msg;
+        }
+        return false;
+    }
+    if (proc.exitStatus() != QProcess::NormalExit || proc.exitCode() != 0) {
+        const QString details = QString::fromUtf8(proc.readAllStandardError()).trimmed();
+        const QString msg = details.isEmpty()
+                ? QString::fromUtf8("Helper firewall завершился с ошибкой.")
+                : QString::fromUtf8("Helper firewall завершился с ошибкой: %1").arg(details);
+        if (errorText) {
+            *errorText = msg;
+        }
+        return false;
+    }
+    return true;
 }
 
 void HttpUploadController::updateLogDownloadUrl()
@@ -369,6 +474,41 @@ bool HttpUploadController::isValidTokenInPath(const QString &path) const
     const QUrl url = QUrl::fromEncoded(path.toUtf8());
     QUrlQuery q(url);
     return q.queryItemValue(QStringLiteral("token")) == m_sessionToken;
+}
+
+bool HttpUploadController::isAuthorizedClient(const QHostAddress &peer) const
+{
+    if (peer.isNull()) {
+        return false;
+    }
+    if (m_authorizedClientAddress.isNull()) {
+        return true;
+    }
+    return peer == m_authorizedClientAddress;
+}
+
+QHostAddress HttpUploadController::effectiveClientAddress() const
+{
+    if (!m_client) {
+        return QHostAddress();
+    }
+    const QHostAddress peer = m_client->peerAddress();
+    if (!m_trustProxyHeaders || !peer.isLoopback()) {
+        return peer;
+    }
+
+    const QString forwarded = m_requestHeaders.value(QStringLiteral("x-forwarded-for")).trimmed();
+    if (forwarded.isEmpty()) {
+        return peer;
+    }
+
+    const QString first = forwarded.split(QLatin1Char(','), Qt::SkipEmptyParts).value(0).trimmed();
+    if (first.isEmpty()) {
+        return peer;
+    }
+
+    const QHostAddress forwardedAddr(first);
+    return forwardedAddr.isNull() ? peer : forwardedAddr;
 }
 
 void HttpUploadController::updateQrCode()
@@ -471,6 +611,7 @@ void HttpUploadController::startSession()
         return;
     }
 
+    loadNetworkSettings();
     if (m_json) {
         const QString p = m_json->readString(QStringLiteral("httpUploadPort"));
         if (!p.isEmpty()) {
@@ -489,16 +630,31 @@ void HttpUploadController::startSession()
 
     m_sessionToken = randomToken();
     emit sessionTokenChanged();
+    m_authorizedClientAddress = QHostAddress();
 
     QDir().mkpath(effectiveUploadDir());
     emit uploadSavePathChanged();
 
-    if (!m_server->listen(QHostAddress::AnyIPv4, static_cast<quint16>(m_port))) {
+    m_listenAddress = preferredListenAddress();
+    if (!m_server->listen(m_listenAddress, static_cast<quint16>(m_port))) {
         setLastError(QString::fromUtf8("Не удалось занять порт %1: %2")
                              .arg(m_port)
                              .arg(m_server->errorString()));
+        m_listenAddress = QHostAddress();
         m_sessionToken.clear();
         emit sessionTokenChanged();
+        return;
+    }
+
+    QString fwError;
+    if (!invokeUploadFirewallGuard(QStringLiteral("open"), &fwError)) {
+        if (m_server->isListening()) {
+            m_server->close();
+        }
+        m_listenAddress = QHostAddress();
+        m_sessionToken.clear();
+        emit sessionTokenChanged();
+        setLastError(fwError);
         return;
     }
 
@@ -511,6 +667,11 @@ void HttpUploadController::startSession()
 
 void HttpUploadController::stopSession()
 {
+    QString fwError;
+    if (!invokeUploadFirewallGuard(QStringLiteral("close"), &fwError)) {
+        qWarning() << "HttpUploadController:" << fwError;
+    }
+
     m_sessionTimer.stop();
     if (m_client) {
         m_client->disconnect(this);
@@ -529,6 +690,8 @@ void HttpUploadController::stopSession()
     if (m_server->isListening()) {
         m_server->close();
     }
+    m_listenAddress = QHostAddress();
+    m_authorizedClientAddress = QHostAddress();
     m_sessionToken.clear();
     emit sessionTokenChanged();
     m_rxBuffer.clear();
@@ -713,6 +876,7 @@ QByteArray HttpUploadController::buildUploadPageHtml() const
             "initial-scale=1\"><title>Загрузка файлов</title></head><body>"
             "<h1>Загрузка файлов</h1>"
             "<p><strong>Серийный номер:</strong> %3<br><strong>Тип аппарата:</strong> %4</p>"
+            "<p><strong>Важно:</strong> эта ссылка действует только для текущей сессии и только для устройства, которое первым открыло страницу. После перезапуска приёма или таймаута откройте страницу заново.</p>"
             "<p>Выберите файл обновления в формате <b>имя-a.b-c.d-e.zip</b> (например: onyx-5.6-3.4-1.zip)</p>"
             "<form id=\"uploadForm\" method=\"post\" action=\"/upload\" enctype=\"multipart/form-data\">"
             "<input type=\"hidden\" name=\"token\" value=\"%1\">"
@@ -1324,8 +1488,10 @@ bool HttpUploadController::parseMultipartAndSave(const QByteArray &body, const Q
         }
     }
 
-    // Для upload не блокируем по token: он может устареть в открытой вкладке,
-    // а полезный файл к этому моменту уже корректно обработан.
+    if (!m_active || m_sessionToken.isEmpty() || formToken != m_sessionToken) {
+        *errorMessage = QStringLiteral("token");
+        return false;
+    }
     if (*filesSaved == 0) {
         *errorMessage = sawInvalidReleaseZipName
                 ? QStringLiteral("invalid release name")
@@ -1393,12 +1559,28 @@ void HttpUploadController::tryProcessBuffer()
         }
 
         m_headerComplete = true;
+        const QHostAddress peerAddress = effectiveClientAddress();
+        const QString peerText = peerAddress.toString();
 
         if (m_method == QStringLiteral("GET")) {
             if (m_path == QStringLiteral("/") || m_path.isEmpty()) {
+                if (m_authorizedClientAddress.isNull()) {
+                    m_authorizedClientAddress = peerAddress;
+                    qWarning() << "HttpUploadController: session bound to client" << peerText;
+                } else if (!isAuthorizedClient(peerAddress)) {
+                    qWarning() << "HttpUploadController: rejected GET from unauthorized client" << peerText;
+                    sendSimpleHtml(m_client, 403, QStringLiteral("Доступ запрещён"),
+                                   QStringLiteral("<p>Сессия уже открыта на другом устройстве.</p>"));
+                    releaseClientSocket();
+                    return;
+                }
                 sendHttpResponse(m_client, 200, "text/html; charset=utf-8", buildUploadPageHtml());
             } else if (m_path.startsWith(QStringLiteral("/download/logFile.txt"))) {
-                if (!isValidTokenInPath(QString::fromLatin1(parts[1]))) {
+                if (!isAuthorizedClient(peerAddress)) {
+                    qWarning() << "HttpUploadController: rejected log download from unauthorized client" << peerText;
+                    sendSimpleHtml(m_client, 403, QStringLiteral("Доступ запрещён"),
+                                   QStringLiteral("<p>Скачивание доступно только с устройства, открывшего сессию.</p>"));
+                } else if (!isValidTokenInPath(QString::fromLatin1(parts[1]))) {
                     sendSimpleHtml(m_client, 403, QStringLiteral("Доступ запрещён"),
                                    QStringLiteral("<p>Неверный токен для скачивания файла.</p>"));
                 } else {
@@ -1428,6 +1610,20 @@ void HttpUploadController::tryProcessBuffer()
 
         if (m_path != QStringLiteral("/upload")) {
             sendSimpleHtml(m_client, 404, QStringLiteral("Не найдено"), QStringLiteral("<p>Страница не найдена</p>"));
+            releaseClientSocket();
+            return;
+        }
+        if (!m_active || m_sessionToken.isEmpty()) {
+            qWarning() << "HttpUploadController: rejected upload without active session from" << peerText;
+            sendSimpleHtml(m_client, 403, QStringLiteral("Доступ запрещён"),
+                           QStringLiteral("<p>Сессия загрузки не активна. Откройте страницу заново с устройства.</p>"));
+            releaseClientSocket();
+            return;
+        }
+        if (!isAuthorizedClient(peerAddress)) {
+            qWarning() << "HttpUploadController: rejected upload from unauthorized client" << peerText;
+            sendSimpleHtml(m_client, 403, QStringLiteral("Доступ запрещён"),
+                           QStringLiteral("<p>Загрузка доступна только с устройства, открывшего сессию.</p>"));
             releaseClientSocket();
             return;
         }

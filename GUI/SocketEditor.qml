@@ -479,7 +479,9 @@ Popup {
                     anchors.bottom: instrButtons.top
                     curIndex: modeEditor.currentInstrIndex
                     initialIndex: initiallySelectedInstr
-                    imageSourceTemplate: "image://instruments/minstr%1"
+                    noImage: true
+                    hideNoImageSymbol: true
+                    // imageSourceTemplate: "image://instruments/minstr%1"
                 }
 
                 RowLayout {
@@ -565,7 +567,7 @@ Popup {
 
                     Item {
                         height: 50
-                        visible: !modeEditor.isEndo
+                        visible: !modeEditor.isEndo && !isBiCoagMode()
                     }
 
                     Label {
@@ -1244,7 +1246,7 @@ Popup {
             if (internalIndexChange || openingInProgress) {
                 return
             }
-            if (index === modeEditor.currentModeIndex && centerView !== "modePreview") {
+            if (index === modeEditor.currentModeIndex && centerView === "modePreview") {
                 return
             }
             modeEditor.currentModeIndex = index
@@ -1260,7 +1262,7 @@ Popup {
             if (internalIndexChange || openingInProgress) {
                 return
             }
-            if (index === modeEditor.currentInstrIndex && centerView !== "instrPreview") {
+            if (index === modeEditor.currentInstrIndex && centerView === "instrPreview") {
                 return
             }
             modeEditor.currentInstrIndex = index

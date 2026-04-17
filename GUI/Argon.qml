@@ -60,12 +60,12 @@ Rectangle {
         id: rootCustomBut
         property int delta
         property string iconText
-        property bool pressed: mouseArea.pressed
+        property bool isPressed: mouseArea.pressed
         
-        signal clicked()
+        signal pressed()
 
         radius: 16
-        color: pressed ? "#66BB6A" : "#8BC34A"
+        color: isPressed ? "#66BB6A" : "#8BC34A"
         border {
             color: "#00000030"
             width: 1
@@ -85,7 +85,7 @@ Rectangle {
             
             onPressed: {
                 // Первое срабатывание СРАЗУ при нажатии (как в ModePowerRect)
-                rootCustomBut.clicked()
+                rootCustomBut.pressed()
                 // Запускаем таймер задержки перед автоповтором
                 delayTimer.start()
             }
@@ -114,7 +114,7 @@ Rectangle {
             id: autoRepeatTimer
             interval: 150  // Интервал повторения в миллисекундах
             repeat: true
-            onTriggered: rootCustomBut.clicked()
+            onTriggered: rootCustomBut.pressed()
         }
     }
 
@@ -188,7 +188,7 @@ Rectangle {
             delta: -10
             iconText: "−"
             visible: showControls
-            onClicked: {
+            onPressed: {
                 var newRate = Math.max(minFlowRate, flowRate + delta)
                 if (newRate !== flowRate) {
                     isUserChange = true  // Устанавливаем флаг перед изменением
@@ -288,7 +288,7 @@ Rectangle {
             delta: 10
             iconText: "+"
             visible: showControls
-            onClicked: {
+            onPressed: {
                 var newRate = Math.min(maxFlowRate, flowRate + delta)
                 if (newRate !== flowRate) {
                     isUserChange = true  // Устанавливаем флаг перед изменением
@@ -391,7 +391,7 @@ Rectangle {
             MouseArea {
                 id: blowMA
                 anchors.fill: parent
-                onClicked: {
+                onPressed: {
                     // Визуальная обратная связь
                     blowButton.isPressed = true
                     blowTimer.restart()

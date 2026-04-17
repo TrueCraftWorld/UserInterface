@@ -143,6 +143,9 @@ int main(int argc, char *argv[])
     initMap->insert("serialNumber", "");
     initMap->insert("deviceType", "");
     initMap->insert("featureNotes", "");
+    initMap->insert("httpUploadListenAddress", "");
+    initMap->insert("httpUploadPublicBaseUrl", "");
+    initMap->insert("httpUploadTrustProxyHeaders", "0");
     m_savedJson = new JsonStorage(nullptr, initMap);
     engine.rootContext()->setContextProperty("savedJson", m_savedJson);
 

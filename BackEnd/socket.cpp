@@ -16,10 +16,12 @@ SOCKET::SOCKET(Onyx::SocType type) :
         m_allowedPedals = {Onyx::NO_PED, Onyx::SINGLE_PED, Onyx::DOUBLE_PED, Onyx::INSTR_BUTTON_BI};
         break;
     case Onyx::MONOPOLAR_1:
-        m_allowedPedals = {Onyx::NO_PED, Onyx::SINGLE_PED, Onyx::DOUBLE_PED, Onyx::INSTR_BUTTON_MONO};
+        m_allowedPedals = {Onyx::NO_PED, Onyx::SINGLE_PED, Onyx::DOUBLE_PED};
+//        m_allowedPedals = {Onyx::NO_PED, Onyx::SINGLE_PED, Onyx::DOUBLE_PED, Onyx::INSTR_BUTTON_MONO};
         break;
     case Onyx::MONOPOLAR_2:
-        m_allowedPedals = {Onyx::NO_PED, Onyx::SINGLE_PED, Onyx::DOUBLE_PED, Onyx::INSTR_BUTTON_MONO};
+        m_allowedPedals = {Onyx::NO_PED, Onyx::SINGLE_PED, Onyx::DOUBLE_PED};
+//        m_allowedPedals = {Onyx::NO_PED, Onyx::SINGLE_PED, Onyx::DOUBLE_PED, Onyx::INSTR_BUTTON_MONO};
         break;
     default:
         break;
@@ -110,10 +112,12 @@ void SOCKET::setSocketType(Onyx::SocType newSocketType)
         m_allowedPedals = {Onyx::NO_PED, Onyx::SINGLE_PED, Onyx::DOUBLE_PED, Onyx::INSTR_BUTTON_BI};
         break;
     case Onyx::MONOPOLAR_1:
-        m_allowedPedals = {Onyx::NO_PED, Onyx::SINGLE_PED, Onyx::DOUBLE_PED, Onyx::INSTR_BUTTON_MONO};
+        m_allowedPedals = {Onyx::NO_PED, Onyx::SINGLE_PED, Onyx::DOUBLE_PED};
+//        m_allowedPedals = {Onyx::NO_PED, Onyx::SINGLE_PED, Onyx::DOUBLE_PED, Onyx::INSTR_BUTTON_MONO};
         break;
     case Onyx::MONOPOLAR_2:
-        m_allowedPedals = {Onyx::NO_PED, Onyx::SINGLE_PED, Onyx::DOUBLE_PED, Onyx::INSTR_BUTTON_MONO};
+        m_allowedPedals = {Onyx::NO_PED, Onyx::SINGLE_PED, Onyx::DOUBLE_PED};
+//        m_allowedPedals = {Onyx::NO_PED, Onyx::SINGLE_PED, Onyx::DOUBLE_PED, Onyx::INSTR_BUTTON_MONO};
         break;
     default:
         break;

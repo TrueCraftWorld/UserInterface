@@ -3,19 +3,50 @@
 #include <QFileInfo>
 #include <QDir>
 #include <QVariantMap>
+#include <QDebug>
+
+namespace {
+
+bool writeJsonObjectToFile(const QString &filePath, const QJsonObject &object)
+{
+    QFile jsonFile(filePath);
+    if (!jsonFile.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
+        qWarning() << "JsonStorage: failed to open" << filePath
+                   << "for writing:" << jsonFile.errorString();
+        return false;
+    }
+
+    const QByteArray jsonBytes = QJsonDocument(object).toJson(QJsonDocument::Indented);
+    const qint64 written = jsonFile.write(jsonBytes);
+    if (written != jsonBytes.size()) {
+        qWarning() << "JsonStorage: failed to fully write" << filePath
+                   << "- written" << written << "of" << jsonBytes.size()
+                   << "bytes:" << jsonFile.errorString();
+        jsonFile.close();
+        return false;
+    }
+
+    jsonFile.close();
+    return true;
+}
+
+} // namespace
 
 JsonStorage::JsonStorage(QObject *parent, QVariantMap* initMap)
     : QObject{parent}
 {
     QFileInfo info(JSON_FILE_NAME);
     QDir dir = info.absoluteDir();
-    if (!dir.exists()) {
-        dir.mkpath(dir.absolutePath());
+    if (!dir.exists() && !dir.mkpath(dir.absolutePath())) {
+        qWarning() << "JsonStorage: failed to create directory" << dir.absolutePath();
     }
 
     // Одноразовая миграция со старого пути, если новый файл ещё не создан
     if (!QFile::exists(JSON_FILE_NAME) && QFile::exists(LEGACY_JSON_FILE_NAME)) {
-        QFile::copy(LEGACY_JSON_FILE_NAME, JSON_FILE_NAME);
+        if (!QFile::copy(LEGACY_JSON_FILE_NAME, JSON_FILE_NAME)) {
+            qWarning() << "JsonStorage: failed to migrate legacy file from"
+                       << LEGACY_JSON_FILE_NAME << "to" << JSON_FILE_NAME;
+        }
     }
 
     QFile jsonFile(JSON_FILE_NAME);
@@ -26,8 +57,14 @@ JsonStorage::JsonStorage(QObject *parent, QVariantMap* initMap)
         jsonFile.close();
     } else {
         // Если файла нет или он не читается, создаём из дефолтной карты
-        m_object = QJsonObject::fromVariantMap(*initMap);
+        if (initMap) {
+            m_object = QJsonObject::fromVariantMap(*initMap);
+        } else {
+            qWarning() << "JsonStorage: initMap is null, starting with empty object";
+            m_object = QJsonObject();
+        }
         m_document.setObject(m_object);
+        writeJsonObjectToFile(JSON_FILE_NAME, m_object);
     }
 
 }
@@ -41,16 +78,16 @@ void JsonStorage::save(QString key, QJsonValue data)
 //template <typename T> void JsonStorage::save(QString key, T data)
 {
     m_object[key] = data;
+    m_document.setObject(m_object);
 
-    QFile jsonFile(JSON_FILE_NAME);
-    if (!jsonFile.open(QIODevice::WriteOnly)) {
-        // qDebug() << "не открывается json";
+    QFileInfo info(JSON_FILE_NAME);
+    QDir dir = info.absoluteDir();
+    if (!dir.exists() && !dir.mkpath(dir.absolutePath())) {
+        qWarning() << "JsonStorage: failed to create directory" << dir.absolutePath();
+        return;
     }
-    else {
-        jsonFile.write(QJsonDocument(m_object).toJson(QJsonDocument::Indented));
-        jsonFile.close();
-//        qDebug() << "записали " << data << " в " << key;
-    }
+
+    writeJsonObjectToFile(JSON_FILE_NAME, m_object);
 }
 
 bool JsonStorage::read(QString key, QJsonValue* data)

@@ -7,6 +7,7 @@ Rectangle {
     signal pedalMenuRequest()
     property int pedalStateIdx
     property int socketId
+    property real shellSize: Math.min(width, height)
 
     Connections {
         target: pedalRoot
@@ -88,9 +89,9 @@ Rectangle {
 
     Rectangle {
         id: shell
-        width: 85
-        height: 85
-        anchors.top: parent.top
+        width: pedalRoot.shellSize
+        height: pedalRoot.shellSize
+        anchors.bottom: parent.bottom
         anchors.right: parent.right
 
         radius: 10
@@ -205,7 +206,7 @@ Rectangle {
         MouseArea {
 
             anchors.fill: parent
-            onClicked: {
+            onPressed: {
 //                console.log("initial PedClick")
                 pedalRoot.pedalMenuRequest()
             }

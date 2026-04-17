@@ -211,6 +211,6 @@ Rectangle {
     MouseArea {
         id: mouseArea
         anchors.fill: parent
-        onClicked: neutButRoot.clicked()
+        onPressed: neutButRoot.clicked()
     }
 }

@@ -117,11 +117,16 @@ private:
     void setActive(bool v);
     void setLastError(const QString &e);
     void updateBaseUrl();
+    QHostAddress preferredListenAddress() const;
+    QHostAddress effectiveClientAddress() const;
+    void loadNetworkSettings();
+    bool invokeUploadFirewallGuard(const QString &action, QString *errorText = nullptr) const;
     void tryProcessBuffer();
     void sendHttpResponse(QTcpSocket *socket, int statusCode, const QByteArray &contentType, const QByteArray &body);
     void sendFileDownloadResponse(QTcpSocket *socket, const QByteArray &downloadFileName, const QByteArray &body);
     void sendSimpleHtml(QTcpSocket *socket, int statusCode, const QString &title, const QString &bodyHtml);
     QByteArray buildUploadPageHtml() const;
+    bool isAuthorizedClient(const QHostAddress &peer) const;
     bool parseMultipartAndSave(const QByteArray &body, const QString &contentType, int *filesSaved, QString *errorMessage);
     bool processReleaseArchiveBytes(const QString &sourceFileName, const QByteArray &archiveBytes, QString *errorMessage);
     static QString normalizeRelPath(const QString &rawRelPath);
@@ -183,6 +188,10 @@ private:
     QStringList m_availableGenVersions;
     int m_port = 57891;
     QString m_uploadDir; // из JSON или по умолчанию
+    QString m_publicBaseUrl;
+    bool m_trustProxyHeaders = false;
+    QHostAddress m_listenAddress;
+    QHostAddress m_authorizedClientAddress;
     QTimer m_sessionTimer;
 
     static constexpr int kSessionTimeoutMs = 15 * 60 * 1000;

@@ -6,6 +6,7 @@ import QtQuick.CuteKeyboard 1.0
 import StratifyLabs.UI 2.0
 import BackEnd 1.0
 
+// О-хо-хо, будем сливать
 
 Window {
     id: container
@@ -22,8 +23,8 @@ Window {
     // Свойства для управления панелями
     property bool leftPanelExpanded: false
     property bool rightPanelExpanded: false
-    readonly property int pedalPanelWidth: 85
-    readonly property int argNeutralPanelWidth: 85
+    readonly property int pedalPanelWidth: 100
+    readonly property int argNeutralPanelWidth: 100
 
     // Свойство для нейтрального электрода
     property bool neutralConnected: false
@@ -252,7 +253,6 @@ Window {
             z: -1
             onPressed: mouse.accepted = true
             onReleased: mouse.accepted = true
-            onClicked: mouse.accepted = true
             onPositionChanged: mouse.accepted = true
         }
 
@@ -316,6 +316,14 @@ Window {
         target: pedalContainer
         function onPedMenuRequest(socketId) {
             pedDrawer.socketId = socketId
+            var targetHeight = pedalContainer.socketHeight(socketId)
+            if (targetHeight > 0) {
+                pedDrawer.y = pedalContainer.y + pedalContainer.socketTop(socketId)
+                pedDrawer.height = targetHeight
+            } else {
+                pedDrawer.y = 0
+                pedDrawer.height = container.height
+            }
             pedDrawer.open()
         }
     }
@@ -335,7 +343,7 @@ Window {
         Rectangle {
             anchors.fill: parent
             color: "black"
-            opacity: 0.5
+            opacity: 0.7
 
             MouseArea {
                 anchors.fill: parent
@@ -416,12 +424,6 @@ Window {
             isSwipeGesture = false
         }
 
-        onClicked: {
-            // Если это был свайп (даже не завершенный), принимаем событие, чтобы оно не проходило дальше
-            // Если это обычный клик, пропускаем событие (propagateComposedEvents сработает)
-            mouse.accepted = hadSwipeGesture
-            hadSwipeGesture = false
-        }
     }
 
     // MouseArea для обработки свайпов в области PedalContainer
@@ -503,17 +505,10 @@ Window {
             if (hadSwipeGesture) {
                 mouse.accepted = true
             } else {
-                // Если не было свайпа, пропускаем событие для клика
+            // Если не было свайпа, пропускаем событие для клика
                 mouse.accepted = false
             }
             isSwipeGesture = false
-            // hadSwipeGesture сохраняем для onClicked
-        }
-
-        onClicked: {
-            // Если это был свайп (даже не завершенный), принимаем событие, чтобы оно не проходило дальше
-            // Если это обычный клик, пропускаем событие для клика по педалям
-            mouse.accepted = hadSwipeGesture
             hadSwipeGesture = false
         }
     }

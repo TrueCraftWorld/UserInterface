@@ -9,6 +9,7 @@ Rectangle {
     property string imageSourceTemplate
     property alias curIndex: theView.currentIndex
     property bool noImage: false
+    property bool hideNoImageSymbol: false
     property int initialIndex: -1
     signal newIndexSelected(int newIndex)
 
@@ -101,7 +102,7 @@ Rectangle {
                     id: itemSymbol
                     height: parent.height
                     width: parent.height
-                    visible: noImage
+                    visible: noImage && !hideNoImageSymbol
                     radius: 8
                     anchors {
                         top:parent.top
@@ -126,7 +127,8 @@ Rectangle {
                     anchors {
                         top:parent.top
                         bottom: parent.bottom
-                        left: itemImageRect.right
+                        left: noImage ? (hideNoImageSymbol ? parent.left : itemSymbol.right)
+                                      : itemImageRect.right
                         right:  parent.right
                     }
                     Label {
@@ -164,7 +166,10 @@ Rectangle {
 
                 MouseArea {
                     anchors.fill: parent
-                    onClicked: {
+                    onPressed: {
+                        if (theView.currentIndex === index) {
+                            itemList.newIndexSelected(index)
+                        }
                         theView.currentIndex = index
                     }
                 }

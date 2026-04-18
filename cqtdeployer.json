@@ -1,0 +1,35 @@
+{
+    "bin": [
+        "./"
+    ],
+    "qmake": "/opt/qt5/bin/qmake",
+    "targetDir": "./Distribution",
+    "libDir": "./",
+    "recursiveDepth": 5,
+    "deploySystem": true,
+    "deployPlugins": true,
+    "deployQml": true,
+    "deployTranslations": true,
+    "qmlOutDir": "qml",
+    "pluginsOutDir": "plugins",
+    "translationsOutDir": "translations",
+    "libOutDir": "./",
+    "ignore": [
+        "libEGL",
+        "libGLESv2",
+        "d3dcompiler",
+        "opengl32sw"
+    ],
+    "extraLibs": [
+        "/usr/x86_64-w64-mingw32/lib/libgcc_s_seh-1.dll",
+        "/usr/x86_64-w64-mingw32/lib/libstdc++-6.dll",
+        "/usr/x86_64-w64-mingw32/lib/libwinpthread-1.dll"
+    ],
+    "extraPaths": [
+        "/usr/x86_64-w64-mingw32/bin"
+    ],
+    "clear": true,
+    "force": true,
+    "zip": true,
+    "zipName": "%{ProjectName}_win64_portable"
+}

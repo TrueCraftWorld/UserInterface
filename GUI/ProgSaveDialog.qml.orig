@@ -1,21 +1,65 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
+<<<<<<< HEAD
 import QtQuick.Layouts 1.15
+=======
 import StratifyLabs.UI 2.0
+>>>>>>> development
 import BackEnd 1.0
 
 Dialog {
     readonly property string progName: progNameInput.text
+<<<<<<< HEAD
+    readonly property string scopeName: "Программы пользователя"
+    
+    title: qsTr("Название программы")
+=======
     readonly property string scopeName: contRect.isNewScope ? newScopeNameInput.text : scopeNameBox.currentText
     title: qsTr("Сохранение программы")
+>>>>>>> development
     standardButtons: Dialog.Ok | Dialog.Cancel
+    modal: true
+    
     onOpened: {
-        console.log("openSaveDia")
-        recomHandle.isRecomProgs = false;
-        scopeNameBox.model = recomHandle.scopeNameList
-        progNameInput.text = "Программа 1"
+        recomHandle.isRecomProgs = false
+        progNameInput.text = container.currentProgName || "Программа 1"
+        progNameInput.selectAll()
+    }
+    
+    onClosed: {
+        progNameInput.focus = false
+        Qt.inputMethod.hide()
     }
 
+<<<<<<< HEAD
+    contentItem: Item {
+        implicitWidth: 400
+        implicitHeight: 150
+        
+        ColumnLayout {
+            anchors.fill: parent
+            anchors.margins: 20
+            spacing: 20
+            
+            Text {
+                Layout.alignment: Qt.AlignHCenter
+                text: qsTr("Введите название:")
+                font.pixelSize: 22
+                color: "black"
+            }
+
+            TextField {
+                id: progNameInput
+                Layout.fillWidth: true
+                Layout.preferredHeight: 60
+                font.pixelSize: 24
+                horizontalAlignment: Text.AlignHCenter
+                text: "Программа 1"
+                
+                Component.onCompleted: {
+                    forceActiveFocus()
+                }
+=======
     contentItem: Rectangle {
         id: contRect
         property bool isNewScope: false
@@ -68,6 +112,7 @@ Dialog {
                 placeholder: "Название";
                 anchors.horizontalCenter: parent.horizontalCenter
                 width: parent.width * .9
+>>>>>>> development
             }
         }
 

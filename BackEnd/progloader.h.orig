@@ -80,13 +80,16 @@ public:
 
 	///формально ничего не мешает удалить/переименовать рекоменд прогу
 	void deleteUserProg(int id);
+<<<<<<< HEAD
 	void deleteAllUserProgs();
+=======
 
 	void renameUserProg(int id, const QString& name);
 
 	void deleteUserScope(int id);
 
 	void renameUserScope(int id, const QString& name);
+>>>>>>> development
 	
 	/**
 	 * @brief Загружает последнее сохранённое состояние из БД
@@ -118,7 +121,19 @@ private:
 
 	QSharedPointer<DataBaseReader> m_dbReaderPtr;
 	QSharedPointer<SocketModel> m_socketModelPtr;
+<<<<<<< HEAD
+
+	// std::map<int, QSharedPointer<ProgLoaderBase>> m_loaders;
+	// QPointer<ProgLoaderBase> loader = nullptr;
+	progType m_curLoaderType = ptRecom;
+	int m_currentLoadedProgId = -1;
+	QString m_currentLoadedProgName;
+	int m_currentLoadedScopeId = -1;
+
+	ProgLoaderBase* getLoader(progType type);
+=======
 	progType m_curLoaderType = ptRecom;	
+>>>>>>> development
 };
 
 #endif // PROGLOADER_H

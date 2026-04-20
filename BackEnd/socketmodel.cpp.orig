@@ -1,23 +1,6 @@
 #include "socketmodel.h"
 #include <QQmlEngine>
 #include <QTimer>
-// #include <algorithm>
-
-namespace {
-template<typename Key, typename Value>
-void uniteMaps(
-    std::map<Key, Value>& destination,
-    const std::map<Key, Value>& source) {
-    for (const auto& [key, value] : source) {
-        auto it = destination.find(key);
-        if (it != destination.end()) {
-            continue;
-        } else {
-            destination[key] = value;
-        }
-    }
-}
-}
 
 SocketModel::SocketModel(QObject *parent)
     : QAbstractListModel{parent}
@@ -163,20 +146,6 @@ QVariant SocketModel::data(const QModelIndex &index, int role) const
         }
         return res;
     }
-    case CoagInstrIdList:
-    {
-        QStringList res;
-        std::map<int, Onyx::InstrInfo> all;
-        int lim = socketItem.coagModeCount();
-        for (int mode = 0; mode < lim; ++mode) {
-            const auto& modePtr = socketItem.getMode(mode, true);
-            uniteMaps(all, modePtr->InstrConstraints() );
-        }
-        for (const auto& [key, item] : all) {
-            res.append(QString::number(item.id));
-        }
-        return res;
-    }
     case CoagModeInstrNum:
     {
         if (socketItem.curCoagMode().isNull()
@@ -184,8 +153,13 @@ QVariant SocketModel::data(const QModelIndex &index, int role) const
             return -1;
         
         int instrId = socketItem.curCoagMode()->selectedInstrId();
+<<<<<<< HEAD
         // Если выбран пункт "НЕ ВЫБРАН" (ID = 1000), возвращаем 1000
+        if (instrId == 1000)
+=======
+        // Если выбран "Инструмент не выбран" (ID = 1000), возвращаем 1000
         if (instrId == 1000) {
+>>>>>>> development
             return 1000;
         }
         
@@ -267,20 +241,6 @@ QVariant SocketModel::data(const QModelIndex &index, int role) const
         }
         return res;
     }
-    case CutInstrIdList:
-    {
-        QStringList res;
-        std::map<int, Onyx::InstrInfo> all;
-        int lim = socketItem.cutModeCount();
-        for (int mode = 0; mode < lim; ++mode) {
-            const auto& modePtr = socketItem.getMode(mode, false);
-            uniteMaps(all,modePtr->InstrConstraints() );
-        }
-        for (const auto& [key, item] : all) {
-            res.append(QString::number(item.id));
-        }
-        return res;
-    }
     case CutModeInstrNum:
     {
         if (socketItem.curCutMode().isNull()
@@ -289,8 +249,13 @@ QVariant SocketModel::data(const QModelIndex &index, int role) const
         }
         
         int instrId = socketItem.curCutMode()->selectedInstrId();
+<<<<<<< HEAD
         // Если выбран пункт "НЕ ВЫБРАН" (ID = 1000), возвращаем 1000
+        if (instrId == 1000)
+=======
+        // Если выбран "Инструмент не выбран" (ID = 1000), возвращаем 1000
         if (instrId == 1000) {
+>>>>>>> development
             return 1000;
         }
         
@@ -515,6 +480,7 @@ QStringList SocketModel::instrumNamesIds(int socketId, int modeIndex, bool isCoa
         if (instIter != m_instrMapPtr->end()) {
             names.append(QString("%1").arg(instIter->second->id()));
         }
+    }
     // Добавляем ID для пункта "НЕ ВЫБРАН"
     names.append("1000");
     return names;
@@ -541,6 +507,7 @@ QStringList SocketModel::instrumNamesNums(int socketId, int modeIndex, bool isCo
         if (instIter != m_instrMapPtr->end()) {
             nums.append(QString("%1").arg(instIter->second->legacyNumber()));
         }
+    }
     // Добавляем Num для пункта "НЕ ВЫБРАН"
     nums.append("1000");
     return nums;
@@ -1036,5 +1003,9 @@ std::vector<std::map<int, InstrPtr> > SocketModel::getInstrCopy()
             curInstr.insert({instr.first, InstrPtr::create(*instr.second)});
         }
     }
+<<<<<<< HEAD
+    return progDesc;
+=======
     return instrMap;
+>>>>>>> development
 }

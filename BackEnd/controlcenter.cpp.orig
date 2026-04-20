@@ -25,14 +25,14 @@ std::vector<int> m_rolesSaveTriggered = {
 
 ControlCenter::ControlCenter(QObject *parent)
     : QObject{parent},
+        m_socketModel(new SocketModel()),
+        m_editor(new SocketModeEditor(m_socketModel,this)),
+        m_handle(new ProgHandle(this)),
+        m_progLoader(new ProgLoader(this)),
+        m_periphery(new PeriphHandler(this)),
+        m_linkStm(nullptr),
+        m_saveTimer(new QTimer(this))
 
-    m_socketModel(new SocketModel()),
-    m_editor(new SocketModeEditor(m_socketModel,this)),
-    m_handle(new ProgHandle(this)),
-    m_progLoader(new ProgLoader(this)),
-    m_periphery(new PeriphHandler(this)),
-    m_linkStm(nullptr),
-    m_saveTimer(new QTimer(this))
 {
 	QQmlEngine::setObjectOwnership(m_socketModel.data(), QQmlEngine::CppOwnership);
 	QQmlEngine::setObjectOwnership(m_editor, QQmlEngine::CppOwnership);
@@ -71,15 +71,16 @@ void ControlCenter::init()
 
 void ControlCenter::makeHandleConnections()
 {
-	if (m_handle.isNull())
-		return;
+<<<<<<< HEAD
+    if (m_handle.isNull())
+        return;
 
-	connect(m_handle, &ProgHandle::signalRemoveSub,
-	        m_socketModel.data(), &SocketModel::slotRemoveSubProg);
+    connect(m_handle, &ProgHandle::signalRemoveSub,
+            m_socketModel.data(), &SocketModel::slotRemoveSubProg);
 
-	connect(m_handle, &ProgHandle::signalRecomProgChosen,
-	        m_progLoader, &ProgLoader::programmLoadSocketInit);
-
+    connect(m_handle, &ProgHandle::signalRecomProgChosen, 
+            m_progLoader, &ProgLoader::programmLoadSocketInit);
+    
     connect(m_handle, &ProgHandle::signalFreeSettingsRequested,
             this, [this]() {
         m_progLoader->freeSettingsSocketInit(true);
@@ -90,6 +91,45 @@ void ControlCenter::makeHandleConnections()
         m_progLoader->deleteAllUserProgs();
     });
     
+    connect(m_handle, &ProgHandle::signalScopeRequest,
+            this, [this] (int id) {
+        m_handle->setProgList(m_progLoader->getProgs(id));
+    });
+
+    connect(m_handle, &ProgHandle::updateScopes,
+            this, [this] (bool isRecom) {
+        // std::cout << "caught ProgHandle::updateScopes" << isRecom << std::endl;
+        m_progLoader->setCurLoaderType(isRecom ? ProgLoader::ptRecom : ProgLoader::ptUser);
+        m_handle->setScopeList(m_progLoader->getCategories());
+    });
+
+    // connect(m_handle, &ProgHandle::signalUserProgsRequest,
+    //         this, [this] () {
+    //     // qDebug() << " lamba signalUserProgsRequest";
+    //     m_handle->setUserProgList(m_progLoader->getUserProgList());
+    // });
+
+    // connect(m_handle, &ProgHandle::signalUserProgChosen,
+    //         m_progLoader, &ProgLoader::loadUserProg);
+
+    connect(m_handle, &ProgHandle::signalAddEmptyDefault,
+            m_progLoader, &ProgLoader::defaultSocketInit);
+
+    connect(m_handle, &ProgHandle::signalSaveName,
+            m_progLoader, &ProgLoader::saveUserProg);
+
+    connect(m_handle, &ProgHandle::signalCopyCurrent,
+            m_socketModel.data(), &SocketModel::copyCurrentList);
+=======
+	if (m_handle.isNull())
+		return;
+
+	connect(m_handle, &ProgHandle::signalRemoveSub,
+	        m_socketModel.data(), &SocketModel::slotRemoveSubProg);
+
+	connect(m_handle, &ProgHandle::signalRecomProgChosen,
+	        m_progLoader, &ProgLoader::programmLoadSocketInit);
+
 	connect(m_handle, &ProgHandle::signalScopeRequest,
 	        this, [this] (int id) {
 		m_handle->setProgList(m_progLoader->getProgs(id));
@@ -124,6 +164,7 @@ void ControlCenter::makeHandleConnections()
 	        m_progLoader, &ProgLoader::renameUserProg);
 
 	// connect(m_)
+>>>>>>> development
 }
 
 QPointer<SocketModeEditor> ControlCenter::getModeEditor() const
@@ -206,6 +247,113 @@ void ControlCenter::scheduleSave()
 
 void ControlCenter::setLinkStm(LinkStm* linkStm)
 {
+<<<<<<< HEAD
+    if (m_linkStm == linkStm)
+        return;
+        
+    // Отключаем старые соединения, если они были
+    if (!m_linkStm.isNull()) {
+        disconnect(m_linkStm, nullptr, nullptr, nullptr);
+        m_linkStm->deleteLater();
+        m_linkStm = nullptr;
+    }
+    
+    m_linkStm = linkStm;
+    
+    // Подключаем обработчик входящих данных
+    if (!m_linkStm.isNull()) {
+//        connect(m_linkStm, &LinkStm::sigUnitStateChanged,
+//                m_periphery, &PeriphHandler::unitStateHandler,
+//                Qt::QueuedConnection);
+        
+        // Инициализируем текущие значения состояния в LinkStm
+        m_linkStm->setEnableActivation(m_periphery->enableActivation());
+        m_linkStm->setNeutralElDivided(m_periphery->neutralElDivided());
+        m_linkStm->setArgonFlowRate(m_periphery->argonFlowRate());
+        
+        // Подключаем сигнал обновления данных сокетов
+        // чуть громоздко но без лишних сигналов, полностью нативно
+        connect(m_socketModel.data(), &SocketModel::dataChanged,
+                this, [this] (const QModelIndex &topLeft,
+                                const QModelIndex &bottomRight,
+                                const QVector<int> &/*roles = QVector<int>()*/) {
+            int idxStart = topLeft.row();
+            int idxStop = bottomRight.row();
+            for (int i = idxStart; i <= idxStop; ++i) {
+            //вызовы data по доке reenterant так что мы можем предать в арги прям вызовы
+                QMetaObject::invokeMethod(  m_linkStm.data(),
+                                        "updateSocketData",
+                                        Qt::QueuedConnection,
+                                        Q_ARG(int, i),
+                                        Q_ARG(Onyx::SocketState, topLeft.siblingAtRow(i).data(SocketModel::SocketUartInfo).value<Onyx::SocketState>()));
+                                        // Q_ARG(quint16, topLeft.siblingAtRow(i).data(SocketModel::CutModeNum).value<quint16>()),
+                                        // Q_ARG(quint16, topLeft.siblingAtRow(i).data(SocketModel::CoagModeNum).value<quint16>()),
+                                        // Q_ARG(quint16, topLeft.siblingAtRow(i).data(SocketModel::CutModePower).value<quint16>()),
+                                        // Q_ARG(quint16, topLeft.siblingAtRow(i).data(SocketModel::CoagModePower).value<quint16>()),
+                                        // Q_ARG(quint8, topLeft.siblingAtRow(i).data(SocketModel::SocketPedal).value<quint8>()));
+            }
+        }, Qt::QueuedConnection);
+        
+        // Подключаем сигналы активации
+        connect(m_linkStm, &LinkStm::sigStartActivation,
+                m_socketModel.data(), &SocketModel::startActivation,
+                Qt::QueuedConnection);
+        connect(m_linkStm, &LinkStm::sigStopActivation,
+                m_socketModel.data(), &SocketModel::stopActivation,
+                Qt::QueuedConnection);
+        connect(m_linkStm, &LinkStm::sigStopActivation,
+                m_periphery, &PeriphHandler::showWarningCode,
+                Qt::QueuedConnection);
+        connect(m_linkStm, &LinkStm::sigError,
+                m_periphery, &PeriphHandler::showWarningCode,
+                Qt::QueuedConnection);
+        
+//-----------Коннекты получения перифейрийной информации
+        connect(m_linkStm, &LinkStm::sigUnitStateChanged,
+                m_periphery, &PeriphHandler::unitStateHandler,
+                Qt::QueuedConnection);
+
+//-----------Коннекты передачи пользовательских действий
+        connect(m_periphery, &PeriphHandler::activCylinderFirstChanged,
+                m_linkStm, &LinkStm::setActivCylinderFirst,
+                Qt::QueuedConnection);
+        connect(m_periphery, &PeriphHandler::neutralElDividedChanged,
+                m_linkStm, &LinkStm::setNeutralElDivided,
+                Qt::QueuedConnection);
+        connect(m_periphery, &PeriphHandler::enableActivationChanged,
+                m_linkStm,  &LinkStm::setEnableActivation,
+                Qt::QueuedConnection);
+        connect(m_periphery, &PeriphHandler::sigArgonFlowRateChanged,
+                m_linkStm, &LinkStm::setArgonFlowRate,
+                Qt::QueuedConnection);
+        connect(m_periphery, &PeriphHandler::sigArgonBlow,
+                m_linkStm, &LinkStm::argonBlow,
+                Qt::QueuedConnection);
+        connect(m_periphery, &PeriphHandler::autoModeChanged,
+                this, [this](int socketId, int mode) {
+            if (m_linkStm.isNull() || m_periphery.isNull()) {
+                return;
+            }
+            QMetaObject::invokeMethod(m_linkStm.data(), "setSocketAutoMode", Qt::QueuedConnection,
+                                      Q_ARG(int, socketId), Q_ARG(quint8, static_cast<quint8>(mode)));
+        }, Qt::QueuedConnection);
+        connect(m_periphery, &PeriphHandler::autoDelayMsChanged,
+                this, [this](int delayMs) {
+            m_autoDelay = delayMs;
+        }, Qt::QueuedConnection);
+
+        // Инициализируем все сокеты текущими данными
+        initSocketsForPeriphery();
+        m_autoDelay = m_periphery->autoDelayMs();
+        for (int socketId = 0; socketId < 4; ++socketId) {
+            QMetaObject::invokeMethod(m_linkStm.data(), "setSocketAutoMode", Qt::QueuedConnection,
+                                      Q_ARG(int, socketId),
+                                      Q_ARG(quint8, static_cast<quint8>(m_periphery->autoMode(socketId))));
+        }
+        
+//        qDebug() << "LinkStm connected to ControlCenter";
+    }
+=======
 	if (m_linkStm == linkStm)
 		return;
 
@@ -227,7 +375,6 @@ void ControlCenter::setLinkStm(LinkStm* linkStm)
 		// Инициализируем текущие значения состояния в LinkStm
 		m_linkStm->setEnableActivation(m_periphery->enableActivation());
 		m_linkStm->setNeutralElDivided(m_periphery->neutralElDivided());
-        m_linkStm->setArgonFlowRate(m_periphery->argonFlowRate());
 
 		// Подключаем сигнал обновления данных сокетов
 		// чуть громоздко но без лишних сигналов, полностью нативно
@@ -260,12 +407,6 @@ void ControlCenter::setLinkStm(LinkStm* linkStm)
 		connect(m_linkStm, &LinkStm::sigStopActivation,
 		        m_socketModel.data(), &SocketModel::stopActivation,
 		        Qt::QueuedConnection);
-        connect(m_linkStm, &LinkStm::sigStopActivation,
-                m_periphery, &PeriphHandler::showWarningCode,
-                Qt::QueuedConnection);
-        connect(m_linkStm, &LinkStm::sigError,
-                m_periphery, &PeriphHandler::showWarningCode,
-                Qt::QueuedConnection);
 
 		//-----------Коннекты получения перифейрийной информации
 		connect(m_linkStm, &LinkStm::sigUnitStateChanged,
@@ -288,30 +429,13 @@ void ControlCenter::setLinkStm(LinkStm* linkStm)
 		connect(m_periphery, &PeriphHandler::sigArgonBlow,
 		        m_linkStm, &LinkStm::argonBlow,
 		        Qt::QueuedConnection);
-        connect(m_periphery, &PeriphHandler::autoModeChanged,
-                this, [this](int socketId, int mode) {
-            if (m_linkStm.isNull() || m_periphery.isNull()) {
-                return;
-            }
-            QMetaObject::invokeMethod(m_linkStm.data(), "setSocketAutoMode", Qt::QueuedConnection,
-                                      Q_ARG(int, socketId), Q_ARG(quint8, static_cast<quint8>(mode)));
-        }, Qt::QueuedConnection);
-        connect(m_periphery, &PeriphHandler::autoDelayMsChanged,
-                this, [this](int delayMs) {
-            m_autoDelay = delayMs;
-        }, Qt::QueuedConnection);
 
 		// Инициализируем все сокеты текущими данными
 		initSocketsForPeriphery();
-        m_autoDelay = m_periphery->autoDelayMs();
-        for (int socketId = 0; socketId < 4; ++socketId) {
-            QMetaObject::invokeMethod(m_linkStm.data(), "setSocketAutoMode", Qt::QueuedConnection,
-                                      Q_ARG(int, socketId),
-                                      Q_ARG(quint8, static_cast<quint8>(m_periphery->autoMode(socketId))));
-        }
 
 		//qDebug() << "LinkStm connected to ControlCenter";
 	}
+>>>>>>> development
 }
 
 void ControlCenter::initSocketsForPeriphery()

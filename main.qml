@@ -107,7 +107,7 @@ Window {
       id: statusDummy
       //я искал панграммы для русского и хорошо так посмеялся с эфы
       text: qsTr("")
-      versionText: qsTr("Текущая версия: ") + appVersion
+//      versionText: qsTr("Текущая версия: ") + appVersion
       width: parent.width
       height: 85
       anchors {

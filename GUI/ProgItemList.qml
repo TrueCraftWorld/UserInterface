@@ -124,6 +124,8 @@ Rectangle {
 			curIndex: recomHandle.scopeIdx
             noImage: true
             hideNoImageSymbol: true
+            selectedBackgroundColor: "white"
+            selectedTextColor: "black"
             // imageSourceTemplate: "image://scopes/scope%1"
         }
 
@@ -133,6 +135,7 @@ Rectangle {
             anchors.left: parent.left
             anchors.right: parent.right
             anchors.bottom: parent.bottom
+            anchors.bottomMargin: 16
             spacing: 10
 
             Button {
@@ -207,6 +210,7 @@ Rectangle {
             anchors.left: parent.left
             anchors.right: parent.right
             anchors.bottom: parent.bottom
+            anchors.bottomMargin: 16
             spacing: 10
 
             Button {

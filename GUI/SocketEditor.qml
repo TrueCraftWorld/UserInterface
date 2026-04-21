@@ -302,6 +302,8 @@ Popup {
         instrListView.curIndex = modeEditor.currentInstrIndex
         normalizeEndoCurrentPower()
         Qt.callLater(function() {
+            modeListView.positionSelectedItem()
+            instrListView.positionSelectedItem()
             internalIndexChange = false
             openingInProgress = false
         })
@@ -395,6 +397,10 @@ Popup {
                     curIndex: modeEditor.currentModeIndex
                     initialIndex: initiallySelectedMode
                     imageSourceTemplate: "image://modes/" + modeImagePrefix() + "%1"
+                    selectedBackgroundColor: "white"
+                    selectedTextColor: "black"
+                    keepSelectedItemAtTop: true
+                    noAutoScrollItemId: 1000
                 }
 
                 RowLayout {
@@ -481,6 +487,10 @@ Popup {
                     initialIndex: initiallySelectedInstr
                     noImage: true
                     hideNoImageSymbol: true
+                    selectedBackgroundColor: "white"
+                    selectedTextColor: "black"
+                    keepSelectedItemAtTop: true
+                    noAutoScrollItemId: 1000
                     // imageSourceTemplate: "image://instruments/minstr%1"
                 }
 
@@ -1252,6 +1262,8 @@ Popup {
             modeEditor.currentModeIndex = index
             modeListView.curIndex = index
             instrListView.curIndex = modeEditor.currentInstrIndex
+            modeListView.positionSelectedItem()
+            instrListView.positionSelectedItem()
             centerView = "modePreview"
         }
     }
@@ -1267,6 +1279,7 @@ Popup {
             }
             modeEditor.currentInstrIndex = index
             instrListView.curIndex = index
+            instrListView.positionSelectedItem()
             centerView = "instrPreview"
         }
     }
@@ -1277,6 +1290,8 @@ Popup {
             internalIndexChange = true
             updateInstrModel()
             instrListView.curIndex = modeEditor.currentInstrIndex
+            modeListView.positionSelectedItem()
+            instrListView.positionSelectedItem()
             internalIndexChange = false
             if (!openingInProgress && socketAutoModeState !== 0) {
                 setSocketAutoMode(0)

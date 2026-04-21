@@ -7,6 +7,12 @@ Rectangle {
     signal saveCalled()
     property alias text: mainText.text
     property alias versionText: appVersionText.text
+    readonly property int sideSpacing: 12
+    readonly property int leftOccupiedWidth: drawerButton.width + sideSpacing
+    readonly property int rightOccupiedWidth: saveButton.width
+                                            + (appVersionText.visible ? appVersionText.width + sideSpacing : 0)
+                                            + sideSpacing
+    readonly property int titleSideMargin: Math.max(leftOccupiedWidth, rightOccupiedWidth)
 
     border {
         width: 1
@@ -29,19 +35,23 @@ Rectangle {
     SText {
         id: mainText
         height: parent.height
-        anchors.left: drawerButton.right
-        anchors.right: appVersionText.left
+        anchors.left: parent.left
+        anchors.leftMargin: titleSideMargin
+        anchors.right: parent.right
+        anchors.rightMargin: titleSideMargin
         horizontalAlignment: Text.AlignHCenter
         verticalAlignment: Text.AlignVCenter
     }
     SText {
         id: appVersionText
         height: parent.height
-        width: 220
+        width: visible ? Math.min(implicitWidth, statusRoot.width * 0.25) : 0
         anchors.right: saveButton.left
+        anchors.rightMargin: sideSpacing
         horizontalAlignment: Text.AlignRight
         verticalAlignment: Text.AlignVCenter
         text: ""
+        visible: text !== ""
     }
     SButton {
         id: saveButton

@@ -14,6 +14,10 @@ Rectangle {
 	property bool hideNoImageSymbol: false
 	property int initialIndex: -1
 	property bool editable: false
+	property color selectedBackgroundColor: "transparent"
+	property color selectedTextColor: "white"
+	property bool keepSelectedItemAtTop: false
+	property int noAutoScrollItemId: -1
 	
 	signal newIndexSelected(int newIndex)
 	signal deleteItem(int index)
@@ -36,6 +40,29 @@ Rectangle {
 			theView.positionViewAtIndex(theView.currentIndex, ListView.Beginning)
 		}
 	}
+
+	function currentItemId() {
+		if (!theView.model || theView.currentIndex < 0 || theView.currentIndex >= theView.count
+				|| typeof theView.model.get !== "function") {
+			return -1
+		}
+		return parseInt(theView.model.get(theView.currentIndex).itemId)
+	}
+
+	function positionSelectedItem() {
+		if (!keepSelectedItemAtTop || theView.count <= 0) {
+			return
+		}
+
+		if (currentItemId() === noAutoScrollItemId) {
+			theView.positionViewAtIndex(0, ListView.Beginning)
+			return
+		}
+
+		if (theView.currentIndex >= 0 && theView.currentIndex < theView.count) {
+			theView.positionViewAtIndex(theView.currentIndex, ListView.Beginning)
+		}
+	}
 	ColumnLayout {
 		id: layout
 		anchors.fill: parent
@@ -52,15 +79,19 @@ Rectangle {
 			displayMarginEnd: 15
 			spacing: 10
 			clip: true
+			onCurrentIndexChanged: itemList.positionSelectedItem()
 
 			delegate: Rectangle {
 				id: itemRoot
 				property bool isSelected: (index === curIndex)
 				property bool isInitial: (index === initialIndex)
+				readonly property bool showImage: !noImage && imageSourceTemplate !== "" && itemImage.status === Image.Ready
+				readonly property bool reserveLeftSymbolSpace: noImage && !hideNoImageSymbol
+				readonly property bool showEditPanel: itemList.editable
 				height: 100
 				width: ListView.view.width
 				radius: 8
-				color: "transparent"
+				color: isSelected ? selectedBackgroundColor : "transparent"
 				Rectangle {
 					id: itemImageRectBorder
 					width: 10
@@ -86,7 +117,7 @@ Rectangle {
 					id: itemImageRect
 					height: parent.height
 					width: parent.height
-					visible: !noImage
+					visible: showImage
 					radius: 8
 					anchors {
 						top:parent.top
@@ -130,8 +161,11 @@ Rectangle {
 					anchors {
 						top:parent.top
 						bottom: parent.bottom
-						left: noImage ? (hideNoImageSymbol ? parent.left : itemSymbol.right) : itemImageRect.right
-						right:  itemEditRect.left
+						left: showImage ? itemImageRect.right
+						                : (reserveLeftSymbolSpace ? itemSymbol.right : parent.left)
+						right: showEditPanel ? itemEditRect.left : parent.right
+						leftMargin: showImage || reserveLeftSymbolSpace ? 10 : 0
+						rightMargin: showEditPanel ? 10 : 0
 					}
 					Label {
 						anchors.fill: parent
@@ -141,12 +175,13 @@ Rectangle {
 						wrapMode: Text.WordWrap
 						font.bold: true
 						font.pixelSize: 18
-						color: "white"
+						color: isSelected ? selectedTextColor : "white"
 					}
 					MouseArea {
 						anchors.fill: parent
 						onClicked: {
 							theView.currentIndex = index
+							itemList.positionSelectedItem()
 							itemList.newIndexSelected(index)
 						}
 					}
@@ -156,7 +191,7 @@ Rectangle {
 					property bool engaged : false
 					color: "transparent"
 					width: engaged ? 3 * height : height
-					visible: itemList.editable
+					visible: showEditPanel
 					anchors {
 						top: parent.top
 						bottom: parent.bottom
@@ -230,7 +265,7 @@ Rectangle {
 					id: selectionBorder
 					anchors.fill: parent
 					color: "transparent"
-					border.width: (isSelected || (isInitial && !isSelected)) ? 3 : 0
+					border.width: (isInitial && !isSelected) ? 3 : 0
 					radius: 8
 					border.color: (isInitial && !isSelected) ? "grey" : "white"
 				}

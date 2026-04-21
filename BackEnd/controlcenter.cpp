@@ -79,7 +79,7 @@ void ControlCenter::makeHandleConnections()
 
 	connect(m_handle, &ProgHandle::signalRecomProgChosen,
 	        this, [this](int progId, bool clear) {
-		qDebug() << "[ProgFlow] signalRecomProgChosen progId:" << progId << "clear:" << clear;
+		qWarning() << "[ProgFlow] signalRecomProgChosen progId:" << progId << "clear:" << clear;
 		m_progLoader->programmLoadSocketInit(progId, clear);
 	});
 

@@ -41,8 +41,8 @@ ProgHandle::ProgHandle(QObject *parent)
 
 void ProgHandle::loadRecommendedProg(int recomProgIdx, bool clear)
 {
-	qDebug() << "[ProgFlow] loadRecommendedProg listIndex:" << recomProgIdx
-	         << "clear:" << clear << "m_progs.size:" << m_progs.size();
+	qWarning() << "[ProgFlow] loadRecommendedProg listIndex:" << recomProgIdx
+	           << "clear:" << clear << "m_progs.size:" << m_progs.size();
 	if (recomProgIdx < 0 || recomProgIdx >= m_progs.size()) {
 		qWarning() << "[ProgFlow] loadRecommendedProg: индекс вне диапазона или список пуст"
 		           << "index:" << recomProgIdx << "size:" << m_progs.size();
@@ -52,8 +52,8 @@ void ProgHandle::loadRecommendedProg(int recomProgIdx, bool clear)
 	for (int a = 0; a < recomProgIdx; a++) {
 		++iter;
 	}
-	qDebug() << "[ProgFlow] loadRecommendedProg → signalRecomProgChosen progId:" << iter->first
-	         << "name:" << iter->second;
+	qWarning() << "[ProgFlow] loadRecommendedProg → signalRecomProgChosen progId:" << iter->first
+	           << "name:" << iter->second;
 	emit signalRecomProgChosen(iter->first, clear);
 }
 

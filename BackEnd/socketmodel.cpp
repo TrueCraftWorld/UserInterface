@@ -1,6 +1,7 @@
 #include "socketmodel.h"
 #include <QQmlEngine>
 #include <QTimer>
+#include <QDebug>
 // #include <algorithm>
 
 namespace {
@@ -163,20 +164,20 @@ QVariant SocketModel::data(const QModelIndex &index, int role) const
         }
         return res;
     }
-    case CoagInstrIdList:
-    {
-        QStringList res;
-        std::map<int, Onyx::InstrInfo> all;
-        int lim = socketItem.coagModeCount();
-        for (int mode = 0; mode < lim; ++mode) {
-            const auto& modePtr = socketItem.getMode(mode, true);
-            uniteMaps(all, modePtr->InstrConstraints() );
-        }
-        for (const auto& [key, item] : all) {
-            res.append(QString::number(item.id));
-        }
-        return res;
-    }
+//    case CoagInstrIdList:
+//    {
+//        QStringList res;
+//        std::map<int, Onyx::InstrInfo> all;
+//        int lim = socketItem.coagModeCount();
+//        for (int mode = 0; mode < lim; ++mode) {
+//            const auto& modePtr = socketItem.getMode(mode, true);
+//            uniteMaps(all, modePtr->InstrConstraints() );
+//        }
+//        for (const auto& [key, item] : all) {
+//            res.append(QString::number(item.id));
+//        }
+//        return res;
+//    }
     case CoagModeInstrNum:
     {
         if (socketItem.curCoagMode().isNull()
@@ -267,20 +268,20 @@ QVariant SocketModel::data(const QModelIndex &index, int role) const
         }
         return res;
     }
-    case CutInstrIdList:
-    {
-        QStringList res;
-        std::map<int, Onyx::InstrInfo> all;
-        int lim = socketItem.cutModeCount();
-        for (int mode = 0; mode < lim; ++mode) {
-            const auto& modePtr = socketItem.getMode(mode, false);
-            uniteMaps(all,modePtr->InstrConstraints() );
-        }
-        for (const auto& [key, item] : all) {
-            res.append(QString::number(item.id));
-        }
-        return res;
-    }
+//    case CutInstrIdList:
+//    {
+//        QStringList res;
+//        std::map<int, Onyx::InstrInfo> all;
+//        int lim = socketItem.cutModeCount();
+//        for (int mode = 0; mode < lim; ++mode) {
+//            const auto& modePtr = socketItem.getMode(mode, false);
+//            uniteMaps(all,modePtr->InstrConstraints() );
+//        }
+//        for (const auto& [key, item] : all) {
+//            res.append(QString::number(item.id));
+//        }
+//        return res;
+//    }
     case CutModeInstrNum:
     {
         if (socketItem.curCutMode().isNull()
@@ -515,6 +516,7 @@ QStringList SocketModel::instrumNamesIds(int socketId, int modeIndex, bool isCoa
         if (instIter != m_instrMapPtr->end()) {
             names.append(QString("%1").arg(instIter->second->id()));
         }
+    }
     // Добавляем ID для пункта "НЕ ВЫБРАН"
     names.append("1000");
     return names;
@@ -541,6 +543,7 @@ QStringList SocketModel::instrumNamesNums(int socketId, int modeIndex, bool isCo
         if (instIter != m_instrMapPtr->end()) {
             nums.append(QString("%1").arg(instIter->second->legacyNumber()));
         }
+    }
     // Добавляем Num для пункта "НЕ ВЫБРАН"
     nums.append("1000");
     return nums;
@@ -835,7 +838,10 @@ void SocketModel::expandSocket(int socketId)
 void SocketModel::loadProgs(const std::vector<std::map<int, SockPtr> > &itemsMapVect,
                 const std::vector<std::map<int, InstrPtr> > &instrMapVect, bool add)
 {
+    qDebug() << "[ProgFlow] SocketModel::loadProgs pages:" << itemsMapVect.size()
+             << "add(добавить к существующим):" << add;
     if (itemsMapVect.size() != instrMapVect.size()) { //размеры не совпали, разбираться не хочу - бежим
+        qWarning() << "[ProgFlow] SocketModel::loadProgs: размеры itemsMapVect и instrMapVect не совпали";
         return;
     }
 
@@ -872,6 +878,8 @@ void SocketModel::loadProgs(const std::vector<std::map<int, SockPtr> > &itemsMap
 
     endResetModel();
     emit subProgCountChanged();
+    qDebug() << "[ProgFlow] SocketModel::loadProgs готово subProgIdx:" << m_subProgIdx
+             << "subProgCount:" << m_itemsMapVect.size();
 }
 
 void SocketModel::removeSubProg(int index)

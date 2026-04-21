@@ -78,7 +78,10 @@ void ControlCenter::makeHandleConnections()
 	        m_socketModel.data(), &SocketModel::slotRemoveSubProg);
 
 	connect(m_handle, &ProgHandle::signalRecomProgChosen,
-	        m_progLoader, &ProgLoader::programmLoadSocketInit);
+	        this, [this](int progId, bool clear) {
+		qDebug() << "[ProgFlow] signalRecomProgChosen progId:" << progId << "clear:" << clear;
+		m_progLoader->programmLoadSocketInit(progId, clear);
+	});
 
     connect(m_handle, &ProgHandle::signalFreeSettingsRequested,
             this, [this]() {
@@ -92,14 +95,22 @@ void ControlCenter::makeHandleConnections()
     
 	connect(m_handle, &ProgHandle::signalScopeRequest,
 	        this, [this] (int id) {
+		qDebug() << "[ProgFlow] signalScopeRequest scopeId:" << id;
 		m_handle->setProgList(m_progLoader->getProgs(id));
 	});
 
 	connect(m_handle, &ProgHandle::updateScopes,
 	        this, [this] (bool isRecom) {
+		qDebug() << "[ProgFlow] updateScopes isRecom:" << isRecom;
 		m_progLoader->setCurLoaderType(isRecom ? ProgLoader::ptRecom : ProgLoader::ptUser);
-		m_handle->setScopeList(m_progLoader->getCategories());
-		m_handle->setProgList(m_progLoader->getProgs(-1));
+		const auto categories = m_progLoader->getCategories();
+		qDebug() << "[ProgFlow] updateScopes categories:" << categories.size();
+		m_handle->setScopeList(categories);
+		// Списки программ подставляет signalScopeRequest → setProgList(getProgs(scopeId))
+		// из setScopeIdx(0) внутри setScopeList. Вызов getProgs(-1) давал пустой запрос
+		// Scope_ID = -1 и затирал m_progs до пустого — клик по списку не вызывал загрузку.
+		qDebug() << "[ProgFlow] updateScopes prog list size after setScopeList:"
+		         << m_handle->progNameList().size();
 	});
 
 	connect(m_handle, &ProgHandle::signalAddEmptyDefault,

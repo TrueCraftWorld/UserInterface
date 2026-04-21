@@ -41,14 +41,19 @@ ProgHandle::ProgHandle(QObject *parent)
 
 void ProgHandle::loadRecommendedProg(int recomProgIdx, bool clear)
 {
-    qWarning() << "loadRecommendedProg вызван с index:" << recomProgIdx << "размер m_progs:" << m_progs.size();
-	if (recomProgIdx >= m_progs.size())
+	qDebug() << "[ProgFlow] loadRecommendedProg listIndex:" << recomProgIdx
+	         << "clear:" << clear << "m_progs.size:" << m_progs.size();
+	if (recomProgIdx < 0 || recomProgIdx >= m_progs.size()) {
+		qWarning() << "[ProgFlow] loadRecommendedProg: индекс вне диапазона или список пуст"
+		           << "index:" << recomProgIdx << "size:" << m_progs.size();
 		return;
+	}
 	auto iter = m_progs.begin();
 	for (int a = 0; a < recomProgIdx; a++) {
-		iter++;
+		++iter;
 	}
-    qWarning() << "Эмитим signalRecomProgChosen с progId:" << iter->first << "clear:" << clear;
+	qDebug() << "[ProgFlow] loadRecommendedProg → signalRecomProgChosen progId:" << iter->first
+	         << "name:" << iter->second;
 	emit signalRecomProgChosen(iter->first, clear);
 }
 
@@ -170,12 +175,19 @@ void ProgHandle::setScopeIdx(int newScopeIdx)
 
 void ProgHandle::setProgList(const std::map<int, QString>& lst/*, bool isRecom*/)
 {
+	qDebug() << "[ProgFlow] setProgList size:" << lst.size()
+	         << "isRecomProgs:" << m_isRecomProgs;
+	if (!lst.empty()) {
+		auto it = lst.cbegin();
+		qDebug() << "[ProgFlow] setProgList first entry id:" << it->first << "name:" << it->second;
+	}
 	m_progs = lst;
 	emit progNameListChanged();
 }
 
 void ProgHandle::setScopeList(const std::map<int, QString> &scopes/*, bool isRecom*/)
 {
+	qDebug() << "[ProgFlow] setScopeList scopes:" << scopes.size();
 	m_scopes = scopes;
 	setScopeIdx(0);
 	emit scopeNameListChanged();

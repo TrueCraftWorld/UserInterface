@@ -70,8 +70,13 @@ Rectangle {
 	Connections {
 		target: recomHandle
 		function onScopeNameListChanged() {
-			console.log("bugaga")
+			console.log("[ProgFlow] ProgItemList onScopeNameListChanged")
 			init();
+			updateModel();
+		}
+		function onProgNameListChanged() {
+			console.log("[ProgFlow] ProgItemList onProgNameListChanged, progs:",
+						recomHandle.progNameList.length)
 			updateModel();
 		}
 	}
@@ -274,22 +279,19 @@ Rectangle {
             radius: 18
             color: "#808080"
 		}
-		
-        }
 
-        contentItem: Text {
-            text: retButton.text
-            color: "white"
-            font.pixelSize: 24
-            font.bold: true
-            horizontalAlignment: Text.AlignHCenter
-            verticalAlignment: Text.AlignVCenter
-        }
-		
+		contentItem: Text {
+			text: retButton.text
+			color: "white"
+			font.pixelSize: 24
+			font.bold: true
+			horizontalAlignment: Text.AlignHCenter
+			verticalAlignment: Text.AlignVCenter
+		}
 
-        text: qsTr("НАЗАД")
+		text: qsTr("НАЗАД")
 
-        onPressed: recProgs.returnButtonPressed()
+		onPressed: recProgs.returnButtonPressed()
 	}
 	
 	Connections {
@@ -308,6 +310,12 @@ Rectangle {
 	Connections {
 		target: progList
 		function onNewIndexSelected(index) {
+			var pid = (index >= 0 && index < recomHandle.progIdList.length)
+					? recomHandle.progIdList[index] : -1
+			console.log("[ProgFlow] ProgItemList progList onNewIndexSelected listIndex:", index,
+						"progId:", pid, "loadClear:", loadClear,
+						"scopeIdx:", recomHandle.scopeIdx,
+						"progIdList.length:", recomHandle.progIdList.length)
 			recomHandle.loadRecommendedProg(index, loadClear)
             
             var scopeName = ""

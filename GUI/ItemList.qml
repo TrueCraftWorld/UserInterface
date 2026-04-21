@@ -11,7 +11,7 @@ Rectangle {
 	property string imageSourceTemplate
 	property alias curIndex: theView.currentIndex
 	property bool noImage: false
-    property bool hideNoImageSymbol: false
+	property bool hideNoImageSymbol: false
 	property int initialIndex: -1
 	property bool editable: false
 	
@@ -24,16 +24,16 @@ Rectangle {
 
 	// Функции для прокрутки списка
 	function scrollUp() {
-        if (theView.currentIndex > 0) {
-            theView.currentIndex -= 1
-            theView.positionViewAtIndex(theView.currentIndex, ListView.Beginning)
+		if (theView.currentIndex > 0) {
+			theView.currentIndex -= 1
+			theView.positionViewAtIndex(theView.currentIndex, ListView.Beginning)
 		}
 	}
 
 	function scrollDown() {
-        if (theView.currentIndex < theView.count - 1) {
-            theView.currentIndex += 1
-            theView.positionViewAtIndex(theView.currentIndex, ListView.Beginning)
+		if (theView.currentIndex < theView.count - 1) {
+			theView.currentIndex += 1
+			theView.positionViewAtIndex(theView.currentIndex, ListView.Beginning)
 		}
 	}
 	ColumnLayout {
@@ -52,12 +52,6 @@ Rectangle {
 			displayMarginEnd: 15
 			spacing: 10
 			clip: true
-            onCurrentIndexChanged: {
-                if (currentIndex >= 0 && currentIndex < count) {
-                    positionViewAtIndex(currentIndex, ListView.Beginning)
-                    itemList.newIndexSelected(currentIndex)
-                }
-            }
 
 			delegate: Rectangle {
 				id: itemRoot
@@ -66,7 +60,7 @@ Rectangle {
 				height: 100
 				width: ListView.view.width
 				radius: 8
-                color: isSelected ? "white" : "transparent"
+				color: "transparent"
 				Rectangle {
 					id: itemImageRectBorder
 					width: 10
@@ -102,7 +96,7 @@ Rectangle {
 					Image {
 						id: itemImage
 						asynchronous: true
-                        source: imageSourceTemplate.replace("%1", model.itemId)
+						source: imageSourceTemplate.replace("%1", model.itemId)
 						anchors.fill: parent
 						fillMode: Image.PreserveAspectFit
 					}
@@ -111,7 +105,7 @@ Rectangle {
 					id: itemSymbol
 					height: parent.height
 					width: parent.height
-                    visible: noImage && !hideNoImageSymbol
+					visible: noImage && !hideNoImageSymbol
 					radius: 8
 					anchors {
 						top:parent.top
@@ -128,50 +122,121 @@ Rectangle {
 						anchors.centerIn: parent
 					}
 
-                }
-                Rectangle {
-                    id: itemNameRect
-                    color: "transparent"
-                    radius: 8
-                    anchors {
-                        top:parent.top
-                        bottom: parent.bottom
-                        left: noImage ? (hideNoImageSymbol ? parent.left : itemSymbol.right)
-                                      : itemImageRect.right
-                        right:  parent.right
-                    }
-                    Label {
-                        anchors.fill: parent
-                        text: model.itemName
-                        horizontalAlignment: Qt.AlignHCenter
-                        verticalAlignment: Qt.AlignVCenter
-                        wrapMode: Text.WordWrap
-                        font.bold: true
-                        font.pixelSize: 18
-                        color: isSelected ? "black" : "white"
-                    }
-                }
-                Rectangle {
-                    id: spacer
-                    height: 2
-                    width: parent.width
-                    gradient: Gradient.SolidStone/*Gradient {
-                        GradientStop { position: 0.0; color: "transparent" }
-                        GradientStop { position: 0.5; color: "white" }
-                        GradientStop { position: 1.0; color: "transparent" }
-                    }*/
-                    z: 0
-                    opacity: 0.5
-                    anchors.bottom: parent.bottom
-                    anchors.bottomMargin: 0
-                }
-                Rectangle {
-                    id: selectionBorder
-                    anchors.fill: parent
-                    color: "transparent"
-                    border.width: 0
-                    radius: 8
-                }
+				}
+				Rectangle {
+					id: itemNameRect
+					color: "transparent"
+					radius: 8
+					anchors {
+						top:parent.top
+						bottom: parent.bottom
+						left: noImage ? (hideNoImageSymbol ? parent.left : itemSymbol.right) : itemImageRect.right
+						right:  itemEditRect.left
+					}
+					Label {
+						anchors.fill: parent
+						text: model.itemName
+						horizontalAlignment: Qt.AlignHCenter
+						verticalAlignment: Qt.AlignVCenter
+						wrapMode: Text.WordWrap
+						font.bold: true
+						font.pixelSize: 18
+						color: "white"
+					}
+					MouseArea {
+						anchors.fill: parent
+						onClicked: {
+							theView.currentIndex = index
+							itemList.newIndexSelected(index)
+						}
+					}
+				}
+				Rectangle {
+					id: itemEditRect
+					property bool engaged : false
+					color: "transparent"
+					width: engaged ? 3 * height : height
+					visible: itemList.editable
+					anchors {
+						top: parent.top
+						bottom: parent.bottom
+						right:  parent.right
+						margins: 10
+					}
+					SButton {
+						id: engageEditButton
+						visible: !itemEditRect.engaged
+						anchors.fill: parent
+						anchors.margins: 5
+						iconString: Fa.Icon.chevron_left;
+						onClicked: {
+							itemEditRect.engaged = true;
+						}
+					}
+					Rectangle {
+						id: editVariantBox
+						visible: itemEditRect.engaged
+						color: "transparent"
+						anchors.fill: parent
+						anchors.margins: 5
+						RowLayout {
+							anchors.fill: parent
+							spacing: 5
+							anchors.margins: 0
+							SButton {
+								id: deleteButton
+								Layout.fillHeight: true
+								Layout.fillWidth: true
+								iconString: Fa.Icon.trash;
+								text: "";
+								onClicked: {
+									deleteItem(index)
+								}
+							}
+							SButton {
+								id: renameButton
+								Layout.fillHeight: true
+								Layout.fillWidth: true
+								iconString: Fa.Icon.pencil_square_o;
+								text: "";
+								onClicked: {
+									nameDialog.editingIndex = index
+									nameDialog.open()
+								}
+							}
+							SButton {
+								id: cancelButton
+								Layout.fillHeight: true
+								Layout.fillWidth: true
+								iconString: Fa.Icon.chevron_right;
+								text: "";
+								onClicked: {
+									itemEditRect.engaged = false;
+								}
+							}
+						}
+					}
+				}
+				Rectangle {
+					id: spacer
+					height: 2
+					width: parent.width
+					gradient: Gradient.SolidStone
+					opacity: 0.5
+					anchors.bottom: parent.bottom
+					anchors.bottomMargin: 0
+				}
+				Rectangle {
+					id: selectionBorder
+					anchors.fill: parent
+					color: "transparent"
+					border.width: (isSelected || (isInitial && !isSelected)) ? 3 : 0
+					radius: 8
+					border.color: (isInitial && !isSelected) ? "grey" : "white"
+				}
+			}
+		}
+	}
 
 	Dialog {
 		id: nameDialog

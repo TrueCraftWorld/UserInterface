@@ -501,34 +501,24 @@ void ProgLoader::defaultSocketInit(bool clear)
 bool ProgLoader::programmLoadSocketInit(int progId, bool clear)
 {
     if (m_dbReaderPtr.isNull()) {
+        qWarning() << "[ProgFlow] programmLoadSocketInit: нет m_dbReaderPtr";
         return false;
     }
-    
-    qWarning() << "programmLoadSocketInit вызван с progId:" << progId;
-    
+
+    qDebug() << "[ProgFlow] programmLoadSocketInit progId:" << progId << "clear:" << clear;
+
     QList<QVariantList> progInfo = m_dbReaderPtr->slotSendSelectQuery(QStringList{"Progs"},
                                                   QStringList{"Name_RU", "Scope_ID"},
                                                   QString("id = %1").arg(progId));
-    qWarning() << "Получено строк:" << progInfo.size();
-    
+    qDebug() << "[ProgFlow] programmLoadSocketInit Progs lookup rows:" << progInfo.size();
+
     if (!progInfo.isEmpty()) {
         QString progName = progInfo.first().at(0).toString();
         int scopeId = progInfo.first().at(1).toInt();
-        qWarning() << "Найдена программа:" << progName << "ScopeId:" << scopeId << "ProgId:" << progId;
-        
-        if (scopeId >= 1000) {
-            m_currentLoadedProgName = progName;
-            m_currentLoadedScopeId = scopeId;
-            qWarning() << "Это пользовательская программа (scopeId >= 1000), сохраняем название";
-        } else {
-            qWarning() << "Это рекомендованная программа (scopeId < 1000), сбрасываем saved name/scope";
-            m_currentLoadedProgName.clear();
-            m_currentLoadedScopeId = -1;
-        }
+        qDebug() << "[ProgFlow] programmLoadSocketInit Progs name:" << progName
+                 << "Scope_ID:" << scopeId;
     } else {
-        qWarning() << "Запрос не вернул данных для progId:" << progId;
-        m_currentLoadedProgName.clear();
-        m_currentLoadedScopeId = -1;
+        qWarning() << "[ProgFlow] programmLoadSocketInit: нет строки Progs для id:" << progId;
     }
     
 	//начинаем прорабатывать прогрузку несекольких экранов
@@ -542,8 +532,12 @@ bool ProgLoader::programmLoadSocketInit(int progId, bool clear)
 	progListVariant = m_dbReaderPtr->slotSendSelectQuery(QStringList{"Lists"},
 	                                                     fields,
 	                                                     queryConditionRecom.arg(progId));
-	if (progListVariant.size() == 0)
+	qDebug() << "[ProgFlow] programmLoadSocketInit Lists rows (Prog_ID=" << progId
+	         << "):" << progListVariant.size();
+	if (progListVariant.size() == 0) {
+		qWarning() << "[ProgFlow] programmLoadSocketInit: пустой Lists для Prog_ID" << progId;
 		return false;
+	}
 
 	//Шаг5---------------------------------------------------------
 	//тут какой-то затуп с базой на каких-то прогах, разрешено всего несколько инструментов
@@ -562,10 +556,14 @@ bool ProgLoader::programmLoadSocketInit(int progId, bool clear)
 		modeNamesList.append(iter.at(0).toString());
 	}
 
+	int skippedNumOutOfRange = 0;
 	for (const auto& progItem : qAsConst(progListVariant)) {
 		//ограничения для каждого листа
-		if (progItem.at(1).toInt() < 0
-		        || progItem.at(1).toInt() >= 4) {
+		const int num = progItem.at(1).toInt();
+		if (num < 0 || num >= 4) {
+			++skippedNumOutOfRange;
+			qDebug() << "[ProgFlow] programmLoadSocketInit пропуск строки Lists Num=" << num
+			         << "(ожидается 0..3)";
 			continue;
 		}
 		//Шаг2---------------------------------------------------------
@@ -617,10 +615,17 @@ bool ProgLoader::programmLoadSocketInit(int progId, bool clear)
 		instrMapVector.push_back(getInstrums());
 	}
 
-	if (socketMapVector.empty())
+	if (skippedNumOutOfRange > 0) {
+		qDebug() << "[ProgFlow] programmLoadSocketInit всего пропущено по Num:" << skippedNumOutOfRange;
+	}
+	qDebug() << "[ProgFlow] programmLoadSocketInit socketMapVector.size:" << socketMapVector.size();
+	if (socketMapVector.empty()) {
+		qWarning() << "[ProgFlow] programmLoadSocketInit: не собрано ни одной страницы (socketMap пуст)";
 		return false;
+	}
 
 	m_socketModelPtr->loadProgs(socketMapVector, instrMapVector, !clear);
+	qDebug() << "[ProgFlow] programmLoadSocketInit loadProgs завершён, add=" << (!clear);
 
 	if (progId != 1000) {
 		slotSaveCurrentState();
@@ -703,8 +708,13 @@ bool ProgLoader::freeSettingsSocketInit(bool clear)
             for (const auto& mode : modesList) {
                 allModesId.append(mode.at(2).toInt());
             }
-            
-            std::map<int, std::map<int, Onyx::InstrInfo>> instrumConstraints = getConstraints(allModesId);
+
+            std::vector<int> allModesIdVec;
+            allModesIdVec.reserve(allModesId.size());
+            for (int modeId : allModesId) {
+                allModesIdVec.push_back(modeId);
+            }
+            std::map<int, std::map<int, Onyx::InstrInfo>> instrumConstraints = getConstraints(allModesIdVec);
             
             makeModes(modes, modesList, instrumConstraints, QVariantList(), i, isCoag, {}, true);
             
@@ -746,9 +756,6 @@ bool ProgLoader::freeSettingsSocketInit(bool clear)
         return false;
     
     m_socketModelPtr->loadProgs(socketMapVector, instrMapVector, !clear);
-    m_currentLoadedProgId = -1;
-    m_currentLoadedProgName.clear();
-    m_currentLoadedScopeId = -1;
     return true;
 }
 
@@ -956,18 +963,16 @@ void ProgLoader::saveUserProg(const QString &scopeName, const QString &progName)
 	int pageCount = m_socketModelPtr->subProgCount();
 	QList<QStringList> listsStr = prepSaveState();
 
+	QString deleteOldListsQuery = QString("DELETE FROM Lists WHERE Prog_ID = %1").arg(idToUse);
+	if (!m_dbReaderPtr->executeUpdateQuery(deleteOldListsQuery)) {
+		qWarning() << "Failed to delete old Lists entries for Prog_ID:" << idToUse;
+	} else {
+		m_dbReaderPtr->commit();
+		qWarning() << "Старые записи Lists удалены для Prog_ID:" << idToUse;
+	}
+
 	for (int i = 0; i < pageCount; ++i) {
 		const auto& curList = listsStr.at(i);
-    QString deleteOldListsQuery = QString("DELETE FROM Lists WHERE Prog_ID = %1").arg(idToUse);
-    if (!m_dbReaderPtr->executeUpdateQuery(deleteOldListsQuery)) {
-        qWarning() << "Failed to delete old Lists entries for Prog_ID:" << idToUse;
-    } else {
-        m_dbReaderPtr->commit();
-        qWarning() << "Старые записи Lists удалены для Prog_ID:" << idToUse;
-    }
-
-    // Формируем SQL запрос для INSERT
-
 		QString query = insertUserProgQuery
 		                // QString query = saveCurQuery
 		                .arg(curList.at(0)).arg(curList.at(1)).arg(curList.at(2)) //mono1 cut
@@ -984,6 +989,8 @@ void ProgLoader::saveUserProg(const QString &scopeName, const QString &progName)
 		if (!m_dbReaderPtr->executeUpdateQuery(query)) {
 			// qDebug() << "Failed to save current state";
 		}
+	}
+}
 
 void ProgLoader::deleteAllUserProgs()
 {

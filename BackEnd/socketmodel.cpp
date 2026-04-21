@@ -838,10 +838,10 @@ void SocketModel::expandSocket(int socketId)
 void SocketModel::loadProgs(const std::vector<std::map<int, SockPtr> > &itemsMapVect,
                 const std::vector<std::map<int, InstrPtr> > &instrMapVect, bool add)
 {
-    qDebug() << "[ProgFlow] SocketModel::loadProgs pages:" << itemsMapVect.size()
-             << "add(добавить к существующим):" << add;
+//    qDebug() << "[ProgFlow] SocketModel::loadProgs pages:" << itemsMapVect.size()
+//             << "add(добавить к существующим):" << add;
     if (itemsMapVect.size() != instrMapVect.size()) { //размеры не совпали, разбираться не хочу - бежим
-        qWarning() << "[ProgFlow] SocketModel::loadProgs: размеры itemsMapVect и instrMapVect не совпали";
+//        qWarning() << "[ProgFlow] SocketModel::loadProgs: размеры itemsMapVect и instrMapVect не совпали";
         return;
     }
 
@@ -877,8 +877,8 @@ void SocketModel::loadProgs(const std::vector<std::map<int, SockPtr> > &itemsMap
 
     endResetModel();
     emit subProgCountChanged();
-    qDebug() << "[ProgFlow] SocketModel::loadProgs готово subProgIdx:" << m_subProgIdx
-             << "subProgCount:" << m_itemsMapVect.size();
+//    qDebug() << "[ProgFlow] SocketModel::loadProgs готово subProgIdx:" << m_subProgIdx
+//             << "subProgCount:" << m_itemsMapVect.size();
 }
 
 void SocketModel::removeSubProg(int index)

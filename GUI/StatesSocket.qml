@@ -24,6 +24,7 @@ Rectangle {
     property int cutInstrumNum
     property string cutInstrumName: qsTr("не выбран")
     property bool cutIsEndo: false
+    property bool cutHasAvailableModes: true
 
     property string coagModeName
     property int coagModePower
@@ -33,6 +34,7 @@ Rectangle {
     property int coagInstrumNum
     property string coagInstrumName: qsTr("не выбран")
     property bool coagIsEndo: false
+    property bool coagHasAvailableModes: true
 
     signal socketEditorRequest(int socketId, bool isCoag)
 
@@ -84,6 +86,7 @@ Rectangle {
         instrumNum: socketRoot.cutInstrumNum
         instrumName:socketRoot.cutInstrumName
         isEndo:     socketRoot.cutIsEndo
+        hasAvailableModes: socketRoot.cutHasAvailableModes
         anchors.left: parent.left
         anchors.right: centerSeparator.left
         anchors.top: parent.top
@@ -104,6 +107,7 @@ Rectangle {
         instrumNum: socketRoot.coagInstrumNum
         instrumName:socketRoot.coagInstrumName
         isEndo:     socketRoot.coagIsEndo
+        hasAvailableModes: socketRoot.coagHasAvailableModes
         anchors.left: centerSeparator.right
         anchors.right: parent.right
         anchors.top: parent.top

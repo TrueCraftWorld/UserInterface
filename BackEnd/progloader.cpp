@@ -319,7 +319,8 @@ ProgLoader::ProgLoader(QObject *parent)
 void ProgLoader::slotSaveCurrentState()
 {
 	if (m_socketModelPtr == nullptr
-	        || m_socketModelPtr->itemsMap() == nullptr) {
+	        || m_socketModelPtr->itemsMap() == nullptr
+	        || m_dbReaderPtr.isNull()) {
 		// qWarning() << "Cannot save state: socket model not initialized";
 		return;
 	}
@@ -327,10 +328,19 @@ void ProgLoader::slotSaveCurrentState()
 	int pageCount = m_socketModelPtr->subProgCount();
 	QList<QStringList> listsStr = prepSaveState();
 
+	if (!m_dbReaderPtr->beginTransaction()) {
+		qWarning() << "slotSaveCurrentState: failed to begin transaction";
+		return;
+	}
+
 	// Формируем SQL запрос для REPLACE (INSERT OR UPDATE)
 	QString removeQuerry = "DELETE FROM Lists WHERE Prog_ID = 1000";
-	m_dbReaderPtr->executeUpdateQuery(removeQuerry);
-	// qDebug() << "saving N pages - " << subCount;
+	if (!m_dbReaderPtr->executeUpdateQuery(removeQuerry)) {
+		m_dbReaderPtr->rollback();
+		qWarning() << "slotSaveCurrentState: failed to clear previous state";
+		return;
+	}
+
 	for (int i = 0; i < pageCount; ++i) {
 		const auto& curList = listsStr.at(i);
 
@@ -348,9 +358,13 @@ void ProgLoader::slotSaveCurrentState()
 		                .arg(i + 1);
 
 		if (!m_dbReaderPtr->executeUpdateQuery(query)) {
-			// qDebug() << "Failed to save current state";
+			m_dbReaderPtr->rollback();
+			qWarning() << "slotSaveCurrentState: failed to insert page" << i + 1;
+			return;
 		}
 	}
+
+	m_dbReaderPtr->commit();
 }
 
 void ProgLoader::defaultSocketInit(bool clear)
@@ -502,24 +516,24 @@ void ProgLoader::defaultSocketInit(bool clear)
 bool ProgLoader::programmLoadSocketInit(int progId, bool clear)
 {
     if (m_dbReaderPtr.isNull()) {
-        qWarning() << "[ProgFlow] programmLoadSocketInit: нет m_dbReaderPtr";
+//        qWarning() << "[ProgFlow] programmLoadSocketInit: нет m_dbReaderPtr";
         return false;
     }
 
-    qWarning() << "[ProgFlow] programmLoadSocketInit progId:" << progId << "clear:" << clear;
+//    qWarning() << "[ProgFlow] programmLoadSocketInit progId:" << progId << "clear:" << clear;
 
     QList<QVariantList> progInfo = m_dbReaderPtr->slotSendSelectQuery(QStringList{"Progs"},
                                                   QStringList{"Name_RU", "Scope_ID"},
                                                   QString("id = %1").arg(progId));
-    qWarning() << "[ProgFlow] programmLoadSocketInit Progs lookup rows:" << progInfo.size();
+//    qWarning() << "[ProgFlow] programmLoadSocketInit Progs lookup rows:" << progInfo.size();
 
     if (!progInfo.isEmpty()) {
         QString progName = progInfo.first().at(0).toString();
         int scopeId = progInfo.first().at(1).toInt();
-        qWarning() << "[ProgFlow] programmLoadSocketInit Progs name:" << progName
-                   << "Scope_ID:" << scopeId;
+//        qWarning() << "[ProgFlow] programmLoadSocketInit Progs name:" << progName
+//                   << "Scope_ID:" << scopeId;
     } else {
-        qWarning() << "[ProgFlow] programmLoadSocketInit: нет строки Progs для id:" << progId;
+//        qWarning() << "[ProgFlow] programmLoadSocketInit: нет строки Progs для id:" << progId;
     }
     
 	//начинаем прорабатывать прогрузку несекольких экранов
@@ -533,10 +547,10 @@ bool ProgLoader::programmLoadSocketInit(int progId, bool clear)
 	progListVariant = m_dbReaderPtr->slotSendSelectQuery(QStringList{"Lists"},
 	                                                     fields,
 	                                                     queryConditionRecom.arg(progId));
-	qWarning() << "[ProgFlow] programmLoadSocketInit Lists rows (Prog_ID=" << progId
-	           << "):" << progListVariant.size();
+//	qWarning() << "[ProgFlow] programmLoadSocketInit Lists rows (Prog_ID=" << progId
+//	           << "):" << progListVariant.size();
 	if (progListVariant.size() == 0) {
-		qWarning() << "[ProgFlow] programmLoadSocketInit: пустой Lists для Prog_ID" << progId;
+//		qWarning() << "[ProgFlow] programmLoadSocketInit: пустой Lists для Prog_ID" << progId;
 		return false;
 	}
 
@@ -564,24 +578,24 @@ bool ProgLoader::programmLoadSocketInit(int progId, bool clear)
 		const int num = progItem.at(1).toInt();
 		if (num < 0 || num >= 4) {
 			++skippedNumOutOfRange;
-			qWarning() << "[ProgFlow] programmLoadSocketInit пропуск строки Lists Num=" << num
-			           << "(ожидается 0..3)";
+//			qWarning() << "[ProgFlow] programmLoadSocketInit пропуск строки Lists Num=" << num
+//			           << "(ожидается 0..3)";
 			continue;
 		}
 		if (acceptedNums.find(num) != acceptedNums.end()) {
-			qWarning() << "[ProgFlow] programmLoadSocketInit дубликат страницы Num=" << num
-			           << "listRowId:" << progItem.at(0).toInt()
-			           << "- пропускаем";
+//			qWarning() << "[ProgFlow] programmLoadSocketInit дубликат страницы Num=" << num
+//			           << "listRowId:" << progItem.at(0).toInt()
+//			           << "- пропускаем";
 			continue;
 		}
 		acceptedNums.insert(num);
 		//Шаг2---------------------------------------------------------
 		std::vector<int> allowedModesId = getAllowedModes(progId, progItem);
 		if (allowedModesId.empty()) {
-			qWarning() << "[ProgFlow] programmLoadSocketInit: пустой allowedModesId"
-			           << "progId:" << progId
-			           << "listRowId:" << progItem.at(0).toInt()
-			           << "listNum:" << progItem.at(1).toInt();
+//			qWarning() << "[ProgFlow] programmLoadSocketInit: пустой allowedModesId"
+//			           << "progId:" << progId
+//			           << "listRowId:" << progItem.at(0).toInt()
+//			           << "listNum:" << progItem.at(1).toInt();
 		}
 
 		//Шаг3---------------------------------------------------------
@@ -631,16 +645,16 @@ bool ProgLoader::programmLoadSocketInit(int progId, bool clear)
 	}
 
 	if (skippedNumOutOfRange > 0) {
-		qWarning() << "[ProgFlow] programmLoadSocketInit всего пропущено по Num:" << skippedNumOutOfRange;
+//		qWarning() << "[ProgFlow] programmLoadSocketInit всего пропущено по Num:" << skippedNumOutOfRange;
 	}
-	qWarning() << "[ProgFlow] programmLoadSocketInit socketMapVector.size:" << socketMapVector.size();
+//	qWarning() << "[ProgFlow] programmLoadSocketInit socketMapVector.size:" << socketMapVector.size();
 	if (socketMapVector.empty()) {
-		qWarning() << "[ProgFlow] programmLoadSocketInit: не собрано ни одной страницы (socketMap пуст)";
+//		qWarning() << "[ProgFlow] programmLoadSocketInit: не собрано ни одной страницы (socketMap пуст)";
 		return false;
 	}
 
 	m_socketModelPtr->loadProgs(socketMapVector, instrMapVector, !clear);
-	qWarning() << "[ProgFlow] programmLoadSocketInit loadProgs завершён, add=" << (!clear);
+//	qWarning() << "[ProgFlow] programmLoadSocketInit loadProgs завершён, add=" << (!clear);
 
 	if (progId != 1000) {
 		slotSaveCurrentState();
@@ -1095,8 +1109,8 @@ std::vector<int> ProgLoader::getAllowedModes(int progId, const QVariantList& pro
 		                                             QString("Prog_ID = %1").arg(progId));
 		// На части БД рекомендованные режимы привязаны не к Prog_ID, а к List_ID.
 		if (allowedModes.isEmpty()) {
-			qWarning() << "[ProgFlow] getAllowedModes: пусто по Prog_ID, fallback на List_ID"
-			           << "progId:" << progId << "listId:" << listId;
+//			qWarning() << "[ProgFlow] getAllowedModes: пусто по Prog_ID, fallback на List_ID"
+//			           << "progId:" << progId << "listId:" << listId;
 			allowedModes = m_dbReaderPtr->slotSendSelectQuery(QStringList{"EnableModes"},
 			                                                  QStringList{"Mode_ID"},
 			                                                  QString("List_ID = %1").arg(listId));
@@ -1108,8 +1122,8 @@ std::vector<int> ProgLoader::getAllowedModes(int progId, const QVariantList& pro
 		// Последний fallback: извлекаем режимы из строки Lists (как для user-программ),
 		// чтобы загрузка программы не ломалась даже при отсутствующих связях в EnableModes.
 		if (allowedModesId.empty()) {
-			qWarning() << "[ProgFlow] getAllowedModes: пусто и по List_ID, fallback из Lists полей"
-			           << "progId:" << progId << "listId:" << listId;
+//			qWarning() << "[ProgFlow] getAllowedModes: пусто и по List_ID, fallback из Lists полей"
+//			           << "progId:" << progId << "listId:" << listId;
 			for (int i = 0; i < 8; ++i) {
 				QString allowed = progItem.at(4 + 3*i).toString();
 				QStringList list = allowed.split(',', Qt::SkipEmptyParts);
@@ -1120,8 +1134,8 @@ std::vector<int> ProgLoader::getAllowedModes(int progId, const QVariantList& pro
 			std::sort(allowedModesId.begin(), allowedModesId.end());
 			auto last = std::unique(allowedModesId.begin(), allowedModesId.end());
 			allowedModesId.erase(last, allowedModesId.end());
-			qWarning() << "[ProgFlow] getAllowedModes: fallback из Lists дал modeCount:"
-			           << allowedModesId.size();
+//			qWarning() << "[ProgFlow] getAllowedModes: fallback из Lists дал modeCount:"
+//			           << allowedModesId.size();
 		}
 	} else {
 		// std::vector<int> allowedModesId__;

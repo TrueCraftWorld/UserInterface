@@ -140,6 +140,7 @@ int main(int argc, char *argv[])
 
     QVariantMap *initMap = new QVariantMap();
     initMap->insert("boot", 0);
+    initMap->insert("language", "ru");
     initMap->insert("serialNumber", "");
     initMap->insert("deviceType", "");
     initMap->insert("featureNotes", "");
@@ -220,6 +221,9 @@ int main(int argc, char *argv[])
                      m_linkStm, &QObject::deleteLater);
 
     // Корректное завершение потока при выходе из приложения
+    QObject::connect(&app, &QCoreApplication::aboutToQuit,
+                     ctrl.data(), &ControlCenter::flushPendingSave,
+                     Qt::DirectConnection);
     QObject::connect(&app, &QCoreApplication::aboutToQuit,
                      linkStmThread, &QThread::quit);
     QObject::connect(linkStmThread, &QThread::finished,

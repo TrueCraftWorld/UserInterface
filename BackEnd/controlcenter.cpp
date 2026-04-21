@@ -79,13 +79,33 @@ void ControlCenter::makeHandleConnections()
 
 	connect(m_handle, &ProgHandle::signalRecomProgChosen,
 	        this, [this](int progId, bool clear) {
-		qWarning() << "[ProgFlow] signalRecomProgChosen progId:" << progId << "clear:" << clear;
+//		qWarning() << "[ProgFlow] signalRecomProgChosen progId:" << progId << "clear:" << clear;
 		m_progLoader->programmLoadSocketInit(progId, clear);
 	});
 
     connect(m_handle, &ProgHandle::signalFreeSettingsRequested,
             this, [this]() {
         m_progLoader->freeSettingsSocketInit(true);
+    });
+
+    connect(m_handle, &ProgHandle::signalEmptyFreeSettingsRequested,
+            this, [this]() {
+        m_progLoader->defaultSocketInit(true);
+        m_progLoader->slotSaveCurrentState();
+    });
+
+    connect(m_handle, &ProgHandle::signalLastSettingsRequested,
+            this, [this]() {
+        if (!m_progLoader->loadCurrentState()) {
+            m_progLoader->defaultSocketInit();
+        }
+    });
+
+    connect(m_handle, &ProgHandle::signalSaveCurrentStateRequested,
+            this, [this]() {
+        if (!m_progLoader.isNull()) {
+            m_progLoader->slotSaveCurrentState();
+        }
     });
     
     connect(m_handle, &ProgHandle::signalDeleteAllUserProgs,
@@ -95,22 +115,22 @@ void ControlCenter::makeHandleConnections()
     
 	connect(m_handle, &ProgHandle::signalScopeRequest,
 	        this, [this] (int id) {
-		qDebug() << "[ProgFlow] signalScopeRequest scopeId:" << id;
+//		qDebug() << "[ProgFlow] signalScopeRequest scopeId:" << id;
 		m_handle->setProgList(m_progLoader->getProgs(id));
 	});
 
 	connect(m_handle, &ProgHandle::updateScopes,
 	        this, [this] (bool isRecom) {
-		qDebug() << "[ProgFlow] updateScopes isRecom:" << isRecom;
+//		qDebug() << "[ProgFlow] updateScopes isRecom:" << isRecom;
 		m_progLoader->setCurLoaderType(isRecom ? ProgLoader::ptRecom : ProgLoader::ptUser);
 		const auto categories = m_progLoader->getCategories();
-		qDebug() << "[ProgFlow] updateScopes categories:" << categories.size();
+//		qDebug() << "[ProgFlow] updateScopes categories:" << categories.size();
 		m_handle->setScopeList(categories);
 		// Списки программ подставляет signalScopeRequest → setProgList(getProgs(scopeId))
 		// из setScopeIdx(0) внутри setScopeList. Вызов getProgs(-1) давал пустой запрос
 		// Scope_ID = -1 и затирал m_progs до пустого — клик по списку не вызывал загрузку.
-		qDebug() << "[ProgFlow] updateScopes prog list size after setScopeList:"
-		         << m_handle->progNameList().size();
+//		qDebug() << "[ProgFlow] updateScopes prog list size after setScopeList:"
+//		         << m_handle->progNameList().size();
 	});
 
 	connect(m_handle, &ProgHandle::signalAddEmptyDefault,
@@ -153,50 +173,6 @@ void ControlCenter::initSockets()
 void ControlCenter::prepareConnectios()
 {
 	makeHandleConnections();
-	if (m_progLoader && m_saveTimer) {
-		connect(m_saveTimer, &QTimer::timeout,
-		        m_progLoader, &ProgLoader::slotSaveCurrentState);
-	}
-
-	if (m_progLoader && m_editor) {
-		connect(m_editor, &SocketModeEditor::editingFinished,
-		        this, [this] (bool success) {
-			if (success) {
-				scheduleSave();
-			}
-		});
-	}
-
-	connect(m_socketModel.data(), &SocketModel::dataChanged,
-	        this, [this] (const QModelIndex&, const QModelIndex&, const QVector<int>& roles) {
-		if (roles.empty()) {
-			scheduleSave();
-			return;
-		}
-		size_t checkIdx = 0;
-		std::vector<int> rolesSrtd = std::vector(roles.begin(), roles.end());
-		std::sort(rolesSrtd.begin(), rolesSrtd.end());
-		//стд вектор, чтобы не переживать о shared-контейнерах и утечках
-		//сортировка для того, чтобы справиться за 1 проход;
-		for (const auto& item : rolesSrtd) {
-			for (size_t i = checkIdx; i < m_rolesSaveTriggered.size(); ++i) {
-				if (m_rolesSaveTriggered[i] < item) {
-					checkIdx++;
-					continue;
-				}
-				break;
-			}
-			//паранойная доп проверка на размер массива
-			if (checkIdx < m_rolesSaveTriggered.size()
-			        && item == m_rolesSaveTriggered[checkIdx]) {
-				//нашли хоть одну нужную роль - тикаем, запустив сохранение
-				scheduleSave();
-				return;
-			}
-		}
-	});
-	connect(m_socketModel.data(), &SocketModel::subProgCountChanged,
-	        this, &ControlCenter::scheduleSave);
 }
 
 QPointer<ProgHandle> ControlCenter::getHandle() const
@@ -212,6 +188,17 @@ void ControlCenter::scheduleSave()
 	if (!m_saveTimer->isActive() || m_saveTimer->remainingTime() < 10) {
 		m_saveTimer->stop();
 		m_saveTimer->start();
+	}
+}
+
+void ControlCenter::flushPendingSave()
+{
+	if (m_saveTimer && m_saveTimer->isActive()) {
+		m_saveTimer->stop();
+	}
+
+	if (!m_progLoader.isNull()) {
+		m_progLoader->slotSaveCurrentState();
 	}
 }
 

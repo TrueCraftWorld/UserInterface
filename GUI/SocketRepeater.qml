@@ -41,12 +41,30 @@ Repeater {
         cutModeId:         model.cutmodeid
         cutModeName:       model.cutmodename
         cutInstrumName:    model.cutmodeinstrname
+        cutHasAvailableModes: {
+            var ids = model.cutmodeidlist || []
+            for (var i = 0; i < ids.length; ++i) {
+                if (Number(ids[i]) !== 1000) {
+                    return true
+                }
+            }
+            return false
+        }
 
         coagInstrumNum:    model.coagmodeinstrnum
         coagMaxPower:      model.coagmodemaxpower
         coagModeId:        model.coagmodeid
         coagModeName:      model.coagmodename
         coagInstrumName:   model.coagmodeinstrname
+        coagHasAvailableModes: {
+            var ids = model.coagmodeidlist || []
+            for (var i = 0; i < ids.length; ++i) {
+                if (Number(ids[i]) !== 1000) {
+                    return true
+                }
+            }
+            return false
+        }
 
         coagIsEndo:        model.coagmodeisendo
         cutIsEndo:         model.cutmodeisendo

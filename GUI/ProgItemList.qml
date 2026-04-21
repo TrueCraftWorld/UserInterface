@@ -45,6 +45,7 @@ Rectangle {
 		progList.curIndex = -1
 	}
 	function init() {
+        scopeModel.clear()
 		itemNameArr = recomHandle.scopeNameList
 		itemIdArr = recomHandle.scopeIdList
 		if (itemIdArr.length !== itemNameArr.length) {
@@ -70,13 +71,13 @@ Rectangle {
 	Connections {
 		target: recomHandle
 		function onScopeNameListChanged() {
-			console.log("[ProgFlow] ProgItemList onScopeNameListChanged")
+//			console.log("[ProgFlow] ProgItemList onScopeNameListChanged")
 			init();
 			updateModel();
 		}
 		function onProgNameListChanged() {
-			console.log("[ProgFlow] ProgItemList onProgNameListChanged, progs:",
-						recomHandle.progNameList.length)
+//			console.log("[ProgFlow] ProgItemList onProgNameListChanged, progs:",
+//						recomHandle.progNameList.length)
 			updateModel();
 		}
 	}
@@ -99,7 +100,9 @@ Rectangle {
 		}
 		Text {
 			anchors.fill: parent
-			text: qsTr("РЕКОМЕНДОВАННЫЕ ПРОГРАММЫ")
+			text: recommended
+                  ? qsTr("РЕКОМЕНДОВАННЫЕ ПРОГРАММЫ")
+                  : qsTr("ПОЛЬЗОВАТЕЛЬСКИЕ ПРОГРАММЫ")
 			horizontalAlignment: Qt.AlignHCenter
 			verticalAlignment: Qt.AlignVCenter
 			font.pixelSize: 30
@@ -316,10 +319,10 @@ Rectangle {
 		function onNewIndexSelected(index) {
 			var pid = (index >= 0 && index < recomHandle.progIdList.length)
 					? recomHandle.progIdList[index] : -1
-			console.log("[ProgFlow] ProgItemList progList onNewIndexSelected listIndex:", index,
-						"progId:", pid, "loadClear:", loadClear,
-						"scopeIdx:", recomHandle.scopeIdx,
-						"progIdList.length:", recomHandle.progIdList.length)
+//			console.log("[ProgFlow] ProgItemList progList onNewIndexSelected listIndex:", index,
+//						"progId:", pid, "loadClear:", loadClear,
+//						"scopeIdx:", recomHandle.scopeIdx,
+//						"progIdList.length:", recomHandle.progIdList.length)
 			recomHandle.loadRecommendedProg(index, loadClear)
             
             var scopeName = ""

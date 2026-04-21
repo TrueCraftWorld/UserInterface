@@ -31,12 +31,86 @@ Window {
     
     // Текущее название программы
     property string currentProgName: ""
+    property string language: "ru"
+    readonly property color fotekBlue: "#264093"
+    readonly property color fotekOrange: "#faa731"
+    property string startupScreen: "startMenu"
+    property bool startupInfoVisible: false
+    readonly property bool startupFlowVisible: startupScreen !== "mainScreen"
 
     function activationEnable() {
         periphHandle.enableActivation = !(pedDrawer.opened
                                           | leftDrawer.opened
                                           | argNeutDrawer.opened
-                                          | socketsDummy.socketEditorOpened)
+                                          | socketsDummy.socketEditorOpened
+                                          | startupFlowVisible)
+    }
+
+    function setCurrentProgram(scopeName, progName) {
+        statusDummy.text = scopeName + ": " + progName
+        container.currentProgName = progName
+        persistCurrentProgramInfo()
+    }
+
+    function setCurrentProgramTitle(titleText) {
+        statusDummy.text = titleText
+        container.currentProgName = titleText
+        persistCurrentProgramInfo()
+    }
+
+    function normalizedLanguage(value) {
+        var lang = String(value === undefined || value === null ? "" : value).trim().toLowerCase()
+        return lang === "en" ? "en" : "ru"
+    }
+
+    function keyboardLayoutForLanguage() {
+        return container.language === "en" ? "En" : "Ru"
+    }
+
+    function persistLanguage() {
+        savedJson.saveString("language", container.language)
+    }
+
+    function restoreLanguage() {
+        container.language = normalizedLanguage(savedJson.readString("language", "ru"))
+        persistLanguage()
+    }
+
+    function persistCurrentProgramInfo() {
+        savedJson.saveString("lastProgramDisplayName", statusDummy.text)
+        savedJson.saveString("lastProgramName", container.currentProgName)
+    }
+
+    function restoreCurrentProgramInfo() {
+        var displayName = String(savedJson.readString("lastProgramDisplayName", "")).trim()
+        var progName = String(savedJson.readString("lastProgramName", "")).trim()
+        var restored = false
+
+        if (displayName !== "") {
+            statusDummy.text = displayName
+            restored = true
+        }
+
+        if (progName !== "") {
+            container.currentProgName = progName
+            restored = true
+        } else if (displayName !== "") {
+            container.currentProgName = displayName
+        }
+
+        return restored
+    }
+
+    function showStartupScreen(screenName) {
+        startupScreen = screenName
+        startupInfoVisible = false
+        activationEnable()
+    }
+
+    function showMainScreen() {
+        startupScreen = "mainScreen"
+        startupInfoVisible = false
+        activationEnable()
     }
 
     function warningColorForCode(code) {
@@ -101,6 +175,24 @@ Window {
         default:
             return qsTr("Ошибка устройства (код 0x") + code.toString(16).toUpperCase() + ")"
         }
+    }
+
+    Component.onCompleted: {
+        restoreLanguage()
+        restoreCurrentProgramInfo()
+        activationEnable()
+    }
+
+    onStartupScreenChanged: activationEnable()
+    onStartupInfoVisibleChanged: activationEnable()
+    onLanguageChanged: {
+        var normalized = normalizedLanguage(container.language)
+        if (normalized !== container.language) {
+            container.language = normalized
+            return
+        }
+        persistLanguage()
+        inputPanel.languageLayout = keyboardLayoutForLanguage()
     }
 
    StatusBar {
@@ -262,11 +354,98 @@ Window {
         }
     }
 
+    Item {
+        id: startupOverlay
+        anchors.fill: parent
+        z: 20000
+        visible: startupFlowVisible
+
+        Loader {
+            id: startupContentLoader
+            anchors.fill: parent
+            sourceComponent: {
+                switch (container.startupScreen) {
+                case "recommendedList":
+                    return recommendedProgramsComponent
+                case "userProgramList":
+                    return userProgramsComponent
+                default:
+                    return startupMenuComponent
+                }
+            }
+        }
+
+        Loader {
+            id: startupAboutLoader
+            anchors.fill: parent
+            active: container.startupInfoVisible
+            visible: active
+            source: "qrc:/StartupInfoScreen.qml"
+        }
+
+        Connections {
+            target: startupAboutLoader.item
+            ignoreUnknownSignals: true
+            function onReturnButtonPressed() {
+                container.startupInfoVisible = false
+            }
+        }
+
+        Component {
+            id: startupMenuComponent
+
+            StartupMenu {
+                fotekBlue: container.fotekBlue
+                fotekOrange: container.fotekOrange
+                onRecommendedProgramsPressed: container.showStartupScreen("recommendedList")
+                onUserProgramsPressed: container.showStartupScreen("userProgramList")
+                onFreeSettingsPressed: {
+                    recomHandle.loadEmptyFreeSettings()
+                    container.setCurrentProgramTitle(qsTr("Свободные установки"))
+                    container.showMainScreen()
+                }
+                onLastSettingsPressed: {
+                    recomHandle.loadLastSettings()
+                    if (!container.restoreCurrentProgramInfo()) {
+                        container.setCurrentProgramTitle(qsTr("Последние установки"))
+                    }
+                    container.showMainScreen()
+                }
+                onInfoButtonPressed: container.startupInfoVisible = true
+            }
+        }
+
+        Component {
+            id: recommendedProgramsComponent
+
+            ProgItemList {
+                recommended: true
+                editable: false
+                onReturnButtonPressed: container.showStartupScreen("startMenu")
+                onProgramSelected: container.setCurrentProgram(scopeName, progName)
+                onClickedButton: container.showMainScreen()
+            }
+        }
+
+        Component {
+            id: userProgramsComponent
+
+            ProgItemList {
+                recommended: false
+                editable: true
+                onReturnButtonPressed: container.showStartupScreen("startMenu")
+                onProgramSelected: container.setCurrentProgram(scopeName, progName)
+                onClickedButton: container.showMainScreen()
+            }
+        }
+    }
+
 	ProgSaveDialog {
 		id: saveProgDialog
-		anchors.centerIn: parent
 		width: 0.8 * parent.width
-		height: 350
+		height: 390
+        x: (parent.width - width) / 2
+        y: statusDummy.height
 
     }
     Connections {
@@ -274,8 +453,8 @@ Window {
         function onAccepted() {
             recomHandle.saveProg(saveProgDialog.scopeName,
                                  saveProgDialog.progName)
-            statusDummy.text = saveProgDialog.scopeName + ": " + saveProgDialog.progName
-            container.currentProgName = saveProgDialog.progName
+            recomHandle.saveCurrentState()
+            container.setCurrentProgram(saveProgDialog.scopeName, saveProgDialog.progName)
             Qt.inputMethod.hide()
         }
         function onRejected() {
@@ -528,12 +707,10 @@ Window {
             leftDrawer.close()
         }
         function onProgramSelected(scopeName, progName) {
-            statusDummy.text = scopeName + ": " + progName
-            container.currentProgName = progName
+            container.setCurrentProgram(scopeName, progName)
         }
         function onFreeSettingsModeActivated() {
-            statusDummy.text = "Свободные установки"
-            container.currentProgName = "Свободные установки"
+            container.setCurrentProgramTitle(qsTr("Свободные установки"))
         }
         function onDeleteAllUserProgsRequested() {
             recomHandle.deleteAllUserProgs()
@@ -578,6 +755,7 @@ Window {
 	// Монитор системы в правом нижнем углу
 	SystemMonitor {
 		id: systemMonitor
+        visible: false
 		anchors {
 			right: parent.right
 			bottom: parent.bottom
@@ -739,12 +917,14 @@ Window {
       
       z: 9999
       y: container.height
+      languageLayout: container.keyboardLayoutForLanguage()
       availableLanguageLayouts: ["Ru","En"]
       anchors.left: parent.left
       anchors.right: parent.right
 
       onActiveChanged: {
          if (active) {
+            inputPanel.languageLayout = container.keyboardLayoutForLanguage()
             keyboardTuningTimer.restart()
          }
       }

@@ -125,6 +125,26 @@ bool DataBaseReader::executeUpdateQuery(const QString &queryStr) const
     return true;
 }
 
+bool DataBaseReader::beginTransaction() const
+{
+    QSqlDatabase db = QSqlDatabase::database("etoBasa");
+    if (!db.open()) {
+        qWarning() << "beginTransaction fail";
+        return false;
+    }
+    return db.transaction();
+}
+
+void DataBaseReader::rollback() const
+{
+    QSqlDatabase db = QSqlDatabase::database("etoBasa");
+    if (!db.open()) {
+        qWarning() << "rollback fail";
+        return;
+    }
+    db.rollback();
+}
+
 void DataBaseReader::commit() const
 {
     QSqlDatabase db = QSqlDatabase::database("etoBasa");

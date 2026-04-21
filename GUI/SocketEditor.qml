@@ -1244,6 +1244,7 @@ Popup {
                 }
                 onPressed: {
                     modeEditor.commitChanges()
+                    recomHandle.saveCurrentState()
                     root.close()
                 }
             }

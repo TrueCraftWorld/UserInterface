@@ -14,6 +14,7 @@ Rectangle {
     property int instrumNum
     property string instrumName: qsTr("не выбран")
     property bool isEndo: false
+    property bool hasAvailableModes: true
 
     readonly property color socketColor: {
         if (modeId === 1000) {
@@ -99,7 +100,8 @@ Rectangle {
 
     Label {
         id: modeLabel
-        text: modeId === 1000 ? qsTr("режим не выбран") : halfSocketRoot.modeName
+        visible: halfSocketRoot.hasAvailableModes
+        text: modeId === 1000 ? qsTr("выберите режим") : halfSocketRoot.modeName
         color: (halfSocketRoot.isCoag || modeId === 1000) ? "white" : "black"
         font.pixelSize:  modeId === 1000 ? 24 : 36
         font.bold: true

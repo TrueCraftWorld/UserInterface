@@ -24,6 +24,9 @@ public:
 	
 	Q_INVOKABLE void loadRecommendedProg(int recomProgId, bool clear = true);
     Q_INVOKABLE void loadFreeSettings();
+    Q_INVOKABLE void loadEmptyFreeSettings();
+    Q_INVOKABLE void loadLastSettings();
+    Q_INVOKABLE void saveCurrentState();
 	Q_INVOKABLE void removeSubProg();
 	Q_INVOKABLE void permitAll();
 	Q_INVOKABLE void saveProg(const QString& scopeName,
@@ -64,6 +67,9 @@ signals:
 	void signalLoadRecommend(int scopeIdx, int progIdx, int subProgIdx);
 	void signalRecomProgChosen(int progId, bool clear);
     void signalFreeSettingsRequested();
+    void signalEmptyFreeSettingsRequested();
+    void signalLastSettingsRequested();
+    void signalSaveCurrentStateRequested();
     void signalDeleteAllUserProgs();
 	void signalRemoveSub();
 	//может быть избыточно и проги сможем просто по id разделять

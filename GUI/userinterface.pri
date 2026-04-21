@@ -33,6 +33,8 @@ DISTFILES += \
     $$PWD/SocketRepeater.qml \
     $$PWD/StatesSocket.qml \
     $$PWD/SocketContainerV2.qml \
+    $$PWD/StartupInfoScreen.qml \
+    $$PWD/StartupMenu.qml \
     $$PWD/StatusBar.qml
     $$PWD/VideoPlayer.qml
 

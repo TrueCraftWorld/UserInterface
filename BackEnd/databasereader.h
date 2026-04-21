@@ -28,6 +28,8 @@ public:
      */
     bool executeUpdateQuery(const QString& queryStr) const;
 
+    bool beginTransaction() const;
+    void rollback() const;
     void commit() const;
 
 signals:

@@ -180,6 +180,7 @@ HalfSocket::HalfSocket(const HalfSocket &other)
     if (&other == this) {
         return;
     }
+    m_curMode = nullptr;
     m_modeIndex = other.m_modeIndex;
     m_modeNames = other.m_modeNames;
     m_isCoag = other.m_isCoag;
@@ -187,6 +188,11 @@ HalfSocket::HalfSocket(const HalfSocket &other)
     for (auto modeIter = other.m_modes.constBegin(); modeIter != other.m_modes.constEnd(); ++modeIter) {
         //создаём копию режима и новый шаредптр уже на копию
         m_modes.insert(modeIter.key(), SurgModePtr::create(*modeIter.value()));
+    }
+    if (!other.m_curMode.isNull()) {
+        setModeId(other.m_curMode->id());
+    } else if (!m_modes.isEmpty()) {
+        setModeIndex(m_modeIndex);
     }
 }
 
@@ -195,13 +201,20 @@ HalfSocket &HalfSocket::operator=(const HalfSocket &other)
     if (&other == this) {
         return *this;
     }
+    m_curMode = nullptr;
     m_modeIndex = other.m_modeIndex;
     m_modeNames = other.m_modeNames;
     m_isCoag = other.m_isCoag;
     m_state = other.m_state;
+    m_modes.clear();
     for (auto modeIter = other.m_modes.constBegin(); modeIter != other.m_modes.constEnd(); ++modeIter) {
         //создаём копию режима и новый шаредптр уже на копию
         m_modes.insert(modeIter.key(), SurgModePtr::create(*modeIter.value()));
+    }
+    if (!other.m_curMode.isNull()) {
+        setModeId(other.m_curMode->id());
+    } else if (!m_modes.isEmpty()) {
+        setModeIndex(m_modeIndex);
     }
     return *this;
 }

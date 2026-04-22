@@ -79,6 +79,12 @@ Item {
                     if (menuLoader.item.userButtonPressed) {
                         menuLoader.item.userButtonPressed.disconnect()
                     }
+                    if (menuLoader.item.languageButtonPressed) {
+                        menuLoader.item.languageButtonPressed.disconnect()
+                    }
+                    if (menuLoader.item.infoButtonPressed) {
+                        menuLoader.item.infoButtonPressed.disconnect()
+                    }
                 } catch(e) {
                     // Игнорируем ошибки отключения
                 }
@@ -121,6 +127,18 @@ Item {
                     if (menuLoader.item.serviceMenuButtonPressed) {
                         menuLoader.item.serviceMenuButtonPressed.connect(function() {
                             navigateTo("qrc:/ServiceMenu.qml")
+                        })
+                    }
+                    if (menuLoader.item.infoButtonPressed) {
+                        menuLoader.item.infoButtonPressed.connect(function() {
+                            navigateTo("qrc:/StartupInfoScreen.qml")
+                        })
+                    }
+                    if (menuLoader.item.languageButtonPressed) {
+                        menuLoader.item.languageButtonPressed.connect(function() {
+                            if (typeof container !== "undefined" && container.language !== undefined) {
+                                container.language = container.language === "en" ? "ru" : "en"
+                            }
                         })
                     }
                     if (menuLoader.item.serialNumberButtonPressed) {

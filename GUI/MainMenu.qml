@@ -14,160 +14,288 @@ Item {
     signal userProgsButtonPressed()
     signal freeSettingsButtonPressed()
     signal serviceMenuButtonPressed()
-    
+    signal languageButtonPressed()
+    signal infoButtonPressed()
+
+    property color fotekBlue: "#264093"
+    property color fotekOrange: "#faa731"
+    readonly property int screenMargin: 34
+    readonly property int topButtonWidth: 160
+    readonly property int topButtonHeight: 64
+    readonly property int mainSpacing: 24
+    readonly property int actionButtonHeight: 132
+    readonly property int topActionsHeight: actionButtonHeight * 2 + mainSpacing
+
     property bool videoPlayerVisible: false
+
     Rectangle {
-        id: background
         anchors.fill: parent
-        color: "darkslategray"
+        color: "#F3F5F9"
     }
-    SLabel {
+
+    Rectangle {
+        anchors.fill: parent
+        color: "transparent"
+        border.width: 22
+        border.color: settinsScreen.fotekBlue
+    }
+
+    Button {
+        id: infoButton
+        anchors.top: parent.top
+        anchors.left: parent.left
+        anchors.topMargin: settinsScreen.screenMargin
+        anchors.leftMargin: settinsScreen.screenMargin
+        width: settinsScreen.topButtonWidth
+        height: settinsScreen.topButtonHeight
+        text: qsTr("ИНФО")
+        onPressed: settinsScreen.infoButtonPressed()
+
+        background: Rectangle {
+            radius: 18
+            color: "white"
+            border.width: 1
+            border.color: settinsScreen.fotekBlue
+        }
+
+        contentItem: Text {
+            text: parent.text
+            color: settinsScreen.fotekBlue
+            font.pixelSize: 24
+            font.bold: true
+            horizontalAlignment: Text.AlignHCenter
+            verticalAlignment: Text.AlignVCenter
+        }
+    }
+
+    Button {
+        id: languageButton
+        anchors.top: parent.top
+        anchors.right: parent.right
+        anchors.topMargin: settinsScreen.screenMargin
+        anchors.rightMargin: settinsScreen.screenMargin
+        width: settinsScreen.topButtonWidth
+        height: settinsScreen.topButtonHeight
+        text: qsTr("RU / EN")
+        onPressed: settinsScreen.languageButtonPressed()
+
+        background: Rectangle {
+            radius: 18
+            color: "white"
+            border.width: 1
+            border.color: settinsScreen.fotekBlue
+        }
+
+        contentItem: Text {
+            text: parent.text
+            color: settinsScreen.fotekBlue
+            font.pixelSize: 24
+            font.bold: true
+            horizontalAlignment: Text.AlignHCenter
+            verticalAlignment: Text.AlignVCenter
+        }
+    }
+
+    Text {
         id: screenTitle
-        style: "label-primary lg"
-        text: qsTr("Настройки")
+        text: qsTr("МЕНЮ")
         anchors {
             top: parent.top
-            left: parent.left
-            right: parent.right
+            horizontalCenter: parent.horizontalCenter
+            topMargin: settinsScreen.screenMargin + 6
         }
+        color: settinsScreen.fotekBlue
+        font.pixelSize: 48
+        font.bold: true
     }
 
-    SButton{
+    Button {
         id: exitButton
-        style: "btn-secondary"
-        text: qsTr("Выход")
+        width: 180
+        height: 72
+        text: qsTr("НАЗАД")
         onPressed: settinsScreen.exitButtonPressed()
         anchors {
-            left:parent.left
+            left: parent.left
             bottom: parent.bottom
-            margins: 15
+            margins: settinsScreen.screenMargin
+        }
+
+        background: Rectangle {
+            radius: 20
+            color: settinsScreen.fotekBlue
+            border.width: 1
+            border.color: "#1E3274"
+        }
+
+        contentItem: Text {
+            text: parent.text
+            color: "white"
+            font.pixelSize: 30
+            font.bold: true
+            horizontalAlignment: Text.AlignHCenter
+            verticalAlignment: Text.AlignVCenter
         }
     }
 
-
-    ColumnLayout {
-        id: buttonGrid
+    Item {
+        id: actionsArea
         anchors {
             top: screenTitle.bottom
-            topMargin: 20
+            topMargin: 26
             horizontalCenter: parent.horizontalCenter
+            bottom: exitButton.top
+            bottomMargin: 24
         }
-        spacing: 20
+        width: parent.width - settinsScreen.screenMargin * 2
 
-        RowLayout {
-            Layout.alignment: Qt.AlignHCenter
-            spacing: 20
-            
-            SButton {
-                id: wifiButton
-                style: "btn-primary lg"
-                Layout.preferredWidth: 480
-                Layout.preferredHeight: 110
-                text: qsTr("Рекомендованные программы")
-                onPressed: recommendButtonPressed()
-                contentItem: Text {
-                    text: wifiButton.text
-                    font: wifiButton.font
-                    opacity: enabled ? 1.0 : 0.3
-                    color: "white"
-                    horizontalAlignment: Text.AlignHCenter
-                    verticalAlignment: Text.AlignVCenter
-                    wrapMode: Text.WordWrap
-                    elide: Text.ElideRight
+        ColumnLayout {
+            anchors.fill: parent
+            spacing: settinsScreen.mainSpacing
+
+            RowLayout {
+                Layout.fillWidth: true
+                Layout.preferredHeight: settinsScreen.topActionsHeight
+                spacing: settinsScreen.mainSpacing
+
+                Button {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: settinsScreen.topActionsHeight
+                    text: qsTr("Рекомендованные программы")
+                    onPressed: recommendButtonPressed()
+
+                    background: Rectangle {
+                        radius: 28
+                        color: "white"
+                        border.width: 2
+                        border.color: settinsScreen.fotekOrange
+                    }
+
+                    contentItem: Text {
+                        text: parent.text
+                        color: settinsScreen.fotekBlue
+                        font.pixelSize: 42
+                        font.bold: true
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                        wrapMode: Text.WordWrap
+                    }
+                }
+
+                ColumnLayout {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: settinsScreen.topActionsHeight
+                    spacing: settinsScreen.mainSpacing
+
+                    Button {
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: settinsScreen.actionButtonHeight
+                        text: qsTr("Пользовательские программы")
+                        onPressed: userButtonPressed()
+
+                        background: Rectangle {
+                            radius: 24
+                            color: settinsScreen.fotekOrange
+                            border.width: 1
+                            border.color: "#D88714"
+                        }
+
+                        contentItem: Text {
+                            text: parent.text
+                            color: "#111111"
+                            font.pixelSize: 30
+                            font.bold: true
+                            horizontalAlignment: Text.AlignHCenter
+                            verticalAlignment: Text.AlignVCenter
+                            wrapMode: Text.WordWrap
+                        }
+                    }
+
+                    Button {
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: settinsScreen.actionButtonHeight
+                        text: qsTr("Свободные установки")
+                        onPressed: {
+                            recomHandle.loadFreeSettings()
+                            freeSettingsButtonPressed()
+                        }
+
+                        background: Rectangle {
+                            radius: 24
+                            color: "white"
+                            border.width: 1
+                            border.color: "#C7CEDA"
+                        }
+
+                        contentItem: Text {
+                            text: parent.text
+                            color: "black"
+                            font.pixelSize: 30
+                            font.bold: true
+                            horizontalAlignment: Text.AlignHCenter
+                            verticalAlignment: Text.AlignVCenter
+                            wrapMode: Text.WordWrap
+                        }
+                    }
                 }
             }
 
-            SButton {
-                id: userProgButton
-                style: "btn-primary lg"
-                Layout.preferredWidth: 480
-                Layout.preferredHeight: 110
-                text: qsTr("Пользовательские программы")
-                onPressed: userButtonPressed()
-                contentItem: Text {
-                    text: userProgButton.text
-                    font: userProgButton.font
-                    opacity: enabled ? 1.0 : 0.3
-                    color: "white"
-                    horizontalAlignment: Text.AlignHCenter
-                    verticalAlignment: Text.AlignVCenter
-                    wrapMode: Text.WordWrap
-                    elide: Text.ElideRight
+            RowLayout {
+                Layout.fillWidth: true
+                Layout.preferredHeight: settinsScreen.actionButtonHeight
+                spacing: settinsScreen.mainSpacing
+
+                Button {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: settinsScreen.actionButtonHeight
+                    text: qsTr("Видеоинструкции")
+                    onPressed: settinsScreen.videoPlayerVisible = true
+
+                    background: Rectangle {
+                        radius: 24
+                        color: "white"
+                        border.width: 1
+                        border.color: "#C7CEDA"
+                    }
+
+                    contentItem: Text {
+                        text: parent.text
+                        color: "black"
+                        font.pixelSize: 30
+                        font.bold: true
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                        wrapMode: Text.WordWrap
+                    }
                 }
-            }
-        }
-        
-        RowLayout {
-            Layout.alignment: Qt.AlignHCenter
-            spacing: 20
-            
-            SButton {
-                id: freeSettingsButton
-                style: "btn-primary lg"
-                Layout.preferredWidth: 480
-                Layout.preferredHeight: 110
-                text: qsTr("Свободные установки")
-                onPressed: {
-                    recomHandle.loadFreeSettings()
-                    freeSettingsButtonPressed()
-                }
-                contentItem: Text {
-                    text: freeSettingsButton.text
-                    font: freeSettingsButton.font
-                    opacity: enabled ? 1.0 : 0.3
-                    color: "white"
-                    horizontalAlignment: Text.AlignHCenter
-                    verticalAlignment: Text.AlignVCenter
-                    wrapMode: Text.WordWrap
-                    elide: Text.ElideRight
-                }
-            }
-            
-        }
-        
-        RowLayout {
-            Layout.alignment: Qt.AlignHCenter
-            spacing: 20
-            
-            SButton {
-                id: videoButton
-                style: "btn-primary lg"
-                Layout.preferredWidth: 480
-                Layout.preferredHeight: 110
-                text: qsTr("Видео 🎬")
-                onPressed: settinsScreen.videoPlayerVisible = true
-                contentItem: Text {
-                    text: videoButton.text
-                    font: videoButton.font
-                    opacity: enabled ? 1.0 : 0.3
-                    color: "white"
-                    horizontalAlignment: Text.AlignHCenter
-                    verticalAlignment: Text.AlignVCenter
-                    wrapMode: Text.WordWrap
-                    elide: Text.ElideRight
-                }
-            }
-            
-            SButton {
-                id: serviceMenuButton
-                style: "btn-primary lg"
-                Layout.preferredWidth: 480
-                Layout.preferredHeight: 110
-                text: qsTr("Сервисное меню")
-                onPressed: serviceMenuButtonPressed()
-                contentItem: Text {
-                    text: serviceMenuButton.text
-                    font: serviceMenuButton.font
-                    opacity: enabled ? 1.0 : 0.3
-                    color: "white"
-                    horizontalAlignment: Text.AlignHCenter
-                    verticalAlignment: Text.AlignVCenter
-                    wrapMode: Text.WordWrap
-                    elide: Text.ElideRight
+
+                Button {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: settinsScreen.actionButtonHeight
+                    text: qsTr("Сервисное меню")
+                    onPressed: serviceMenuButtonPressed()
+
+                    background: Rectangle {
+                        radius: 24
+                        color: settinsScreen.fotekBlue
+                        border.width: 1
+                        border.color: "#1E3274"
+                    }
+
+                    contentItem: Text {
+                        text: parent.text
+                        color: "white"
+                        font.pixelSize: 30
+                        font.bold: true
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                        wrapMode: Text.WordWrap
+                    }
                 }
             }
         }
     }
+
     VideoPlayer {
         id: videoPlayer
         anchors.fill: parent

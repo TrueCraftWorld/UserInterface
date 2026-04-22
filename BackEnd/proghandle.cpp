@@ -41,19 +41,13 @@ ProgHandle::ProgHandle(QObject *parent)
 
 void ProgHandle::loadRecommendedProg(int recomProgIdx, bool clear)
 {
-//	qWarning() << "[ProgFlow] loadRecommendedProg listIndex:" << recomProgIdx
-//	           << "clear:" << clear << "m_progs.size:" << m_progs.size();
 	if (recomProgIdx < 0 || recomProgIdx >= m_progs.size()) {
-//		qWarning() << "[ProgFlow] loadRecommendedProg: индекс вне диапазона или список пуст"
-//		           << "index:" << recomProgIdx << "size:" << m_progs.size();
 		return;
 	}
 	auto iter = m_progs.begin();
 	for (int a = 0; a < recomProgIdx; a++) {
 		++iter;
 	}
-//	qWarning() << "[ProgFlow] loadRecommendedProg → signalRecomProgChosen progId:" << iter->first
-//	           << "name:" << iter->second;
 	emit signalRecomProgChosen(iter->first, clear);
 }
 
@@ -89,7 +83,6 @@ void ProgHandle::removeSubProg()
 
 void ProgHandle::saveProg(const QString &scopeName, const QString &progName)
 {
-	// qDebug() << "saveProg" << scopeName << progName;
 	emit signalSaveName(scopeName, progName);
 }
 
@@ -108,11 +101,11 @@ void ProgHandle::deleteProgRequest(int index)
 	if (m_isRecomProgs) {
 		return;
 	}
-	if (m_progs.size() <= index) {
+	if (index < 0 || m_progs.size() <= index) {
 		return;
 	}
 	auto iter = m_progs.begin();
-	for (int i = 0; i < index; ++index) {
+	for (int i = 0; i < index; ++i) {
 		iter++;
 	}
 	int idToDelete = iter->first;
@@ -122,13 +115,16 @@ void ProgHandle::deleteProgRequest(int index)
 void ProgHandle::renameProgRequest(int index, const QString &name)
 {
 	if (m_isRecomProgs) {
+		qWarning() << "renameProgRequest skipped: current list is recommended";
 		return;
 	}
-	if (m_progs.size() <= index) {
+	if (index < 0 || m_progs.size() <= index) {
+		qWarning() << "renameProgRequest skipped: index out of range" << index
+		           << "size" << static_cast<int>(m_progs.size());
 		return;
 	}
 	auto iter = m_progs.begin();
-	for (int i = 0; i < index; ++index) {
+	for (int i = 0; i < index; ++i) {
 		iter++;
 	}
 	int idToRename = iter->first;
@@ -203,9 +199,48 @@ void ProgHandle::setProgList(const std::map<int, QString>& lst/*, bool isRecom*/
 void ProgHandle::setScopeList(const std::map<int, QString> &scopes/*, bool isRecom*/)
 {
 //	qDebug() << "[ProgFlow] setScopeList scopes:" << scopes.size();
+	int previousScopeId = -1;
+	if (!m_scopes.empty() && m_scopeIdx >= 0 && static_cast<size_t>(m_scopeIdx) < m_scopes.size()) {
+		auto iter = m_scopes.begin();
+		for (int i = 0; i < m_scopeIdx; ++i) {
+			++iter;
+		}
+		previousScopeId = iter->first;
+	}
+
+	const int previousScopeIdx = m_scopeIdx;
 	m_scopes = scopes;
-	setScopeIdx(0);
 	emit scopeNameListChanged();
+
+	if (m_scopes.empty()) {
+		m_scopeIdx = 0;
+		m_progs.clear();
+		emit progNameListChanged();
+		emit scopeIdxChanged();
+		return;
+	}
+
+	int restoredScopeIdx = -1;
+	if (previousScopeId >= 0) {
+		int idx = 0;
+		for (auto iter = m_scopes.begin(); iter != m_scopes.end(); ++iter, ++idx) {
+			if (iter->first == previousScopeId) {
+				restoredScopeIdx = idx;
+				break;
+			}
+		}
+	}
+
+	if (restoredScopeIdx < 0) {
+		restoredScopeIdx = previousScopeIdx;
+		if (restoredScopeIdx < 0) {
+			restoredScopeIdx = 0;
+		} else if (static_cast<size_t>(restoredScopeIdx) >= m_scopes.size()) {
+			restoredScopeIdx = static_cast<int>(m_scopes.size()) - 1;
+		}
+	}
+
+	setScopeIdx(restoredScopeIdx);
 }
 
 bool ProgHandle::isRecomProgs() const
@@ -224,11 +259,11 @@ void ProgHandle::deleteScopeRequest(int index)
 	if (m_isRecomProgs) {
 		return;
 	}
-	if (m_scopes.size() <= index) {
+	if (index < 0 || m_scopes.size() <= index) {
 		return;
 	}
 	auto iter = m_scopes.begin();
-	for (int i = 0; i < index; ++index) {
+	for (int i = 0; i < index; ++i) {
 		iter++;
 	}
 	int idToDelete = iter->first;
@@ -238,16 +273,21 @@ void ProgHandle::deleteScopeRequest(int index)
 void ProgHandle::renameScopeRequest(int index, const QString &name)
 {
 	if (m_isRecomProgs) {
+		qWarning() << "renameScopeRequest skipped: current list is recommended";
 		return;
 	}
-	if (m_scopes.size() <= index) {
+	if (index < 0 || m_scopes.size() <= index) {
+		qWarning() << "renameScopeRequest skipped: index out of range" << index
+		           << "size" << static_cast<int>(m_scopes.size());
 		return;
 	}
 	auto iter = m_scopes.begin();
-	for (int i = 0; i < index; ++index) {
+	for (int i = 0; i < index; ++i) {
 		iter++;
 	}
 	int idToRename = iter->first;
+	qWarning() << "renameScopeRequest emit signalRenameScope id" << idToRename
+	           << "newName" << name;
 	emit signalRenameScope(idToRename, name);
 }
 

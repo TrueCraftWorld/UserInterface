@@ -189,9 +189,13 @@ Rectangle {
 				Rectangle {
 					id: itemEditRect
 					property bool engaged : false
-					color: "transparent"
+					color: "#22000000"
+					border.color: "#55ffffff"
+					border.width: 1
+					radius: 8
 					width: engaged ? 3 * height : height
 					visible: showEditPanel
+					clip: true
 					anchors {
 						top: parent.top
 						bottom: parent.bottom
@@ -200,6 +204,7 @@ Rectangle {
 					}
 					SButton {
 						id: engageEditButton
+						style: "btn-naked"
 						visible: !itemEditRect.engaged
 						anchors.fill: parent
 						anchors.margins: 5
@@ -220,6 +225,7 @@ Rectangle {
 							anchors.margins: 0
 							SButton {
 								id: deleteButton
+								style: "btn-naked"
 								Layout.fillHeight: true
 								Layout.fillWidth: true
 								iconString: Fa.Icon.trash;
@@ -230,17 +236,20 @@ Rectangle {
 							}
 							SButton {
 								id: renameButton
+								style: "btn-naked"
 								Layout.fillHeight: true
 								Layout.fillWidth: true
 								iconString: Fa.Icon.pencil_square_o;
 								text: "";
 								onClicked: {
 									nameDialog.editingIndex = index
+									nameDialog.initialName = model.itemName
 									nameDialog.open()
 								}
 							}
 							SButton {
 								id: cancelButton
+								style: "btn-naked"
 								Layout.fillHeight: true
 								Layout.fillWidth: true
 								iconString: Fa.Icon.chevron_right;
@@ -276,46 +285,150 @@ Rectangle {
 	Dialog {
 		id: nameDialog
 		property int editingIndex
+		property string initialName: ""
+		function submitRename() {
+			var newName = edit.text.trim()
+			edit.focus = false
+			Qt.inputMethod.hide()
+			if (newName.length > 0 && editingIndex >= 0) {
+				editItemName(editingIndex, newName)
+			}
+			close()
+		}
 		width: 600
-		height: 200
+		height: 320
 		parent: Overlay.overlay
-		anchors.centerIn: parent
+		modal: true
+		x: (parent.width - width) / 2
+		y: Math.max(20, Math.round(parent.height * 0.14))
 		title: qsTr("Редактирование названия")
-		standardButtons: Dialog.Ok | Dialog.Cancel
+		Overlay.modal: Rectangle {
+			color: "#70000000"
+		}
+		onOpened: {
+			edit.text = initialName
+			Qt.callLater(function() {
+				edit.forceActiveFocus()
+				edit.deselect()
+				edit.cursorPosition = edit.text.length
+			})
+		}
 		contentItem: Rectangle {
 			id: contentRect
 			color: "white"
-			anchors.fill: parent
-			Label {
-				id: editLabel
-				anchors {
-					top: parent.top
-					left: parent.left
-					right: parent.right
-					bottom: parent.verticalCenter
-					bottomMargin: 15
+
+			ColumnLayout {
+				anchors.fill: parent
+				anchors.margins: 24
+				spacing: 18
+
+				Label {
+					id: editLabel
+					Layout.fillWidth: true
+					horizontalAlignment: Qt.AlignCenter
+					verticalAlignment: Qt.AlignVCenter
+					text: qsTr("Укажите новое имя:")
+					color: "black"
+					font.pixelSize: 24
+					font.bold: true
+					wrapMode: Text.WordWrap
 				}
-				horizontalAlignment: Qt.AlignCenter
-				verticalAlignment: Qt.AlignBottom
-				text: "Укажите новое имя:"
-				color: "black"
+
+				TextField {
+					id: edit
+					Layout.fillWidth: true
+					Layout.preferredHeight: 64
+					color: "black"
+					horizontalAlignment: Text.AlignLeft
+					verticalAlignment: Text.AlignVCenter
+					selectByMouse: true
+					inputMethodHints: Qt.ImhNoPredictiveText
+					font.pixelSize: 24
+					background: Rectangle {
+						color: "#f5f5f5"
+						border.color: edit.activeFocus ? "#4a9eff" : "#7a7a7a"
+						border.width: 2
+						radius: 6
+					}
+				}
+
+				Item {
+					Layout.fillHeight: true
+				}
 			}
-			TextEdit {
-				id: edit
-				anchors.bottom: parent.bottom
-				anchors.left: parent.left
-				anchors.right: parent.right
-				anchors.top: parent.verticalCenter
-				color: "black"
-				horizontalAlignment: Qt.AlignCenter
+		}
+		footer: Rectangle {
+			color: "transparent"
+			implicitHeight: 108
+
+			RowLayout {
+				anchors.fill: parent
+				anchors.leftMargin: 20
+				anchors.rightMargin: 20
+				anchors.topMargin: 20
+				anchors.bottomMargin: 20
+				spacing: 16
+
+				Button {
+					Layout.preferredWidth: 180
+					Layout.fillHeight: true
+					text: qsTr("ОТМЕНА")
+					onPressed: nameDialog.reject()
+
+					background: Rectangle {
+						radius: 18
+						color: "#808080"
+					}
+
+					contentItem: Text {
+						text: parent.text
+						color: "white"
+						font.pixelSize: 24
+						font.bold: true
+						horizontalAlignment: Text.AlignHCenter
+						verticalAlignment: Text.AlignVCenter
+					}
+				}
+
+				Item { Layout.fillWidth: true }
+
+				Button {
+					Layout.preferredWidth: 180
+					Layout.fillHeight: true
+					text: qsTr("ПРИНЯТЬ")
+					enabled: edit.text.trim().length > 0
+					onPressed: nameDialog.submitRename()
+
+					background: Rectangle {
+						radius: 18
+						color: parent.enabled ? "#2E7D32" : "#2E7D3270"
+					}
+
+					contentItem: Text {
+						text: parent.text
+						color: "white"
+						font.pixelSize: 24
+						font.bold: true
+						horizontalAlignment: Text.AlignHCenter
+						verticalAlignment: Text.AlignVCenter
+					}
+				}
 			}
 		}
 		onAccepted: {
-			editItemName(editingIndex, edit.text)
-			close();
+			nameDialog.submitRename()
 		}
 		onRejected: {
+			edit.focus = false
+			Qt.inputMethod.hide()
 			close()
+		}
+		onClosed: {
+			edit.focus = false
+			Qt.inputMethod.hide()
+			initialName = ""
+			editingIndex = -1
+			edit.text = ""
 		}
 	}
 }

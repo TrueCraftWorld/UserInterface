@@ -28,10 +28,12 @@ std::map<int, QString> UserProgLoader::getPrograms(int scopeID)
 
     std::map<int, QString> progList;
     for (const auto& item : progListVariant) {
-        // Prog tmp;
-        bool isMainProg = item.at(2).toInt() % 10 == 0 ? true : false;
+        const bool isMainProg = item.at(2).toInt() % 10 == 0;
+        if (!isMainProg) {
+            continue;
+        }
         int id = item.at(1).toInt();
-        QString name = item.at(isMainProg ? 0 : 3).toString();
+        QString name = item.at(0).toString();
         progList.insert_or_assign(id, name);
     }
     return progList;

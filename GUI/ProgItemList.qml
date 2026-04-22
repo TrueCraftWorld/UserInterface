@@ -60,7 +60,7 @@ Rectangle {
 							  })
 		}
 		scopeList.innerModel = scopeModel
-		recomHandle.scopeIdx = 0
+		scopeList.curIndex = recomHandle.scopeIdx
 	}
 	
 	
@@ -74,6 +74,9 @@ Rectangle {
 //			console.log("[ProgFlow] ProgItemList onScopeNameListChanged")
 			init();
 			updateModel();
+		}
+		function onScopeIdxChanged() {
+			scopeList.curIndex = recomHandle.scopeIdx
 		}
 		function onProgNameListChanged() {
 //			console.log("[ProgFlow] ProgItemList onProgNameListChanged, progs:",
@@ -125,6 +128,7 @@ Rectangle {
             anchors.right: parent.right
             anchors.bottom: scopeButtons.top
 			curIndex: recomHandle.scopeIdx
+            editable: !recProgs.recommended
             noImage: true
             hideNoImageSymbol: true
             selectedBackgroundColor: "white"
@@ -203,6 +207,7 @@ Rectangle {
             anchors.left: parent.left
             anchors.right: parent.right
             anchors.bottom: progButtons.top
+            editable: !recProgs.recommended
 			noImage: true
             hideNoImageSymbol: true
         }
@@ -326,13 +331,9 @@ Rectangle {
 			recomHandle.loadRecommendedProg(index, loadClear)
             
             var scopeName = ""
-            if (recommended) {
-                scopeName = scopeList.curIndex >= 0 && scopeList.curIndex < scopeModel.count 
-                    ? scopeModel.get(scopeList.curIndex).itemName 
-                    : ""
-            } else {
-                scopeName = "Программы пользователя"
-            }
+            scopeName = scopeList.curIndex >= 0 && scopeList.curIndex < scopeModel.count
+                ? scopeModel.get(scopeList.curIndex).itemName
+                : ""
             
             var progName = index >= 0 && index < progsModel.count 
                 ? progsModel.get(index).itemName 

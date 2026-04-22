@@ -137,22 +137,36 @@ void ControlCenter::makeHandleConnections()
 	        m_progLoader, &ProgLoader::defaultSocketInit);
 
 	connect(m_handle, &ProgHandle::signalSaveName,
-	        m_progLoader, &ProgLoader::saveUserProg);
+	        this, [this](const QString& scopeName, const QString& progName) {
+		m_progLoader->saveUserProg(scopeName, progName);
+	});
 
 	connect(m_handle, &ProgHandle::signalCopyCurrent,
 	        m_socketModel.data(), &SocketModel::copyCurrentList);
 
 	connect(m_handle, &ProgHandle::signalDeleteProg,
-	        m_progLoader, &ProgLoader::deleteUserProg);
+	        this, [this](int progId) {
+		m_progLoader->deleteUserProg(progId);
+		emit m_handle->updateScopes(false);
+	});
 
 	connect(m_handle, &ProgHandle::signalDeleteScope,
-	        m_progLoader, &ProgLoader::deleteUserScope);
+	        this, [this](int scopeId) {
+		m_progLoader->deleteUserScope(scopeId);
+		emit m_handle->updateScopes(false);
+	});
 
 	connect(m_handle, &ProgHandle::signalRenameScope,
-	        m_progLoader, &ProgLoader::renameUserScope);
+	        this, [this](int scopeId, const QString& name) {
+		m_progLoader->renameUserScope(scopeId, name);
+		emit m_handle->updateScopes(false);
+	});
 
 	connect(m_handle, &ProgHandle::signalRenameProg,
-	        m_progLoader, &ProgLoader::renameUserProg);
+	        this, [this](int progId, const QString& name) {
+		m_progLoader->renameUserProg(progId, name);
+		emit m_handle->updateScopes(false);
+	});
 
 	// connect(m_)
 }

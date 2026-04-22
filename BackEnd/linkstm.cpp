@@ -143,7 +143,7 @@ void LinkStm::unpackRxCommand(const QByteArray &rxPacket)
     // Повторяем команду, если ответ не подходящий
     else {
         m_state = STATE_RX_ERR;
-//        qDebug() << "не тот ответ от stm";      // DEBUG
+        qDebug() << "не тот ответ от stm";      // DEBUG
         if (m_fwUpdateSessionActive) {
             if (!m_fwRxErrStreakTimer.isValid()) {
                 m_fwRxErrStreakTimer.start();
@@ -167,9 +167,14 @@ bool LinkStm::checkRxCommand()
     uint32_t addrR = 0;
 
     // команды обновления
-    if (m_txCommand.com >= CurrentVersion && m_txCommand.com <= UpdateFinish)
+    if (m_txCommand.com >= CurrentVersion && m_txCommand.com <= UpdateFinish) {
+        if (m_txCommand.com == CurrentVersion) {
+            if (m_rxCommand.com >= Version_0 && m_rxCommand.com <= Version_2)
+                return true;
+            else return false;
+        }
         return m_txCommand.com == m_rxCommand.com ? true : false;
-
+    }
     if (m_txCommand.com == SoftData) {
         if (m_rxCommand.com != SoftDataAck || m_rxCommand.data.size() < 4)
             return false;
@@ -503,13 +508,13 @@ void LinkStm::readRxCommand()
             case PRESS_PED2_Y:
             case PRESS_PED2_B:
                 unitState.pedalKnob = static_cast<PedalKnobPressed>(pressValue);
-//                qDebug() << "Pressed pedal: " << unitState.pedalKnob << "current m_comState:" << m_comState;
+                qDebug() << "Pressed pedal: " << unitState.pedalKnob << "current m_comState:" << m_comState;
                 if (m_comState != ACTIVATION) {
                     m_comState = START_ACTIVATION;
                     qDebug() << "Set m_comState to START_ACTIVATION";
                     qDebug() << m_rxCommand.com << " " << getHexStr(m_rxCommand.data);
                 } else {
-//                    qDebug() << "m_comState is ACTIVATION, not setting START_ACTIVATION";
+                    qDebug() << "m_comState is ACTIVATION, not setting START_ACTIVATION";
                 }
                 break;
             case PRESS_MONO1_YB:
@@ -520,7 +525,7 @@ void LinkStm::readRxCommand()
                 break;
             default:
                 unitState.pedalKnob = PRESS_WRONG;
-                // qWarning() << "Invalid pedal/knob press value:" << Qt::hex << pressValue;
+                 qWarning() << "Invalid pedal/knob press value:" << Qt::hex << pressValue;
                 break;
             }
             
@@ -575,7 +580,7 @@ void LinkStm::readRxCommand()
     // Ответы на команды обновления ПО
     case RxUpdating:
         if ((m_rxCommand.com >= Version_0)
-             && (m_rxCommand.com <= Version_1)) {
+             && (m_rxCommand.com <= Version_2)) {
             setMcVersions(m_rxCommand);
             m_comState = IDLE;
         }

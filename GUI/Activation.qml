@@ -10,6 +10,7 @@ Popup {
     property int power: 0
     property bool isCoag: false
     property bool isEndo: false
+    property var sizeTarget: null
     
     onPowerChanged: {
 //        console.log("Activation.qml: power changed to", power)
@@ -23,8 +24,8 @@ Popup {
     modal: true  // Модальный - блокируем касания
     closePolicy: Popup.NoAutoClose  // Закрывается только программно
     anchors.centerIn: parent
-    width: parent.width
-    height: parent.height
+    width: sizeTarget ? sizeTarget.width : (parent ? parent.width : 0)
+    height: sizeTarget ? sizeTarget.height : (parent ? parent.height : 0)
     
     
     // Перехватываем все события мыши

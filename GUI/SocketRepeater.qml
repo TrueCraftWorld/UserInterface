@@ -13,6 +13,7 @@ Repeater {
     required property int containerMargins
     required property int containerHeight
     required property int usedSpacing
+    property var activationSizeTarget: null
 
     signal socketEditorRequest(int socketId, int modeIndex, bool isCoag)
 
@@ -31,6 +32,7 @@ Repeater {
         Layout.fillWidth: true
         Layout.alignment: Qt.AlignTop
         Layout.preferredHeight: repeatRoot.calculateCollapsedHeight()
+        activationSizeTarget: repeatRoot.activationSizeTarget
 
         title: model.socketname
         socketId: index

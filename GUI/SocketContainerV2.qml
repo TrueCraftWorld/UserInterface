@@ -111,6 +111,7 @@ Rectangle {
             containerMargins: layout.anchors.margins
             containerHeight: layout.height - layout.spacing - progPage.height
             usedSpacing: layout.spacing
+            activationSizeTarget: socketContainer
         }
         Item {
             Layout.fillHeight: true

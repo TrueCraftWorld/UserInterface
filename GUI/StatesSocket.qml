@@ -4,6 +4,7 @@ import QtQuick.Controls 2.15
 Rectangle {
     id: socketRoot
     color: "transparent"
+    property var activationSizeTarget: null
 
     // Константы состояний сокета (соответствуют Onyx::SocStatus)
     readonly property int socketStateOff: 0          // S_OFF - Отключен
@@ -131,6 +132,7 @@ Rectangle {
     Activation {
         id: activationIndicator
         parent: socketRoot
+        sizeTarget: socketRoot.activationSizeTarget
     }
 
     Connections {

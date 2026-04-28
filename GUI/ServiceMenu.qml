@@ -13,6 +13,7 @@ Item {
     signal networkSettingsButtonPressed()
     signal wifiFileReceiveButtonPressed()
     signal wifiSettingsButtonPressed()
+    signal touchScreenTestButtonPressed()
     signal aboutButtonPressed()
     readonly property int menuButtonWidth: 410
     readonly property int menuButtonHeight: 96
@@ -98,6 +99,15 @@ Item {
             Layout.preferredHeight: serviceMenuRoot.menuButtonHeight
             text: qsTr("О программе")
             onPressed: serviceMenuRoot.aboutButtonPressed()
+        }
+
+        SButton {
+            id: touchScreenTestButton
+            style: "btn-primary lg"
+            Layout.preferredWidth: serviceMenuRoot.menuButtonWidth
+            Layout.preferredHeight: serviceMenuRoot.menuButtonHeight
+            text: qsTr("Проверка тач-скрина")
+            onPressed: serviceMenuRoot.touchScreenTestButtonPressed()
         }
 
         SButton {

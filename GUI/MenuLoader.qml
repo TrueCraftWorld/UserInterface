@@ -46,6 +46,7 @@ Item {
                 || base === "ServiceNetworkSettings.qml"
                 || base === "WifiFileReceive.qml"
                 || base === "WiFiConnector.qml"
+                || base === "TouchScreenTest.qml"
                 || base === "AboutScreen.qml"
     }
 
@@ -169,6 +170,11 @@ Item {
                     if (menuLoader.item.aboutButtonPressed) {
                         menuLoader.item.aboutButtonPressed.connect(function() {
                             navigateTo("qrc:/AboutScreen.qml")
+                        })
+                    }
+                    if (menuLoader.item.touchScreenTestButtonPressed) {
+                        menuLoader.item.touchScreenTestButtonPressed.connect(function() {
+                            navigateTo("qrc:/TouchScreenTest.qml")
                         })
                     }
                     if (menuLoader.item.deleteAllUserProgsRequested) {

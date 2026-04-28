@@ -296,11 +296,19 @@ Item {
         }
     }
 
-    VideoPlayer {
-        id: videoPlayer
+    Loader {
+        id: videoPlayerLoader
         anchors.fill: parent
-        visible: settinsScreen.videoPlayerVisible
         z: 1000
-        onCloseRequested: settinsScreen.videoPlayerVisible = false
-   }
+        active: settinsScreen.videoPlayerVisible
+        sourceComponent: videoPlayerComponent
+    }
+
+    Component {
+        id: videoPlayerComponent
+        VideoPlayer {
+            anchors.fill: parent
+            onCloseRequested: settinsScreen.videoPlayerVisible = false
+        }
+    }
 }

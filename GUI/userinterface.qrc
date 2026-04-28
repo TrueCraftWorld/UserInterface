@@ -41,5 +41,6 @@
         <file>ProgSaveDialog.qml</file>
         <file>StartupMenu.qml</file>
         <file>StartupInfoScreen.qml</file>
+        <file>TouchScreenTest.qml</file>
     </qresource>
 </RCC>

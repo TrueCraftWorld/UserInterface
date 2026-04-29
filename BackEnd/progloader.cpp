@@ -719,6 +719,8 @@ void ProgLoader::saveUserProg(const QString &scopeName, const QString &progName)
 
 	int scopeId = getScopeId(scopeName, biggestKnownId);
 
+	std::map<int, QString> knownProgs;
+
 	if (scopeId == -1) {
 		//тут добавить новый скоуп
 		const   QString insertUserProgNameQuery = QString(
@@ -736,7 +738,16 @@ void ProgLoader::saveUserProg(const QString &scopeName, const QString &progName)
 			m_dbReaderPtr->commit();
 			scopeId = id;
 		}
+	} else {//удалить одноимённую прогу если есть такая
+		knownProgs = getProgs(scopeId);
+		for (const auto & item : knownProgs) {
+			if (item.second == progName) {
+				deleteUserProg(item.first);
+				break;
+			}
+		}
 	}
+
 
 	const  QString insertUserProgNameQuery = QString(
 	                                             "INSERT INTO Progs "

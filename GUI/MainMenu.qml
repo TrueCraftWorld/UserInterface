@@ -92,15 +92,15 @@ Item {
             text: qsTr("Настройки ...")
         }
             
-        SButton {
-            id: videoButton
-            style: "btn-primary lg"           // Попробуйте: btn-primary, btn-secondary, btn-info, btn-light
-//                style: "btn-outline-primary lg"
-            width: parent.width
-            height: parent.height
-            onClicked: settinsScreen.videoPlayerVisible = true
-            text: qsTr("Видео 🎬")
-        }
+//         SButton {
+//             id: videoButton
+//             style: "btn-primary lg"           // Попробуйте: btn-primary, btn-secondary, btn-info, btn-light
+// //                style: "btn-outline-primary lg"
+//             width: parent.width
+//             height: parent.height
+//             onClicked: settinsScreen.videoPlayerVisible = true
+//             text: qsTr("Видео 🎬")
+//         }
 
         SButton {
             id: secretKeysButton
@@ -118,11 +118,11 @@ Item {
             Layout.fillWidth: true
         }
     }
-    VideoPlayer {
-        id: videoPlayer
-        anchors.fill: parent
-        visible: settinsScreen.videoPlayerVisible
-        z: 1000
-        onCloseRequested: settinsScreen.videoPlayerVisible = false
-   }
+   //  VideoPlayer {
+   //      id: videoPlayer
+   //      anchors.fill: parent
+   //      visible: settinsScreen.videoPlayerVisible
+   //      z: 1000
+   //      onCloseRequested: settinsScreen.videoPlayerVisible = false
+   // }
 }

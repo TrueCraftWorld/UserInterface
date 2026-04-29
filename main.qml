@@ -30,12 +30,12 @@ Window {
 		periphHandle.enableActivation = !(pedDrawer.opened
 										  | leftDrawer.opened
 										  | argNeutDrawer.opened
-										  | socketsDummy.modeDialogOpened
-										  | socketsDummy.instrDialogOpened)
+										  | sockets.modeDialogOpened
+										  | sockets.instrDialogOpened)
 	}
 
 	StatusBar {
-		id: statusDummy
+		id: statusBar
 		//я искал панграммы для русского и хорошо так посмеялся с эфы
 		text: qsTr("В бою с шипящими змеями — эфой и гадюкой — маленький, цепкий, храбрый ёж съел их")
 		width: parent.width
@@ -46,14 +46,14 @@ Window {
 	}
 
 	SocketContainerV2 {
-		id: socketsDummy
+		id: sockets
 		objectName: "socketContainer"
 		innerModel: theModel
 		width: parent.width - 180
 		anchors {
 			horizontalCenter: parent.horizontalCenter
 			bottom: parent.bottom
-			top: statusDummy.bottom
+			top: statusBar.bottom
 		}
 	}
 
@@ -62,8 +62,8 @@ Window {
 		anchors {
 			left: parent.left
 			bottom: parent.bottom
-			top: statusDummy.bottom
-			right: socketsDummy.left
+			top: statusBar.bottom
+			right: sockets.left
 		}
 	}
 	Connections {
@@ -83,10 +83,10 @@ Window {
 		id: pedalContainer
 		innerModel: theModel
 		anchors {
-			left: socketsDummy.right
+			left: sockets.right
 			right: parent.right
 			bottom: parent.bottom
-			top: statusDummy.bottom
+			top: statusBar.bottom
 		}
 	}
 
@@ -153,13 +153,13 @@ Window {
 		}
 	}
 	Connections {
-		target: socketsDummy
+		target: sockets
 		function onModeDialogOpenedChanged() {
 			container.activationEnable()
 		}
 	}
 	Connections {
-		target: socketsDummy
+		target: sockets
 		function onInstrDialogOpenedChanged() {
 			container.activationEnable()
 		}
@@ -205,12 +205,13 @@ Window {
 		}
 	}
 
+	///TODO если уж неизбежно использовать кастом свайпы - надо вынести свайп зону как комппонент, принимающий в себя направление свайпа
 	// MouseArea для обработки свайпов в области PeripheryPanel
 	MouseArea {
 		id: peripherySwipeArea
 		anchors {
 			left: parent.left
-			top: statusDummy.bottom
+			top: statusBar.bottom
 			bottom: parent.bottom
 		}
 		width: 200
@@ -282,7 +283,7 @@ Window {
 		id: pedalSwipeArea
 		anchors {
 			right: parent.right
-			top: statusDummy.bottom
+			top: statusBar.bottom
 			bottom: parent.bottom
 		}
 		width: 200
@@ -368,7 +369,7 @@ Window {
 	}
 
 	Connections {
-		target: statusDummy
+		target: statusBar
 		function onDrawerCalled() {
 			leftDrawer.open()
 		}
@@ -383,7 +384,7 @@ Window {
 		}
 	}
 	Connections {
-		target: socketsDummy
+		target: sockets
 		function onProgAddRequest(addType) {
 			switch (addType) {
 			case 0:
@@ -410,7 +411,8 @@ Window {
 				menuLoad.shortcut = true;
 				menuLoad.loader.setSource("qrc:/ProgItemList.qml",
 										  {"recommended" : false,
-											  "loadClear" : false})
+											"loadClear" : false,
+											"editable" : true})
 				leftDrawer.open()
 				break;
 			}
@@ -435,132 +437,4 @@ Window {
 			enabled: false  // Отключаем перехват событий - все проходят сквозь
 		}
 	}
-	// Область для свайпов и закрытия панелей
-	// MouseArea {
-	//    id: swipeArea
-	//    anchors.fill: parent
-	//    z: 25  // Всегда выше панелей для обработки свайпов
-	//    propagateComposedEvents: true
-
-	//    property real startX: 0
-	//    property bool isSwipeGesture: false
-	//    property real startTime: 0
-
-	//    onPressed: {
-	//       startX = mouse.x
-	//       startTime = Date.now()
-	//       isSwipeGesture = false
-
-	//       // Вычисляем границы панелей
-	//       var rightPanelLeftEdge = rightPanelExpanded ? (container.width - rightPanel.expandedWidth) : (container.width - 85)
-	//       var leftPanelRightEdge = leftPanelExpanded ? (container.width / 2) : 85
-
-	//       // Если панели открыты и клик вне их области - обрабатываем
-	//       if (leftPanelExpanded && mouse.x > leftPanelRightEdge) {
-	//          mouse.accepted = true
-	//          return
-	//       }
-
-	//       if (rightPanelExpanded && mouse.x < rightPanelLeftEdge) {
-	//          mouse.accepted = true
-	//          return
-	//       }
-
-	//       // Проверяем области для свайпа:
-	//       if ((mouse.x < 100) ||
-	//             (mouse.x > container.width - 100) ||
-	//             (leftPanelExpanded && mouse.x <= leftPanelRightEdge) ||
-	//             (rightPanelExpanded && mouse.x >= rightPanelLeftEdge)) {
-	//          isSwipeGesture = true
-	//          mouse.accepted = true
-	//       } else {
-	//          // Центральная область (панели закрыты) - пропускаем событие к сокетам
-	//          mouse.accepted = false
-	//       }
-	//    }
-
-	//    onReleased: {
-	//       if (!isSwipeGesture) {
-	//          return
-	//       }
-
-	//       var deltaX = mouse.x - startX
-	//       var threshold = 50
-	//       var swipeThreshold = Math.abs(deltaX)
-
-	//       if (swipeThreshold > threshold) {
-	//          // Закрытие панелей имеет приоритет
-	//          if (leftPanelExpanded && deltaX < -threshold) {
-	//             leftPanelExpanded = false
-	//             mouse.accepted = true
-	//          } else if (rightPanelExpanded && deltaX > threshold) {
-	//             rightPanelExpanded = false
-	//             mouse.accepted = true
-	//          }
-	//          // Открытие панелей
-	//          else if (!leftPanelExpanded && !rightPanelExpanded && startX < 100 && deltaX > threshold) {
-	//             leftPanelExpanded = true
-	//             mouse.accepted = true
-	//          } else if (!leftPanelExpanded && !rightPanelExpanded && startX > container.width - 100 && deltaX < -threshold) {
-	//             rightPanelExpanded = true
-	//             mouse.accepted = true
-	//          }
-	//       }
-	//    }
-
-	//    onClicked: {
-	//       var deltaX = Math.abs(mouse.x - startX)
-
-	//       // Вычисляем границу правой панели (независимо от анимации)
-	//       var rightPanelLeftEdge = rightPanelExpanded ? (container.width - rightPanel.expandedWidth) : (container.width - 85)
-	//       var leftPanelRightEdge = leftPanelExpanded ? (container.width / 2) : 85
-
-	//       // Игнорируем клики, которые являются частью свайпа
-	//       if (deltaX > 30) {
-	//          mouse.accepted = true
-	//          return
-	//       }
-
-	//       // Закрываем ЛЕВУЮ панель при клике вне её области
-	//       if (leftPanelExpanded && startX > leftPanelRightEdge) {
-	//          leftPanelExpanded = false
-	//          mouse.accepted = true
-	//          return
-	//       }
-
-	//       // Закрываем ПРАВУЮ панель при клике вне её области (слева от панели)
-	//       if (rightPanelExpanded && startX < rightPanelLeftEdge) {
-	//          rightPanelExpanded = false
-	//          mouse.accepted = true
-	//          return
-	//       }
-
-	//       // Клик по свёрнутой левой панели - разворачиваем
-	//       if (!leftPanelExpanded && startX <= 85) {
-	//          leftPanelExpanded = true
-	//          mouse.accepted = true
-	//          return
-	//       }
-
-	//       // Клик по свёрнутой правой панели - разворачиваем
-	//       if (!rightPanelExpanded && startX >= container.width - 85) {
-	//          // Используем функцию из PedalPanel для определения сокета по клику
-	//          var socketIndex = rightPanel.findSocketIndexByClick(mouse.x, mouse.y)
-
-	//          if (socketIndex >= 0) {
-	//             rightPanel.lastClickedSocketIndex = socketIndex
-	//             rightPanel.openedByPedalClick = true
-	//          }
-
-	//          rightPanelExpanded = true
-	//          mouse.accepted = true
-	//          return
-	//       }
-
-	//       // Центральная область или внутри панели - пропускаем к дочерним элементам
-	//       mouse.accepted = false
-	//    }
-
-	// }
-
 }

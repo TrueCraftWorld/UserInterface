@@ -17,7 +17,7 @@ Dialog {
         width: 250
         height: 100
         radius: 8
-        color: "transparent"
+        color: "darkgray"
         border {
             color: "white"
             width: 1

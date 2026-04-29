@@ -411,7 +411,8 @@ Window {
 				menuLoad.shortcut = true;
 				menuLoad.loader.setSource("qrc:/ProgItemList.qml",
 										  {"recommended" : false,
-											  "loadClear" : false})
+											"loadClear" : false,
+											"editable" : true})
 				leftDrawer.open()
 				break;
 			}

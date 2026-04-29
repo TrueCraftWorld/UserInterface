@@ -1,6 +1,8 @@
 QT += quick multimedia
-CONFIG += c++17 link_pkgconfig disable-desktop
-
+CONFIG += c++17
+arm64: {
+CONFIG += link_pkgconfig disable-desktop
+}
 RESOURCES += $$PWD/userinterface.qrc
 
 DISTFILES += \

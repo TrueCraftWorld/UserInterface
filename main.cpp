@@ -34,53 +34,22 @@ JsonStorage* m_savedJson;
 
 // Объявляение обработчика для логов
 void messageHandler(QtMsgType type, const QMessageLogContext &context, const QString &msg);
+void stuff();
 
 int main(int argc, char *argv[])
 {
 #if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
     QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
 #endif
+
+#ifndef Q_OS_WIN
     QCoreApplication::setAttribute(Qt::AA_UseOpenGLES);
-    
-    // Настройки для Qt Multimedia
-    qputenv("QT_GSTREAMER_USE_PLAYBIN_VOLUME", "1");
-    // qputenv("GST_DEBUG", "1");  // Минимальная отладка (1=ERROR, 2=WARNING, 3=INFO)
-    qputenv("QT_MULTIMEDIA_PREFERRED_PLUGINS", "gstreamer");
-    
-    // Настройка приоритетов декодеров H.264
-    // В системе доступен только openh264dec (avdec_h264 отсутствует)
-    // Для установки avdec_h264: sudo apt install gstreamer1.0-libav
-    // v4l2slh264dec - аппаратный (не работает стабильно)
-    // qputenv("GST_PLUGIN_FEATURE_RANK", "v4l2slh264dec:NONE");
-    
-    // Используем ximagesink для вывода видео с отключенной синхронизацией
-    // sync=false позволяет не сбрасывать буферы при отставании
-    // qputenv("QT_GSTREAMER_VIDEOSINK", "ximagesink");
-    // qputenv("QT_GSTREAMER_CAMERABIN_VIDEOSINK", "ximagesink");
-    
-    // Настройки буферизации и обработки кадров
-    qputenv("GST_BUFFER_DURATION", "1000000000");  // 1 секунда буферизации (в наносекундах)
-    
-    // Настройки аудио - используем PulseAudio с явным указанием устройства
-    // Доступные устройства (pactl list sinks):
-    // - alsa_output.platform-hdmi-sound.stereo-fallback (HDMI)
-    // - alsa_output.platform-rk809-sound.stereo-fallback (Analog/наушники) ✓
-    // qputenv("QT_GSTREAMER_PLAYBIN_AUDIOSINK", "pulsesink");
-    
-    // Указываем использовать аналоговый выход (RK809) вместо HDMI
-    // qputenv("PULSE_SINK", "alsa_output.platform-rk809-sound.stereo-fallback");
-    
-    // Переключаем RK809 на динамик (SPK) вместо наушников (HP)
-    // Playback Mux: 0=HP (наушники), 1=SPK (динамик через GPIO)
-    // QProcess::execute("amixer", QStringList() << "-c" << "0" << "cset" << "numid=4" << "0");
-    
-    // Включаем аудио в playbin
-    // qputenv("QT_GSTREAMER_PLAYBIN_FLAGS", "audio+video+soft-colorbalance+soft-volume");
-    
+#endif
+
+    stuff();
+
     ///Добавляем модуль клавиатуры
     qputenv("QT_IM_MODULE", QByteArray("cutekeyboard"));
-    ///Отключаем курсор мыши на embedded-системе
-    // qputenv("QT_QPA_EGLFS_HIDECURSOR", "1");
 
     OnyxApp app(argc, argv);
 
@@ -108,7 +77,9 @@ int main(int argc, char *argv[])
     QSharedPointer<ControlCenter> ctrl  = QSharedPointer<ControlCenter>::create(nullptr);
 
     // Создаём монитор системы
+#ifndef Q_OS_WIN
     SystemMonitor *sysMonitor = new SystemMonitor();
+#endif
     
     // Создаём генератор секретных ключей
     KeyGenerator *keyGen = new KeyGenerator();
@@ -119,7 +90,9 @@ int main(int argc, char *argv[])
     engine.rootContext()->setContextProperty("recomHandle", ctrl->getHandle());
     engine.rootContext()->setContextProperty("periphHandle", ctrl->getPeripheryHandle());
 
+#ifndef Q_OS_WIN
     engine.rootContext()->setContextProperty("sysMonitor", sysMonitor);
+#endif
     engine.rootContext()->setContextProperty("keyGenerator", keyGen);
 
     engine.addImageProvider(QLatin1String("instrums"), new InstrImageProvider);
@@ -139,11 +112,14 @@ int main(int argc, char *argv[])
     //этот вызов для загрузки элемента pullToRefresshHandler
     engine.addImportPath("qrc:/");
     // Добавляем пути для поиска QML модулей на удалённой машине - c чего вдруг мы используем дефолтные qt?!
+    // я даже допишу - откуда у нас на одноплатнике вообще дефолтные кутя?!
     //чтобы на классные баг нарваться связанные с разными qml файлами?!
     // engine.addImportPath("/usr/lib/aarch64-linux-gnu/qt5/qml");//
     // engine.addImportPath("/usr/lib/qt5/qml");
     engine.load(url);
 
+
+    //это всё нужно спрятать в статик или просто в инит метод, не место в main
     // Сохраняемые значения лежат в json-файле
     QVariantMap* initMap = new QVariantMap();
     initMap->insert("boot", 0);
@@ -177,6 +153,46 @@ int main(int argc, char *argv[])
     ctrl->setLinkStm(m_linkStm);
 
     return app.exec();
+}
+
+void stuff() {
+    // Настройки для Qt Multimedia
+    qputenv("QT_GSTREAMER_USE_PLAYBIN_VOLUME", "1");
+    // qputenv("GST_DEBUG", "1");  // Минимальная отладка (1=ERROR, 2=WARNING, 3=INFO)
+    qputenv("QT_MULTIMEDIA_PREFERRED_PLUGINS", "gstreamer");
+
+    // Настройка приоритетов декодеров H.264
+    // В системе доступен только openh264dec (avdec_h264 отсутствует)
+    // Для установки avdec_h264: sudo apt install gstreamer1.0-libav
+    // v4l2slh264dec - аппаратный (не работает стабильно)
+    // qputenv("GST_PLUGIN_FEATURE_RANK", "v4l2slh264dec:NONE");
+
+    // Используем ximagesink для вывода видео с отключенной синхронизацией
+    // sync=false позволяет не сбрасывать буферы при отставании
+    // qputenv("QT_GSTREAMER_VIDEOSINK", "ximagesink");
+    // qputenv("QT_GSTREAMER_CAMERABIN_VIDEOSINK", "ximagesink");
+
+    // Настройки буферизации и обработки кадров
+    qputenv("GST_BUFFER_DURATION", "1000000000");  // 1 секунда буферизации (в наносекундах)
+
+    // Настройки аудио - используем PulseAudio с явным указанием устройства
+    // Доступные устройства (pactl list sinks):
+    // - alsa_output.platform-hdmi-sound.stereo-fallback (HDMI)
+    // - alsa_output.platform-rk809-sound.stereo-fallback (Analog/наушники) ✓
+    // qputenv("QT_GSTREAMER_PLAYBIN_AUDIOSINK", "pulsesink");
+
+    // Указываем использовать аналоговый выход (RK809) вместо HDMI
+    // qputenv("PULSE_SINK", "alsa_output.platform-rk809-sound.stereo-fallback");
+
+    // Переключаем RK809 на динамик (SPK) вместо наушников (HP)
+    // Playback Mux: 0=HP (наушники), 1=SPK (динамик через GPIO)
+    // QProcess::execute("amixer", QStringList() << "-c" << "0" << "cset" << "numid=4" << "0");
+
+    // Включаем аудио в playbin
+    // qputenv("QT_GSTREAMER_PLAYBIN_FLAGS", "audio+video+soft-colorbalance+soft-volume");
+
+    ///Отключаем курсор мыши на embedded-системе
+    // qputenv("QT_QPA_EGLFS_HIDECURSOR", "1");
 }
 
 // Реализация обработчика

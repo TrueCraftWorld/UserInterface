@@ -2,6 +2,7 @@
 
 #include <QDir>
 #include <QMutex>
+#include <QCoreApplication>
 
 // Статические члены
 QFileInfoList InstrImageProvider::s_knownFiles;
@@ -27,11 +28,15 @@ void InstrImageProvider::scanFiles()
     //проверям наличие папки (это символы до первого слеша), так получаем нужный сет, и проверяем в нём
     //если нет - то если сильно хочется(но мне кажется это зло, т.к.errorProne со всех сторон)
     //то ищем проверяем, добивая номерные нули.
-
+    QString imgFolder = "/home/kikorik/FOTEK/Images";
+#ifdef Q_OS_WIN
+    QString tmp = QCoreApplication::applicationDirPath();
+    imgFolder = tmp.left(tmp.lastIndexOf("bin")) + "Images";
+#endif
 
     
     // Сканируем папку с инструментами
-    QDir instrDir("/home/kikorik/FOTEK/Images/instruments");
+    QDir instrDir(imgFolder + "/instruments");
     if (instrDir.exists()) {
         s_knownFiles = instrDir.entryInfoList(filters, QDir::Files
                                                         | QDir::NoDotAndDotDot
@@ -42,7 +47,7 @@ void InstrImageProvider::scanFiles()
     }
     
     // Сканируем папку с режимами
-    QDir modesDir("/home/kikorik/FOTEK/Images/modes");
+    QDir modesDir(imgFolder + "/modes");
     if (modesDir.exists()) {
         QFileInfoList modeFiles = modesDir.entryInfoList(filters,
                                                         QDir::Files

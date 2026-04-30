@@ -13,6 +13,9 @@ Rectangle {
                                             + (appVersionText.visible ? appVersionText.width + sideSpacing : 0)
                                             + sideSpacing
     readonly property int titleSideMargin: Math.max(leftOccupiedWidth, rightOccupiedWidth)
+    readonly property int titleLargeFontSize: 42
+    readonly property int titleCompactFontSize: 30
+    readonly property bool useCompactTitle: mainTextLargeMetrics.width > mainText.width
 
     border {
         width: 1
@@ -22,11 +25,13 @@ Rectangle {
 
     SButton {
         id: drawerButton
-        height: parent.height
+        height: Math.round(parent.height * 1.30)
         width: height
         anchors.left: parent.left
+        anchors.verticalCenter: parent.verticalCenter
         iconString: Fa.Icon.bars
-        style: "btn-naked"
+        style: "btn-naked lg"
+        scale: 1.12
 
         onClicked: {
             statusRoot.drawerCalled()
@@ -41,6 +46,17 @@ Rectangle {
         anchors.rightMargin: titleSideMargin
         horizontalAlignment: Text.AlignHCenter
         verticalAlignment: Text.AlignVCenter
+        font.pixelSize: statusRoot.useCompactTitle
+                        ? statusRoot.titleCompactFontSize
+                        : statusRoot.titleLargeFontSize
+        wrapMode: Text.WordWrap
+        maximumLineCount: statusRoot.useCompactTitle ? 2 : 1
+        elide: Text.ElideRight
+    }
+    TextMetrics {
+        id: mainTextLargeMetrics
+        text: mainText.text
+        font.pixelSize: statusRoot.titleLargeFontSize
     }
     SText {
         id: appVersionText
@@ -55,11 +71,13 @@ Rectangle {
     }
     SButton {
         id: saveButton
-        height: parent.height
+        height: Math.round(parent.height * 1.50)
         width: height
         anchors.right: parent.right
+        anchors.verticalCenter: parent.verticalCenter
         iconString: Fa.Icon.save
-        style: "btn-naked"
+        style: "btn-naked lg"
+        scale: 1.12
 
         onClicked: {
             statusRoot.saveCalled()

@@ -44,6 +44,8 @@ Rectangle {
                             verticalAlignment: Qt.AlignVCenter
                             anchors.fill: parent
                             color: index === theModel.subProgIdx ? "black" : "white"
+                            font.pixelSize: 34
+                            font.bold: true
                         }
                         MouseArea {
                             anchors.fill: parent
@@ -67,6 +69,8 @@ Rectangle {
                         verticalAlignment: Qt.AlignVCenter
                         anchors.fill: parent
                         color: "white"
+                        font.pixelSize: 36
+                        font.bold: true
                     }
                     MouseArea {
                         anchors.fill: parent
@@ -96,6 +100,8 @@ Rectangle {
                         verticalAlignment: Qt.AlignVCenter
                         anchors.fill: parent
                         color: "white"
+                        font.pixelSize: 30
+                        font.bold: true
                     }
                     MouseArea {
                         anchors.fill: parent

@@ -341,7 +341,7 @@ Popup {
                 horizontalAlignment: Qt.AlignHCenter
                 verticalAlignment: Qt.AlignVCenter
                 wrapMode: Text.WordWrap
-                font.pixelSize: 28
+                font.pixelSize: 34
                 font.bold: true
                 color: isCoag ? "white" : "black"
             }
@@ -401,6 +401,7 @@ Popup {
                     selectedTextColor: "black"
                     keepSelectedItemAtTop: true
                     noAutoScrollItemId: 1000
+                    itemFontPixelSize: 24
                 }
 
                 RowLayout {
@@ -491,6 +492,7 @@ Popup {
                     selectedTextColor: "black"
                     keepSelectedItemAtTop: true
                     noAutoScrollItemId: 1000
+                    itemFontPixelSize: 24
                     // imageSourceTemplate: "image://instruments/minstr%1"
                 }
 
@@ -570,7 +572,7 @@ Popup {
                         text: modeTitleText()
                         wrapMode: Text.WordWrap
                         horizontalAlignment: Text.AlignHCenter
-                        font.pixelSize: 28
+                        font.pixelSize: 34
                         font.bold: true
                         color: "white"
                     }

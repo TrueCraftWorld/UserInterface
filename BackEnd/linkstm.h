@@ -28,12 +28,12 @@ public:
         StopActivation = 0x40,          // Остановка активации
 
         AckNeutralResist = 0x61,        // Запрос сопротивления НЭ
-        AckMonoHandleResist = 0x62,     // Запрос сопр. моно держателя
-        AckBiHandleResist = 0x63,       // Запрос сопр. би держателя
-        ReadMono2Id = 0x64,             // Прочитать данные в определителе Моно2
-        ReadBi2Id = 0x65,               // Прочитать данные в определителе Би2
-        WriteMono2Id = 0x66,            // Запись данных в определитель Моно2
-        WriteBi2Id = 0x67,              // Запись данных в определитель Би2
+//        AckMonoHandleResist = 0x62,     // Запрос сопр. моно держателя                Пока не используются
+//        AckBiHandleResist = 0x63,       // Запрос сопр. би держателя
+//        ReadMono2Id = 0x64,             // Прочитать данные в определителе Моно2
+//        ReadBi2Id = 0x65,               // Прочитать данные в определителе Би2
+//        WriteMono2Id = 0x66,            // Запись данных в определитель Моно2
+//        WriteBi2Id = 0x67,              // Запись данных в определитель Би2
         WirelessSearch = 0x68,          // Поиск беспроводных устройств
         TxAddrWireless = 0x69,          // Передача адреса для беспроводных устройств
         TxDataWireless = 0x6A,          // Передача данных для беспроводных устройств
@@ -42,16 +42,12 @@ public:
         SignalAlarm = 0x80,             // Выдача звукового сигнала (аварии)
 
         CurrentVersion = 0xE0,          // Запрос версий ПО
-        Erase_1 = 0xE3,                 // Стереть банк 1
-        Erase_2 = 0xE4,                 // Стереть банк 2
-        StartUpdate_1 = 0xE5,           // Начало передачи ПО для банка 1
-        StartUpdate_2 = 0xE6,           // Начало передачи ПО для банка 2
-        SoftData = 0xE7,                // Данные прошивки
-        UpdateFinish = 0xE8,            // ПО передано - версия ПО
-        GoBoot = 0xE9,                  // Переключение на загрузчик
-        GoBank_1 = 0xEA,                // Переключение на банк 1
-        GoBank_2 = 0xEB,                // Переключение на банк 2
-        Reboot = 0xEC,                  // Перезагрузка stm
+        Erase = 0xE1,                   // Стереть память под прошивку
+        StartUpdate = 0xE2,             // Начало передачи ПО
+        SoftData = 0xE3,                // Данные прошивки
+        UpdateFinish = 0xE4,            // ПО передано - версия ПО
+        GoBoot = 0xE5,                  // Переключение на загрузчик
+        GoApp = 0xE6,                   // Переключение на рабочую прошивку
 
         NoTxCommand = 0xFF
     };
@@ -92,6 +88,9 @@ public:
         ErrPowerNe5V = 0x87,            // Питание НЭ 5В не соответствует норме
         ErrPowerNe3V3 = 0x88,           // Питание НЭ 3,3В не соответствует норме
         ErrNeOverheat = 0x89,           // Перегрев контроллера НЭ (выше 80)
+        ErrStandBy = 0x8C,              // Кнопка StandBy зажата при включении - переход в сервисный режим
+        ErrUpdate = 0x8D,               // Ошибка обновления прошивки
+        ErrApp = 0x8E,                  // Нет рабочей прошивки (сидим в загрузчике)
 
         CritIsnStart = 0x90,            // Критичные ошибки - ИСН при включении
         CritAdc1Ucont = 0x91,           // Ошибка АЦП1 - напряжение контура
@@ -103,18 +102,13 @@ public:
         CritNeResonance = 0x97,         // Не найден резонанс при калибровке НЭ
         CritAdcNe = 0x98,               // Ошибка АЦП схемы НЭ
 
-        Version_0 = 0xE0,               // Версии ПО, рабочих прошивок нет
-        Version_1 = 0xE1,               // Версии ПО, основная прошивка в банке 1
-        Version_2 = 0xE2,               // Версии ПО, основная прошивка в банке 2
-        Erased_1 = 0xE3,                // Банк 1 стёрт
-        Erased_2 = 0xE4,                // Банк 2 стёрт
-        ReadyToUpdate_1 = 0xE5,         // Готов принять новую прошивку в банк 1
-        ReadyToUpdate_2 = 0xE6,         // Готов принять новую прошивку в банк 2
-        SoftDataAck = 0xE7,             // Принял данные прошивки
-        UpdateResult = 0xE8,            // Результаты обновления
-        BootAck = 0xE9,                 // Стандартный ответ загрузчика
-        Start = 0xEC,                   // Запуск МК
-        UpdateError = 0xEF              // Ошибка обновления
+        Version = 0xE0,                 // Версии ПО
+        Erased = 0xE1,                  // Рабочая прошивка стёрта
+        ReadyToUpdate = 0xE2,           // Готов принять новую прошивку
+        SoftDataAck = 0xE3,             // Принял данные прошивки
+        UpdateResult = 0xE4,            // Результаты обновления
+        BootAck = 0xE5,                 // Стандартный ответ загрузчика
+        Start = 0xE6,                   // Ответ рабочей прошивки после старта
 
     };
     Q_ENUM(RxCommand);
@@ -161,10 +155,8 @@ public:
         McUnit mc;
         quint8 bootVer;
         quint8 bootSubVer;
-        quint8 app0Ver;
-        quint8 app0SubVer;
-        quint8 app1Ver;
-        quint8 app1SubVer;
+        quint8 appVer;
+        quint8 appSubVer;
     };
 
     struct HexString {
@@ -204,7 +196,7 @@ public:
 
     const UartRx &rxCommand() const;
 
-    void updateTransfer(QList<LinkStm::HexString> hexList, int bank, QString versionStr);
+    void updateTransfer(QList<LinkStm::HexString> hexList, QString versionStr);
 
     const BootChoice &boot() const;
 
@@ -219,7 +211,7 @@ public:
 public slots:
     void start();
     /// Загрузка hex из файла (вызов из потока LinkStm). bankOrZero: 0 — неактивный банк относительно m_boot, иначе 1 или 2.
-    void startFirmwareUpdateFromFile(const QString &filePath, int bankOrZero, const QString &versionStr, int mcUnitRaw);
+    void startFirmwareUpdateFromFile(const QString &filePath, const QString &versionStr, int mcUnitRaw);
     void argonBlow();
     void setEnableActivation(bool enable);
     void setNeutralElDivided(bool divided);

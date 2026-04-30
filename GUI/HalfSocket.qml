@@ -27,6 +27,8 @@ Rectangle {
                                           && instrumNum !== 1000
     readonly property int endoCutEffect: Math.floor(modePower / 10)
     readonly property int endoCoagEffect: modePower % 10
+    readonly property int normalModeNameFont: 36
+    readonly property int singleLineModeNameFont: 42
 
     Canvas {
         id: socketBackground
@@ -102,8 +104,12 @@ Rectangle {
         id: modeLabel
         visible: halfSocketRoot.hasAvailableModes
         text: modeId === 1000 ? qsTr("выберите режим") : halfSocketRoot.modeName
-        color: (halfSocketRoot.isCoag || modeId === 1000) ? "white" : "black"
-        font.pixelSize:  modeId === 1000 ? 24 : 36
+        color: (!halfSocketRoot.isCoag || modeId === 1000) ? "black" : "white"
+        font.pixelSize: modeId === 1000
+                        ? 24
+                        : (singleLineModeMetrics.width <= modeLabel.width
+                           ? halfSocketRoot.singleLineModeNameFont
+                           : halfSocketRoot.normalModeNameFont)
         font.bold: true
         wrapMode: Text.Wrap
         lineHeight: 0.82
@@ -118,6 +124,13 @@ Rectangle {
         anchors.leftMargin: halfSocketRoot.isCoag ? 6 : 8
         anchors.right: halfSocketRoot.isCoag ? parent.right : collapsedInstrImage.left
         anchors.rightMargin: halfSocketRoot.isCoag ? 8 : 6
+    }
+
+    TextMetrics {
+        id: singleLineModeMetrics
+        text: modeId === 1000 ? "" : halfSocketRoot.modeName
+        font.pixelSize: halfSocketRoot.singleLineModeNameFont
+        font.bold: true
     }
 
     Label {
@@ -137,27 +150,59 @@ Rectangle {
         anchors.rightMargin: halfSocketRoot.isCoag ? 8 : 6
     }
 
-    Text {
-        id: powerEndoLabel
+    Row {
+        id: powerEndoRow
         visible: halfSocketRoot.isEndo && halfSocketRoot.modeId !== 1000
-        textFormat: Text.RichText
-        color: halfSocketRoot.isCoag ? "white" : "black"
-        text: "<span style='font-size:20px;'>эф.рез.</span> "
-              + "<span style='font-size:60px; font-weight:700;'>"
-              + halfSocketRoot.endoCutEffect
-              + "</span> "
-              + "<span style='font-size:20px;'>эф.коаг.</span> "
-              + "<span style='font-size:60px; font-weight:700;'>"
-              + halfSocketRoot.endoCoagEffect
-              + "</span>"
-        horizontalAlignment: halfSocketRoot.isCoag ? Text.AlignRight : Text.AlignLeft
-        verticalAlignment: Text.AlignBottom
-        wrapMode: Text.Wrap
+        spacing: 18
         anchors.bottom: parent.bottom
         anchors.bottomMargin: 5
         anchors.left: halfSocketRoot.isCoag ? collapsedInstrImage.right : parent.left
         anchors.leftMargin: halfSocketRoot.isCoag ? 6 : 8
         anchors.right: halfSocketRoot.isCoag ? parent.right : collapsedInstrImage.left
         anchors.rightMargin: halfSocketRoot.isCoag ? 8 : 6
+
+        Row {
+            spacing: 6
+
+            Text {
+                text: qsTr("эфф.\nрез.")
+                color: halfSocketRoot.isCoag ? "white" : "black"
+                font.pixelSize: 24
+                font.bold: true
+                width: implicitWidth
+                horizontalAlignment: Text.AlignLeft
+                verticalAlignment: Text.AlignVCenter
+            }
+
+            Text {
+                text: halfSocketRoot.endoCutEffect
+                color: halfSocketRoot.isCoag ? "white" : "black"
+                font.pixelSize: 60
+                font.bold: true
+                verticalAlignment: Text.AlignVCenter
+            }
+        }
+
+        Row {
+            spacing: 6
+
+            Text {
+                text: qsTr("эфф.\nкоаг.")
+                color: halfSocketRoot.isCoag ? "white" : "black"
+                font.pixelSize: 24
+                font.bold: true
+                width: implicitWidth
+                horizontalAlignment: Text.AlignLeft
+                verticalAlignment: Text.AlignVCenter
+            }
+
+            Text {
+                text: halfSocketRoot.endoCoagEffect
+                color: halfSocketRoot.isCoag ? "white" : "black"
+                font.pixelSize: 60
+                font.bold: true
+                verticalAlignment: Text.AlignVCenter
+            }
+        }
     }
 }

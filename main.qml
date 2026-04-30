@@ -139,6 +139,12 @@ Window {
 
     function warningTextForCode(code) {
         switch (code) {
+        case 0x01: return qsTr("Ошибка связи: передача не выполнена")
+        case 0x02: return qsTr("Ошибка связи: нет ответа")
+        case 0x03: return qsTr("Ошибка связи: неверный ответ")
+        case 0x04: return qsTr("Ошибка связи: неверная длина пакета")
+        case 0x05: return qsTr("Ошибка связи: CRC не совпадает")
+
         case 0x41: return qsTr("Активация остановлена: холостой ход (автостоп)")
         case 0x42: return qsTr("Активация остановлена: короткое замыкание бранш")
         case 0x43: return qsTr("Активация остановлена: обрыв нейтрального электрода")
@@ -156,6 +162,9 @@ Window {
         case 0x87: return qsTr("Ошибка: питание НЭ 5В не соответствует норме")
         case 0x88: return qsTr("Ошибка: питание НЭ 3,3В не соответствует норме")
         case 0x89: return qsTr("Ошибка: перегрев контроллера НЭ")
+//        case 0x8C: return qsTr("Ошибка: кнопка питания зажата")
+        case 0x8D: return qsTr("Ошибка: обновление не выполнено")
+        case 0x8E: return qsTr("Ошибка: нет рабочей прошивки МУС")
 
         case 0x90: return qsTr("Критичная ошибка: ИСН при включении")
         case 0x91: return qsTr("Критичная ошибка: АЦП1 (напряжение контура)")
@@ -167,11 +176,6 @@ Window {
         case 0x97: return qsTr("Критичная ошибка: не найден резонанс при калибровке НЭ")
         case 0x98: return qsTr("Критичная ошибка: АЦП схемы НЭ")
 
-        case 32: return qsTr("Ошибка UART: передача не выполнена")
-        case 33: return qsTr("Ошибка UART: нет ответа")
-        case 34: return qsTr("Ошибка UART: неверный ответ")
-        case 35: return qsTr("Ошибка UART: неверная длина пакета")
-        case 36: return qsTr("Ошибка UART: CRC не совпадает")
         default:
             return qsTr("Ошибка устройства (код 0x") + code.toString(16).toUpperCase() + ")"
         }

@@ -143,7 +143,7 @@ void LinkStm::unpackRxCommand(const QByteArray &rxPacket)
     // Повторяем команду, если ответ не подходящий
     else {
         m_state = STATE_RX_ERR;
-        qDebug() << "не тот ответ от stm";      // DEBUG
+//        qDebug() << "не тот ответ от stm";      // DEBUG
         if (m_fwUpdateSessionActive) {
             if (!m_fwRxErrStreakTimer.isValid()) {
                 m_fwRxErrStreakTimer.start();
@@ -166,16 +166,16 @@ bool LinkStm::checkRxCommand()
     uint32_t addrT = 0;
     uint32_t addrR = 0;
 
-    // команды обновления
-    if (m_txCommand.com >= CurrentVersion && m_txCommand.com <= UpdateFinish) {
-        if (m_txCommand.com == CurrentVersion) {
-            if (m_rxCommand.com >= Version_0 && m_rxCommand.com <= Version_2)
-                return true;
-            else return false;
-        }
-        return m_txCommand.com == m_rxCommand.com ? true : false;
-    }
-    if (m_txCommand.com == SoftData) {
+    switch (m_txCommand.com) {
+    case CurrentVersion:
+        return m_rxCommand.com == Version ? true : false;
+    case Erase:
+        return m_rxCommand.com == Erased ? true : false;
+    case StartUpdate:
+        return m_rxCommand.com == ReadyToUpdate ? true : false;
+    case UpdateFinish:
+        return m_rxCommand.com == UpdateResult ? true : false;
+    case SoftData:
         if (m_rxCommand.com != SoftDataAck || m_rxCommand.data.size() < 4)
             return false;
         // Сравниваем адреса во флэш, переданный и принятый
@@ -219,7 +219,7 @@ void LinkStm::sendCommand()
     if (m_state != STATE_OK) {
         if (m_state != preState) {
             // qDebug() << "UART-ошибки: " << m_state;
-            emit sigError(m_state + 32);        // Ошибки ответа (первые 32 - то, что присылается по uart)
+            emit sigError(m_state);             // Ошибки ответа
             preState = m_state;                 // Запоминаем предыдущее состояние
             errCounter = 0;                     // Сбрасываем счётчик ошибок
         }
@@ -312,9 +312,8 @@ void LinkStm::sendCommand()
             if (m_rxCommand.com == Start) {        // После перезагрузки МК
                 setTxCommandBoot();
             }
-            else if ((m_lastCommand.com == StartUpdate_1) ||
-                    (m_lastCommand.com == StartUpdate_2) ||
-                 (m_lastCommand.com == SoftData)) {
+            else if ((m_lastCommand.com == StartUpdate) ||
+                     (m_lastCommand.com == SoftData)) {
        if (m_hexList.size() > updateCounter) {
            m_txCommand.com = SoftData;
            m_txCommand.data.clear();
@@ -366,13 +365,9 @@ void LinkStm::sendCommand()
 
     // Разная задержка ожидания ответа для разных команд
     switch (m_txCommand.com) {
-    case StartUpdate_1:
-    case StartUpdate_2:
-    case GoBank_1:
-    case GoBank_2:
-    case Reboot:
-    case Erase_1:
-    case Erase_2:
+    case StartUpdate:
+    case GoApp:
+    case Erase:
     case GoBoot:
         m_uartTimer->setInterval(3000);  // Стирание банка около 6 сек, перезагрузка 3-4 сек
         break;
@@ -380,8 +375,8 @@ void LinkStm::sendCommand()
         m_uartTimer->setInterval(200);
         break;
     default:
-        m_uartTimer->setInterval(500);
-//        m_uartTimer->setInterval(50);
+//        m_uartTimer->setInterval(500);
+        m_uartTimer->setInterval(50);
     }
 
 //    qDebug() << "txCom: " << m_txCommand.com << ": " << QString::number(m_txCommand.com, 16);
@@ -575,12 +570,12 @@ void LinkStm::readRxCommand()
         break;
     // Присылаемые ошибки
     case RxErrors:
+    case RxCritical:
         emit sigError(m_rxCommand.com);
         break;
     // Ответы на команды обновления ПО
     case RxUpdating:
-        if ((m_rxCommand.com >= Version_0)
-             && (m_rxCommand.com <= Version_2)) {
+        if (m_rxCommand.com == Version) {
             setMcVersions(m_rxCommand);
             m_comState = IDLE;
         }
@@ -711,7 +706,7 @@ const LinkStm::UartRx &LinkStm::rxCommand() const
     return m_rxCommand;
 }
 
-void LinkStm::updateTransfer(QList<HexString> hexList, int bank, QString versionStr)
+void LinkStm::updateTransfer(QList<HexString> hexList, QString versionStr)
 {
     m_softSize = hexList.size();
     m_transferredSize = 0;
@@ -720,14 +715,13 @@ void LinkStm::updateTransfer(QList<HexString> hexList, int bank, QString version
     m_fwRxErrStreakTimer.invalidate();
     // Организуем отправку
     UartTx txCom;
-    txCom.com = bank == 1 ? LinkStm::StartUpdate_1 : LinkStm::StartUpdate_2;
-    // Отправляем, в какой банк надо будет писать прошивку (т.е. его стереть в начале)
+    txCom.com = LinkStm::StartUpdate;
     txCom.data.clear();
     txCom.mc = m_mc;
     m_fwUpdateAwaitingReady = true;
     m_txCommand = txCom;
     m_versionStr = versionStr;
-    qDebug() << "startUpdate_" << bank;
+    qDebug() << "startUpdate";
 }
 
 void LinkStm::abortFirmwareUpdate(const QString &message)
@@ -750,8 +744,7 @@ void LinkStm::abortFirmwareUpdate(const QString &message)
     emit firmwareUpdateParseError(message);
 }
 
-void LinkStm::startFirmwareUpdateFromFile(const QString &filePath, int bankOrZero, const QString &versionStr,
-                                          int mcUnitRaw)
+void LinkStm::startFirmwareUpdateFromFile(const QString &filePath, const QString &versionStr, int mcUnitRaw)
 {
     QFileInfo fi(filePath);
     if (!fi.exists() || !fi.isFile()) {
@@ -775,19 +768,8 @@ void LinkStm::startFirmwareUpdateFromFile(const QString &filePath, int bankOrZer
         return;
     }
 
-    int bank = bankOrZero;
-    if (bankOrZero <= 0 || bankOrZero > 2) {
-        if (m_boot == BOOT_APP_1) {
-            bank = 2;
-        } else if (m_boot == BOOT_APP_2) {
-            bank = 1;
-        } else {
-            bank = 1;
-        }
-    }
-
     setMc(static_cast<McUnit>(static_cast<quint8>(mcUnitRaw)));
-    updateTransfer(hexList, bank, versionStr);
+    updateTransfer(hexList, versionStr);
 }
 
 // Ставим новую команду в очередь
@@ -808,9 +790,7 @@ void LinkStm::setTxCommandBoot()
     if (m_boot == BOOT_0)           // Загрузчик
         bootCommand.com = GoBoot;
     else if (m_boot == BOOT_APP_1)  // Банк 1
-        bootCommand.com = GoBank_1;
-    else if (m_boot == BOOT_APP_2)  // Банк 2
-        bootCommand.com = GoBank_2;
+        bootCommand.com = GoApp;
     else
         bootCommand.com = Allright;
     // Ставим в очередь
@@ -892,15 +872,13 @@ void LinkStm::mcVersRequest()
 //    comVer.mc = MC_COM;
 //    comVer.bootVer = 1;
 //    comVer.bootSubVer = 0;
-//    comVer.app0Ver = 2;
-//    comVer.app0SubVer = 1;
-//    comVer.app1Ver = 3;
-//    comVer.app1SubVer = 33;
+//    comVer.appVer = 2;
+//    comVer.appSubVer = 1;
 
-//    argVer = {MC_ARG, 2, 1, 4, 44, 5, 55};
-//    genVer = {MC_GEN, 3, 2, 6, 66, 7, 77};
-//    raskVer = {MC_RAS, 0, 0, 8, 88, 0, 0};
-//    nelVer = {MC_NEL, 0, 0, 9, 99, 0, 0};
+//    argVer = {MC_ARG, 2, 1, 4, 44};
+//    genVer = {MC_GEN, 3, 2, 6, 66};
+//    raskVer = {MC_RAS, 0, 0, 8, 88};
+//    nelVer = {MC_NEL, 0, 0, 9, 99};
 
 //    mcVersions[0] = comVer;
 //    mcVersions[1] = argVer;
@@ -912,79 +890,20 @@ void LinkStm::mcVersRequest()
 
 void LinkStm::setMcVersions(const UartRx &rxCom)
 {
-    bool isErrRx = false;
-    if (rxCom.mc == MC_COM) {        // Присланы версии ПО МУС
-        if (rxCom.data.size() == 6) {
-            mcVersions[0].bootVer = rxCom.data.at(0);
-            mcVersions[0].bootSubVer = rxCom.data.at(1);
-            if (rxCom.com == Version_2) {
-                mcVersions[0].app1Ver = rxCom.data.at(2);
-                mcVersions[0].app1SubVer = rxCom.data.at(3);
-                mcVersions[0].app0Ver = rxCom.data.at(4);
-                mcVersions[0].app0SubVer = rxCom.data.at(5);
-            }
-            else {
-                mcVersions[0].app0Ver = rxCom.data.at(2);
-                mcVersions[0].app0SubVer = rxCom.data.at(3);
-                mcVersions[0].app1Ver = rxCom.data.at(4);
-                mcVersions[0].app1SubVer = rxCom.data.at(5);
-            }
-        }
-        else isErrRx = true;
-    }
-    if (rxCom.mc == MC_ARG) {        // Присланы версии ПО аргонника
-        if (rxCom.data.size() == 6) {
-            mcVersions[1].bootVer = rxCom.data.at(0);
-            mcVersions[1].bootSubVer = rxCom.data.at(1);
-            if (rxCom.com == Version_2) {
-                mcVersions[1].app0Ver = rxCom.data.at(2);
-                mcVersions[1].app0SubVer = rxCom.data.at(3);
-                mcVersions[1].app1Ver = rxCom.data.at(4);
-                mcVersions[1].app1SubVer = rxCom.data.at(5);
-            }
-            else {
-                mcVersions[1].app1Ver = rxCom.data.at(2);
-                mcVersions[1].app1SubVer = rxCom.data.at(3);
-                mcVersions[1].app0Ver = rxCom.data.at(4);
-                mcVersions[1].app0SubVer = rxCom.data.at(5);
-            }
-        }
-        else isErrRx = true;
-    }
-    else if (rxCom.mc == MC_GEN) {        // Присланы версии ПО генератора
-        if (rxCom.data.size() == 8) {
-            mcVersions[2].bootVer = rxCom.data.at(0);
-            mcVersions[2].bootSubVer = rxCom.data.at(1);
-            if (rxCom.com == Version_2) {
-                mcVersions[2].app0Ver = rxCom.data.at(2);
-                mcVersions[2].app0SubVer = rxCom.data.at(3);
-                mcVersions[2].app1Ver = rxCom.data.at(4);
-                mcVersions[2].app1SubVer = rxCom.data.at(5);
-            }
-            else {
-                mcVersions[2].app1Ver = rxCom.data.at(2);
-                mcVersions[2].app1SubVer = rxCom.data.at(3);
-                mcVersions[2].app0Ver = rxCom.data.at(4);
-                mcVersions[2].app0SubVer = rxCom.data.at(5);
-            }
-            mcVersions[3].app0Ver = rxCom.data.at(6);       // Версия раскачки (без подверсий)
-            mcVersions[4].app0Ver = rxCom.data.at(7);       // Версия НЭ
-        }
-        else isErrRx = true;
-    }
+    quint8 mc = rxCom.mc >> 5; // модуль связи - 0, аргонник - 1, генератор - 2
+//    bool isErrRx = false;
+    mcVersions[mc].bootVer = rxCom.data.at(0);
+    mcVersions[mc].bootSubVer = rxCom.data.at(1);
+    mcVersions[mc].appVer = rxCom.data.at(2);
+    mcVersions[mc].appSubVer = rxCom.data.at(3);
+    m_moduleHasWorkingApp[mc] = mcVersions[mc].appVer == 0 ? false : true;
 
-    if (isErrRx) qDebug() << "Error - длина посылки с версией " << rxCom.data.size();
-
-    // Если пришла Version_0, то рабочей прошивки нет ни в банке 1, ни в 2
-    bool isApp = rxCom.com == Version_0 ? false : true;
-    if (rxCom.mc == MC_COM) {
-    m_moduleHasWorkingApp[0] = isApp;
-    } else if (rxCom.mc == MC_ARG) {
-    m_moduleHasWorkingApp[1] = isApp;
-    } else if (rxCom.mc == MC_GEN) {
-    m_moduleHasWorkingApp[2] = isApp;
-    m_moduleHasWorkingApp[3] = isApp;
-    m_moduleHasWorkingApp[4] = isApp;
+    // Генератор передаёт ещё версии НЭ и раскачки
+    if (mc == 2) {
+        mcVersions[3].appVer = rxCom.data.at(6);       // Версия раскачки (без подверсий)
+        mcVersions[4].appVer = rxCom.data.at(7);       // Версия НЭ
+        m_moduleHasWorkingApp[3] = mcVersions[3].appVer == 0 ? false : true;
+        m_moduleHasWorkingApp[4] = mcVersions[4].appVer == 0 ? false : true;
     }
 
     publishFirmwareVersions();
@@ -1001,10 +920,8 @@ static QVariantList packMcVersionsForQml(const LinkStm::McVersions *vs, bool *mo
         m.insert(QStringLiteral("mcUnit"), static_cast<int>(v.mc));
         m.insert(QStringLiteral("bootMain"), static_cast<int>(v.bootVer));
         m.insert(QStringLiteral("bootSub"), static_cast<int>(v.bootSubVer));
-        m.insert(QStringLiteral("app0Main"), static_cast<int>(v.app0Ver));
-        m.insert(QStringLiteral("app0Sub"), static_cast<int>(v.app0SubVer));
-        m.insert(QStringLiteral("app1Main"), static_cast<int>(v.app1Ver));
-        m.insert(QStringLiteral("app1Sub"), static_cast<int>(v.app1SubVer));
+        m.insert(QStringLiteral("appMain"), static_cast<int>(v.appVer));
+        m.insert(QStringLiteral("appSub"), static_cast<int>(v.appSubVer));
         m.insert(QStringLiteral("reportsBootAndApp1"), i < 3);
         m.insert(QStringLiteral("hasWorkingApp"), moduleHasWorkingApp[i]);
         list.append(m);

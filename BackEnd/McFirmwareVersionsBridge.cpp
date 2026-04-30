@@ -17,10 +17,8 @@ bool McFirmwareVersionsBridge::modulesDataEqual(const QVariantList &a, const QVa
         QStringLiteral("mcUnit"),
         QStringLiteral("bootMain"),
         QStringLiteral("bootSub"),
-        QStringLiteral("app0Main"),
-        QStringLiteral("app0Sub"),
-        QStringLiteral("app1Main"),
-        QStringLiteral("app1Sub"),
+        QStringLiteral("appMain"),
+        QStringLiteral("appSub"),
         QStringLiteral("reportsBootAndApp1"),
         QStringLiteral("hasWorkingApp"),
     };

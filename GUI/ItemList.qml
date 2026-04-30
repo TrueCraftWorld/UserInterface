@@ -18,6 +18,7 @@ Rectangle {
 	property color selectedTextColor: "white"
 	property bool keepSelectedItemAtTop: false
 	property int noAutoScrollItemId: -1
+	property int itemFontPixelSize: 18
 	
 	signal newIndexSelected(int newIndex)
 	signal deleteItem(int index)
@@ -174,7 +175,7 @@ Rectangle {
 						verticalAlignment: Qt.AlignVCenter
 						wrapMode: Text.WordWrap
 						font.bold: true
-						font.pixelSize: 18
+						font.pixelSize: itemList.itemFontPixelSize
 						color: isSelected ? selectedTextColor : "white"
 					}
 					MouseArea {

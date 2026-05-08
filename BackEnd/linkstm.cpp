@@ -105,6 +105,16 @@ void LinkStm::unpackRxCommand(const QByteArray &rxPacket)
             xorValue = 0;
         }
     }
+    if (xorValue != 0) {
+        qWarning() << "Rx packet ends with escape byte, dropping packet";
+        m_state = STATE_RX_ERR;
+        return;
+    }
+    if (destuffedBuffer.isEmpty()) {
+        qWarning() << "Destuffed packet is empty";
+        m_state = STATE_RX_LEN_ERR;
+        return;
+    }
     // Длина буфера
     int packetLen = (destuffedBuffer.at(0) & UART_LEN)*2 + 4;
     if (packetLen != destuffedBuffer.size()) {
@@ -892,6 +902,14 @@ void LinkStm::setMcVersions(const UartRx &rxCom)
 {
     quint8 mc = rxCom.mc >> 5; // модуль связи - 0, аргонник - 1, генератор - 2
 //    bool isErrRx = false;
+    if (mc >= 5) {
+        qWarning() << "setMcVersions: invalid module index" << mc;
+        return;
+    }
+    if (rxCom.data.size() < 4) {
+        qWarning() << "setMcVersions: packet too short, size =" << rxCom.data.size();
+        return;
+    }
     mcVersions[mc].bootVer = rxCom.data.at(0);
     mcVersions[mc].bootSubVer = rxCom.data.at(1);
     mcVersions[mc].appVer = rxCom.data.at(2);
@@ -900,6 +918,11 @@ void LinkStm::setMcVersions(const UartRx &rxCom)
 
     // Генератор передаёт ещё версии НЭ и раскачки
     if (mc == 2) {
+        if (rxCom.data.size() < 8) {
+            qWarning() << "setMcVersions: generator packet too short, size =" << rxCom.data.size();
+            publishFirmwareVersions();
+            return;
+        }
         mcVersions[3].appVer = rxCom.data.at(6);       // Версия раскачки (без подверсий)
         mcVersions[4].appVer = rxCom.data.at(7);       // Версия НЭ
         m_moduleHasWorkingApp[3] = mcVersions[3].appVer == 0 ? false : true;

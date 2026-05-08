@@ -31,6 +31,7 @@ Window {
     
     // Текущее название программы
     property string currentProgName: ""
+    property bool currentProgramIsUser: false
     property string language: "ru"
     readonly property color fotekBlue: "#264093"
     readonly property color fotekOrange: "#faa731"
@@ -426,7 +427,10 @@ Window {
                 recommended: true
                 editable: false
                 onReturnButtonPressed: container.showStartupScreen("startMenu")
-                onProgramSelected: container.setCurrentProgram(scopeName, progName)
+                onProgramSelected: {
+                    container.currentProgramIsUser = false
+                    container.setCurrentProgram(scopeName, progName)
+                }
                 onClickedButton: container.showMainScreen()
             }
         }
@@ -438,7 +442,10 @@ Window {
                 recommended: false
                 editable: true
                 onReturnButtonPressed: container.showStartupScreen("startMenu")
-                onProgramSelected: container.setCurrentProgram(scopeName, progName)
+                onProgramSelected: {
+                    container.currentProgramIsUser = true
+                    container.setCurrentProgram(scopeName, progName)
+                }
                 onClickedButton: container.showMainScreen()
             }
         }
@@ -450,14 +457,102 @@ Window {
 		height: 390
         x: (parent.width - width) / 2
         y: statusDummy.height
+        originalProgName: container.currentProgName
+        currentProgramIsUser: container.currentProgramIsUser
+    }
+    Dialog {
+        id: overwriteConfirmDialog
+        modal: true
+        width: saveProgDialog.width
+        height: saveProgDialog.height
+        x: saveProgDialog.x
+        y: saveProgDialog.y
 
+        contentItem: Rectangle {
+            color: "transparent"
+
+            Text {
+                anchors.fill: parent
+                wrapMode: Text.WordWrap
+                horizontalAlignment: Text.AlignHCenter
+                verticalAlignment: Text.AlignVCenter
+                text: qsTr("Внимание! Текущая программа\n\n%1\n\nбудет перезаписана").arg(saveProgDialog.originalProgName)
+                font.pixelSize: 30
+                color: "black"
+            }
+        }
+
+        footer: Rectangle {
+            color: "transparent"
+            implicitHeight: 108
+
+            RowLayout {
+                anchors.fill: parent
+                anchors.leftMargin: 20
+                anchors.rightMargin: 20
+                anchors.topMargin: 20
+                anchors.bottomMargin: 20
+                spacing: 16
+
+                Button {
+                    Layout.preferredWidth: 180
+                    Layout.fillHeight: true
+                    text: qsTr("ОТМЕНА")
+                    onPressed: overwriteConfirmDialog.close()
+
+                    background: Rectangle {
+                        radius: 18
+                        color: "#808080"
+                    }
+
+                    contentItem: Text {
+                        text: parent.text
+                        color: "white"
+                        font.pixelSize: 24
+                        font.bold: true
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                    }
+                }
+
+                Item { Layout.fillWidth: true }
+
+                Button {
+                    Layout.preferredWidth: 180
+                    Layout.fillHeight: true
+                    text: qsTr("ПРИНЯТЬ")
+                    onPressed: {
+                        overwriteConfirmDialog.close()
+                        saveProgDialog.accept()
+                    }
+
+                    background: Rectangle {
+                        radius: 18
+                        color: "#2E7D32"
+                    }
+
+                    contentItem: Text {
+                        text: parent.text
+                        color: "white"
+                        font.pixelSize: 24
+                        font.bold: true
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                    }
+                }
+            }
+        }
     }
     Connections {
         target: saveProgDialog
+        function onOverwriteConfirmationRequested() {
+            overwriteConfirmDialog.open()
+        }
         function onAccepted() {
             recomHandle.saveProg(saveProgDialog.scopeName,
                                  saveProgDialog.progName)
             recomHandle.saveCurrentState()
+            container.currentProgramIsUser = true
             container.setCurrentProgram(saveProgDialog.scopeName, saveProgDialog.progName)
             Qt.inputMethod.hide()
         }
@@ -714,6 +809,7 @@ Window {
             container.setCurrentProgram(scopeName, progName)
         }
         function onFreeSettingsModeActivated() {
+            container.currentProgramIsUser = false
             container.setCurrentProgramTitle(qsTr("Свободные установки"))
         }
         function onDeleteAllUserProgsRequested() {

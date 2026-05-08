@@ -19,7 +19,7 @@ Dialog {
         radius: 8
         color: "transparent"
         border {
-            color: "white"
+            color: "grey"
             width: 1
         }
         Label {
@@ -31,7 +31,7 @@ Dialog {
             anchors.fill: parent
             anchors.centerIn: parent
             wrapMode: Text.WordWrap
-            color: "white"
+            color: "black"
         }
         MouseArea {
             anchors.fill: parent

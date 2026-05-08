@@ -5,15 +5,18 @@ import StratifyLabs.UI 2.0
 import BackEnd 1.0
 
 Dialog {
+    signal overwriteConfirmationRequested()
     readonly property string progName: progNameInput.text
     readonly property string scopeName: contRect.isNewScope ? newScopeNameInput.text : scopeNameBox.currentText
+    property string originalProgName: ""
+    property bool currentProgramIsUser: false
     title: qsTr("Сохранение программы")
     modal: true
     onOpened: {
         console.log("openSaveDia")
         recomHandle.isRecomProgs = false;
         scopeNameBox.model = recomHandle.scopeNameList
-        progNameInput.text = ""
+        progNameInput.text = originalProgName
         Qt.callLater(function() {
             progNameInput.forceActiveFocus()
             Qt.inputMethod.show()
@@ -117,7 +120,14 @@ Dialog {
                 Layout.fillHeight: true
                 text: qsTr("ПРИНЯТЬ")
                 enabled: progName.length > 0 && scopeName.length > 0
-                onPressed: accept()
+                onPressed: {
+                    var isSameName = progName === originalProgName
+                    if (currentProgramIsUser && isSameName && originalProgName.length > 0) {
+                        overwriteConfirmationRequested()
+                        return
+                    }
+                    accept()
+                }
 
                 background: Rectangle {
                     radius: 18
@@ -135,4 +145,5 @@ Dialog {
             }
         }
     }
+
 }

@@ -333,7 +333,7 @@ Popup {
             }
         }
 
-        Button {
+        DialogActionButton {
             id: declineButton
             // visible: modeEditor.hasChanges
             width: parent.width * .2
@@ -344,30 +344,20 @@ Popup {
                 left: modeList.right
                 leftMargin: 20
             }
-            background: Rectangle {
-                color: "transparent"
-                border.width: 3
-                border.color: "white"
-                radius: 8
-            }
-
-            Text {
-                id: declineText
-                text: qsTr("ОТМЕНА")
-                font.pixelSize: 34
-                font.bold: true
-                anchors.fill: parent
-                horizontalAlignment: Qt.AlignHCenter
-                verticalAlignment: Qt.AlignVCenter
-                color: "white"
-            }
+            text: qsTr("ОТМЕНА")
+            secondaryColor: "transparent"
+            secondaryBorderWidth: 3
+            secondaryBorderColor: "white"
+            cornerRadius: 8
+            labelPixelSize: 34
+            labelColor: "white"
             onClicked: {
                 modeEditor.rollBack()
                 root.close()
             }
         }
 
-        Button {
+        DialogActionButton {
             id: acceptButton
             width: parent.width * .2
             height: parent.height * .15
@@ -378,22 +368,15 @@ Popup {
                 left: declineButton.right
                 leftMargin: 80
             }
-            background: Rectangle {
-                color: "transparent"
-                border.width: 3
-                border.color: "lightgreen"
-                radius: 8
-            }
-            Text {
-                id: acceptText
-                text: qsTr("ПРИНЯТЬ")
-                font.pixelSize: 34
-                font.bold: true
-                color: "lightgreen"
-                anchors.fill: parent
-                horizontalAlignment: Qt.AlignHCenter
-                verticalAlignment: Qt.AlignVCenter
-            }
+            text: qsTr("ПРИНЯТЬ")
+            primary: true
+            primaryEnabledColor: "transparent"
+            primaryDisabledColor: "transparent"
+            primaryBorderWidth: 3
+            primaryBorderColor: "lightgreen"
+            cornerRadius: 8
+            labelPixelSize: 34
+            labelColor: "lightgreen"
             onClicked: {
                 modeEditor.commitChanges()
                 root.close();

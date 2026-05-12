@@ -109,32 +109,21 @@ Item {
         font.bold: true
     }
 
-    Button {
+    DialogActionButton {
         id: exitButton
         width: 180
         height: 72
         text: qsTr("НАЗАД")
+        secondaryColor: settinsScreen.fotekBlue
+        secondaryBorderWidth: 1
+        secondaryBorderColor: "#1E3274"
+        cornerRadius: 20
+        labelPixelSize: 30
         onPressed: settinsScreen.exitButtonPressed()
         anchors {
             left: parent.left
             bottom: parent.bottom
             margins: settinsScreen.screenMargin
-        }
-
-        background: Rectangle {
-            radius: 20
-            color: settinsScreen.fotekBlue
-            border.width: 1
-            border.color: "#1E3274"
-        }
-
-        contentItem: Text {
-            text: parent.text
-            color: "white"
-            font.pixelSize: 30
-            font.bold: true
-            horizontalAlignment: Text.AlignHCenter
-            verticalAlignment: Text.AlignVCenter
         }
     }
 

@@ -99,6 +99,15 @@ QString makeCommaSeparatedNumbers(const std::vector<int>& list) {
 	return res;
 }
 
+/** Pedal_1 / Pedal_2 в Lists: 0 — педаль не назначена; 1..4 — номер сокета (выход). */
+int listsPedalColumnToSocketIndex(int v)
+{
+	if (v <= 0 || v > 4) {
+		return -1;
+	}
+	return v - 1;
+}
+
 QString makeSocketName(Onyx::SocType type) {
 	QString socketName = "";
 	switch (type) {
@@ -251,7 +260,7 @@ QString makeDbStringInstr( const QModelIndex& idx,
     return list.join(',');
 }
 
-const QString queryConditionRecom = "Prog_ID = %1 AND Num >= 0 AND Num < 4 ORDER BY id DESC";
+const QString queryConditionRecom = "Prog_ID = %1 AND Num >= 0 AND Num < 4 ORDER BY Num ASC, id ASC";
 const QStringList fields = {"id", "Num", "Prog_ID", /* 0 1 2*/
                             "Bi1Cut_INSTR", "Bi1Cut_MODE", "Bi1Cut_POWER", /* 3 4 5*/
                             "Bi1Coag_INSTR", "Bi1Coag_MODE", "Bi1Coag_POWER", /* 6 7 8*/
@@ -648,13 +657,14 @@ bool ProgLoader::programmLoadSocketInit(int progId, bool clear)
 			bool coagEna = hasNonZeroDigit(progItem.at(29).toInt(), (8 - 2*i) - 1 );
 			bool cutEna = hasNonZeroDigit(progItem.at(29).toInt(), (8 - 2*i) );
 
-			int monoPedSocket = progItem.at(27).toInt();
-			if (i == monoPedSocket) {
+			const int singleIdx = listsPedalColumnToSocketIndex(progItem.at(27).toInt());
+			const int doubleIdx = listsPedalColumnToSocketIndex(progItem.at(28).toInt());
+			if (doubleIdx >= 0 && i == doubleIdx) {
+				socket->setPedal(Onyx::DOUBLE_PED);
+			} else if (singleIdx >= 0 && i == singleIdx) {
 				socket->setPedal(Onyx::SINGLE_PED);
-			}
-			int doubePedSocket = progItem.at(27).toInt();
-			if (i == doubePedSocket) {
-				socket->setPedal(Onyx::SINGLE_PED);
+			} else {
+				socket->setPedal(Onyx::NO_PED);
 			}
 
 			bool allowSock = cutEna || coagEna;
@@ -803,8 +813,30 @@ bool ProgLoader::freeSettingsSocketInit(bool clear)
     
     if (socketMapVector.empty())
         return false;
-    
-    m_socketModelPtr->loadProgs(socketMapVector, instrMapVector, !clear);
+
+    if (clear) {
+        // Для "Свободных установок" сохраняем остальные листы и
+        // заменяем только текущий, чтобы не терялась структура подпрограмм.
+        std::vector<std::map<int, SockPtr>> allSocketMaps = m_socketModelPtr->getSocketsCopy();
+        std::vector<std::map<int, InstrPtr>> allInstrMaps = m_socketModelPtr->getInstrCopy();
+
+        const int currentIdx = m_socketModelPtr->subProgIdx();
+        if (allSocketMaps.empty() || allInstrMaps.empty()
+            || currentIdx < 0
+            || currentIdx >= static_cast<int>(allSocketMaps.size())
+            || currentIdx >= static_cast<int>(allInstrMaps.size())) {
+            m_socketModelPtr->loadProgs(socketMapVector, instrMapVector, false);
+            return true;
+        }
+
+        allSocketMaps[currentIdx] = socketMapVector.front();
+        allInstrMaps[currentIdx] = instrMapVector.front();
+        m_socketModelPtr->loadProgs(allSocketMaps, allInstrMaps, false);
+        m_socketModelPtr->setSubProgIdx(currentIdx);
+        return true;
+    }
+
+    m_socketModelPtr->loadProgs(socketMapVector, instrMapVector, true);
     return true;
 }
 
@@ -1077,24 +1109,34 @@ void ProgLoader::saveUserProg(const QString &scopeName, const QString &progName)
 		return maxUserProgId + 1;
 	};
 
-	const int newUserProgId = nextUserProgId();
+	const QString escapedProgName = QString(progName).replace("'", "''");
+	QList<QVariantList> existingProgRows = m_dbReaderPtr->slotSendSelectQuery(
+	            QStringList{"Progs"},
+	            QStringList{"id"},
+	            QString("Scope_ID = %1 AND Name_RU = '%2' AND id > 1000")
+	            .arg(scopeId)
+	            .arg(escapedProgName));
 
-	const  QString insertUserProgNameQuery = QString(
-	                                             "INSERT INTO Progs "
-	                                             "(id, Prog_NUM, Argon, Name_RU, Name_EN, Name_ES, Scope_ID, Sub_NUM)"
-	                                             " VALUES "
-	                                             "(%1, 0, 0, '%2', '%2', '%2', %3, 0)");
-
-	if (!m_dbReaderPtr->executeUpdateQuery(insertUserProgNameQuery
-	                                       .arg(newUserProgId)
-	                                       .arg(progName)
-	                                       .arg(scopeId))) {
-            return;
+	if (!existingProgRows.isEmpty() && !existingProgRows.first().isEmpty()) {
+		idToUse = existingProgRows.first().at(0).toInt();
 	} else {
-		m_dbReaderPtr->commit();
-	}
+		const int newUserProgId = nextUserProgId();
+		const  QString insertUserProgNameQuery = QString(
+		                                             "INSERT INTO Progs "
+		                                             "(id, Prog_NUM, Argon, Name_RU, Name_EN, Name_ES, Scope_ID, Sub_NUM)"
+		                                             " VALUES "
+		                                             "(%1, 0, 0, '%2', '%2', '%2', %3, 0)");
 
-	idToUse = newUserProgId;
+		if (!m_dbReaderPtr->executeUpdateQuery(insertUserProgNameQuery
+		                                       .arg(newUserProgId)
+		                                       .arg(escapedProgName)
+		                                       .arg(scopeId))) {
+			return;
+		} else {
+			m_dbReaderPtr->commit();
+		}
+		idToUse = newUserProgId;
+	}
 	int pageCount = m_socketModelPtr->subProgCount();
 	QList<QStringList> listsStr = prepSaveState();
 

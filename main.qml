@@ -31,7 +31,9 @@ Window {
     
     // Текущее название программы
     property string currentProgName: ""
+    property string currentProgramDisplayTitle: ""
     property bool currentProgramIsUser: false
+    property bool hasUnsavedChanges: false
     property string language: "ru"
     readonly property color fotekBlue: "#264093"
     readonly property color fotekOrange: "#faa731"
@@ -48,15 +50,58 @@ Window {
     }
 
     function setCurrentProgram(scopeName, progName) {
-        statusDummy.text = scopeName + ": " + progName
+        currentProgramDisplayTitle = scopeName + ": " + progName
         container.currentProgName = progName
+        resetUnsavedChanges()
+        refreshStatusTitle()
         persistCurrentProgramInfo()
     }
 
     function setCurrentProgramTitle(titleText) {
-        statusDummy.text = titleText
+        currentProgramDisplayTitle = titleText
         container.currentProgName = titleText
+        resetUnsavedChanges()
+        refreshStatusTitle()
         persistCurrentProgramInfo()
+    }
+
+    function displayTitleWithoutUnsavedMark(value) {
+        var textValue = String(value === undefined || value === null ? "" : value)
+        return textValue.endsWith("*") ? textValue.slice(0, -1).trim() : textValue
+    }
+
+    function refreshStatusTitle() {
+        var suffix = hasUnsavedChanges ? "*" : ""
+        statusDummy.text = currentProgramDisplayTitle + suffix
+        statusDummy.saveHighlighted = hasUnsavedChanges
+    }
+
+    function markUnsavedChanges() {
+        if (!hasUnsavedChanges) {
+            hasUnsavedChanges = true
+            refreshStatusTitle()
+        }
+    }
+
+    function resetUnsavedChanges() {
+        if (hasUnsavedChanges) {
+            hasUnsavedChanges = false
+            refreshStatusTitle()
+            return
+        }
+        statusDummy.saveHighlighted = false
+    }
+
+    function rolesContainAny(roles, expectedRoles) {
+        if (!roles || roles.length === 0) {
+            return false
+        }
+        for (var i = 0; i < expectedRoles.length; ++i) {
+            if (roles.indexOf(expectedRoles[i]) >= 0) {
+                return true
+            }
+        }
+        return false
     }
 
     function normalizedLanguage(value) {
@@ -78,7 +123,7 @@ Window {
     }
 
     function persistCurrentProgramInfo() {
-        savedJson.saveString("lastProgramDisplayName", statusDummy.text)
+        savedJson.saveString("lastProgramDisplayName", currentProgramDisplayTitle)
         savedJson.saveString("lastProgramName", container.currentProgName)
     }
 
@@ -88,7 +133,7 @@ Window {
         var restored = false
 
         if (displayName !== "") {
-            statusDummy.text = displayName
+            currentProgramDisplayTitle = displayTitleWithoutUnsavedMark(displayName)
             restored = true
         }
 
@@ -96,8 +141,10 @@ Window {
             container.currentProgName = progName
             restored = true
         } else if (displayName !== "") {
-            container.currentProgName = displayName
+            container.currentProgName = displayTitleWithoutUnsavedMark(displayName)
         }
+        resetUnsavedChanges()
+        refreshStatusTitle()
 
         return restored
     }
@@ -210,6 +257,32 @@ Window {
       anchors {
          top: parent.top
       }
+   }
+   Connections {
+       target: theModel
+       function onDataChanged(topLeft, bottomRight, roles) {
+           var dirtyRoles = [
+               SocketModel.CoagModeIndex,
+               SocketModel.CutModeIndex,
+               SocketModel.CoagModeId,
+               SocketModel.CutModeId,
+               SocketModel.CoagModePower,
+               SocketModel.CutModePower,
+               SocketModel.CoagModeInstrID,
+               SocketModel.CutModeInstrID,
+               SocketModel.CoagModeInstrIndex,
+               SocketModel.CutModeInstrIndex,
+               SocketModel.SocketPedal
+           ]
+           if (rolesContainAny(roles, dirtyRoles)) {
+               markUnsavedChanges()
+           }
+       }
+       function onSubProgCountChanged() {
+           if (!container.startupFlowVisible) {
+               markUnsavedChanges()
+           }
+       }
    }
 
     Column {
@@ -406,7 +479,7 @@ Window {
                 onUserProgramsPressed: container.showStartupScreen("userProgramList")
                 onFreeSettingsPressed: {
                     recomHandle.loadEmptyFreeSettings()
-                    container.setCurrentProgramTitle(qsTr("Свободные установки"))
+                    container.markUnsavedChanges()
                     container.showMainScreen()
                 }
                 onLastSettingsPressed: {
@@ -494,50 +567,23 @@ Window {
                 anchors.bottomMargin: 20
                 spacing: 16
 
-                Button {
+                DialogActionButton {
                     Layout.preferredWidth: 180
                     Layout.fillHeight: true
                     text: qsTr("ОТМЕНА")
                     onPressed: overwriteConfirmDialog.close()
-
-                    background: Rectangle {
-                        radius: 18
-                        color: "#808080"
-                    }
-
-                    contentItem: Text {
-                        text: parent.text
-                        color: "white"
-                        font.pixelSize: 24
-                        font.bold: true
-                        horizontalAlignment: Text.AlignHCenter
-                        verticalAlignment: Text.AlignVCenter
-                    }
                 }
 
                 Item { Layout.fillWidth: true }
 
-                Button {
+                DialogActionButton {
                     Layout.preferredWidth: 180
                     Layout.fillHeight: true
                     text: qsTr("ПРИНЯТЬ")
+                    primary: true
                     onPressed: {
                         overwriteConfirmDialog.close()
                         saveProgDialog.accept()
-                    }
-
-                    background: Rectangle {
-                        radius: 18
-                        color: "#2E7D32"
-                    }
-
-                    contentItem: Text {
-                        text: parent.text
-                        color: "white"
-                        font.pixelSize: 24
-                        font.bold: true
-                        horizontalAlignment: Text.AlignHCenter
-                        verticalAlignment: Text.AlignVCenter
                     }
                 }
             }
@@ -806,11 +852,15 @@ Window {
             leftDrawer.close()
         }
         function onProgramSelected(scopeName, progName) {
+            if (menuLoad.shortcut) {
+                menuLoad.shortcut = false
+                return
+            }
             container.setCurrentProgram(scopeName, progName)
         }
         function onFreeSettingsModeActivated() {
             container.currentProgramIsUser = false
-            container.setCurrentProgramTitle(qsTr("Свободные установки"))
+            container.markUnsavedChanges()
         }
         function onDeleteAllUserProgsRequested() {
             recomHandle.deleteAllUserProgs()

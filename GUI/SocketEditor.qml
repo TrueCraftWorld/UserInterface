@@ -1151,40 +1151,17 @@ Popup {
                             Layout.preferredHeight: 64
                             spacing: 16
 
-                            Button {
+                            DialogActionButton {
                                 Layout.fillWidth: true
                                 Layout.preferredHeight: 64
                                 text: qsTr("ОТМЕНА")
-                                background: Rectangle {
-                                    radius: 18
-                                    color: "#808080"
-                                }
-                                contentItem: Text {
-                                    text: parent.text
-                                    color: "white"
-                                    font.pixelSize: 24
-                                    font.bold: true
-                                    horizontalAlignment: Text.AlignHCenter
-                                    verticalAlignment: Text.AlignVCenter
-                                }
                                 onPressed: restoreCommittedSelection()
                             }
-                            Button {
+                            DialogActionButton {
                                 Layout.fillWidth: true
                                 Layout.preferredHeight: 64
                                 text: qsTr("ПРИНЯТЬ")
-                                background: Rectangle {
-                                    radius: 18
-                                    color: "#2E7D32"
-                                }
-                                contentItem: Text {
-                                    text: parent.text
-                                    color: "white"
-                                    font.pixelSize: 24
-                                    font.bold: true
-                                    horizontalAlignment: Text.AlignHCenter
-                                    verticalAlignment: Text.AlignVCenter
-                                }
+                                primary: true
                                 onPressed: applyPreviewSelection()
                             }
                         }
@@ -1202,48 +1179,25 @@ Popup {
             color: "transparent"
             visible: centerView === "power"
 
-            Button {
+            DialogActionButton {
                 anchors.left: parent.left
                 anchors.leftMargin: 20
                 anchors.verticalCenter: parent.verticalCenter
                 width: 180
                 height: 62
                 text: qsTr("ОТМЕНА")
-                background: Rectangle {
-                    radius: 18
-                    color: "#808080"
-                }
-                contentItem: Text {
-                    text: parent.text
-                    color: "white"
-                    font.pixelSize: 24
-                    font.bold: true
-                    horizontalAlignment: Text.AlignHCenter
-                    verticalAlignment: Text.AlignVCenter
-                }
                 onPressed: cancelEditorAndClose()
             }
 
-            Button {
+            DialogActionButton {
                 anchors.right: parent.right
                 anchors.rightMargin: 20
                 anchors.verticalCenter: parent.verticalCenter
                 width: 180
                 height: 62
                 text: qsTr("ПРИНЯТЬ")
+                primary: true
                 enabled: modeEditor.hasChanges
-                background: Rectangle {
-                    radius: 18
-                    color: parent.enabled ? "#2E7D32" : "#2E7D3270"
-                }
-                contentItem: Text {
-                    text: parent.text
-                    color: "white"
-                    font.pixelSize: 24
-                    font.bold: true
-                    horizontalAlignment: Text.AlignHCenter
-                    verticalAlignment: Text.AlignVCenter
-                }
                 onPressed: {
                     modeEditor.commitChanges()
                     recomHandle.saveCurrentState()
@@ -1358,44 +1312,25 @@ Popup {
                 Layout.preferredHeight: 64
                 spacing: 12
 
-                Button {
+                DialogActionButton {
                     Layout.fillWidth: true
                     Layout.preferredHeight: 64
                     text: qsTr("ОТМЕНА")
-                    background: Rectangle {
-                        radius: 14
-                        color: "#808080"
-                    }
-                    contentItem: Text {
-                        text: parent.text
-                        color: "white"
-                        font.pixelSize: 22
-                        font.bold: true
-                        horizontalAlignment: Text.AlignHCenter
-                        verticalAlignment: Text.AlignVCenter
-                    }
+                    cornerRadius: 14
+                    labelPixelSize: 22
                     onPressed: {
                         pendingAutoMode = -1
                         autoModeConfirmPopup.close()
                     }
                 }
 
-                Button {
+                DialogActionButton {
                     Layout.fillWidth: true
                     Layout.preferredHeight: 64
                     text: qsTr("ПРИНЯТЬ")
-                    background: Rectangle {
-                        radius: 14
-                        color: "#2E7D32"
-                    }
-                    contentItem: Text {
-                        text: parent.text
-                        color: "white"
-                        font.pixelSize: 22
-                        font.bold: true
-                        horizontalAlignment: Text.AlignHCenter
-                        verticalAlignment: Text.AlignVCenter
-                    }
+                    primary: true
+                    cornerRadius: 14
+                    labelPixelSize: 22
                     onPressed: {
                         if (pendingAutoMode >= 0) {
                             setSocketAutoMode(pendingAutoMode)

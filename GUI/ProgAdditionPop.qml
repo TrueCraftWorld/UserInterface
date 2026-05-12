@@ -14,7 +14,7 @@ Dialog {
         property int buttonType: 0
         property alias title : titleLabel.text
 
-        width: 250
+        width: 310
         height: 100
         radius: 8
         color: "transparent"
@@ -79,22 +79,22 @@ Dialog {
 
                 spacing: 20
                 VariantRect{
-                    title: qsTr("ДУБЛИРОВАТЬ ТЕКУЩИЙ")
+                    title: qsTr("ДУБЛИРОВАТЬ\nТЕКУЩИЙ")
                     buttonType: 0
                     Layout.alignment: Qt.AlignCenter
                 }
                 VariantRect{
-                    title: qsTr("ЗАГРУЗИТЬ РЕКОМЕНДОВАННЫЙ")
+                    title: qsTr("ВЫБРАТЬ ИЗ\nРЕКОМЕНДОВАННЫХ")
                     buttonType: 1
                     Layout.alignment: Qt.AlignCenter
                 }
+//                VariantRect{
+//                    title: qsTr("ЗАГРУЗИТЬ ПОЛЬЗОВАТЕЛЬСКИЙ")
+//                    buttonType: 3
+//                    Layout.alignment: Qt.AlignCenter
+//                }
                 VariantRect{
-                    title: qsTr("ЗАГРУЗИТЬ ПОЛЬЗОВАТЕЛЬСКИЙ")
-                    buttonType: 3
-                    Layout.alignment: Qt.AlignCenter
-                }
-                VariantRect{
-                    title: qsTr("ДОБАВИТЬ ПУСТОЙ")
+                    title: qsTr("ДОБАВИТЬ\nПУСТОЙ")
                     buttonType: 2
                     Layout.alignment: Qt.AlignCenter
                 }

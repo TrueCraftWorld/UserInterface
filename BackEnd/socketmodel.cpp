@@ -616,9 +616,33 @@ InstrPtr SocketModel::getInstrumentById(int id) const
 
 void SocketModel::copyCurrentList()
 {
-    std::map<int, SockPtr> itemsMap = m_itemsMapVect.at(m_subProgIdx);
-    std::map<int, InstrPtr> instrMap = m_instrMapVect.at(m_subProgIdx);
-    loadProgs({itemsMap}, {instrMap}, true);
+    if (m_subProgIdx < 0
+        || m_subProgIdx >= static_cast<int>(m_itemsMapVect.size())
+        || m_subProgIdx >= static_cast<int>(m_instrMapVect.size())) {
+        qWarning() << "copyCurrentList: invalid sub program index" << m_subProgIdx;
+        return;
+    }
+
+    std::map<int, SockPtr> itemsMapCopy;
+    const auto &sourceItemsMap = m_itemsMapVect.at(m_subProgIdx);
+    for (const auto &item : sourceItemsMap) {
+        if (item.second.isNull()) {
+            continue;
+        }
+        // Важно: создаем новый объект SOCKET, а не копируем QSharedPointer.
+        itemsMapCopy.insert({item.first, SockPtr::create(*item.second)});
+    }
+
+    std::map<int, InstrPtr> instrMapCopy;
+    const auto &sourceInstrMap = m_instrMapVect.at(m_subProgIdx);
+    for (const auto &instr : sourceInstrMap) {
+        if (instr.second.isNull()) {
+            continue;
+        }
+        instrMapCopy.insert({instr.first, InstrPtr::create(*instr.second)});
+    }
+
+    loadProgs({itemsMapCopy}, {instrMapCopy}, true);
 }
 
 
@@ -856,11 +880,20 @@ void SocketModel::loadProgs(const std::vector<std::map<int, SockPtr> > &itemsMap
     }
 
     size_t size = itemsMapVect.size();
+    const int pageCountBeforeAdd = add ? static_cast<int>(m_itemsMapVect.size()) : 0;
+    const int subProgIdxBeforeAdd = m_subProgIdx;
 
     for (size_t i = 0; i < size; ++i) {
         addList(itemsMapVect.at(i), instrMapVect.at(i));
         if (m_itemsMapVect.size() == 4) {
             break;
+        }
+    }
+
+    if (add) {
+        const int pageCountAfterAdd = static_cast<int>(m_itemsMapVect.size());
+        if (pageCountAfterAdd > pageCountBeforeAdd) {
+            m_subProgIdx = pageCountAfterAdd - 1;
         }
     }
 
@@ -877,6 +910,9 @@ void SocketModel::loadProgs(const std::vector<std::map<int, SockPtr> > &itemsMap
 
     endResetModel();
     emit subProgCountChanged();
+    if (add && m_subProgIdx != subProgIdxBeforeAdd) {
+        emit subProgIdxChanged();
+    }
 //    qDebug() << "[ProgFlow] SocketModel::loadProgs готово subProgIdx:" << m_subProgIdx
 //             << "subProgCount:" << m_itemsMapVect.size();
 }

@@ -278,7 +278,7 @@ Rectangle {
 		color: "darkgray"
 	}
 	
-	Button {
+	DialogActionButton {
 		id: retButton
 		
 		anchors.bottom: parent.bottom
@@ -287,19 +287,6 @@ Rectangle {
         anchors.bottomMargin: 12
         width: 180
         height: 62
-		background: Rectangle {
-            radius: 18
-            color: "#808080"
-		}
-
-		contentItem: Text {
-			text: retButton.text
-			color: "white"
-			font.pixelSize: 24
-			font.bold: true
-			horizontalAlignment: Text.AlignHCenter
-			verticalAlignment: Text.AlignVCenter
-		}
 
 		text: qsTr("НАЗАД")
 

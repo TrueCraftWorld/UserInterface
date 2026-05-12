@@ -370,49 +370,22 @@ Rectangle {
 				anchors.bottomMargin: 20
 				spacing: 16
 
-				Button {
+				DialogActionButton {
 					Layout.preferredWidth: 180
 					Layout.fillHeight: true
 					text: qsTr("ОТМЕНА")
 					onPressed: nameDialog.reject()
-
-					background: Rectangle {
-						radius: 18
-						color: "#808080"
-					}
-
-					contentItem: Text {
-						text: parent.text
-						color: "white"
-						font.pixelSize: 24
-						font.bold: true
-						horizontalAlignment: Text.AlignHCenter
-						verticalAlignment: Text.AlignVCenter
-					}
 				}
 
 				Item { Layout.fillWidth: true }
 
-				Button {
+				DialogActionButton {
 					Layout.preferredWidth: 180
 					Layout.fillHeight: true
 					text: qsTr("ПРИНЯТЬ")
+					primary: true
 					enabled: edit.text.trim().length > 0
 					onPressed: nameDialog.submitRename()
-
-					background: Rectangle {
-						radius: 18
-						color: parent.enabled ? "#2E7D32" : "#2E7D3270"
-					}
-
-					contentItem: Text {
-						text: parent.text
-						color: "white"
-						font.pixelSize: 24
-						font.bold: true
-						horizontalAlignment: Text.AlignHCenter
-						verticalAlignment: Text.AlignVCenter
-					}
 				}
 			}
 		}

@@ -38,6 +38,7 @@
         <file>VideoPlayer.qml</file>
         <file>SystemMonitor.qml</file>
         <file>SecretKeysWindow.qml</file>
+        <file>DialogActionButton.qml</file>
         <file>ProgSaveDialog.qml</file>
         <file>StartupMenu.qml</file>
         <file>StartupInfoScreen.qml</file>

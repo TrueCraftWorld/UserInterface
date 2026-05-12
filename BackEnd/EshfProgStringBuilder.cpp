@@ -53,15 +53,16 @@ QStringList EshfProgStringBuilder::makePedalString(size_t pageNum)
 	if (pageNum >= m_sockets.size()) {
 		return res;
 	}
-	res.append(QString::number(0));
-	res.append(QString::number(0));
+	// Lists: Pedal_1 — одноклавишная, Pedal_2 — двухклавишная; 0 — педаль не назначена; 1..4 — номер сокета.
+	res.append(QStringLiteral("0"));
+	res.append(QStringLiteral("0"));
 	const auto& page = m_sockets.at(pageNum);
 	for (int i = 0; i < 4; ++i) {
-		if (page.at(i)->pedal() == Onyx::DOUBLE_PED) {
-			res[0] = QString::number(i);
-		}
 		if (page.at(i)->pedal() == Onyx::SINGLE_PED) {
-			res[1] = QString::number(i);
+			res[0] = QString::number(i + 1);
+		}
+		if (page.at(i)->pedal() == Onyx::DOUBLE_PED) {
+			res[1] = QString::number(i + 1);
 		}
 	}
 	return res;
@@ -89,9 +90,15 @@ QString EshfProgStringBuilder::makeModeString(SockPtr sock, bool isCoag)
 	if (modes.empty()) {
 		//ветка где режимов нет
 	} else {
-		int index = isCoag ? sock->coagModeIndex() : sock->cutModeIndex();
-		if (index >= 0 && index < modes.size()) {
-			modes.prepend(modes.takeAt(index));
+		const int selectedModeId = isCoag ? sock->coagModeId() : sock->cutModeId();
+		const QString selectedModeIdStr = QString::number(selectedModeId);
+		const int selectedPos = modes.indexOf(selectedModeIdStr);
+		if (selectedPos >= 0) {
+			modes.prepend(modes.takeAt(selectedPos));
+		} else if (selectedModeId > 0 && selectedModeId != 1000) {
+			// Если выбранный режим не попал в список (редкий кейс несогласованности),
+			// явно фиксируем его первым, чтобы при загрузке не сместился выбор.
+			modes.prepend(selectedModeIdStr);
 		}
 	}
 	//положительная ветка, когда есть режимы и выбран режим

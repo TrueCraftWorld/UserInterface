@@ -127,28 +127,15 @@ Item {
                 }
             }
 
-            Button {
+            DialogActionButton {
                 Layout.alignment: Qt.AlignLeft
                 Layout.preferredWidth: 180
                 Layout.preferredHeight: 66
                 text: qsTr("НАЗАД")
+                secondaryColor: startupInfo.fotekBlue
+                secondaryBorderWidth: 1
+                secondaryBorderColor: "#1C2F6B"
                 onPressed: startupInfo.returnButtonPressed()
-
-                background: Rectangle {
-                    radius: 18
-                    color: startupInfo.fotekBlue
-                    border.width: 1
-                    border.color: "#1C2F6B"
-                }
-
-                contentItem: Text {
-                    text: parent.text
-                    color: "white"
-                    font.pixelSize: 24
-                    font.bold: true
-                    horizontalAlignment: Text.AlignHCenter
-                    verticalAlignment: Text.AlignVCenter
-                }
             }
         }
     }

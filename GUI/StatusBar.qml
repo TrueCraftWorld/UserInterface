@@ -7,6 +7,7 @@ Rectangle {
     signal saveCalled()
     property alias text: mainText.text
     property alias versionText: appVersionText.text
+    property bool saveHighlighted: false
     readonly property int sideSpacing: 12
     readonly property int leftOccupiedWidth: drawerButton.width + sideSpacing
     readonly property int rightOccupiedWidth: saveButton.width
@@ -81,6 +82,15 @@ Rectangle {
 
         onClicked: {
             statusRoot.saveCalled()
+        }
+
+        Rectangle {
+            anchors.fill: parent
+            anchors.margins: 6
+            radius: 10
+            color: "#70F870"
+            opacity: statusRoot.saveHighlighted ? 0.95 : 0.0
+            z: -1
         }
     }
 

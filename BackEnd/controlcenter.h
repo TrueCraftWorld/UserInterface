@@ -65,6 +65,8 @@ public:
 
 	QPointer<PeriphHandler> getPeripheryHandle() const;
 
+	Q_INVOKABLE bool loadProgram(int progId, bool clear);
+
 private:
 	QSharedPointer<SocketModel> m_socketModel;
 

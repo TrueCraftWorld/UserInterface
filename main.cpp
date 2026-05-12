@@ -132,6 +132,7 @@ int main(int argc, char *argv[])
     engine.rootContext()->setContextProperty("theModel", ctrl->getSocketModel());
     engine.rootContext()->setContextProperty("Editor", ctrl->getModeEditor());
     engine.rootContext()->setContextProperty("recomHandle", ctrl->getHandle());
+    engine.rootContext()->setContextProperty("appControl", ctrl.data());
     engine.rootContext()->setContextProperty("periphHandle", ctrl->getPeripheryHandle());
 
     engine.rootContext()->setContextProperty("sysMonitor", sysMonitor);

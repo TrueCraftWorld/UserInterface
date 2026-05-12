@@ -589,6 +589,66 @@ Window {
             }
         }
     }
+    Dialog {
+        id: endoProgramMixDialog
+        modal: true
+        width: saveProgDialog.width
+        height: saveProgDialog.height
+        x: Math.round((parent.width - width) / 2)
+        y: Math.round((parent.height - height) / 2)
+
+        background: Rectangle {
+            color: "#f5f5f5"
+            border.color: container.fotekBlue
+            border.width: 3
+        }
+
+        contentItem: Rectangle {
+            color: "transparent"
+
+            Text {
+                anchors.fill: parent
+                wrapMode: Text.WordWrap
+                horizontalAlignment: Text.AlignHCenter
+                verticalAlignment: Text.AlignVCenter
+                text: qsTr("Эндоскопические программы не могут быть использованы совместно с другими программами")
+                font.pixelSize: 30
+                color: "black"
+            }
+        }
+
+        footer: Rectangle {
+            color: "transparent"
+            implicitHeight: 108
+
+            RowLayout {
+                anchors.fill: parent
+                anchors.leftMargin: 20
+                anchors.rightMargin: 20
+                anchors.topMargin: 20
+                anchors.bottomMargin: 20
+                spacing: 16
+
+                Item { Layout.fillWidth: true }
+
+                DialogActionButton {
+                    Layout.preferredWidth: 180
+                    Layout.fillHeight: true
+                    text: qsTr("ПРИНЯТЬ")
+                    primary: true
+                    onPressed: endoProgramMixDialog.close()
+                }
+
+                Item { Layout.fillWidth: true }
+            }
+        }
+    }
+    Connections {
+        target: recomHandle
+        function onEndoProgramMixRejected() {
+            endoProgramMixDialog.open()
+        }
+    }
     Connections {
         target: saveProgDialog
         function onOverwriteConfirmationRequested() {

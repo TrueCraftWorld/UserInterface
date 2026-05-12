@@ -44,6 +44,13 @@ Popup {
     readonly property color autoBtnOffText: "#B0BEC5"
 
     function modeImagePrefix() {
+        var socketName = modeEditor.socketName ? String(modeEditor.socketName).toUpperCase() : ""
+        if (socketName.indexOf("МОНО") !== -1) {
+            return "monomode"
+        }
+        if (socketName.indexOf("БИ") !== -1) {
+            return "bimode"
+        }
         return socId <= 1 ? "bimode" : "monomode"
     }
 

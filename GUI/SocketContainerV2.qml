@@ -19,8 +19,9 @@ Rectangle {
         spacing: 10
         Rectangle {
             id: progPage
-            height: 50
+            height: theModel.endoProgramView ? 0 : 50
             Layout.fillWidth: true
+            visible: !theModel.endoProgramView
             color: "transparent"
             RowLayout {
                 anchors.fill: parent
@@ -61,7 +62,7 @@ Rectangle {
                     border.color: "white"
                     border.width: 1
                     radius: 6
-                    visible: theModel.subProgCount < 5 ? true : false
+                    visible: theModel.subProgCount < 5 && !theModel.endoProgramView
 
                     Text {
                         text: "+"
@@ -92,7 +93,7 @@ Rectangle {
                     border.color: "red"
                     border.width: 1
                     radius: 6
-                    visible: theModel.subProgCount < 5 ? true : false
+                    visible: theModel.subProgCount < 5 && !theModel.endoProgramView
 
                     Text {
                         text: qsTr("удалить")

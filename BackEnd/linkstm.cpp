@@ -299,10 +299,16 @@ void LinkStm::sendCommand()
 
         //__________________Команда по умолчанию_________________
         if (m_comState == IDLE && !m_fwUpdateAwaitingReady) {
-            if (m_unitState.pedalKnob != PRESS_NONE) {
+            if (m_unitState.pedalKnob == PRESS_NONE
+                || m_unitState.pedalKnob == PRESS_WRONG) {
+                m_thirdKnobSignalConsumedUntilRelease = false;
+            } else {
                 activeSocket = determineSocket(m_unitState.pedalKnob);
                 if (activeSocket.is3rdKnob && activeSocket.id < 4) {
-                   emit sigPressed3rdKnob(activeSocket.id);    // Отправляем нажатие 3-й кнопки
+                    if (!m_thirdKnobSignalConsumedUntilRelease) {
+                        emit sigPressed3rdKnob(activeSocket.id);
+                        m_thirdKnobSignalConsumedUntilRelease = true;
+                    }
                 }
             }
             m_txCommand.com = Allright;

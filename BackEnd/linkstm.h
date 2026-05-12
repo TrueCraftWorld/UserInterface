@@ -318,6 +318,8 @@ private:
     QElapsedTimer m_fwRxErrStreakTimer;
     bool m_abortFirmwareUpdatePending = false;
     bool m_moduleHasWorkingApp[5] = {true, true, true, true, true};
+    /// После sigPressed3rdKnob не повторять, пока педали/кнопки не вернутся в PRESS_NONE
+    bool m_thirdKnobSignalConsumedUntilRelease = false;
 };
 
 #endif // LINKSTM_H

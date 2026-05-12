@@ -184,16 +184,15 @@ QStringList SocketModeEditor::modeNamesIds() const
 
 QStringList SocketModeEditor::modeNamesNums() const
 {
-    // Получаем Num для каждого режима по его индексу
     QStringList nums;
+    nums.reserve(m_modeNames.size());
+
     for (int i = 0; i < m_modeNames.size(); ++i) {
-        CSurgModePtr mode = m_model->itemsMap()->at(m_socketID)->getMode(i, m_isCoag);
-        if (!mode.isNull()) {
-            nums.append(QString::number(mode->num()));
-        } else {
-            nums.append("0");
-        }
+        const QVariantMap modeParams = m_model->modeParam(m_socketID, i, m_isCoag);
+        const int modeNum = modeParams.value("num", 0).toInt();
+        nums.append(QString::number(modeNum));
     }
+
     return nums;
 }
 

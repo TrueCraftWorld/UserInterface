@@ -83,6 +83,9 @@ void ControlCenter::makeHandleConnections()
 		m_progLoader->programmLoadSocketInit(progId, clear);
 	});
 
+	connect(m_progLoader, &ProgLoader::endoProgramAddBlocked,
+	        m_handle, &ProgHandle::notifyEndoProgramMixRejected);
+
     connect(m_handle, &ProgHandle::signalFreeSettingsRequested,
             this, [this]() {
         m_progLoader->freeSettingsSocketInit(true);
@@ -272,6 +275,20 @@ void ControlCenter::setLinkStm(LinkStm* linkStm)
 		connect(m_linkStm, &LinkStm::sigStopActivation,
 		        m_socketModel.data(), &SocketModel::stopActivation,
 		        Qt::QueuedConnection);
+		connect(m_linkStm, &LinkStm::sigPressed3rdKnob,
+		        m_socketModel.data(),
+		        [this](quint8 /*socketId*/) {
+			        if (!m_socketModel) {
+				        return;
+			        }
+			        const int n = m_socketModel->subProgCount();
+			        if (n <= 1) {
+				        return;
+			        }
+			        const int next = (m_socketModel->subProgIdx() + 1) % n;
+			        m_socketModel->setSubProgIdx(next);
+		        },
+		        Qt::QueuedConnection);
         connect(m_linkStm, &LinkStm::sigStopActivation,
                 m_periphery, &PeriphHandler::showWarningCode,
                 Qt::QueuedConnection);
@@ -349,6 +366,13 @@ void ControlCenter::initSocketsForPeriphery()
 QPointer<PeriphHandler> ControlCenter::getPeripheryHandle() const
 {
 	return m_periphery;
+}
+
+bool ControlCenter::loadProgram(int progId, bool clear)
+{
+	if (m_progLoader.isNull())
+		return false;
+	return m_progLoader->programmLoadSocketInit(progId, clear);
 }
 
 //не понял задумки в этих фнкциях

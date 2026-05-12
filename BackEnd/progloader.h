@@ -38,7 +38,8 @@ public slots:
 	void slotSaveCurrentState();
 	
 signals:
-	
+	void endoProgramAddBlocked();
+
 public:	
 	void defaultSocketInit(bool clear = true);
 	// void removeSubProg(int index);

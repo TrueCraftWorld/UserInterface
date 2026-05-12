@@ -553,6 +553,9 @@ void ProgLoader::defaultSocketInit(bool clear)
 		instrMapVector.push_back(getInstrums());
 	}
 	m_socketModelPtr->loadProgs(socketMapVector, instrMapVector, !clear);
+    if (!m_socketModelPtr.isNull()) {
+        m_socketModelPtr->setEndoProgramView(false);
+    }
 }
 
 bool ProgLoader::programmLoadSocketInit(int progId, bool clear)
@@ -565,12 +568,11 @@ bool ProgLoader::programmLoadSocketInit(int progId, bool clear)
 //    qWarning() << "[ProgFlow] programmLoadSocketInit progId:" << progId << "clear:" << clear;
 
     QList<QVariantList> progInfo = m_dbReaderPtr->slotSendSelectQuery(QStringList{"Progs"},
-                                                  QStringList{"Name_RU", "Scope_ID"},
+                                                  QStringList{"Name_RU", "Scope_ID", "Endo"},
                                                   QString("id = %1").arg(progId));
 //    qWarning() << "[ProgFlow] programmLoadSocketInit Progs lookup rows:" << progInfo.size();
 
     const bool useInlineUserData = (progId == 1000 || m_curLoaderType == ptUser);
-
     Q_UNUSED(useInlineUserData)
     
 	//начинаем прорабатывать прогрузку несекольких экранов
@@ -587,6 +589,19 @@ bool ProgLoader::programmLoadSocketInit(int progId, bool clear)
 	if (progListVariant.size() == 0) {
 		return false;
 	}
+    const bool isEndoProgram = (!progInfo.isEmpty() && progInfo.first().size() > 2)
+            ? progInfo.first().at(2).toBool()
+            : false;
+
+    if (!clear
+        && !m_socketModelPtr.isNull()
+        && !m_socketModelPtr->endoProgramView()
+        && isEndoProgram) {
+        qWarning() << "programmLoadSocketInit: adding endo page to non-endo program is forbidden"
+                   << "progId:" << progId;
+        emit endoProgramAddBlocked();
+        return false;
+    }
 
 	//Шаг5---------------------------------------------------------
 	//тут какой-то затуп с базой на каких-то прогах, разрешено всего несколько инструментов
@@ -683,7 +698,13 @@ bool ProgLoader::programmLoadSocketInit(int progId, bool clear)
 		return false;
 	}
 
+    if (isEndoProgram && socketMapVector.size() == 1 && instrMapVector.size() == 1) {
+        socketMapVector.push_back(socketMapVector.front());
+        instrMapVector.push_back(instrMapVector.front());
+    }
+
 	m_socketModelPtr->loadProgs(socketMapVector, instrMapVector, !clear);
+    m_socketModelPtr->setEndoProgramView(isEndoProgram);
 //	qWarning() << "[ProgFlow] programmLoadSocketInit loadProgs завершён, add=" << (!clear);
 
 	if (progId != 1000) {
@@ -697,6 +718,8 @@ bool ProgLoader::freeSettingsSocketInit(bool clear)
     if (m_dbReaderPtr.isNull() || m_socketModelPtr.isNull()) {
         return false;
     }
+
+    const bool keepEndoView = m_socketModelPtr->endoProgramView();
 
     struct HalfSelectionState {
         int modeId = 1000;
@@ -826,17 +849,34 @@ bool ProgLoader::freeSettingsSocketInit(bool clear)
             || currentIdx >= static_cast<int>(allSocketMaps.size())
             || currentIdx >= static_cast<int>(allInstrMaps.size())) {
             m_socketModelPtr->loadProgs(socketMapVector, instrMapVector, false);
+            if (keepEndoView
+                && socketMapVector.size() == 1
+                && instrMapVector.size() == 1) {
+                m_socketModelPtr->loadProgs(socketMapVector, instrMapVector, true);
+            }
+            m_socketModelPtr->setEndoProgramView(keepEndoView);
             return true;
         }
 
         allSocketMaps[currentIdx] = socketMapVector.front();
         allInstrMaps[currentIdx] = instrMapVector.front();
+        if (keepEndoView && allSocketMaps.size() == 1 && allInstrMaps.size() == 1) {
+            allSocketMaps.push_back(allSocketMaps.front());
+            allInstrMaps.push_back(allInstrMaps.front());
+        }
         m_socketModelPtr->loadProgs(allSocketMaps, allInstrMaps, false);
         m_socketModelPtr->setSubProgIdx(currentIdx);
+        m_socketModelPtr->setEndoProgramView(keepEndoView);
         return true;
     }
 
     m_socketModelPtr->loadProgs(socketMapVector, instrMapVector, true);
+    if (keepEndoView
+        && socketMapVector.size() == 1
+        && instrMapVector.size() == 1) {
+        m_socketModelPtr->loadProgs(socketMapVector, instrMapVector, true);
+    }
+    m_socketModelPtr->setEndoProgramView(keepEndoView);
     return true;
 }
 
@@ -1057,6 +1097,7 @@ void ProgLoader::saveUserProg(const QString &scopeName, const QString &progName)
 
 	int idToUse = -1;
 	int biggestKnownId = -1;
+    const int endoFlag = (m_socketModelPtr->endoProgramView() ? 1 : 0);
 
 	auto getScopeId = [this](const QString& name, int& bigId) -> int {
 		int res = -1;
@@ -1119,22 +1160,43 @@ void ProgLoader::saveUserProg(const QString &scopeName, const QString &progName)
 
 	if (!existingProgRows.isEmpty() && !existingProgRows.first().isEmpty()) {
 		idToUse = existingProgRows.first().at(0).toInt();
+        m_dbReaderPtr->executeUpdateQuery(
+                    QString("UPDATE Progs SET Endo = %1 WHERE id = %2")
+                    .arg(endoFlag)
+                    .arg(idToUse));
+        m_dbReaderPtr->commit();
 	} else {
 		const int newUserProgId = nextUserProgId();
 		const  QString insertUserProgNameQuery = QString(
 		                                             "INSERT INTO Progs "
-		                                             "(id, Prog_NUM, Argon, Name_RU, Name_EN, Name_ES, Scope_ID, Sub_NUM)"
+		                                             "(id, Prog_NUM, Argon, Name_RU, Name_EN, Name_ES, Scope_ID, Sub_NUM, Endo)"
 		                                             " VALUES "
-		                                             "(%1, 0, 0, '%2', '%2', '%2', %3, 0)");
+		                                             "(%1, 0, 0, '%2', '%2', '%2', %3, 0, %4)");
 
 		if (!m_dbReaderPtr->executeUpdateQuery(insertUserProgNameQuery
 		                                       .arg(newUserProgId)
 		                                       .arg(escapedProgName)
-		                                       .arg(scopeId))) {
-			return;
-		} else {
-			m_dbReaderPtr->commit();
-		}
+		                                       .arg(scopeId)
+		                                       .arg(endoFlag))) {
+            const QString fallbackInsertUserProgNameQuery = QString(
+                        "INSERT INTO Progs "
+                        "(id, Prog_NUM, Argon, Name_RU, Name_EN, Name_ES, Scope_ID, Sub_NUM)"
+                        " VALUES "
+                        "(%1, 0, 0, '%2', '%2', '%2', %3, 0)");
+            if (!m_dbReaderPtr->executeUpdateQuery(fallbackInsertUserProgNameQuery
+                                                   .arg(newUserProgId)
+                                                   .arg(escapedProgName)
+                                                   .arg(scopeId))) {
+                return;
+            }
+            m_dbReaderPtr->executeUpdateQuery(
+                        QString("UPDATE Progs SET Endo = %1 WHERE id = %2")
+                        .arg(endoFlag)
+                        .arg(newUserProgId));
+            m_dbReaderPtr->commit();
+        } else {
+            m_dbReaderPtr->commit();
+        }
 		idToUse = newUserProgId;
 	}
 	int pageCount = m_socketModelPtr->subProgCount();

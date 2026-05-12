@@ -73,7 +73,7 @@ Rectangle {
     SButton {
         id: saveButton
         height: Math.round(parent.height * 1.50)
-        width: height
+        width: container.pedalPanelWidth
         anchors.right: parent.right
         anchors.verticalCenter: parent.verticalCenter
         iconString: Fa.Icon.save

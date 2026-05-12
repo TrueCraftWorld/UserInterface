@@ -39,7 +39,7 @@ public:
 
 	Q_INVOKABLE void deleteScopeRequest(int index);
 	Q_INVOKABLE void renameScopeRequest(int index, const QString& name);
-	
+
 	///TODO: убрать видео из класса работы с программами
 	Q_INVOKABLE QString readTextFile(const QString& filePath);
 	Q_INVOKABLE QStringList scanVideoFiles(const QString& folderPath);
@@ -57,7 +57,10 @@ public:
 	
 	bool isRecomProgs() const;
 	void setIsRecomProgs(bool newIsRecomProgs);
-	
+
+public slots:
+	void notifyEndoProgramMixRejected();
+
 signals:
 	//все этим методы и сигналы нужны т.к. возможно хочется сделать модель ридонли внутри qml
 	// а редачить только через хендлеры для разграничения доступа
@@ -96,7 +99,9 @@ signals:
 	void scopeIdxChanged();
 	
 	void isRecomProgsChanged();
-	
+
+	void endoProgramMixRejected();
+
 private:
 	int m_scopeIdx = 0;
 	std::map<int, QString> m_scopes;

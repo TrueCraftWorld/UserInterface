@@ -5,6 +5,8 @@ Rectangle {
     id: socketRoot
     color: "transparent"
     property var activationSizeTarget: null
+    property bool dimmed: false
+    property bool allowEditing: true
 
     // Константы состояний сокета (соответствуют Onyx::SocStatus)
     readonly property int socketStateOff: 0          // S_OFF - Отключен
@@ -38,6 +40,7 @@ Rectangle {
     property bool coagHasAvailableModes: true
 
     signal socketEditorRequest(int socketId, bool isCoag)
+    signal dimmedSocketClicked(int socketId)
 
     readonly property string coagModeNameForDisplay: {
         var _ = _coagAutoDisplayRev
@@ -95,7 +98,13 @@ Rectangle {
 
         MouseArea {
             anchors.fill: parent
-            onClicked: socketRoot.socketEditorRequest(socketRoot.socketId, false)
+            onClicked: {
+                if (socketRoot.allowEditing) {
+                    socketRoot.socketEditorRequest(socketRoot.socketId, false)
+                } else {
+                    socketRoot.dimmedSocketClicked(socketRoot.socketId)
+                }
+            }
         }
     }
     HalfSocket {
@@ -116,7 +125,13 @@ Rectangle {
 
         MouseArea {
             anchors.fill: parent
-            onClicked: socketRoot.socketEditorRequest(socketRoot.socketId, true)
+            onClicked: {
+                if (socketRoot.allowEditing) {
+                    socketRoot.socketEditorRequest(socketRoot.socketId, true)
+                } else {
+                    socketRoot.dimmedSocketClicked(socketRoot.socketId)
+                }
+            }
         }
     }
 
@@ -129,6 +144,15 @@ Rectangle {
         anchors.bottom: parent.bottom
         z: 2
     }
+
+    Rectangle {
+        id: dimOverlay
+        anchors.fill: parent
+        visible: socketRoot.dimmed
+        color: "#66000000"
+        z: 3
+    }
+
     Activation {
         id: activationIndicator
         parent: socketRoot

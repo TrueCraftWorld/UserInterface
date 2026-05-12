@@ -19,6 +19,7 @@ class SocketModel : public QAbstractListModel
     Q_OBJECT
     Q_PROPERTY(int subProgIdx READ subProgIdx WRITE setSubProgIdx NOTIFY subProgIdxChanged FINAL)
     Q_PROPERTY(int subProgCount READ subProgCount NOTIFY subProgCountChanged FINAL)
+    Q_PROPERTY(bool endoProgramView READ endoProgramView WRITE setEndoProgramView NOTIFY endoProgramViewChanged FINAL)
 public:
     enum SocketRoles {
         SocketStatus = Qt::UserRole+1,
@@ -119,6 +120,8 @@ public:
     int subProgIdx() const;
     int subProgCount() const;
     void setSubProgIdx(int newIndex);
+    bool endoProgramView() const;
+    void setEndoProgramView(bool enabled);
 
     /**
      * @brief getSocketsCopy возвращает копию данных лежащих в модели
@@ -137,9 +140,26 @@ public:
 signals:
     void subProgIdxChanged();
     void subProgCountChanged();
+    void endoProgramViewChanged();
 
 //методы
 private:
+    struct SocketResolveResult {
+        std::map<int, SockPtr>* itemsMap = nullptr;
+        std::map<int, InstrPtr>* instrMap = nullptr;
+        int socketId = -1;
+    };
+
+    struct SocketResolveResultConst {
+        const std::map<int, SockPtr>* itemsMap = nullptr;
+        const std::map<int, InstrPtr>* instrMap = nullptr;
+        int socketId = -1;
+    };
+
+    SocketResolveResult resolveSocket(int displayRow);
+    SocketResolveResultConst resolveSocket(int displayRow) const;
+    void rebuildSocketNames();
+
     void removeSubProg(int index);
     void addList(const std::map<int, SockPtr > &itemsMap,
                  const std::map<int, InstrPtr > &newInstrumMap);
@@ -174,6 +194,7 @@ private:
 
     int m_subProgIdx = 0;
     int activeSocket = -1;
+    bool m_endoProgramView = false;
 
     QStringList m_socketNames;
     QHash<int, QByteArray> m_roles;

@@ -51,6 +51,11 @@ void ProgHandle::loadRecommendedProg(int recomProgIdx, bool clear)
 	emit signalRecomProgChosen(iter->first, clear);
 }
 
+void ProgHandle::notifyEndoProgramMixRejected()
+{
+	emit endoProgramMixRejected();
+}
+
 void ProgHandle::loadFreeSettings()
 {
     emit signalFreeSettingsRequested();

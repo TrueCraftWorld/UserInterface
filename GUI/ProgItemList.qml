@@ -315,17 +315,20 @@ Rectangle {
 //						"progId:", pid, "loadClear:", loadClear,
 //						"scopeIdx:", recomHandle.scopeIdx,
 //						"progIdList.length:", recomHandle.progIdList.length)
-			recomHandle.loadRecommendedProg(index, loadClear)
-            
+			if (pid < 0)
+				return
+			if (!appControl.loadProgram(pid, loadClear))
+				return
+
             var scopeName = ""
             scopeName = scopeList.curIndex >= 0 && scopeList.curIndex < scopeModel.count
                 ? scopeModel.get(scopeList.curIndex).itemName
                 : ""
-            
-            var progName = index >= 0 && index < progsModel.count 
-                ? progsModel.get(index).itemName 
+
+            var progName = index >= 0 && index < progsModel.count
+                ? progsModel.get(index).itemName
                 : ""
-            
+
             recProgs.programSelected(scopeName, progName)
 			recProgs.clickedButton(-1);
 		}

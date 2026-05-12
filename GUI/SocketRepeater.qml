@@ -17,6 +17,34 @@ Repeater {
 
     signal socketEditorRequest(int socketId, int modeIndex, bool isCoag)
 
+    function isEndoSocketDimmed(socketIndex) {
+        if (!theModel || !theModel.endoProgramView) {
+            return false
+        }
+        if (theModel.subProgIdx === 0) {
+            return socketIndex < 2
+        }
+        if (theModel.subProgIdx === 1) {
+            return socketIndex >= 2
+        }
+        return false
+    }
+
+    function switchEndoPageByDimmedSocket(socketId) {
+        if (!theModel || !theModel.endoProgramView) {
+            return
+        }
+        if (theModel.subProgIdx === 0 && socketId < 2) {
+            theModel.subProgIdx = 1
+            return
+        }
+        if (theModel.subProgIdx === 1 && socketId >= 2) {
+            theModel.subProgIdx = 0
+            return
+        }
+        theModel.subProgIdx = theModel.subProgIdx === 0 ? 1 : 0
+    }
+
     function calculateCollapsedHeight() {
         if (count <= 0) {
             return 0
@@ -37,6 +65,8 @@ Repeater {
         title: model.socketname
         socketId: index
         socketState: model.socketstatus
+        dimmed: repeatRoot.isEndoSocketDimmed(index)
+        allowEditing: !repeatRoot.isEndoSocketDimmed(index)
 
         cutInstrumNum:     model.cutmodeinstrnum
         cutMaxPower:       model.cutmodemaxpower
@@ -93,6 +123,9 @@ Repeater {
                 repeatRoot.socketEditorRequest(socketid,
                                                iscoag ? model.coagmodeindex : model.cutmodeindex,
                                                iscoag)
+            }
+            function onDimmedSocketClicked(socketid) {
+                repeatRoot.switchEndoPageByDimmedSocket(socketid)
             }
         }
     }

@@ -5,7 +5,20 @@ Rectangle {
     property var innerModel
     signal pedMenuRequest(int socketId)
     readonly property int pedalSideMargin: 8
-    readonly property int socketTopOffset: 65
+    /** Как в SocketContainerV2: anchors.margins у ColumnLayout */
+    readonly property int layoutMargins: 5
+    /** Как в SocketContainerV2: spacing между progPage и SocketRepeater */
+    readonly property int columnSpacing: 10
+    /** Высота progPage в не-эндо (эндо — 0, блок скрыт) */
+    readonly property int progPageHeight: (innerModel && innerModel.endoProgramView) ? 0 : 50
+    /**
+     * Верх первой строки сокетов (как у ColumnLayout в SocketContainerV2).
+     * В эндо progPage с visible: false не участвует в разметке — между колонкой и сокетами
+     * нет spacing 10 px, только верхний margin 5.
+     */
+    readonly property int socketTopOffset: (innerModel && innerModel.endoProgramView)
+            ? layoutMargins
+            : (layoutMargins + progPageHeight + columnSpacing)
     readonly property int socketSpacing: 10
     color: "#2c2c2c"
     clip: true
@@ -23,8 +36,14 @@ Rectangle {
         if (socketCount <= 0) {
             return 0
         }
-
-        return (height - socketTopOffset - socketCount * socketSpacing) / socketCount
+        // Как SocketContainerV2 → SocketRepeater:
+        // layout.height = высота ColumnLayout (у панели сокетов минус верхний anchor 5).
+        // containerHeight = layout.height - layout.spacing - progPage.height
+        // В SocketRepeater: containerMargins = layout.anchors.margins — при раздельных
+        // top/bottom margin это обычно 0, тогда в calculateCollapsedHeight не вычитается 2*margins.
+        var layoutInnerHeight = height - layoutMargins
+        var containerHeight = layoutInnerHeight - columnSpacing - progPageHeight
+        return (containerHeight - socketCount * socketSpacing) / socketCount
     }
 
     function socketHeight(socketId) {
@@ -49,7 +68,19 @@ Rectangle {
 
         delegate: Item {
             id: socketPedalSlot
-            visible: pedContainer.socketHeight(index) > 0
+            readonly property bool endoDimmed: {
+                if (!theModel || !theModel.endoProgramView) {
+                    return false
+                }
+                if (theModel.subProgIdx === 0) {
+                    return index < 2
+                }
+                if (theModel.subProgIdx === 1) {
+                    return index >= 2
+                }
+                return false
+            }
+            visible: pedContainer.socketHeight(index) > 0 && !endoDimmed
             x: 0
             y: pedContainer.socketTop(index)
             width: pedContainer.width

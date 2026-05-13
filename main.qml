@@ -479,7 +479,9 @@ Window {
                 onUserProgramsPressed: container.showStartupScreen("userProgramList")
                 onFreeSettingsPressed: {
                     recomHandle.loadEmptyFreeSettings()
-                    container.markUnsavedChanges()
+                    container.currentProgramIsUser = false
+                    container.setCurrentProgramTitle(qsTr("СВОБОДНЫЕ УСТАНОВКИ"))
+                    container.resetUnsavedChanges()
                     container.showMainScreen()
                 }
                 onLastSettingsPressed: {

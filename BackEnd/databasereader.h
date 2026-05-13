@@ -13,7 +13,13 @@ class DataBaseReader : public QObject
 {
     Q_OBJECT
 public:
-    DataBaseReader(const QString& pathToDb);
+    /// @param connectionName уникальное имя Qt-соединения (несколько файлов SQLite).
+    /// @param readOnly только чтение (QSQLITE_OPEN_READONLY).
+    DataBaseReader(const QString& pathToDb,
+                   const QString& connectionName = QString(),
+                   bool readOnly = false);
+
+    QString connectionName() const { return m_connectionName; }
 
     void slotSendQuery(const QString& queryStr, int valueNumbersAwaited = 1) const;
 
@@ -37,7 +43,7 @@ signals:
     void signalResultReady(const QString& query, const QList<QVariantList> res) const;
 
 private:
-
+    QString m_connectionName;
 };
 
 #endif // DATABASEREADER_H

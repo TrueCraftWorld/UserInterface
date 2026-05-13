@@ -117,7 +117,11 @@ private:
 	                    const std::vector<int>& allowedModesId,
 	                    const std::map<int, std::map<int, Onyx::InstrInfo>>& instrumConstraints);
 
+	QSharedPointer<DataBaseReader> listsDbForProg(int progId) const;
+	QSharedPointer<DataBaseReader> progsDbForProg(int progId) const;
+
 	QSharedPointer<DataBaseReader> m_dbReaderPtr;
+	QSharedPointer<DataBaseReader> m_userDbReaderPtr;
 	QSharedPointer<SocketModel> m_socketModelPtr;
 	progType m_curLoaderType = ptRecom;	
 };

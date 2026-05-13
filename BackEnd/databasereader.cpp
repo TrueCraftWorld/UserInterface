@@ -1,51 +1,44 @@
 #include "databasereader.h"
 
+#include <QCoreApplication>
+#include <QFileInfo>
+
 #include <QtConcurrent>
 #include <QFuture>
 #include <QFutureWatcher>
 
-DataBaseReader::DataBaseReader(const QString& pathToDb)
+DataBaseReader::DataBaseReader(const QString& pathToDb, const QString& connectionName, bool readOnly)
     : QObject(nullptr)
+    , m_connectionName(connectionName.isEmpty() ? QStringLiteral("etoBasa") : connectionName)
 {
-    QSqlDatabase someDb = QSqlDatabase::addDatabase("QSQLITE", "etoBasa");
+    QSqlDatabase someDb = QSqlDatabase::addDatabase(QStringLiteral("QSQLITE"), m_connectionName);
 
-    // qDebug() << "Исходный путь:" << pathToDb;
-
-    // Преобразуем относительный путь в абсолютный
     QFileInfo fileInfo(pathToDb);
     QString absolutePath;
 
     if (fileInfo.isRelative()) {
-        // Если путь относительный, используем папку с исполняемым файлом
         QString appDir = QCoreApplication::applicationDirPath();
-        // qDebug() << "Папка приложения:" << appDir;
-        absolutePath = appDir + "/" + pathToDb;
-        // qDebug() << "Относительный путь преобразован в абсолютный:" << absolutePath;
+        absolutePath = appDir + QLatin1Char('/') + pathToDb;
     } else {
         absolutePath = fileInfo.absoluteFilePath();
-        // qDebug() << "Путь уже абсолютный:" << absolutePath;
     }
 
-    // Проверяем существование файла
     QFileInfo finalFileInfo(absolutePath);
     if (!finalFileInfo.exists()) {
-        QString m_lastError = QString("Файл базы данных не найден: %1").arg(absolutePath);
-        // qWarning() << m_lastError;
-    }
-    else {
-        // qDebug() << "Файл базы данных найден:" << absolutePath;
-        // qDebug() << "Размер файла:" << finalFileInfo.size() << "байт";
-        // qDebug() << "Права доступа:" << finalFileInfo.permissions();
-        // qDebug() << "Абсолютный путь:" << absolutePath;
+        QString m_lastError = QStringLiteral("Файл базы данных не найден: %1").arg(absolutePath);
+        (void)m_lastError;
     }
 
-    someDb.setDatabaseName(pathToDb);
+    someDb.setDatabaseName(absolutePath);
+    if (readOnly) {
+        someDb.setConnectOptions(QStringLiteral("QSQLITE_OPEN_READONLY"));
+    }
 }
 
 void DataBaseReader::slotSendQuery(const QString &queryStr, int valueNumbersAwaited) const
 {
     QList<QVariantList> result;
-    QSqlDatabase db = QSqlDatabase::database("etoBasa");
+    QSqlDatabase db = QSqlDatabase::database(m_connectionName);
     db.open();
 
     QSqlQuery query(db);
@@ -73,7 +66,7 @@ QList<QVariantList> DataBaseReader::slotSendSelectQuery(const QStringList &table
                                          const QString &conditions) const
 {
     QList<QVariantList> result;
-    QSqlDatabase db = QSqlDatabase::database("etoBasa");
+    QSqlDatabase db = QSqlDatabase::database(m_connectionName);
     db.open();
 
     QSqlQuery query(db);
@@ -108,7 +101,7 @@ QList<QVariantList> DataBaseReader::slotSendSelectQuery(const QStringList &table
 
 bool DataBaseReader::executeUpdateQuery(const QString &queryStr) const
 {
-    QSqlDatabase db = QSqlDatabase::database("etoBasa");
+    QSqlDatabase db = QSqlDatabase::database(m_connectionName);
     if (!db.open()) {
         // qWarning() << "Failed to open database for update query";
         return false;
@@ -127,7 +120,7 @@ bool DataBaseReader::executeUpdateQuery(const QString &queryStr) const
 
 bool DataBaseReader::beginTransaction() const
 {
-    QSqlDatabase db = QSqlDatabase::database("etoBasa");
+    QSqlDatabase db = QSqlDatabase::database(m_connectionName);
     if (!db.open()) {
         qWarning() << "beginTransaction fail";
         return false;
@@ -137,7 +130,7 @@ bool DataBaseReader::beginTransaction() const
 
 void DataBaseReader::rollback() const
 {
-    QSqlDatabase db = QSqlDatabase::database("etoBasa");
+    QSqlDatabase db = QSqlDatabase::database(m_connectionName);
     if (!db.open()) {
         qWarning() << "rollback fail";
         return;
@@ -147,7 +140,7 @@ void DataBaseReader::rollback() const
 
 void DataBaseReader::commit() const
 {
-    QSqlDatabase db = QSqlDatabase::database("etoBasa");
+    QSqlDatabase db = QSqlDatabase::database(m_connectionName);
     if (!db.open()) {
         qWarning() << "commit fail";
         return;

@@ -35,13 +35,36 @@ void filterMapByKey(std::map<int, T>& map, const std::vector<int>& keys_to_keep)
 	}
 }
 
+std::map<int, SockPtr> cloneSocketMap(const std::map<int, SockPtr>& src)
+{
+	std::map<int, SockPtr> dst;
+	for (const auto& entry : src) {
+		if (!entry.second.isNull()) {
+			dst.emplace(entry.first, SockPtr::create(*entry.second));
+		}
+	}
+	return dst;
+}
+
+std::map<int, InstrPtr> cloneInstrMap(const std::map<int, InstrPtr>& src)
+{
+	std::map<int, InstrPtr> dst;
+	for (const auto& entry : src) {
+		if (!entry.second.isNull()) {
+			dst.emplace(entry.first, InstrPtr::create(*entry.second));
+		}
+	}
+	return dst;
+}
+
 using namespace Onyx;
 
-bool executePreparedUpdate(const QString& sql,
+bool executePreparedUpdate(const QString& connectionName,
+                           const QString& sql,
                            const std::function<void(QSqlQuery&)>& bindValues,
                            const char* operationName)
 {
-	QSqlDatabase db = QSqlDatabase::database("etoBasa");
+	QSqlDatabase db = QSqlDatabase::database(connectionName);
 	if (!db.open()) {
 		qWarning() << operationName << "failed: cannot open database";
 		return false;
@@ -354,15 +377,32 @@ ProgLoader::ProgLoader(QObject *parent)
 		OnyxApp* app = dynamic_cast<OnyxApp*>(qApp);
 		if (app) {
 			m_dbReaderPtr = app->getDbReader();
+			m_userDbReaderPtr = app->getUserProgDbReader();
 		}
 	}
+}
+
+QSharedPointer<DataBaseReader> ProgLoader::listsDbForProg(int progId) const
+{
+	if (progId == 1000 || progId > 1000) {
+		return m_userDbReaderPtr;
+	}
+	return m_dbReaderPtr;
+}
+
+QSharedPointer<DataBaseReader> ProgLoader::progsDbForProg(int progId) const
+{
+	if (progId > 1000) {
+		return m_userDbReaderPtr;
+	}
+	return m_dbReaderPtr;
 }
 
 void ProgLoader::slotSaveCurrentState()
 {
 	if (m_socketModelPtr == nullptr
 	        || m_socketModelPtr->itemsMap() == nullptr
-	        || m_dbReaderPtr.isNull()) {
+	        || m_userDbReaderPtr.isNull()) {
 		// qWarning() << "Cannot save state: socket model not initialized";
 		return;
 	}
@@ -370,15 +410,15 @@ void ProgLoader::slotSaveCurrentState()
 	int pageCount = m_socketModelPtr->subProgCount();
 	QList<QStringList> listsStr = prepSaveState();
 
-	if (!m_dbReaderPtr->beginTransaction()) {
+	if (!m_userDbReaderPtr->beginTransaction()) {
 		qWarning() << "slotSaveCurrentState: failed to begin transaction";
 		return;
 	}
 
 	// Формируем SQL запрос для REPLACE (INSERT OR UPDATE)
 	QString removeQuerry = "DELETE FROM Lists WHERE Prog_ID = 1000";
-	if (!m_dbReaderPtr->executeUpdateQuery(removeQuerry)) {
-		m_dbReaderPtr->rollback();
+	if (!m_userDbReaderPtr->executeUpdateQuery(removeQuerry)) {
+		m_userDbReaderPtr->rollback();
 		qWarning() << "slotSaveCurrentState: failed to clear previous state";
 		return;
 	}
@@ -399,14 +439,14 @@ void ProgLoader::slotSaveCurrentState()
 		                .arg(curList.at(24)).arg(curList.at(25)).arg(curList.at(26)) //pedals and outmask
 		                .arg(i);
 
-		if (!m_dbReaderPtr->executeUpdateQuery(query)) {
-			m_dbReaderPtr->rollback();
+		if (!m_userDbReaderPtr->executeUpdateQuery(query)) {
+			m_userDbReaderPtr->rollback();
 			qWarning() << "slotSaveCurrentState: failed to insert page" << i;
 			return;
 		}
 	}
 
-	m_dbReaderPtr->commit();
+	m_userDbReaderPtr->commit();
 }
 
 void ProgLoader::defaultSocketInit(bool clear)
@@ -564,10 +604,15 @@ bool ProgLoader::programmLoadSocketInit(int progId, bool clear)
 //        qWarning() << "[ProgFlow] programmLoadSocketInit: нет m_dbReaderPtr";
         return false;
     }
+    const QSharedPointer<DataBaseReader> listsDb = listsDbForProg(progId);
+    const QSharedPointer<DataBaseReader> progsDb = progsDbForProg(progId);
+    if (listsDb.isNull() || progsDb.isNull()) {
+        return false;
+    }
 
 //    qWarning() << "[ProgFlow] programmLoadSocketInit progId:" << progId << "clear:" << clear;
 
-    QList<QVariantList> progInfo = m_dbReaderPtr->slotSendSelectQuery(QStringList{"Progs"},
+    QList<QVariantList> progInfo = progsDb->slotSendSelectQuery(QStringList{"Progs"},
                                                   QStringList{"Name_RU", "Scope_ID", "Endo"},
                                                   QString("id = %1").arg(progId));
 //    qWarning() << "[ProgFlow] programmLoadSocketInit Progs lookup rows:" << progInfo.size();
@@ -583,7 +628,7 @@ bool ProgLoader::programmLoadSocketInit(int progId, bool clear)
 	QList<QVariantList> progListVariant;
 
 	// Если progId = 0, создаём фиктивную запись программы
-	progListVariant = m_dbReaderPtr->slotSendSelectQuery(QStringList{"Lists"},
+	progListVariant = listsDb->slotSendSelectQuery(QStringList{"Lists"},
 	                                                     fields,
 	                                                     queryConditionRecom.arg(progId));
 	if (progListVariant.size() == 0) {
@@ -699,8 +744,10 @@ bool ProgLoader::programmLoadSocketInit(int progId, bool clear)
 	}
 
     if (isEndoProgram && socketMapVector.size() == 1 && instrMapVector.size() == 1) {
-        socketMapVector.push_back(socketMapVector.front());
-        instrMapVector.push_back(instrMapVector.front());
+        // Отдельные экземпляры SOCKET/Instrument на втором листе — иначе общие SockPtr
+        // дают связанную мощность и режим при одинаковом mode id на двух листах.
+        socketMapVector.push_back(cloneSocketMap(socketMapVector.front()));
+        instrMapVector.push_back(cloneInstrMap(instrMapVector.front()));
     }
 
 	m_socketModelPtr->loadProgs(socketMapVector, instrMapVector, !clear);
@@ -895,24 +942,33 @@ std::map<int, QString> ProgLoader::getCategories()
 
 void ProgLoader::deleteUserProg(int id)
 {
+	if (m_userDbReaderPtr.isNull()) {
+		return;
+	}
 	const QString removeQuery = "DELETE FROM Lists WHERE Prog_ID = %1";
-	m_dbReaderPtr->executeUpdateQuery(removeQuery.arg(id));
+	m_userDbReaderPtr->executeUpdateQuery(removeQuery.arg(id));
 
 	const QString removeProgQuery = "DELETE FROM Progs WHERE id = %1";
-	m_dbReaderPtr->executeUpdateQuery(removeProgQuery.arg(id));
+	m_userDbReaderPtr->executeUpdateQuery(removeProgQuery.arg(id));
 
-	m_dbReaderPtr->commit();
+	m_userDbReaderPtr->commit();
 
 }
 
 void ProgLoader::renameUserProg(int id, const QString &name)
 {
+	if (m_userDbReaderPtr.isNull()) {
+		return;
+	}
 	const QString trimmedName = name.trimmed();
 	if (trimmedName.isEmpty()) {
 		return;
 	}
 
+	const QString conn = m_userDbReaderPtr->connectionName();
+
 	bool ok = executePreparedUpdate(
+	            conn,
 	            "UPDATE Progs "
 	            "SET Name_RU = ?, Name_ES = ?, Name_EN = ? "
 	            "WHERE id = ?",
@@ -927,6 +983,7 @@ void ProgLoader::renameUserProg(int id, const QString &name)
 	// Fallback for databases without ES/EN columns.
 	if (!ok) {
 		ok = executePreparedUpdate(
+		            conn,
 		            "UPDATE Progs "
 		            "SET Name_RU = ? "
 		            "WHERE id = ?",
@@ -938,8 +995,8 @@ void ProgLoader::renameUserProg(int id, const QString &name)
 	}
 
 	if (ok) {
-		m_dbReaderPtr->commit();
-		const QList<QVariantList> rows = m_dbReaderPtr->slotSendSelectQuery(
+		m_userDbReaderPtr->commit();
+		const QList<QVariantList> rows = m_userDbReaderPtr->slotSendSelectQuery(
 		            QStringList{"Progs"},
 		            QStringList{"Name_RU"},
 		            QString("id = %1").arg(id));
@@ -962,9 +1019,12 @@ void ProgLoader::renameUserProg(int id, const QString &name)
 
 void ProgLoader::deleteUserScope(int id)
 {
+	if (m_userDbReaderPtr.isNull()) {
+		return;
+	}
 	const QString queryCondition = "Scope_ID = %1";
 	QList<QVariantList> progListVariant =
-	        m_dbReaderPtr->slotSendSelectQuery(QStringList{"Progs"},
+	        m_userDbReaderPtr->slotSendSelectQuery(QStringList{"Progs"},
 	                                          QStringList{"id"},
 	                                          queryCondition.arg(id));
 	QStringList progIds;
@@ -974,29 +1034,35 @@ void ProgLoader::deleteUserScope(int id)
 	}
 
 	const QString removeProgsQuery = "DELETE FROM Progs WHERE Scope_ID = %1";
-	m_dbReaderPtr->executeUpdateQuery(removeProgsQuery.arg(id));
+	m_userDbReaderPtr->executeUpdateQuery(removeProgsQuery.arg(id));
 
 	if (!progIds.isEmpty()) {
 		const QString removeListsQuery = "DELETE FROM Lists WHERE Prog_ID IN (%1)";
-		m_dbReaderPtr->executeUpdateQuery(removeListsQuery.arg(progIds.join(", ")));
+		m_userDbReaderPtr->executeUpdateQuery(removeListsQuery.arg(progIds.join(", ")));
 	}
 
 	const QString removeScopeQuery = "DELETE FROM Scopes WHERE id = %1";
-	m_dbReaderPtr->executeUpdateQuery(removeScopeQuery.arg(id));
+	m_userDbReaderPtr->executeUpdateQuery(removeScopeQuery.arg(id));
 
-	m_dbReaderPtr->commit();
+	m_userDbReaderPtr->commit();
 
 }
 
 void ProgLoader::renameUserScope(int id, const QString &name)
 {
+	if (m_userDbReaderPtr.isNull()) {
+		return;
+	}
 	const QString trimmedName = name.trimmed();
 	if (trimmedName.isEmpty()) {
 		return;
 	}
 
+	const QString conn = m_userDbReaderPtr->connectionName();
+
 	qWarning() << "renameUserScope start id" << id << "name" << trimmedName;
 	bool ok = executePreparedUpdate(
+	            conn,
 	            "UPDATE Scopes "
 	            "SET Name_RU = ?, Name_ES = ?, Name_EN = ? "
 	            "WHERE id = ?",
@@ -1011,6 +1077,7 @@ void ProgLoader::renameUserScope(int id, const QString &name)
 	// Fallback for databases without ES/EN columns.
 	if (!ok) {
 		ok = executePreparedUpdate(
+		            conn,
 		            "UPDATE Scopes "
 		            "SET Name_RU = ? "
 		            "WHERE id = ?",
@@ -1022,8 +1089,8 @@ void ProgLoader::renameUserScope(int id, const QString &name)
 	}
 
 	if (ok) {
-		m_dbReaderPtr->commit();
-		const QList<QVariantList> rows = m_dbReaderPtr->slotSendSelectQuery(
+		m_userDbReaderPtr->commit();
+		const QList<QVariantList> rows = m_userDbReaderPtr->slotSendSelectQuery(
 		            QStringList{"Scopes"},
 		            QStringList{"Name_RU"},
 		            QString("id = %1").arg(id));
@@ -1090,7 +1157,8 @@ std::map<int, InstrPtr > ProgLoader::getInstrums()
 void ProgLoader::saveUserProg(const QString &scopeName, const QString &progName)
 {
 	if (m_socketModelPtr == nullptr
-	        || m_socketModelPtr->itemsMap() == nullptr) {
+	        || m_socketModelPtr->itemsMap() == nullptr
+	        || m_userDbReaderPtr.isNull()) {
 		// qWarning() << "Cannot save state: socket model not initialized";
 		return;
 	}
@@ -1120,25 +1188,26 @@ void ProgLoader::saveUserProg(const QString &scopeName, const QString &progName)
 
 	if (scopeId == -1) {
 		//тут добавить новый скоуп
+		const QString escapedScopeName = QString(scopeName).replace(QLatin1Char('\''), QLatin1String("''"));
 		const   QString insertUserProgNameQuery = QString(
 		                                              "INSERT INTO Scopes "
 		                                              "(id, Num, Name_RU, Name_EN, Name_ES)"
 		                                              " VALUES "
 		                                              "(%1, %1, '%2', '%2', '%2')");
 		int id = biggestKnownId > 1000 ? biggestKnownId + 1 : 1001;
-		if (!m_dbReaderPtr->executeUpdateQuery(insertUserProgNameQuery
+		if (!m_userDbReaderPtr->executeUpdateQuery(insertUserProgNameQuery
 		                                       .arg(id)
-		                                       .arg(scopeName))) {
+		                                       .arg(escapedScopeName))) {
 			return;
 		} else {
-			m_dbReaderPtr->commit();
+			m_userDbReaderPtr->commit();
 			scopeId = id;
 		}
 	}
 
 	auto nextUserProgId = [this]() -> int {
 		int maxUserProgId = 1000;
-		const QList<QVariantList> userProgIds = m_dbReaderPtr->slotSendSelectQuery(
+		const QList<QVariantList> userProgIds = m_userDbReaderPtr->slotSendSelectQuery(
 		            QStringList{"Progs"},
 		            QStringList{"id"},
 		            "id > 1000");
@@ -1151,7 +1220,7 @@ void ProgLoader::saveUserProg(const QString &scopeName, const QString &progName)
 	};
 
 	const QString escapedProgName = QString(progName).replace("'", "''");
-	QList<QVariantList> existingProgRows = m_dbReaderPtr->slotSendSelectQuery(
+	QList<QVariantList> existingProgRows = m_userDbReaderPtr->slotSendSelectQuery(
 	            QStringList{"Progs"},
 	            QStringList{"id"},
 	            QString("Scope_ID = %1 AND Name_RU = '%2' AND id > 1000")
@@ -1160,11 +1229,11 @@ void ProgLoader::saveUserProg(const QString &scopeName, const QString &progName)
 
 	if (!existingProgRows.isEmpty() && !existingProgRows.first().isEmpty()) {
 		idToUse = existingProgRows.first().at(0).toInt();
-        m_dbReaderPtr->executeUpdateQuery(
+        m_userDbReaderPtr->executeUpdateQuery(
                     QString("UPDATE Progs SET Endo = %1 WHERE id = %2")
                     .arg(endoFlag)
                     .arg(idToUse));
-        m_dbReaderPtr->commit();
+        m_userDbReaderPtr->commit();
 	} else {
 		const int newUserProgId = nextUserProgId();
 		const  QString insertUserProgNameQuery = QString(
@@ -1173,7 +1242,7 @@ void ProgLoader::saveUserProg(const QString &scopeName, const QString &progName)
 		                                             " VALUES "
 		                                             "(%1, 0, 0, '%2', '%2', '%2', %3, 0, %4)");
 
-		if (!m_dbReaderPtr->executeUpdateQuery(insertUserProgNameQuery
+		if (!m_userDbReaderPtr->executeUpdateQuery(insertUserProgNameQuery
 		                                       .arg(newUserProgId)
 		                                       .arg(escapedProgName)
 		                                       .arg(scopeId)
@@ -1183,19 +1252,19 @@ void ProgLoader::saveUserProg(const QString &scopeName, const QString &progName)
                         "(id, Prog_NUM, Argon, Name_RU, Name_EN, Name_ES, Scope_ID, Sub_NUM)"
                         " VALUES "
                         "(%1, 0, 0, '%2', '%2', '%2', %3, 0)");
-            if (!m_dbReaderPtr->executeUpdateQuery(fallbackInsertUserProgNameQuery
+            if (!m_userDbReaderPtr->executeUpdateQuery(fallbackInsertUserProgNameQuery
                                                    .arg(newUserProgId)
                                                    .arg(escapedProgName)
                                                    .arg(scopeId))) {
                 return;
             }
-            m_dbReaderPtr->executeUpdateQuery(
+            m_userDbReaderPtr->executeUpdateQuery(
                         QString("UPDATE Progs SET Endo = %1 WHERE id = %2")
                         .arg(endoFlag)
                         .arg(newUserProgId));
-            m_dbReaderPtr->commit();
+            m_userDbReaderPtr->commit();
         } else {
-            m_dbReaderPtr->commit();
+            m_userDbReaderPtr->commit();
         }
 		idToUse = newUserProgId;
 	}
@@ -1203,9 +1272,9 @@ void ProgLoader::saveUserProg(const QString &scopeName, const QString &progName)
 	QList<QStringList> listsStr = prepSaveState();
 
 	QString deleteOldListsQuery = QString("DELETE FROM Lists WHERE Prog_ID = %1").arg(idToUse);
-	if (!m_dbReaderPtr->executeUpdateQuery(deleteOldListsQuery)) {
+	if (!m_userDbReaderPtr->executeUpdateQuery(deleteOldListsQuery)) {
 	} else {
-		m_dbReaderPtr->commit();
+		m_userDbReaderPtr->commit();
 	}
 
 	for (int i = 0; i < pageCount; ++i) {
@@ -1223,20 +1292,20 @@ void ProgLoader::saveUserProg(const QString &scopeName, const QString &progName)
 		                .arg(curList.at(24)).arg(curList.at(25)).arg(curList.at(26)) //pedals and outmask
 		                .arg(i).arg(idToUse);
 
-		if (!m_dbReaderPtr->executeUpdateQuery(query)) {
+		if (!m_userDbReaderPtr->executeUpdateQuery(query)) {
 		}
 	}
-	m_dbReaderPtr->commit();
+	m_userDbReaderPtr->commit();
 }
 
 void ProgLoader::deleteAllUserProgs()
 {
-    if (m_dbReaderPtr.isNull()) {
+    if (m_userDbReaderPtr.isNull()) {
         qWarning() << "Cannot delete user progs: database not initialized";
         return;
     }
     
-    QList<QVariantList> userProgs = m_dbReaderPtr->slotSendSelectQuery(
+    QList<QVariantList> userProgs = m_userDbReaderPtr->slotSendSelectQuery(
         QStringList{"Progs"},
         QStringList{"id"},
         "Scope_ID >= 1000");
@@ -1247,16 +1316,16 @@ void ProgLoader::deleteAllUserProgs()
         int progId = prog.at(0).toInt();
         
         QString deleteListsQuery = QString("DELETE FROM Lists WHERE Prog_ID = %1").arg(progId);
-        if (!m_dbReaderPtr->executeUpdateQuery(deleteListsQuery)) {
+        if (!m_userDbReaderPtr->executeUpdateQuery(deleteListsQuery)) {
             qWarning() << "Failed to delete Lists for prog ID:" << progId;
         }
     }
     
     QString deleteProgsQuery = "DELETE FROM Progs WHERE Scope_ID >= 1000";
-    if (!m_dbReaderPtr->executeUpdateQuery(deleteProgsQuery)) {
+    if (!m_userDbReaderPtr->executeUpdateQuery(deleteProgsQuery)) {
         qWarning() << "Failed to delete user programs";
     } else {
-        m_dbReaderPtr->commit();
+        m_userDbReaderPtr->commit();
         qWarning() << "Все пользовательские программы удалены";
 	}
 }
@@ -1457,33 +1526,35 @@ void ProgLoader::setSocketModelPtr(QSharedPointer<SocketModel> newSocketModelPtr
 
 int ProgLoader::addUserScope(const QString &name)
 {
+	if (m_userDbReaderPtr.isNull()) {
+		return -1;
+	}
+	const QString escapedName = QString(name).replace(QLatin1Char('\''), QLatin1String("''"));
 	const   QString insertUserProgNameQuery = QString(
 	                                              "INSERT INTO Scopes ("
-	                                              "id, Num, Name"
+	                                              "id, Num, Name_RU, Name_EN, Name_ES"
 	                                              ") VALUES ("
-	                                              "'%1', '%1', '%2')");
+	                                              "%1, %1, '%2', '%2', '%2')");
 
 	int scopeId = -1;
-	QVariantList scope;
 	{
-		QList<QVariantList> scopes = m_dbReaderPtr->slotSendSelectQuery(QStringList{"Scopes"},
-		                                                                QStringList{"id", "Name"},
-		                                                                "");
-		int lastIndex = scopes.last().at(0).toInt();
-		if (lastIndex < 1000) {
-			scopeId = 1000;
+		QList<QVariantList> scopes = m_userDbReaderPtr->slotSendSelectQuery(QStringList{"Scopes"},
+		                                                                QStringList{"id"},
+		                                                                "id >= 1000 ORDER BY id");
+		if (scopes.isEmpty()) {
+			scopeId = 1001;
 		} else {
-			scopeId = lastIndex + 1;
+			scopeId = scopes.last().at(0).toInt() + 1;
 		}
 	}
 	if (scopeId == -1) {
 		return scopeId;
 	}
-	if (!m_dbReaderPtr->executeUpdateQuery(insertUserProgNameQuery.arg(scopeId).arg(name))) {
+	if (!m_userDbReaderPtr->executeUpdateQuery(insertUserProgNameQuery.arg(scopeId).arg(escapedName))) {
 		qDebug() << "Failed to save new scope";
-		return scopeId;
+		return -1;
 	}
-	m_dbReaderPtr->commit();
+	m_userDbReaderPtr->commit();
 	return scopeId;
 }
 

@@ -7,6 +7,7 @@
 #include <QDebug>
 #include <QDir>
 #include <QDirIterator>
+#include <QEventLoop>
 #include <QFile>
 #include <QFileInfo>
 #include <QCoreApplication>
@@ -23,6 +24,7 @@
 #include <QStandardPaths>
 #include <QPointer>
 #include <QTemporaryDir>
+#include <QThread>
 #include <QUrl>
 #include <QUrlQuery>
 #include <QMetaObject>
@@ -65,6 +67,16 @@ bool parseBoolString(const QString &value)
             || v == QStringLiteral("true")
             || v == QStringLiteral("yes")
             || v == QStringLiteral("on");
+}
+
+QString wifiQrEscape(QString value)
+{
+    value.replace(QStringLiteral("\\"), QStringLiteral("\\\\"));
+    value.replace(QStringLiteral(";"), QStringLiteral("\\;"));
+    value.replace(QStringLiteral(","), QStringLiteral("\\,"));
+    value.replace(QStringLiteral(":"), QStringLiteral("\\:"));
+    value.replace(QStringLiteral("\""), QStringLiteral("\\\""));
+    return value;
 }
 
 QString selectPayloadRoot(const QString &extractRoot)
@@ -231,6 +243,9 @@ HttpUploadController::HttpUploadController(QObject *parent)
     m_sessionTimer.setSingleShot(true);
     m_sessionTimer.setInterval(kSessionTimeoutMs);
     connect(&m_sessionTimer, &QTimer::timeout, this, &HttpUploadController::onSessionTimeout);
+    m_apClientPollTimer.setParent(this);
+    m_apClientPollTimer.setInterval(2000);
+    connect(&m_apClientPollTimer, &QTimer::timeout, this, &HttpUploadController::pollAccessPointClient);
     connect(m_server, &QTcpServer::newConnection, this, &HttpUploadController::onNewConnection);
     refreshReleaseVersions();
 }
@@ -321,6 +336,25 @@ void HttpUploadController::setLastError(const QString &e)
     emit lastErrorChanged();
 }
 
+void HttpUploadController::setAccessPointStatusText(const QString &text)
+{
+    if (m_apStatusText == text) {
+        return;
+    }
+    m_apStatusText = text;
+    emit accessPointStatusTextChanged();
+}
+
+void HttpUploadController::setAccessPointClientConnected(bool connected)
+{
+    if (m_apClientConnected == connected) {
+        return;
+    }
+    m_apClientConnected = connected;
+    emit accessPointClientConnectedChanged();
+    updateQrCode();
+}
+
 QStringList HttpUploadController::localIpv4Addresses() const
 {
     QStringList out;
@@ -373,6 +407,9 @@ void HttpUploadController::updateBaseUrl()
 
 QHostAddress HttpUploadController::preferredListenAddress() const
 {
+    if (m_apActive && !m_apAddress.isNull()) {
+        return m_apAddress;
+    }
     if (m_json) {
         const QString configured = m_json->readString(QStringLiteral("httpUploadListenAddress")).trimmed();
         if (!configured.isEmpty()) {
@@ -387,6 +424,125 @@ QHostAddress HttpUploadController::preferredListenAddress() const
         return QHostAddress(QHostAddress::LocalHost);
     }
     return QHostAddress(ips.first());
+}
+
+QString HttpUploadController::selectWifiInterface() const
+{
+    if (m_json) {
+        const QString configured = m_json->readString(QStringLiteral("httpUploadWifiInterface")).trimmed();
+        if (!configured.isEmpty()) {
+            return configured;
+        }
+    }
+
+    QString stdoutText;
+    if (runNmcli({QStringLiteral("-t"), QStringLiteral("-f"), QStringLiteral("DEVICE,TYPE"),
+                  QStringLiteral("device"), QStringLiteral("status")},
+                 5000, &stdoutText, nullptr)) {
+        const QStringList lines = stdoutText.split(QLatin1Char('\n'), Qt::SkipEmptyParts);
+        for (const QString &line : lines) {
+            const QStringList parts = line.split(QLatin1Char(':'));
+            if (parts.size() >= 2 && parts.at(1) == QStringLiteral("wifi")) {
+                return parts.at(0);
+            }
+        }
+    }
+
+    const QDir netDir(QStringLiteral("/sys/class/net"));
+    const QStringList names = netDir.entryList(QDir::Dirs | QDir::NoDotAndDotDot, QDir::Name);
+    for (const QString &name : names) {
+        if (name.startsWith(QStringLiteral("wlan"), Qt::CaseInsensitive)
+            || name.startsWith(QStringLiteral("wl"), Qt::CaseInsensitive)) {
+            return name;
+        }
+    }
+    return QString();
+}
+
+QHostAddress HttpUploadController::addressForInterface(const QString &ifaceName) const
+{
+    const QNetworkInterface iface = QNetworkInterface::interfaceFromName(ifaceName);
+    if (!iface.isValid()) {
+        return QHostAddress();
+    }
+    for (const QNetworkAddressEntry &entry : iface.addressEntries()) {
+        const QHostAddress addr = entry.ip();
+        if (addr.protocol() == QAbstractSocket::IPv4Protocol && !addr.isLoopback()) {
+            return addr;
+        }
+    }
+    return QHostAddress();
+}
+
+bool HttpUploadController::runCommandWithSudoFallback(const QString &program, const QStringList &args,
+                                                      int timeoutMs, QString *stdoutText,
+                                                      QString *stderrText) const
+{
+    auto runOnce = [&](const QString &runProgram, const QStringList &runArgs,
+                      QString *out, QString *err) -> bool {
+        QProcess proc;
+        proc.start(runProgram, runArgs);
+        if (!proc.waitForStarted(1000)) {
+            if (err) {
+                *err = QString::fromUtf8("Не удалось запустить %1").arg(runProgram);
+            }
+            return false;
+        }
+        if (!proc.waitForFinished(timeoutMs)) {
+            proc.kill();
+            proc.waitForFinished(1000);
+            if (err) {
+                *err = QString::fromUtf8("Timeout команды %1").arg(runProgram);
+            }
+            return false;
+        }
+        if (out) {
+            *out = QString::fromUtf8(proc.readAllStandardOutput()).trimmed();
+        }
+        const QString stdErr = QString::fromUtf8(proc.readAllStandardError()).trimmed();
+        if (err) {
+            *err = stdErr;
+        }
+        return proc.exitStatus() == QProcess::NormalExit && proc.exitCode() == 0;
+    };
+
+    QString directOut;
+    QString directErr;
+    if (runOnce(program, args, &directOut, &directErr)) {
+        if (stdoutText) {
+            *stdoutText = directOut;
+        }
+        if (stderrText) {
+            *stderrText = directErr;
+        }
+        return true;
+    }
+
+    QString sudoOut;
+    QString sudoErr;
+    const bool sudoOk = runOnce(QStringLiteral("sudo"),
+                                QStringList{QStringLiteral("-n"), program} + args,
+                                &sudoOut, &sudoErr);
+    if (stdoutText) {
+        *stdoutText = sudoOk ? sudoOut : directOut;
+    }
+    if (stderrText) {
+        *stderrText = sudoOk ? sudoErr : (sudoErr.isEmpty() ? directErr : sudoErr);
+    }
+    return sudoOk;
+}
+
+bool HttpUploadController::runNmcli(const QStringList &args, int timeoutMs,
+                                    QString *stdoutText, QString *stderrText) const
+{
+    const QString nmcliPath = QStandardPaths::findExecutable(QStringLiteral("nmcli"));
+    if (nmcliPath.isEmpty()) {
+        if (stderrText) {
+            *stderrText = QString::fromUtf8("nmcli не найден.");
+        }
+        return false;
+    }
+    return runCommandWithSudoFallback(nmcliPath, args, timeoutMs, stdoutText, stderrText);
 }
 
 void HttpUploadController::loadNetworkSettings()
@@ -464,6 +620,57 @@ void HttpUploadController::updateLogDownloadUrl()
     }
 }
 
+bool HttpUploadController::generateQrCodeImage(const QString &payload, const QString &fileName,
+                                               QString *imagePath, QString *errorText) const
+{
+    const QString qrencodePath = QStandardPaths::findExecutable(QStringLiteral("qrencode"));
+    if (qrencodePath.isEmpty()) {
+        if (errorText) {
+            *errorText = QString::fromUtf8("QR недоступен: не установлен qrencode.");
+        }
+        return false;
+    }
+
+    const QString dir = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation)
+            + QStringLiteral("/wifi_upload");
+    QDir().mkpath(dir);
+    const QString outPath = dir + QLatin1Char('/') + fileName;
+
+    QProcess proc;
+    const QStringList args = {
+        QStringLiteral("-o"), outPath,
+        QStringLiteral("-s"), QStringLiteral("8"),
+        QStringLiteral("-m"), QStringLiteral("1"),
+        payload
+    };
+    proc.start(qrencodePath, args);
+    if (!proc.waitForStarted(1000) || !proc.waitForFinished(3000)
+        || proc.exitStatus() != QProcess::NormalExit || proc.exitCode() != 0 || !QFile::exists(outPath)) {
+        if (errorText) {
+            *errorText = QString::fromUtf8("QR недоступен: ошибка запуска qrencode.");
+        }
+        return false;
+    }
+
+    if (imagePath) {
+        *imagePath = QStringLiteral("file://") + outPath
+                + QStringLiteral("?ts=") + QString::number(QDateTime::currentMSecsSinceEpoch());
+    }
+    return true;
+}
+
+QString HttpUploadController::accessPointQrPayload() const
+{
+    return QStringLiteral("WIFI:S:%1;T:WPA;P:%2;H:false;;")
+            .arg(wifiQrEscape(m_apSsid), wifiQrEscape(m_apPassword));
+}
+
+QString HttpUploadController::accessPointIpAddressString() const
+{
+    const int slash = m_apConfiguredAddress.indexOf(QLatin1Char('/'));
+    return slash > 0 ? m_apConfiguredAddress.left(slash) : m_apConfiguredAddress;
+}
+
 QString HttpUploadController::resolveLogFilePath() const
 {
     return QDir::homePath() + QStringLiteral("/OnyxLog/logFile.txt");
@@ -518,7 +725,7 @@ void HttpUploadController::updateQrCode()
     m_qrImagePath.clear();
     m_qrStatusText.clear();
 
-    if (!m_active || m_baseUrl.isEmpty()) {
+    if (!m_active) {
         if (oldPath != m_qrImagePath) {
             emit qrImagePathChanged();
         }
@@ -528,37 +735,33 @@ void HttpUploadController::updateQrCode()
         return;
     }
 
-    const QString qrencodePath = QStandardPaths::findExecutable(QStringLiteral("qrencode"));
-    if (qrencodePath.isEmpty()) {
-        m_qrStatusText = QString::fromUtf8("QR недоступен: не установлен qrencode.");
-        if (oldPath != m_qrImagePath) {
-            emit qrImagePathChanged();
-        }
-        if (oldStatus != m_qrStatusText) {
-            emit qrStatusTextChanged();
-        }
-        return;
-    }
-
-    const QString dir = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation)
-            + QStringLiteral("/wifi_upload");
-    QDir().mkpath(dir);
-    const QString outPath = dir + QStringLiteral("/upload_qr.png");
-
-    QProcess proc;
-    const QStringList args = {
-        QStringLiteral("-o"), outPath,
-        QStringLiteral("-s"), QStringLiteral("8"),
-        QStringLiteral("-m"), QStringLiteral("1"),
-        m_baseUrl
-    };
-    proc.start(qrencodePath, args);
-    if (!proc.waitForStarted(1000) || !proc.waitForFinished(3000) || proc.exitCode() != 0 || !QFile::exists(outPath)) {
-        m_qrStatusText = QString::fromUtf8("QR недоступен: ошибка запуска qrencode.");
+    QString payload;
+    QString fileName;
+    if (m_apActive && !m_apClientConnected) {
+        payload = accessPointQrPayload();
+        fileName = QStringLiteral("wifi_ap_qr.png");
+        m_qrStatusText = QString::fromUtf8("Сначала подключите телефон или ноутбук к Wi-Fi %1. Пароль: %2")
+                .arg(m_apSsid, m_apPassword);
     } else {
-        m_qrImagePath = QStringLiteral("file://") + outPath
-                + QStringLiteral("?ts=") + QString::number(QDateTime::currentMSecsSinceEpoch());
-        m_qrStatusText.clear();
+        if (m_baseUrl.isEmpty()) {
+            m_qrStatusText = QString::fromUtf8("Адрес загрузки ещё не готов.");
+        } else {
+            payload = m_baseUrl;
+            fileName = QStringLiteral("upload_qr.png");
+            m_qrStatusText = m_apActive && !m_apClientConnected
+                    ? QString::fromUtf8("Если телефон уже подключён к ONYX-TEST, откройте этот QR для страницы загрузки.")
+                    : QString::fromUtf8("Устройство подключено. Отсканируйте QR для открытия страницы загрузки.");
+        }
+    }
+
+    if (!payload.isEmpty()) {
+        QString qrPath;
+        QString qrError;
+        if (generateQrCodeImage(payload, fileName, &qrPath, &qrError)) {
+            m_qrImagePath = qrPath;
+        } else {
+            m_qrStatusText = qrError;
+        }
     }
 
     if (oldPath != m_qrImagePath) {
@@ -604,6 +807,200 @@ static QString randomToken()
     return s;
 }
 
+QString HttpUploadController::makeAccessPointPassword() const
+{
+    const char alphabet[] = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789";
+    QString s;
+    s.reserve(12);
+    for (int i = 0; i < 12; ++i) {
+        s.append(QLatin1Char(alphabet[QRandomGenerator::global()->bounded(int(sizeof(alphabet) - 2))]));
+    }
+    return s;
+}
+
+bool HttpUploadController::startAccessPoint(QString *errorText)
+{
+    m_apInterfaceName = selectWifiInterface();
+    if (m_apInterfaceName.isEmpty()) {
+        if (errorText) {
+            *errorText = QString::fromUtf8("Wi-Fi интерфейс не найден.");
+        }
+        return false;
+    }
+
+    if (m_apPassword.isEmpty()) {
+        m_apPassword = QStringLiteral("Electrosurgical");
+    }
+    setAccessPointClientConnected(false);
+    setAccessPointStatusText(QString::fromUtf8("Запуск точки доступа %1...").arg(m_apSsid));
+    emit accessPointChanged();
+
+    QString stderrText;
+    runNmcli({QStringLiteral("connection"), QStringLiteral("down"), m_apConnectionName},
+             5000, nullptr, nullptr);
+    runNmcli({QStringLiteral("connection"), QStringLiteral("delete"), m_apConnectionName},
+             5000, nullptr, nullptr);
+
+    const QStringList addArgs = {
+        QStringLiteral("connection"), QStringLiteral("add"),
+        QStringLiteral("type"), QStringLiteral("wifi"),
+        QStringLiteral("ifname"), m_apInterfaceName,
+        QStringLiteral("con-name"), m_apConnectionName,
+        QStringLiteral("autoconnect"), QStringLiteral("no"),
+        QStringLiteral("ssid"), m_apSsid
+    };
+    if (!runNmcli(addArgs, 10000, nullptr, &stderrText)) {
+        if (errorText) {
+            *errorText = stderrText.isEmpty()
+                    ? QString::fromUtf8("Не удалось создать профиль точки доступа.")
+                    : QString::fromUtf8("Не удалось создать профиль точки доступа: %1").arg(stderrText);
+        }
+        setAccessPointStatusText(QString());
+        m_apPassword.clear();
+        emit accessPointChanged();
+        return false;
+    }
+
+    const QStringList modifyArgs = {
+        QStringLiteral("connection"), QStringLiteral("modify"), m_apConnectionName,
+        QStringLiteral("802-11-wireless.mode"), QStringLiteral("ap"),
+        QStringLiteral("802-11-wireless.band"), QStringLiteral("bg"),
+        QStringLiteral("ipv4.method"), QStringLiteral("shared"),
+        QStringLiteral("ipv4.addresses"), m_apConfiguredAddress,
+        QStringLiteral("ipv6.method"), QStringLiteral("ignore"),
+        QStringLiteral("wifi-sec.key-mgmt"), QStringLiteral("wpa-psk"),
+        QStringLiteral("wifi-sec.psk"), m_apPassword
+    };
+    if (!runNmcli(modifyArgs, 10000, nullptr, &stderrText)) {
+        runNmcli({QStringLiteral("connection"), QStringLiteral("delete"), m_apConnectionName},
+                 5000, nullptr, nullptr);
+        if (errorText) {
+            *errorText = stderrText.isEmpty()
+                    ? QString::fromUtf8("Не удалось настроить точку доступа.")
+                    : QString::fromUtf8("Не удалось настроить точку доступа: %1").arg(stderrText);
+        }
+        setAccessPointStatusText(QString());
+        m_apPassword.clear();
+        emit accessPointChanged();
+        return false;
+    }
+
+    if (!runNmcli({QStringLiteral("connection"), QStringLiteral("up"), m_apConnectionName},
+                  20000, nullptr, &stderrText)) {
+        runNmcli({QStringLiteral("connection"), QStringLiteral("delete"), m_apConnectionName},
+                 5000, nullptr, nullptr);
+        if (errorText) {
+            *errorText = stderrText.isEmpty()
+                    ? QString::fromUtf8("Не удалось запустить точку доступа.")
+                    : QString::fromUtf8("Не удалось запустить точку доступа: %1").arg(stderrText);
+        }
+        setAccessPointStatusText(QString());
+        m_apPassword.clear();
+        emit accessPointChanged();
+        return false;
+    }
+
+    m_apActive = true;
+    emit accessPointChanged();
+
+    for (int i = 0; i < 10; ++i) {
+        m_apAddress = addressForInterface(m_apInterfaceName);
+        if (!m_apAddress.isNull()) {
+            break;
+        }
+        QCoreApplication::processEvents(QEventLoop::AllEvents, 100);
+        QThread::msleep(300);
+    }
+
+    if (m_apAddress.isNull()) {
+        m_apAddress = QHostAddress(accessPointIpAddressString());
+    }
+
+    setAccessPointStatusText(QString::fromUtf8("Точка доступа %1 активна. Ожидание подключения клиента.")
+                             .arg(m_apSsid));
+    m_apClientPollTimer.start();
+    return true;
+}
+
+void HttpUploadController::stopAccessPoint()
+{
+    m_apClientPollTimer.stop();
+
+    if (!m_apConnectionName.isEmpty()) {
+        QString stderrText;
+        runNmcli({QStringLiteral("connection"), QStringLiteral("down"), m_apConnectionName},
+                 10000, nullptr, &stderrText);
+        runNmcli({QStringLiteral("connection"), QStringLiteral("delete"), m_apConnectionName},
+                 10000, nullptr, &stderrText);
+    }
+
+    const bool changed = m_apActive || !m_apInterfaceName.isEmpty()
+            || !m_apAddress.isNull();
+    m_apActive = false;
+    m_apInterfaceName.clear();
+    m_apAddress = QHostAddress();
+    setAccessPointClientConnected(false);
+    setAccessPointStatusText(QString());
+    if (changed) {
+        emit accessPointChanged();
+    }
+}
+
+bool HttpUploadController::hasConnectedAccessPointClient() const
+{
+    if (m_apInterfaceName.isEmpty()) {
+        return false;
+    }
+
+    QString iwOut;
+    QString iwErr;
+    const QString iwPath = QStandardPaths::findExecutable(QStringLiteral("iw"));
+    if (!iwPath.isEmpty()
+        && runCommandWithSudoFallback(iwPath,
+                                      {QStringLiteral("dev"), m_apInterfaceName,
+                                       QStringLiteral("station"), QStringLiteral("dump")},
+                                      5000, &iwOut, &iwErr)) {
+        if (iwOut.contains(QStringLiteral("Station "))) {
+            return true;
+        }
+    }
+
+    QString neighOut;
+    QString neighErr;
+    const QString ipPath = QStandardPaths::findExecutable(QStringLiteral("ip"));
+    if (!ipPath.isEmpty()
+        && runCommandWithSudoFallback(ipPath,
+                                      {QStringLiteral("neigh"), QStringLiteral("show"),
+                                       QStringLiteral("dev"), m_apInterfaceName},
+                                      5000, &neighOut, &neighErr)) {
+        const QStringList lines = neighOut.split(QLatin1Char('\n'), Qt::SkipEmptyParts);
+        for (const QString &line : lines) {
+            if (line.contains(QStringLiteral("FAILED")) || line.contains(QStringLiteral("INCOMPLETE"))) {
+                continue;
+            }
+            if (!m_apAddress.isNull() && line.startsWith(ipv4ToQString(m_apAddress) + QLatin1Char(' '))) {
+                continue;
+            }
+            return true;
+        }
+    }
+
+    return false;
+}
+
+void HttpUploadController::pollAccessPointClient()
+{
+    if (!m_apActive) {
+        return;
+    }
+    const bool connected = hasConnectedAccessPointClient();
+    setAccessPointClientConnected(connected);
+    setAccessPointStatusText(connected
+                             ? QString::fromUtf8("К точке доступа подключено устройство.")
+                             : QString::fromUtf8("Точка доступа %1 активна. Ожидание подключения клиента.")
+                                   .arg(m_apSsid));
+}
+
 void HttpUploadController::startSession()
 {
     setLastError(QString());
@@ -626,6 +1023,18 @@ void HttpUploadController::startSession()
         if (!d.isEmpty()) {
             m_uploadDir = d;
         }
+        const QString apAddress = m_json->readString(QStringLiteral("httpUploadApAddress")).trimmed();
+        if (!apAddress.isEmpty()) {
+            m_apConfiguredAddress = apAddress.contains(QLatin1Char('/'))
+                    ? apAddress
+                    : apAddress + QStringLiteral("/24");
+        }
+    }
+
+    QString apError;
+    if (!startAccessPoint(&apError)) {
+        setLastError(apError);
+        return;
     }
 
     m_sessionToken = randomToken();
@@ -643,6 +1052,7 @@ void HttpUploadController::startSession()
         m_listenAddress = QHostAddress();
         m_sessionToken.clear();
         emit sessionTokenChanged();
+        stopAccessPoint();
         return;
     }
 
@@ -654,6 +1064,7 @@ void HttpUploadController::startSession()
         m_listenAddress = QHostAddress();
         m_sessionToken.clear();
         emit sessionTokenChanged();
+        stopAccessPoint();
         setLastError(fwError);
         return;
     }
@@ -701,6 +1112,7 @@ void HttpUploadController::stopSession()
     setActive(false);
     m_baseUrl.clear();
     emit baseUrlChanged();
+    stopAccessPoint();
     updateLogDownloadUrl();
     updateQrCode();
 }
@@ -754,14 +1166,27 @@ void HttpUploadController::onNewConnection()
 
 void HttpUploadController::onClientDisconnected()
 {
+    QTcpSocket *const socket = qobject_cast<QTcpSocket *>(sender());
+    if (!socket || socket != m_client) {
+        if (socket) {
+            socket->deleteLater();
+        }
+        return;
+    }
+
     if (m_client) {
-        m_client->deleteLater();
+        QTcpSocket *const oldClient = m_client;
         m_client = nullptr;
+        oldClient->deleteLater();
     }
     m_rxBuffer.clear();
     m_headerComplete = false;
     m_contentLength = -1;
     m_requestHeaders.clear();
+
+    if (m_server && m_server->hasPendingConnections()) {
+        QMetaObject::invokeMethod(this, "onNewConnection", Qt::QueuedConnection);
+    }
 }
 
 void HttpUploadController::releaseClientSocket()
@@ -1739,6 +2164,11 @@ void HttpUploadController::tryProcessBuffer()
 
 void HttpUploadController::onClientReadyRead()
 {
+    QTcpSocket *const socket = qobject_cast<QTcpSocket *>(sender());
+    if (!socket || socket != m_client) {
+        return;
+    }
+
     if (!m_client) {
         return;
     }

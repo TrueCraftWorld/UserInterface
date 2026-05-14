@@ -25,6 +25,11 @@ class HttpUploadController : public QObject
     Q_PROPERTY(QString uploadSavePath READ uploadSavePath NOTIFY uploadSavePathChanged)
     Q_PROPERTY(QString qrImagePath READ qrImagePath NOTIFY qrImagePathChanged)
     Q_PROPERTY(QString qrStatusText READ qrStatusText NOTIFY qrStatusTextChanged)
+    Q_PROPERTY(bool accessPointActive READ accessPointActive NOTIFY accessPointChanged)
+    Q_PROPERTY(bool accessPointClientConnected READ accessPointClientConnected NOTIFY accessPointClientConnectedChanged)
+    Q_PROPERTY(QString accessPointSsid READ accessPointSsid NOTIFY accessPointChanged)
+    Q_PROPERTY(QString accessPointPassword READ accessPointPassword NOTIFY accessPointChanged)
+    Q_PROPERTY(QString accessPointStatusText READ accessPointStatusText NOTIFY accessPointStatusTextChanged)
     Q_PROPERTY(QString logDownloadUrl READ logDownloadUrl NOTIFY logDownloadUrlChanged)
     Q_PROPERTY(bool uploadInProgress READ uploadInProgress NOTIFY uploadProgressChanged)
     Q_PROPERTY(double uploadProgress READ uploadProgress NOTIFY uploadProgressChanged)
@@ -57,6 +62,11 @@ public:
     QString uploadSavePath() const;
     QString qrImagePath() const { return m_qrImagePath; }
     QString qrStatusText() const { return m_qrStatusText; }
+    bool accessPointActive() const { return m_apActive; }
+    bool accessPointClientConnected() const { return m_apClientConnected; }
+    QString accessPointSsid() const { return m_apSsid; }
+    QString accessPointPassword() const { return m_apPassword; }
+    QString accessPointStatusText() const { return m_apStatusText; }
     QString logDownloadUrl() const { return m_logDownloadUrl; }
     bool uploadInProgress() const { return m_uploadInProgress; }
     double uploadProgress() const { return m_uploadProgress; }
@@ -99,6 +109,9 @@ signals:
     void uploadSavePathChanged();
     void qrImagePathChanged();
     void qrStatusTextChanged();
+    void accessPointChanged();
+    void accessPointClientConnectedChanged();
+    void accessPointStatusTextChanged();
     void logDownloadUrlChanged();
     void uploadProgressChanged();
     void detectedReleaseChanged();
@@ -112,13 +125,31 @@ private slots:
     void onClientReadyRead();
     void onClientDisconnected();
     void onSessionTimeout();
+    void pollAccessPointClient();
 
 private:
     void setActive(bool v);
     void setLastError(const QString &e);
+    void setAccessPointStatusText(const QString &text);
+    void setAccessPointClientConnected(bool connected);
     void updateBaseUrl();
     QHostAddress preferredListenAddress() const;
     QHostAddress effectiveClientAddress() const;
+    QString selectWifiInterface() const;
+    QHostAddress addressForInterface(const QString &ifaceName) const;
+    bool startAccessPoint(QString *errorText);
+    void stopAccessPoint();
+    bool runCommandWithSudoFallback(const QString &program, const QStringList &args,
+                                    int timeoutMs, QString *stdoutText = nullptr,
+                                    QString *stderrText = nullptr) const;
+    bool runNmcli(const QStringList &args, int timeoutMs,
+                  QString *stdoutText = nullptr, QString *stderrText = nullptr) const;
+    bool generateQrCodeImage(const QString &payload, const QString &fileName,
+                             QString *imagePath, QString *errorText) const;
+    QString accessPointQrPayload() const;
+    QString makeAccessPointPassword() const;
+    bool hasConnectedAccessPointClient() const;
+    QString accessPointIpAddressString() const;
     void loadNetworkSettings();
     bool invokeUploadFirewallGuard(const QString &action, QString *errorText = nullptr) const;
     void tryProcessBuffer();
@@ -170,6 +201,15 @@ private:
     QString m_lastError;
     QString m_qrImagePath;
     QString m_qrStatusText;
+    bool m_apActive = false;
+    bool m_apClientConnected = false;
+    QString m_apSsid = QStringLiteral("ONYX-TEST");
+    QString m_apPassword = QStringLiteral("Electrosurgical");
+    QString m_apInterfaceName;
+    QString m_apConnectionName = QStringLiteral("ONYX-TEST-update");
+    QString m_apConfiguredAddress = QStringLiteral("192.168.50.1/24");
+    QHostAddress m_apAddress;
+    QString m_apStatusText;
     QString m_logDownloadUrl;
     bool m_uploadInProgress = false;
     double m_uploadProgress = 0.0;
@@ -193,6 +233,7 @@ private:
     QHostAddress m_listenAddress;
     QHostAddress m_authorizedClientAddress;
     QTimer m_sessionTimer;
+    QTimer m_apClientPollTimer;
 
     static constexpr int kSessionTimeoutMs = 15 * 60 * 1000;
     static constexpr qint64 kMaxBodyBytes = 500LL * 1024 * 1024;

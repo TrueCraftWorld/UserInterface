@@ -1851,11 +1851,10 @@ bool HttpUploadController::applyMcFirmwareFromReleases(const QString &version, c
         setLastError(QString::fromUtf8("Файл не найден: %1").arg(path));
         return false;
     }
-    const bool invoked = QMetaObject::invokeMethod(m_linkStm, "startFirmwareUpdateFromFile", Qt::QueuedConnection,
-                                                   Q_ARG(QString, path),
-                                                   Q_ARG(int, 0),
-                                                   Q_ARG(QString, v),
-                                                   Q_ARG(int, mcUnitRaw));
+    LinkStm *const link = m_linkStm;
+    const bool invoked = QMetaObject::invokeMethod(link, [link, path, v, mcUnitRaw]() {
+        link->startFirmwareUpdateFromFile(path, v, mcUnitRaw);
+    }, Qt::QueuedConnection);
     if (!invoked) {
         setMcFirmwareUpdateProgress(-1);
         setLastError(QString::fromUtf8("Не удалось поставить обновление в очередь"));

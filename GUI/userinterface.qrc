@@ -16,6 +16,8 @@
         <file>SocketContainerV2.qml</file>
         <file>InstrumEditor.qml</file>
         <file>ItemList.qml</file>
+        <file>LogFileScreen.qml</file>
+        <file>logUpdate.qml</file>
         <file>PowerRect.qml</file>
         <file>ModeEditor.qml</file>
         <file>ProgItemList.qml</file>
@@ -40,7 +42,6 @@
         <file>SecretKeysWindow.qml</file>
         <file>DialogActionButton.qml</file>
         <file>ProgSaveDialog.qml</file>
-        <file>StartupMenu.qml</file>
         <file>StartupInfoScreen.qml</file>
         <file>TouchScreenTest.qml</file>
     </qresource>

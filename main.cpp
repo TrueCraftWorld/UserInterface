@@ -25,6 +25,8 @@
 #include "BackEnd/jsonstorage.h"
 #include "BackEnd/HttpUploadController.h"
 #include "BackEnd/McFirmwareVersionsBridge.h"
+#include "BackEnd/DeviceLogManager.h"
+#include "BackEnd/UpdateLogManager.h"
 
 // Умный указатель на файл логирования
 QScopedPointer<QFile>   m_logFile;
@@ -93,7 +95,7 @@ int main(int argc, char *argv[])
     
     // Настройки для touch-устройств (как было до отладки)
     qputenv("QT_QPA_EVDEV_TOUCHSCREEN_PARAMETERS", "rotate=0");
-    qputenv("QT_LOGGING_RULES", "qt.qpa.input=false");
+    qputenv("QT_LOGGING_RULES", "*.debug=false;qt.qpa.input=false");
 
     OnyxApp app(argc, argv);
     QCoreApplication::setApplicationVersion("1.1");
@@ -145,11 +147,20 @@ int main(int argc, char *argv[])
     initMap->insert("serialNumber", "");
     initMap->insert("deviceType", "");
     initMap->insert("featureNotes", "");
+    initMap->insert("totalRuntimeMs", 0);
+    initMap->insert("totalActivationMs", 0);
     initMap->insert("httpUploadListenAddress", "");
     initMap->insert("httpUploadPublicBaseUrl", "");
     initMap->insert("httpUploadTrustProxyHeaders", "0");
     m_savedJson = new JsonStorage(nullptr, initMap);
     engine.rootContext()->setContextProperty("savedJson", m_savedJson);
+
+    auto *deviceLog = new DeviceLogManager(m_savedJson, ctrl->getSocketModel(), &app);
+    engine.rootContext()->setContextProperty(QStringLiteral("deviceLog"), deviceLog);
+    deviceLog->beginSession();
+
+    auto *updateLog = new UpdateLogManager(&app);
+    engine.rootContext()->setContextProperty(QStringLiteral("updateLog"), updateLog);
 
     auto *globalRemoteUpdater = new RemoteUpdater(&app);
     globalRemoteUpdater->setSerialNumber(m_savedJson->readString(QStringLiteral("serialNumber")));
@@ -211,6 +222,16 @@ int main(int argc, char *argv[])
                      httpUpload, &HttpUploadController::onMcFirmwareParseError, Qt::QueuedConnection);
     QObject::connect(m_linkStm, &LinkStm::sigUpdateProgress,
                      httpUpload, &HttpUploadController::setMcFirmwareUpdateProgress, Qt::QueuedConnection);
+    QObject::connect(m_linkStm, &LinkStm::sigActivationStartedDetails,
+                     deviceLog, &DeviceLogManager::onActivationStarted, Qt::QueuedConnection);
+    QObject::connect(m_linkStm, &LinkStm::sigStopActivation,
+                     deviceLog, &DeviceLogManager::onActivationStopped, Qt::QueuedConnection);
+    QObject::connect(m_linkStm, &LinkStm::sigStopActivation,
+                     deviceLog, &DeviceLogManager::onWarningCode, Qt::QueuedConnection);
+    QObject::connect(m_linkStm, &LinkStm::sigError,
+                     deviceLog, &DeviceLogManager::onWarningCode, Qt::QueuedConnection);
+    QObject::connect(m_linkStm, &LinkStm::sigPowerOffCommand,
+                     deviceLog, &DeviceLogManager::onPowerOffCommand, Qt::QueuedConnection);
 
     // Переносим LinkStm в отдельный поток для работы с UART
     QThread *linkStmThread = new QThread();
@@ -224,6 +245,9 @@ int main(int argc, char *argv[])
     // Корректное завершение потока при выходе из приложения
     QObject::connect(&app, &QCoreApplication::aboutToQuit,
                      ctrl.data(), &ControlCenter::flushPendingSave,
+                     Qt::DirectConnection);
+    QObject::connect(&app, &QCoreApplication::aboutToQuit,
+                     deviceLog, &DeviceLogManager::finalizeSession,
                      Qt::DirectConnection);
     QObject::connect(&app, &QCoreApplication::aboutToQuit,
                      linkStmThread, &QThread::quit);
@@ -241,6 +265,10 @@ int main(int argc, char *argv[])
 // Реализация обработчика
 void messageHandler(QtMsgType type, const QMessageLogContext &context, const QString &msg)
 {
+    if (type == QtDebugMsg) {
+        return;
+    }
+
     if (type == QtCriticalMsg || type == QtWarningMsg) {
         if (msg.startsWith("Failed to move cursor") ||
             msg.startsWith("Could not set cursor") ||

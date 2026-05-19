@@ -7,6 +7,7 @@
 #include <QString>
 #include <QStringList>
 #include <QTimer>
+#include <QMutex>
 #include <QTcpServer>
 #include <QTcpSocket>
 
@@ -155,9 +156,12 @@ private:
     void tryProcessBuffer();
     void sendHttpResponse(QTcpSocket *socket, int statusCode, const QByteArray &contentType, const QByteArray &body);
     void sendFileDownloadResponse(QTcpSocket *socket, const QByteArray &downloadFileName, const QByteArray &body);
+    void sendJsonResponse(QTcpSocket *socket, int statusCode, const QByteArray &jsonBody);
     void sendSimpleHtml(QTcpSocket *socket, int statusCode, const QString &title, const QString &bodyHtml);
     QByteArray buildUploadPageHtml() const;
     bool isAuthorizedClient(const QHostAddress &peer) const;
+    void bindAuthorizedClient(const QHostAddress &peer);
+    void sendDownloadForbidden(QTcpSocket *socket, const QString &reason, const QString &message);
     bool parseMultipartAndSave(const QByteArray &body, const QString &contentType, int *filesSaved, QString *errorMessage);
     bool processReleaseArchiveBytes(const QString &sourceFileName, const QByteArray &archiveBytes, QString *errorMessage);
     static QString normalizeRelPath(const QString &rawRelPath);
@@ -177,7 +181,16 @@ private:
     void updateQrCode();
     void updateLogDownloadUrl();
     bool isValidTokenInPath(const QString &path) const;
-    QString resolveLogFilePath() const;
+    bool buildLogArchiveBundle(const QString &sessionToken, QString *outFilePath, qint64 *outFileSize,
+                               QString *errorHtml) const;
+    bool sendFileDownloadFromPath(QTcpSocket *socket, const QString &filePath);
+    void drainPendingConnections();
+    void resetLogArchiveCache();
+    void startLogArchiveBuildIfNeeded(bool forceRestart);
+    QByteArray logArchiveStatusJson() const;
+    QString logArchiveCacheDebugText() const;
+    QString logArchiveCacheDebugTextUnlocked() const;
+    bool servePreparedLogArchive(QTcpSocket *socket);
     static bool hasVersionListChanged(const QStringList &oldList, const QStringList &newList);
     static bool copyDirectoryContentsReplace(const QString &srcDirPath, const QString &dstDirPath, QString *errorMessage);
     void setCurrentMediaVersion(const QString &version);
@@ -234,6 +247,19 @@ private:
     QHostAddress m_authorizedClientAddress;
     QTimer m_sessionTimer;
     QTimer m_apClientPollTimer;
+
+    enum class LogArchiveState {
+        Idle,
+        Building,
+        Ready,
+        Error
+    };
+    mutable QMutex m_logArchiveMutex;
+    LogArchiveState m_logArchiveState = LogArchiveState::Idle;
+    QByteArray m_logArchivePayload;
+    QString m_logArchiveFilePath;
+    qint64 m_logArchiveFileSize = 0;
+    QString m_logArchiveErrorText;
 
     static constexpr int kSessionTimeoutMs = 15 * 60 * 1000;
     static constexpr qint64 kMaxBodyBytes = 500LL * 1024 * 1024;

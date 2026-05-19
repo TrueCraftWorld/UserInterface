@@ -37,23 +37,27 @@ Dialog {
             anchors.topMargin: 10
             anchors.horizontalCenter: parent.horizontalCenter
 
-            SRow {
+            RowLayout {
+                width: parent.width * 0.9
+                anchors.horizontalCenter: parent.horizontalCenter
+                spacing: 12
+
                 SDropdown {
                     id: scopeNameBox
-                    span: 8
+                    Layout.fillWidth: true
                     model: ["1","2", "3", "4"]
                     visible: !contRect.isNewScope
                 }
                 SInput {
                     id: newScopeNameInput
-                    span: 8
+                    Layout.fillWidth: true
                     placeholder: "Категория"
                     visible: contRect.isNewScope
                 }
 
                 SButton{
                     id: addScopeButton
-                    span: 4
+                    Layout.preferredWidth: 90
                     iconString: contRect.isNewScope ? Fa.Icon.chevron_left : Fa.Icon.plus_square;
                     onClicked: {
                         contRect.isNewScope = !contRect.isNewScope

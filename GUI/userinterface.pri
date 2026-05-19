@@ -13,6 +13,8 @@ DISTFILES += \
     $$PWD/InstrumEditor.qml \
     $$PWD/InstrumRect.qml \
     $$PWD/ItemList.qml \
+    $$PWD/LogFileScreen.qml \
+    $$PWD/logUpdate.qml \
     $$PWD/MainMenu.qml \
     $$PWD/MenuLoader.qml \
     $$PWD/ModeEditor.qml \
@@ -35,8 +37,7 @@ DISTFILES += \
     $$PWD/StatesSocket.qml \
     $$PWD/SocketContainerV2.qml \
     $$PWD/StartupInfoScreen.qml \
-    $$PWD/StartupMenu.qml \
-    $$PWD/StatusBar.qml
+    $$PWD/StatusBar.qml \
     $$PWD/VideoPlayer.qml
 
 HEADERS +=

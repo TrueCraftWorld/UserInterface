@@ -77,6 +77,7 @@ public:
         WirelessDetected = 0x68,        // Обнаружено беспроводное устройство
         ConfirmAddrWireless = 0x69,     // Подтверждение приёма адреса для беспроводных устройств
         DataWireless = 0x6A,            // Данные от беспроводного устройства
+        PowerOff = 0x6F,                // Команда на выключение питания
 
         ErrComm = 0x80,                 // Модуль связи не принимает сигналы от МИФ
         ErrGenComm = 0x81,              // Генератор не отвечает
@@ -210,7 +211,7 @@ public:
     // Методы для установки состояния из PeriphHandler
 public slots:
     void start();
-    /// Загрузка hex из файла (вызов из потока LinkStm). bankOrZero: 0 — неактивный банк относительно m_boot, иначе 1 или 2.
+    /// Загрузка hex из файла (вызов из потока LinkStm)
     void startFirmwareUpdateFromFile(const QString &filePath, const QString &versionStr, int mcUnitRaw);
     void argonBlow();
     void setEnableActivation(bool enable);
@@ -240,7 +241,10 @@ signals:
     void sigReportRx(QString rxStr, int ms);
     void sigPressed3rdKnob(quint8 socket);
     void sigStartActivation(quint8 socket, bool isCut);
+    void sigActivationStartedDetails(quint8 socket, bool isCut, quint16 mode, quint16 power,
+                                     bool autoMode, quint8 sourceCode);
     void sigStopActivation(quint8 stopReason);
+    void sigPowerOffCommand();
     /// Версии ПО модулей МК: список из 5 QVariantMap (числа для UI и сравнения с обновлениями).
     void sigFirmwareVersionsChanged(const QVariantList &modules);
     void firmwareUpdateParseError(const QString &message);

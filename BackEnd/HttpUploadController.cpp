@@ -3,6 +3,7 @@
 #include "linkstm.h"
 
 #include <QAbstractSocket>
+#include <QDate>
 #include <QDateTime>
 #include <QDebug>
 #include <QDir>
@@ -24,10 +25,17 @@
 #include <QStandardPaths>
 #include <QPointer>
 #include <QTemporaryDir>
+#include <QSqlDatabase>
+#include <QSqlQuery>
 #include <QThread>
 #include <QUrl>
 #include <QUrlQuery>
 #include <QMetaObject>
+#include <QPointer>
+#include <QFutureWatcher>
+#include <QtConcurrent>
+#include <QJsonDocument>
+#include <QJsonObject>
 
 namespace {
 
@@ -116,6 +124,151 @@ QString resolveUnzipProgramPath()
         }
     }
     return QString();
+}
+
+QString requestQueryValue(const QString &requestTarget, const QString &key)
+{
+    const int q = requestTarget.indexOf(QLatin1Char('?'));
+    if (q < 0) {
+        return QString();
+    }
+    QUrlQuery query(requestTarget.mid(q + 1));
+    return query.queryItemValue(key);
+}
+
+QString logArchiveCacheFilePath(const QString &sessionToken)
+{
+    QString base = QStandardPaths::writableLocation(QStandardPaths::TempLocation);
+    if (base.isEmpty()) {
+        base = QDir::tempPath();
+    }
+    return QDir(base).filePath(QStringLiteral("onyxlog-%1.zip").arg(sessionToken));
+}
+
+QHostAddress normalizeClientAddress(const QHostAddress &addr)
+{
+    if (addr.isNull()) {
+        return addr;
+    }
+    if (addr.protocol() == QAbstractSocket::IPv4Protocol) {
+        return addr;
+    }
+    if (addr.protocol() == QAbstractSocket::IPv6Protocol) {
+        bool mapped = false;
+        const quint32 v4 = addr.toIPv4Address(&mapped);
+        if (mapped) {
+            return QHostAddress(v4);
+        }
+    }
+    return addr;
+}
+
+bool writeSocketAll(QTcpSocket *socket, const QByteArray &data, int timeoutMs = 120000)
+{
+    if (!socket || data.isEmpty()) {
+        return true;
+    }
+    qint64 offset = 0;
+    while (offset < data.size()) {
+        if (socket->state() != QAbstractSocket::ConnectedState) {
+            qWarning() << "HttpUploadController: writeSocketAll socket not connected, state="
+                       << socket->state() << "written=" << offset << "of" << data.size();
+            return false;
+        }
+        const qint64 chunk = socket->write(data.constData() + offset, data.size() - offset);
+        if (chunk < 0) {
+            qWarning() << "HttpUploadController: writeSocketAll write error at offset" << offset
+                       << "error=" << socket->errorString();
+            return false;
+        }
+        if (chunk == 0) {
+            if (!socket->waitForBytesWritten(timeoutMs)) {
+                qWarning() << "HttpUploadController: writeSocketAll waitForBytesWritten timeout at"
+                           << offset << "of" << data.size();
+                return false;
+            }
+            continue;
+        }
+        offset += chunk;
+        if (!socket->waitForBytesWritten(timeoutMs)) {
+            qWarning() << "HttpUploadController: writeSocketAll flush timeout at" << offset
+                       << "of" << data.size();
+            return false;
+        }
+    }
+    return true;
+}
+
+QString resolveZipProgramPath()
+{
+    QString program = QStandardPaths::findExecutable(QStringLiteral("zip"));
+    if (!program.isEmpty()) {
+        return program;
+    }
+    const QStringList candidates = {
+        QStringLiteral("/usr/bin/zip"),
+        QStringLiteral("/bin/zip"),
+        QStringLiteral("/usr/local/bin/zip")
+    };
+    for (const QString &p : candidates) {
+        if (QFileInfo::exists(p) && QFileInfo(p).isExecutable()) {
+            return p;
+        }
+    }
+    return QString();
+}
+
+bool copyDirectoryRecursive(const QString &srcDir, const QString &dstDir)
+{
+    QDir src(srcDir);
+    if (!src.exists()) {
+        return false;
+    }
+    QDir().mkpath(dstDir);
+
+    const QFileInfoList entries = src.entryInfoList(QDir::Files | QDir::Dirs | QDir::NoDotAndDotDot);
+    for (const QFileInfo &entry : entries) {
+        const QString targetPath = QDir(dstDir).filePath(entry.fileName());
+        if (entry.isDir()) {
+            if (!copyDirectoryRecursive(entry.absoluteFilePath(), targetPath)) {
+                return false;
+            }
+            continue;
+        }
+        QFile::remove(targetPath);
+        if (!QFile::copy(entry.absoluteFilePath(), targetPath)) {
+            qWarning() << "HttpUploadController: skip unreadable log file" << entry.absoluteFilePath();
+        }
+    }
+    return true;
+}
+
+bool copySqliteDatabaseForArchive(const QString &srcPath, const QString &dstPath)
+{
+    QFile::remove(dstPath);
+    if (QFile::copy(srcPath, dstPath)) {
+        return true;
+    }
+
+    const QString conn = QStringLiteral("log_zip_export_%1")
+            .arg(QRandomGenerator::global()->generate());
+    bool copied = false;
+    {
+        QSqlDatabase db = QSqlDatabase::addDatabase(QStringLiteral("QSQLITE"), conn);
+        db.setDatabaseName(srcPath);
+        if (db.open()) {
+            QString escaped = dstPath;
+            escaped.replace(QLatin1Char('\''), QStringLiteral("''"));
+            QSqlQuery q(db);
+            copied = q.exec(QStringLiteral("VACUUM INTO '%1'").arg(escaped)) && QFile::exists(dstPath);
+            db.close();
+        }
+    }
+    QSqlDatabase::removeDatabase(conn);
+    if (copied) {
+        return true;
+    }
+    return QFile::copy(srcPath, dstPath);
 }
 
 QString payloadSha256Hex(const QString &payloadRoot)
@@ -613,7 +766,7 @@ void HttpUploadController::updateLogDownloadUrl()
     if (!m_active || m_baseUrl.isEmpty() || m_sessionToken.isEmpty()) {
         m_logDownloadUrl.clear();
     } else {
-        m_logDownloadUrl = m_baseUrl + QStringLiteral("download/logFile.txt?token=") + m_sessionToken;
+        m_logDownloadUrl = m_baseUrl + QStringLiteral("download/onyxlog-bundle.zip?token=") + m_sessionToken;
     }
     if (old != m_logDownloadUrl) {
         emit logDownloadUrlChanged();
@@ -671,16 +824,334 @@ QString HttpUploadController::accessPointIpAddressString() const
     return slash > 0 ? m_apConfiguredAddress.left(slash) : m_apConfiguredAddress;
 }
 
-QString HttpUploadController::resolveLogFilePath() const
+bool HttpUploadController::buildLogArchiveBundle(const QString &sessionToken, QString *outFilePath,
+                                                qint64 *outFileSize, QString *errorHtml) const
 {
-    return QDir::homePath() + QStringLiteral("/OnyxLog/logFile.txt");
+    if (!outFilePath || !outFileSize || !errorHtml || sessionToken.isEmpty()) {
+        return false;
+    }
+    outFilePath->clear();
+    *outFileSize = 0;
+    errorHtml->clear();
+
+    qWarning() << "HttpUploadController: buildLogArchiveBundle start";
+
+    const QString home = QDir::homePath();
+    const QString onyxLogDir = QDir(home).filePath(QStringLiteral("OnyxLog"));
+    const QString userProgPath = QDir(home + QStringLiteral("/FOTEK")).filePath(QStringLiteral("userProg.db"));
+
+    if (!QDir(onyxLogDir).exists()) {
+        qWarning() << "HttpUploadController: buildLogArchiveBundle OnyxLog missing:" << onyxLogDir;
+        *errorHtml = QStringLiteral("<p>Каталог журналов не найден: %1</p>").arg(onyxLogDir.toHtmlEscaped());
+        return false;
+    }
+
+    const QString zipProgram = resolveZipProgramPath();
+    if (zipProgram.isEmpty()) {
+        qWarning() << "HttpUploadController: buildLogArchiveBundle zip not found in PATH";
+        *errorHtml = QStringLiteral("<p>Не найдена утилита <code>zip</code> для сборки архива.</p>");
+        return false;
+    }
+
+    QTemporaryDir bundleDir;
+    if (!bundleDir.isValid()) {
+        *errorHtml = QStringLiteral("<p>Не удалось создать временный каталог для архива.</p>");
+        return false;
+    }
+
+    const QString stageRoot = QDir(bundleDir.path()).filePath(QStringLiteral("stage"));
+    const QString stageOnyxLog = QDir(stageRoot).filePath(QStringLiteral("OnyxLog"));
+    if (!copyDirectoryRecursive(onyxLogDir, stageOnyxLog)) {
+        *errorHtml = QStringLiteral("<p>Не удалось подготовить копию каталога OnyxLog.</p>");
+        return false;
+    }
+
+    QStringList relEntries;
+    relEntries << QStringLiteral("OnyxLog");
+
+    if (QFile::exists(userProgPath)) {
+        const QString stageFotek = QDir(stageRoot).filePath(QStringLiteral("FOTEK"));
+        QDir().mkpath(stageFotek);
+        const QString stageUserProg = QDir(stageFotek).filePath(QStringLiteral("userProg.db"));
+        if (copySqliteDatabaseForArchive(userProgPath, stageUserProg)) {
+            relEntries << QStringLiteral("FOTEK");
+        } else {
+            qWarning() << "HttpUploadController: userProg.db not included in log archive";
+        }
+    }
+
+    const QString zipPath = QDir(bundleDir.path()).filePath(QStringLiteral("onyxlog-bundle.zip"));
+    QFile::remove(zipPath);
+
+    QProcess zipProc;
+    QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
+    const QString oldPath = env.value(QStringLiteral("PATH"));
+    env.insert(QStringLiteral("PATH"),
+               oldPath.isEmpty()
+               ? QStringLiteral("/usr/local/bin:/usr/bin:/bin")
+               : oldPath + QStringLiteral(":/usr/local/bin:/usr/bin:/bin"));
+    zipProc.setProcessEnvironment(env);
+    zipProc.setWorkingDirectory(stageRoot);
+
+    QStringList args;
+    args << QStringLiteral("-r") << QStringLiteral("-q")
+         << QStringLiteral("-P") << QString::fromUtf8(kReleaseZipPassword)
+         << zipPath
+         << relEntries;
+
+    zipProc.start(zipProgram, args);
+    if (!zipProc.waitForStarted(3000)) {
+        *errorHtml = QStringLiteral("<p>Не удалось запустить <code>zip</code>.</p>");
+        return false;
+    }
+    if (!zipProc.waitForFinished(300000)) {
+        zipProc.kill();
+        zipProc.waitForFinished(1000);
+        *errorHtml = QStringLiteral("<p>Превышено время ожидания при создании архива.</p>");
+        return false;
+    }
+
+    const QString zipStdout = QString::fromUtf8(zipProc.readAllStandardOutput()).trimmed();
+    const QString zipStderr = QString::fromUtf8(zipProc.readAllStandardError()).trimmed();
+    const int zipExit = zipProc.exitCode();
+
+    if (zipProc.exitStatus() != QProcess::NormalExit || (zipExit != 0 && zipExit != 12)) {
+        qWarning() << "HttpUploadController: buildLogArchiveBundle zip failed, exit=" << zipExit
+                   << "stderr=" << zipStderr << "stdout=" << zipStdout;
+        QString details = zipStderr;
+        if (!zipStdout.isEmpty()) {
+            if (!details.isEmpty()) {
+                details += QStringLiteral("\n");
+            }
+            details += zipStdout;
+        }
+        *errorHtml = details.isEmpty()
+                ? QStringLiteral("<p>Ошибка при создании архива (код %1).</p>").arg(zipExit)
+                : QStringLiteral("<p>Ошибка при создании архива (код %1): %2</p>")
+                      .arg(zipExit)
+                      .arg(details.toHtmlEscaped());
+        return false;
+    }
+
+    const QString cachePath = logArchiveCacheFilePath(sessionToken);
+    if (QFile::exists(cachePath) && !QFile::remove(cachePath)) {
+        *errorHtml = QStringLiteral("<p>Не удалось подготовить файл архива.</p>");
+        return false;
+    }
+    if (!QFile::copy(zipPath, cachePath)) {
+        *errorHtml = QStringLiteral("<p>Не удалось сохранить архив.</p>");
+        return false;
+    }
+    const qint64 size = QFileInfo(cachePath).size();
+    if (size <= 0) {
+        qWarning() << "HttpUploadController: buildLogArchiveBundle result empty";
+        QFile::remove(cachePath);
+        *errorHtml = QStringLiteral("<p>Архив пуст.</p>");
+        return false;
+    }
+    *outFilePath = cachePath;
+    *outFileSize = size;
+    qWarning() << "HttpUploadController: buildLogArchiveBundle ok, path=" << cachePath << "size=" << size;
+    return true;
+}
+
+void HttpUploadController::resetLogArchiveCache()
+{
+    QString cacheFile;
+    {
+        QMutexLocker locker(&m_logArchiveMutex);
+        cacheFile = m_logArchiveFilePath;
+        m_logArchiveState = LogArchiveState::Idle;
+        m_logArchivePayload.clear();
+        m_logArchiveFilePath.clear();
+        m_logArchiveFileSize = 0;
+        m_logArchiveErrorText.clear();
+    }
+    if (!cacheFile.isEmpty()) {
+        QFile::remove(cacheFile);
+    }
+}
+
+void HttpUploadController::startLogArchiveBuildIfNeeded(bool forceRestart)
+{
+    {
+        QMutexLocker locker(&m_logArchiveMutex);
+        if (m_logArchiveState == LogArchiveState::Building) {
+            qWarning() << "HttpUploadController: log archive build already running";
+            return;
+        }
+        if (!forceRestart && m_logArchiveState == LogArchiveState::Ready) {
+            const qint64 cachedBytes = m_logArchiveFileSize > 0
+                    ? m_logArchiveFileSize
+                    : m_logArchivePayload.size();
+            qWarning() << "HttpUploadController: log archive cache ready,"
+                       << cachedBytes << "bytes, skip rebuild";
+            return;
+        }
+        qWarning() << "HttpUploadController: log archive build started, forceRestart="
+                   << forceRestart << "prevState=" << logArchiveCacheDebugTextUnlocked();
+        m_logArchiveState = LogArchiveState::Building;
+        m_logArchivePayload.clear();
+        m_logArchiveErrorText.clear();
+    }
+
+    struct LogArchiveBuildResult {
+        QString filePath;
+        qint64 fileSize = 0;
+        QString errorHtml;
+        bool ok = false;
+    };
+
+    const QString buildToken = m_sessionToken;
+
+    auto *watcher = new QFutureWatcher<LogArchiveBuildResult>(this);
+    connect(watcher, &QFutureWatcher<LogArchiveBuildResult>::finished, this,
+            [this, watcher]() {
+        const LogArchiveBuildResult result = watcher->result();
+        watcher->deleteLater();
+
+        QMutexLocker locker(&m_logArchiveMutex);
+        if (result.ok && result.fileSize > 0 && !result.filePath.isEmpty()) {
+            m_logArchivePayload.clear();
+            m_logArchiveFilePath = result.filePath;
+            m_logArchiveFileSize = result.fileSize;
+            m_logArchiveState = LogArchiveState::Ready;
+            m_logArchiveErrorText.clear();
+            qWarning() << "HttpUploadController: log archive build finished ok, size="
+                       << m_logArchiveFileSize << "path=" << m_logArchiveFilePath;
+        } else {
+            m_logArchivePayload.clear();
+            m_logArchiveFilePath.clear();
+            m_logArchiveFileSize = 0;
+            m_logArchiveState = LogArchiveState::Error;
+            m_logArchiveErrorText = result.errorHtml.isEmpty()
+                    ? QStringLiteral("Не удалось создать архив.")
+                    : result.errorHtml;
+            const QString plain = QString(m_logArchiveErrorText)
+                    .remove(QRegularExpression(QStringLiteral("<[^>]*>")));
+            qWarning() << "HttpUploadController: log archive build failed:" << plain;
+        }
+    });
+
+    watcher->setFuture(QtConcurrent::run([this, buildToken]() {
+        LogArchiveBuildResult result;
+        result.ok = buildLogArchiveBundle(buildToken, &result.filePath, &result.fileSize, &result.errorHtml);
+        return result;
+    }));
+}
+
+QString HttpUploadController::logArchiveCacheDebugTextUnlocked() const
+{
+    switch (m_logArchiveState) {
+    case LogArchiveState::Building:
+        return QStringLiteral("building");
+    case LogArchiveState::Ready: {
+        const qint64 bytes = m_logArchiveFileSize > 0 ? m_logArchiveFileSize : m_logArchivePayload.size();
+        return QStringLiteral("ready, %1 bytes").arg(bytes);
+    }
+    case LogArchiveState::Error:
+        return QStringLiteral("error");
+    case LogArchiveState::Idle:
+    default:
+        return QStringLiteral("idle");
+    }
+}
+
+QString HttpUploadController::logArchiveCacheDebugText() const
+{
+    QMutexLocker locker(&m_logArchiveMutex);
+    return logArchiveCacheDebugTextUnlocked();
+}
+
+QByteArray HttpUploadController::logArchiveStatusJson() const
+{
+    QMutexLocker locker(&m_logArchiveMutex);
+    const QString debug = logArchiveCacheDebugTextUnlocked();
+    switch (m_logArchiveState) {
+    case LogArchiveState::Building:
+        return QJsonDocument(QJsonObject{
+            {QStringLiteral("state"), QStringLiteral("building")},
+            {QStringLiteral("debug"), debug}
+        }).toJson(QJsonDocument::Compact);
+    case LogArchiveState::Ready: {
+        const qint64 bytes = m_logArchiveFileSize > 0 ? m_logArchiveFileSize : m_logArchivePayload.size();
+        return QJsonDocument(QJsonObject{
+            {QStringLiteral("state"), QStringLiteral("ready")},
+            {QStringLiteral("size"), bytes},
+            {QStringLiteral("debug"), debug}
+        }).toJson(QJsonDocument::Compact);
+    }
+    case LogArchiveState::Error: {
+        const QString plain = QString(m_logArchiveErrorText)
+                .remove(QRegularExpression(QStringLiteral("<[^>]*>")));
+        return QJsonDocument(QJsonObject{
+            {QStringLiteral("state"), QStringLiteral("error")},
+            {QStringLiteral("message"), plain},
+            {QStringLiteral("debug"), debug}
+        }).toJson(QJsonDocument::Compact);
+    }
+    case LogArchiveState::Idle:
+    default:
+        return QJsonDocument(QJsonObject{
+            {QStringLiteral("state"), QStringLiteral("building")},
+            {QStringLiteral("debug"), debug}
+        }).toJson(QJsonDocument::Compact);
+    }
+}
+
+bool HttpUploadController::servePreparedLogArchive(QTcpSocket *socket)
+{
+    QString filePath;
+    QByteArray body;
+    QString cacheState;
+    {
+        QMutexLocker locker(&m_logArchiveMutex);
+        cacheState = logArchiveCacheDebugTextUnlocked();
+        const bool hasFile = !m_logArchiveFilePath.isEmpty()
+                && QFile::exists(m_logArchiveFilePath) && m_logArchiveFileSize > 0;
+        const bool hasPayload = !m_logArchivePayload.isEmpty();
+        if (m_logArchiveState != LogArchiveState::Ready || (!hasFile && !hasPayload)) {
+            qWarning() << "HttpUploadController: servePreparedLogArchive not ready, cache="
+                       << cacheState;
+            return false;
+        }
+        if (hasFile) {
+            filePath = m_logArchiveFilePath;
+        } else {
+            body = m_logArchivePayload;
+        }
+    }
+
+    if (!filePath.isEmpty()) {
+        qWarning() << "HttpUploadController: servePreparedLogArchive streaming file" << filePath
+                   << "peer=" << (socket ? socket->peerAddress().toString() : QString())
+                   << "cache=" << cacheState;
+        return sendFileDownloadFromPath(socket, filePath);
+    }
+
+    qWarning() << "HttpUploadController: servePreparedLogArchive sending" << body.size()
+               << "bytes from memory, peer=" << (socket ? socket->peerAddress().toString() : QString())
+               << "cache=" << cacheState;
+    sendFileDownloadResponse(socket, QByteArrayLiteral("onyxlog.zip"), body);
+    return true;
 }
 
 bool HttpUploadController::isValidTokenInPath(const QString &path) const
 {
-    const QUrl url = QUrl::fromEncoded(path.toUtf8());
-    QUrlQuery q(url);
-    return q.queryItemValue(QStringLiteral("token")) == m_sessionToken;
+    return requestQueryValue(path, QStringLiteral("token")) == m_sessionToken;
+}
+
+void HttpUploadController::bindAuthorizedClient(const QHostAddress &peer)
+{
+    const QHostAddress normalized = normalizeClientAddress(peer);
+    if (normalized.isNull()) {
+        return;
+    }
+    if (!m_authorizedClientAddress.isNull()) {
+        return;
+    }
+    m_authorizedClientAddress = normalized;
+    qWarning() << "HttpUploadController: session bound to client" << normalized.toString();
 }
 
 bool HttpUploadController::isAuthorizedClient(const QHostAddress &peer) const
@@ -691,7 +1162,17 @@ bool HttpUploadController::isAuthorizedClient(const QHostAddress &peer) const
     if (m_authorizedClientAddress.isNull()) {
         return true;
     }
-    return peer == m_authorizedClientAddress;
+    return normalizeClientAddress(peer) == m_authorizedClientAddress;
+}
+
+void HttpUploadController::sendDownloadForbidden(QTcpSocket *socket, const QString &reason,
+                                                 const QString &message)
+{
+    sendJsonResponse(socket, 403, QJsonDocument(QJsonObject{
+        {QStringLiteral("state"), QStringLiteral("error")},
+        {QStringLiteral("reason"), reason},
+        {QStringLiteral("message"), message}
+    }).toJson(QJsonDocument::Compact));
 }
 
 QHostAddress HttpUploadController::effectiveClientAddress() const
@@ -1039,6 +1520,7 @@ void HttpUploadController::startSession()
 
     m_sessionToken = randomToken();
     emit sessionTokenChanged();
+    resetLogArchiveCache();
     m_authorizedClientAddress = QHostAddress();
 
     QDir().mkpath(effectiveUploadDir());
@@ -1074,10 +1556,13 @@ void HttpUploadController::startSession()
     updateLogDownloadUrl();
     updateQrCode();
     m_sessionTimer.start();
+    qWarning() << "HttpUploadController: startSession, prebuilding log archive";
+    startLogArchiveBuildIfNeeded(true);
 }
 
 void HttpUploadController::stopSession()
 {
+    resetLogArchiveCache();
     QString fwError;
     if (!invokeUploadFirewallGuard(QStringLiteral("close"), &fwError)) {
         qWarning() << "HttpUploadController:" << fwError;
@@ -1189,6 +1674,16 @@ void HttpUploadController::onClientDisconnected()
     }
 }
 
+void HttpUploadController::drainPendingConnections()
+{
+    while (!m_client && m_server && m_server->hasPendingConnections()) {
+        onNewConnection();
+        if (m_client && m_rxBuffer.isEmpty() && !m_headerComplete) {
+            break;
+        }
+    }
+}
+
 void HttpUploadController::releaseClientSocket()
 {
     if (m_client) {
@@ -1204,7 +1699,7 @@ void HttpUploadController::releaseClientSocket()
     m_requestHeaders.clear();
 
     if (m_server && m_server->hasPendingConnections()) {
-        QMetaObject::invokeMethod(this, "onNewConnection", Qt::QueuedConnection);
+        QMetaObject::invokeMethod(this, &HttpUploadController::drainPendingConnections, Qt::QueuedConnection);
     }
 }
 
@@ -1237,6 +1732,7 @@ void HttpUploadController::sendHttpResponse(QTcpSocket *socket, int statusCode, 
     }
     QByteArray hdr = line;
     hdr += "Connection: close\r\n";
+    hdr += "Cache-Control: no-store, no-cache, must-revalidate\r\n";
     if (!contentType.isEmpty()) {
         hdr += "Content-Type: ";
         hdr += contentType;
@@ -1252,22 +1748,103 @@ void HttpUploadController::sendHttpResponse(QTcpSocket *socket, int statusCode, 
     socket->flush();
 }
 
+bool HttpUploadController::sendFileDownloadFromPath(QTcpSocket *socket, const QString &filePath)
+{
+    if (!socket || filePath.isEmpty()) {
+        qWarning() << "HttpUploadController: sendFileDownloadFromPath invalid args";
+        return false;
+    }
+
+    QFile file(filePath);
+    if (!file.open(QIODevice::ReadOnly)) {
+        qWarning() << "HttpUploadController: sendFileDownloadFromPath open failed:" << filePath
+                   << file.errorString();
+        return false;
+    }
+
+    const qint64 fileSize = file.size();
+    QByteArray hdr = "HTTP/1.1 200 OK\r\n";
+    hdr += "Connection: close\r\n";
+    hdr += "Content-Type: application/zip\r\n";
+    hdr += "Content-Disposition: attachment; filename=\"onyxlog.zip\"\r\n";
+    hdr += "Cache-Control: no-store\r\n";
+    hdr += "Content-Length: ";
+    hdr += QByteArray::number(fileSize);
+    hdr += "\r\n\r\n";
+
+    const bool hdrOk = writeSocketAll(socket, hdr);
+    bool bodyOk = hdrOk;
+    if (bodyOk) {
+        constexpr int kChunkSize = 64 * 1024;
+        while (!file.atEnd()) {
+            const QByteArray chunk = file.read(kChunkSize);
+            if (chunk.isEmpty() && !file.atEnd()) {
+                bodyOk = false;
+                break;
+            }
+            if (!chunk.isEmpty() && !writeSocketAll(socket, chunk)) {
+                bodyOk = false;
+                break;
+            }
+        }
+    }
+    socket->flush();
+    qWarning() << "HttpUploadController: sendFileDownloadFromPath hdrOk=" << hdrOk
+               << "bodyOk=" << bodyOk << "bytes=" << fileSize
+               << "path=" << filePath << "socketState=" << socket->state();
+    return hdrOk && bodyOk;
+}
+
 void HttpUploadController::sendFileDownloadResponse(QTcpSocket *socket, const QByteArray &downloadFileName,
                                                     const QByteArray &body)
 {
+    Q_UNUSED(downloadFileName)
+    if (!socket) {
+        qWarning() << "HttpUploadController: sendFileDownloadResponse null socket";
+        return;
+    }
     QByteArray hdr = "HTTP/1.1 200 OK\r\n";
     hdr += "Connection: close\r\n";
-    hdr += "Content-Type: application/octet-stream\r\n";
-    hdr += "Content-Disposition: attachment; filename=\"";
-    hdr += downloadFileName;
-    hdr += "\"\r\n";
+    hdr += "Content-Type: application/zip\r\n";
+    hdr += "Content-Disposition: attachment; filename=\"onyxlog.zip\"\r\n";
+    hdr += "Cache-Control: no-store\r\n";
     hdr += "Content-Length: ";
     hdr += QByteArray::number(body.size());
     hdr += "\r\n\r\n";
-    socket->write(hdr);
-    if (!body.isEmpty()) {
-        socket->write(body);
+    const bool hdrOk = writeSocketAll(socket, hdr);
+    const bool bodyOk = writeSocketAll(socket, body);
+    socket->flush();
+    qWarning() << "HttpUploadController: sendFileDownloadResponse hdrOk=" << hdrOk
+               << "bodyOk=" << bodyOk << "bytes=" << body.size()
+               << "socketState=" << socket->state();
+}
+
+void HttpUploadController::sendJsonResponse(QTcpSocket *socket, int statusCode, const QByteArray &jsonBody)
+{
+    QByteArray line;
+    switch (statusCode) {
+    case 200:
+        line = "HTTP/1.1 200 OK\r\n";
+        break;
+    case 403:
+        line = "HTTP/1.1 403 Forbidden\r\n";
+        break;
+    case 503:
+        line = "HTTP/1.1 503 Service Unavailable\r\n";
+        break;
+    default:
+        line = "HTTP/1.1 500 Internal Server Error\r\n";
+        break;
     }
+    QByteArray hdr = line;
+    hdr += "Connection: close\r\n";
+    hdr += "Content-Type: application/json; charset=utf-8\r\n";
+    hdr += "Cache-Control: no-store, no-cache, must-revalidate\r\n";
+    hdr += "Content-Length: ";
+    hdr += QByteArray::number(jsonBody.size());
+    hdr += "\r\n\r\n";
+    writeSocketAll(socket, hdr);
+    writeSocketAll(socket, jsonBody);
     socket->flush();
 }
 
@@ -1283,7 +1860,9 @@ void HttpUploadController::sendSimpleHtml(QTcpSocket *socket, int statusCode, co
 QByteArray HttpUploadController::buildUploadPageHtml() const
 {
     const QString token = m_sessionToken.toHtmlEscaped();
-    const QString downloadHref = QStringLiteral("/download/logFile.txt?token=%1").arg(token);
+    const QString tokenJs = QString(m_sessionToken)
+            .replace(QLatin1Char('\\'), QStringLiteral("\\\\"))
+            .replace(QLatin1Char('\''), QStringLiteral("\\'"));
     QString serialHtml = QStringLiteral("—");
     QString typeHtml = QStringLiteral("—");
     if (m_json) {
@@ -1300,17 +1879,17 @@ QByteArray HttpUploadController::buildUploadPageHtml() const
             "<!DOCTYPE html><html><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width, "
             "initial-scale=1\"><title>Загрузка файлов</title></head><body>"
             "<h1>Загрузка файлов</h1>"
-            "<p><strong>Серийный номер:</strong> %3<br><strong>Тип аппарата:</strong> %4</p>"
+            "<p><strong>Серийный номер:</strong> %2<br><strong>Тип аппарата:</strong> %3</p>"
             "<p><strong>Важно:</strong> эта ссылка действует только для текущей сессии и только для устройства, которое первым открыло страницу. После перезапуска приёма или таймаута откройте страницу заново.</p>"
             "<p>Выберите файл обновления в формате <b>имя-a.b-c.d-e.zip</b> (например: onyx-5.6-3.4-1.zip)</p>"
             "<form id=\"uploadForm\" method=\"post\" action=\"/upload\" enctype=\"multipart/form-data\">"
             "<input type=\"hidden\" name=\"token\" value=\"%1\">"
-            "<p>"
+            "<p style=\"display:flex;flex-direction:column;align-items:flex-start;gap:12px;\">"
             "<input id=\"fileInput\" type=\"file\" name=\"file\" multiple style=\"display:none;\">"
-            "<button id=\"pickFileBtn\" type=\"button\">Выбрать файл</button> "
-            "<span id=\"selectedFiles\" style=\"color:#555;\">Файл не выбран</span>"
+            "<button id=\"pickFileBtn\" type=\"button\" style=\"font-size:18px;padding:12px 20px;\">Выбрать файл</button>"
+            "<span id=\"selectedFiles\" style=\"color:#555;font-size:16px;\">Файл не выбран</span>"
             "</p>"
-            "<p><button type=\"submit\">Отправить</button></p>"
+            "<p><button id=\"submitBtn\" type=\"submit\" style=\"font-size:18px;padding:12px 20px;\">Отправить</button></p>"
             "</form>"
             "<div id=\"progressWrap\" style=\"display:none;max-width:520px;\">"
             "<div style=\"height:10px;background:#ddd;border-radius:5px;overflow:hidden;\">"
@@ -1320,9 +1899,122 @@ QByteArray HttpUploadController::buildUploadPageHtml() const
             "</div>"
             "<div id=\"result\"></div>"
             "<hr><h2>Передача файла с устройства</h2>"
-            "<p><a href=\"%2\">Скачать logFile.txt</a></p>"
+            "<p><button id=\"logDownloadBtn\" type=\"button\" style=\"font-size:18px;padding:12px 20px;\">"
+            "Скачать архив журналов (ZIP)</button></p>"
+            "<p id=\"logDownloadStatus\" style=\"color:#555;font-size:14px;\"></p>"
+            "<a id=\"logDownloadDirectLink\" href=\"#\" style=\"display:none;font-size:17px;font-weight:bold;color:#1976d2;"
+            "margin:8px 0;\"></a>"
+            "<p style=\"color:#777;font-size:13px;\">Передача по HTTP в локальной Wi‑Fi. Chrome может показать "
+            "«Невозможно безопасно скачать файл» — это предупреждение, не ошибка: файл обычно всё равно "
+            "появляется в «Загрузках».</p>"
+            "<p style=\"color:#555;font-size:14px;\">В архиве каталог <code>OnyxLog</code> и при наличии файл <code>FOTEK/userProg.db</code>. "
+            "Пароль на архив такой же, как у входящего ZIP с обновлением ПО.</p>"
             "<script>"
             "(function(){"
+            "var sessionToken='%4';"
+            "var logBtn=document.getElementById('logDownloadBtn');"
+            "var logStatus=document.getElementById('logDownloadStatus');"
+            "function setLogStatus(msg){ if(logStatus) logStatus.textContent=msg||''; }"
+            "function xhrNetDebug(prefix,xhr){"
+            "var parts=[prefix||'Ошибка'];"
+            "if(xhr){"
+            "parts.push('readyState='+xhr.readyState);"
+            "parts.push('status='+xhr.status);"
+            "if(xhr.statusText) parts.push(xhr.statusText);"
+            "}"
+            "return parts.join(', ');"
+            "}"
+            "var logZipLoading=false;"
+            "function ensureDownloadFrame(){"
+            "var frame=document.getElementById('logDownloadFrame');"
+            "if(!frame){"
+            "frame=document.createElement('iframe');"
+            "frame.id='logDownloadFrame';"
+            "frame.style.cssText='display:none;width:0;height:0;border:0';"
+            "frame.title='download';"
+            "document.body.appendChild(frame);"
+            "}"
+            "return frame;"
+            "}"
+            "function fetchPreparedZip(fileSize){"
+            "if(logZipLoading) return;"
+            "logZipLoading=true;"
+            "var url='/download/onyxlog-bundle.zip?token='+encodeURIComponent(sessionToken)+'&_='+(Date.now());"
+            "if(logBtn) logBtn.disabled=false;"
+            "var sizeHint=(fileSize>0)?(' ('+fileSize+' байт)'):'';"
+            "setLogStatus('Архив отправлен'+sizeHint+'. Проверьте «Загрузки». Предупреждение Chrome о HTTP можно игнорировать.');"
+            "var link=document.getElementById('logDownloadDirectLink');"
+            "if(link){"
+            "link.style.display='inline-block';"
+            "link.href=url;"
+            "link.textContent='Скачать onyxlog.zip ещё раз';"
+            "}"
+            "ensureDownloadFrame().src=url;"
+            "setTimeout(function(){ logZipLoading=false; },3000);"
+            "}"
+            "function pollArchiveStatus(forceFresh){"
+            "var statusUrl='/download/status?token='+encodeURIComponent(sessionToken)"
+            "+'&fresh='+(forceFresh?1:0);"
+            "var sxhr=new XMLHttpRequest();"
+            "sxhr.open('GET',statusUrl,true);"
+            "sxhr.timeout=30000;"
+            "sxhr.onload=function(){"
+            "if(sxhr.status===403){"
+            "if(logBtn) logBtn.disabled=false;"
+            "var forbidMsg='Доступ запрещён (403)';"
+            "try{"
+            "var fd=JSON.parse(sxhr.responseText);"
+            "if(fd.message) forbidMsg=fd.message;"
+            "if(fd.reason==='token') forbidMsg='Сессия устарела. Закройте вкладку и откройте страницу снова по QR.';"
+            "else if(fd.reason==='client') forbidMsg='Откройте страницу загрузки на этом телефоне и повторите.';"
+            "}catch(e){}"
+            "setLogStatus(forbidMsg);"
+            "return;"
+            "}"
+            "if(sxhr.status<200||sxhr.status>=300){"
+            "if(logBtn) logBtn.disabled=false;"
+            "setLogStatus(xhrNetDebug('Ошибка подготовки',sxhr));"
+            "return;"
+            "}"
+            "var data=null;"
+            "try{ data=JSON.parse(sxhr.responseText); }catch(e){"
+            "if(logBtn) logBtn.disabled=false;"
+            "setLogStatus('Ошибка ответа сервера: '+String(sxhr.responseText).slice(0,120));"
+            "return;"
+            "}"
+            "if(data.state==='building'){"
+            "setLogStatus('Подготовка архива…'+(data.debug?' ['+data.debug+']':''));"
+            "setTimeout(function(){ pollArchiveStatus(false); },1500);"
+            "return;"
+            "}"
+            "if(data.state==='error'){"
+            "if(!forceFresh){ pollArchiveStatus(true); return; }"
+            "if(logBtn) logBtn.disabled=false;"
+            "var errMsg=data.message||'Ошибка создания архива';"
+            "if(data.debug) errMsg+=' ['+data.debug+']';"
+            "setLogStatus(errMsg);"
+            "return;"
+            "}"
+            "if(data.state==='ready'){"
+            "var sz=(data.size!=null)?data.size:0;"
+            "setLogStatus('Архив готов'+(sz?(' ('+sz+' байт)'):'')+'. Запуск передачи…');"
+            "setTimeout(function(){ fetchPreparedZip(sz); },200);"
+            "return;"
+            "}"
+            "if(logBtn) logBtn.disabled=false;"
+            "setLogStatus('Неизвестный статус: '+JSON.stringify(data));"
+            "};"
+            "sxhr.onerror=function(){ if(logBtn) logBtn.disabled=false; setLogStatus(xhrNetDebug('Ошибка сети при подготовке',sxhr)); };"
+            "sxhr.ontimeout=function(){ if(logBtn) logBtn.disabled=false; setLogStatus(xhrNetDebug('Таймаут при подготовке',sxhr)); };"
+            "sxhr.send();"
+            "}"
+            "function downloadLogArchive(){"
+            "if(!sessionToken){ setLogStatus('Сессия недоступна'); return; }"
+            "if(logBtn) logBtn.disabled=true;"
+            "setLogStatus('Подготовка архива, подождите…');"
+            "pollArchiveStatus(false);"
+            "}"
+            "if(logBtn){ logBtn.addEventListener('click',downloadLogArchive); }"
             "var form=document.getElementById('uploadForm');"
             "if(!form) return;"
             "var fileInput=document.getElementById('fileInput');"
@@ -1384,7 +2076,7 @@ QByteArray HttpUploadController::buildUploadPageHtml() const
             "})();"
             "</script>"
             "</body></html>")
-                                 .arg(token, downloadHref, serialHtml, typeHtml);
+                                 .arg(token, serialHtml, typeHtml, tokenJs); // %1 token, %2 serial, %3 type, %4 JS token
     return html.toUtf8();
 }
 
@@ -1986,12 +2678,12 @@ void HttpUploadController::tryProcessBuffer()
         m_headerComplete = true;
         const QHostAddress peerAddress = effectiveClientAddress();
         const QString peerText = peerAddress.toString();
+        qWarning() << "HttpUploadController: request" << m_method << m_path << "from" << peerText;
 
         if (m_method == QStringLiteral("GET")) {
             if (m_path == QStringLiteral("/") || m_path.isEmpty()) {
                 if (m_authorizedClientAddress.isNull()) {
-                    m_authorizedClientAddress = peerAddress;
-                    qWarning() << "HttpUploadController: session bound to client" << peerText;
+                    bindAuthorizedClient(peerAddress);
                 } else if (!isAuthorizedClient(peerAddress)) {
                     qWarning() << "HttpUploadController: rejected GET from unauthorized client" << peerText;
                     sendSimpleHtml(m_client, 403, QStringLiteral("Доступ запрещён"),
@@ -2000,22 +2692,52 @@ void HttpUploadController::tryProcessBuffer()
                     return;
                 }
                 sendHttpResponse(m_client, 200, "text/html; charset=utf-8", buildUploadPageHtml());
-            } else if (m_path.startsWith(QStringLiteral("/download/logFile.txt"))) {
-                if (!isAuthorizedClient(peerAddress)) {
-                    qWarning() << "HttpUploadController: rejected log download from unauthorized client" << peerText;
-                    sendSimpleHtml(m_client, 403, QStringLiteral("Доступ запрещён"),
-                                   QStringLiteral("<p>Скачивание доступно только с устройства, открывшего сессию.</p>"));
-                } else if (!isValidTokenInPath(QString::fromLatin1(parts[1]))) {
-                    sendSimpleHtml(m_client, 403, QStringLiteral("Доступ запрещён"),
-                                   QStringLiteral("<p>Неверный токен для скачивания файла.</p>"));
+            } else if (m_path.startsWith(QStringLiteral("/download/status"))) {
+                const QString requestTarget = QString::fromLatin1(parts[1]);
+                if (!isValidTokenInPath(requestTarget)) {
+                    qWarning() << "HttpUploadController: /download/status invalid token from" << peerText
+                               << "got=" << requestQueryValue(requestTarget, QStringLiteral("token"))
+                               << "expected=" << m_sessionToken;
+                    sendDownloadForbidden(m_client, QStringLiteral("token"),
+                                          QStringLiteral("Сессия устарела. Откройте страницу заново по QR."));
+                } else if (!isAuthorizedClient(peerAddress)) {
+                    qWarning() << "HttpUploadController: /download/status client mismatch from" << peerText
+                               << "bound=" << m_authorizedClientAddress.toString();
+                    sendDownloadForbidden(m_client, QStringLiteral("client"),
+                                          QStringLiteral("Скачивание доступно только с устройства, открывшего страницу."));
                 } else {
-                    const QString logPath = resolveLogFilePath();
-                    QFile f(logPath);
-                    if (!f.exists() || !f.open(QIODevice::ReadOnly)) {
-                        sendSimpleHtml(m_client, 404, QStringLiteral("Не найдено"),
-                                       QStringLiteral("<p>Файл лога не найден: %1</p>").arg(logPath.toHtmlEscaped()));
-                    } else {
-                        sendFileDownloadResponse(m_client, "logFile.txt", f.readAll());
+                    if (m_authorizedClientAddress.isNull()) {
+                        bindAuthorizedClient(peerAddress);
+                    }
+                    const bool forceRestart = requestQueryValue(requestTarget, QStringLiteral("fresh"))
+                            == QStringLiteral("1");
+                    qWarning() << "HttpUploadController: GET /download/status from" << peerText
+                               << "fresh=" << forceRestart
+                               << "cache=" << logArchiveCacheDebugText();
+                    startLogArchiveBuildIfNeeded(forceRestart);
+                    sendJsonResponse(m_client, 200, logArchiveStatusJson());
+                }
+            } else if (m_path.startsWith(QStringLiteral("/download/onyxlog-bundle.zip"))
+                       || m_path.startsWith(QStringLiteral("/download/logFile.txt"))) {
+                const QString requestTarget = QString::fromLatin1(parts[1]);
+                if (!isValidTokenInPath(requestTarget)) {
+                    qWarning() << "HttpUploadController: GET download zip invalid token from" << peerText;
+                    sendDownloadForbidden(m_client, QStringLiteral("token"),
+                                          QStringLiteral("Сессия устарела. Откройте страницу заново по QR."));
+                } else if (!isAuthorizedClient(peerAddress)) {
+                    qWarning() << "HttpUploadController: rejected log download from unauthorized client" << peerText
+                               << "bound=" << m_authorizedClientAddress.toString();
+                    sendDownloadForbidden(m_client, QStringLiteral("client"),
+                                          QStringLiteral("Скачивание доступно только с устройства, открывшего страницу."));
+                } else {
+                    if (m_authorizedClientAddress.isNull()) {
+                        bindAuthorizedClient(peerAddress);
+                    }
+                    qWarning() << "HttpUploadController: GET download zip from" << peerText
+                               << "cache=" << logArchiveCacheDebugText();
+                    if (!servePreparedLogArchive(m_client)) {
+                        qWarning() << "HttpUploadController: GET download zip not ready, 503";
+                        sendJsonResponse(m_client, 503, logArchiveStatusJson());
                     }
                 }
             } else if (m_path == QStringLiteral("/favicon.ico")) {
@@ -2315,7 +3037,7 @@ bool HttpUploadController::applyGenVersion(const QString &version)
 
 bool HttpUploadController::restartDemo1UserService()
 {
-    setLastError(QString());
+    setLastError(QString::fromUtf8("Команда перезагрузки после обновления"));
     QCoreApplication::exit(0);
     return true;
 }

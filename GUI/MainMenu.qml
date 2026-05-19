@@ -5,7 +5,7 @@ import QtQuick.Controls 2.15
 import StratifyLabs.UI 2.0
 
 Item {
-    id: settinsScreen
+    id: settingsScreen
     signal recommendButtonPressed()
     signal settingsButtonPressed()
     signal userButtonPressed()
@@ -13,18 +13,22 @@ Item {
     signal secretKeysButtonPressed()
     signal userProgsButtonPressed()
     signal freeSettingsButtonPressed()
+    signal lastSettingsButtonPressed()
     signal serviceMenuButtonPressed()
     signal languageButtonPressed()
     signal infoButtonPressed()
 
+    property bool startupMode: false
     property color fotekBlue: "#264093"
     property color fotekOrange: "#faa731"
     readonly property int screenMargin: 34
     readonly property int topButtonWidth: 160
     readonly property int topButtonHeight: 64
-    readonly property int mainSpacing: 24
-    readonly property int actionButtonHeight: 132
-    readonly property int topActionsHeight: actionButtonHeight * 2 + mainSpacing
+    readonly property int mainSpacing: startupMode ? 18 : 24
+    readonly property int actionButtonHeight: startupMode ? 96 : 132
+    readonly property int headerHeight: startupMode ? 110 : 70
+    readonly property int bottomActionsHeight: 132
+    readonly property int bottomRowBottomInset: screenMargin + 72 + 24
 
     property bool videoPlayerVisible: false
 
@@ -33,34 +37,27 @@ Item {
         color: "#F3F5F9"
     }
 
-    Rectangle {
-        anchors.fill: parent
-        color: "transparent"
-        border.width: 22
-        border.color: settinsScreen.fotekBlue
-    }
-
     Button {
         id: infoButton
         anchors.top: parent.top
         anchors.left: parent.left
-        anchors.topMargin: settinsScreen.screenMargin
-        anchors.leftMargin: settinsScreen.screenMargin
-        width: settinsScreen.topButtonWidth
-        height: settinsScreen.topButtonHeight
+        anchors.topMargin: settingsScreen.screenMargin
+        anchors.leftMargin: settingsScreen.screenMargin
+        width: settingsScreen.topButtonWidth
+        height: settingsScreen.topButtonHeight
         text: qsTr("ИНФО")
-        onPressed: settinsScreen.infoButtonPressed()
+        onPressed: settingsScreen.infoButtonPressed()
 
         background: Rectangle {
             radius: 18
             color: "white"
             border.width: 1
-            border.color: settinsScreen.fotekBlue
+            border.color: settingsScreen.fotekBlue
         }
 
         contentItem: Text {
             text: parent.text
-            color: settinsScreen.fotekBlue
+            color: settingsScreen.fotekBlue
             font.pixelSize: 24
             font.bold: true
             horizontalAlignment: Text.AlignHCenter
@@ -72,23 +69,23 @@ Item {
         id: languageButton
         anchors.top: parent.top
         anchors.right: parent.right
-        anchors.topMargin: settinsScreen.screenMargin
-        anchors.rightMargin: settinsScreen.screenMargin
-        width: settinsScreen.topButtonWidth
-        height: settinsScreen.topButtonHeight
+        anchors.topMargin: settingsScreen.screenMargin
+        anchors.rightMargin: settingsScreen.screenMargin
+        width: settingsScreen.topButtonWidth
+        height: settingsScreen.topButtonHeight
         text: qsTr("RU / EN")
-        onPressed: settinsScreen.languageButtonPressed()
+        onPressed: settingsScreen.languageButtonPressed()
 
         background: Rectangle {
             radius: 18
             color: "white"
             border.width: 1
-            border.color: settinsScreen.fotekBlue
+            border.color: settingsScreen.fotekBlue
         }
 
         contentItem: Text {
             text: parent.text
-            color: settinsScreen.fotekBlue
+            color: settingsScreen.fotekBlue
             font.pixelSize: 24
             font.bold: true
             horizontalAlignment: Text.AlignHCenter
@@ -96,74 +93,184 @@ Item {
         }
     }
 
-    Text {
-        id: screenTitle
-        text: qsTr("МЕНЮ")
+    Item {
+        id: headerArea
         anchors {
             top: parent.top
             horizontalCenter: parent.horizontalCenter
-            topMargin: settinsScreen.screenMargin + 6
+            topMargin: settingsScreen.screenMargin - 8
         }
-        color: settinsScreen.fotekBlue
-        font.pixelSize: 48
-        font.bold: true
+        width: parent.width - settingsScreen.screenMargin * 2 - settingsScreen.topButtonWidth * 2
+        height: settingsScreen.headerHeight
+
+        Image {
+            id: logoImage
+            visible: settingsScreen.startupMode
+            anchors.fill: parent
+            fillMode: Image.PreserveAspectFit
+            asynchronous: true
+            source: "file:///home/kikorik/FOTEK/Images/logo.png"
+        }
+
+        Text {
+            id: screenTitle
+            visible: !settingsScreen.startupMode
+            text: qsTr("МЕНЮ")
+            anchors.centerIn: parent
+            color: settingsScreen.fotekBlue
+            font.pixelSize: 48
+            font.bold: true
+        }
     }
 
     DialogActionButton {
         id: exitButton
+        visible: !settingsScreen.startupMode
         width: 180
         height: 72
         text: qsTr("НАЗАД")
-        secondaryColor: settinsScreen.fotekBlue
+        secondaryColor: settingsScreen.fotekBlue
         secondaryBorderWidth: 1
         secondaryBorderColor: "#1E3274"
         cornerRadius: 20
         labelPixelSize: 30
-        onPressed: settinsScreen.exitButtonPressed()
+        onPressed: settingsScreen.exitButtonPressed()
         anchors {
             left: parent.left
             bottom: parent.bottom
-            margins: settinsScreen.screenMargin
+            margins: settingsScreen.screenMargin
+        }
+    }
+
+    RowLayout {
+        id: bottomActionsRow
+        z: 2
+        anchors {
+            left: parent.left
+            right: parent.right
+            bottom: settingsScreen.startupMode ? parent.bottom : exitButton.top
+            leftMargin: settingsScreen.screenMargin
+            rightMargin: settingsScreen.screenMargin
+            bottomMargin: settingsScreen.startupMode ? settingsScreen.bottomRowBottomInset : 24
+        }
+        height: settingsScreen.bottomActionsHeight
+        spacing: settingsScreen.mainSpacing
+
+        Button {
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+            text: qsTr("Видеоинструкции")
+            onPressed: settingsScreen.videoPlayerVisible = true
+
+            background: Rectangle {
+                radius: 24
+                color: "white"
+                border.width: 1
+                border.color: "#C7CEDA"
+            }
+
+            contentItem: Text {
+                text: parent.text
+                color: "black"
+                font.pixelSize: 30
+                font.bold: true
+                horizontalAlignment: Text.AlignHCenter
+                verticalAlignment: Text.AlignVCenter
+                wrapMode: Text.WordWrap
+            }
+        }
+
+        Button {
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+            text: qsTr("Сервисное меню")
+            onPressed: settingsScreen.serviceMenuButtonPressed()
+
+            background: Rectangle {
+                radius: 24
+                color: settingsScreen.fotekBlue
+                border.width: 1
+                border.color: "#1E3274"
+            }
+
+            contentItem: Text {
+                text: parent.text
+                color: "white"
+                font.pixelSize: 30
+                font.bold: true
+                horizontalAlignment: Text.AlignHCenter
+                verticalAlignment: Text.AlignVCenter
+                wrapMode: Text.WordWrap
+            }
         }
     }
 
     Item {
         id: actionsArea
         anchors {
-            top: screenTitle.bottom
-            topMargin: 26
-            horizontalCenter: parent.horizontalCenter
-            bottom: exitButton.top
-            bottomMargin: 24
+            top: headerArea.bottom
+            topMargin: settingsScreen.startupMode ? 12 : 26
+            left: parent.left
+            right: parent.right
+            bottom: bottomActionsRow.top
+            bottomMargin: settingsScreen.mainSpacing
+            leftMargin: settingsScreen.screenMargin
+            rightMargin: settingsScreen.screenMargin
         }
-        width: parent.width - settinsScreen.screenMargin * 2
 
-        ColumnLayout {
+        RowLayout {
             anchors.fill: parent
-            spacing: settinsScreen.mainSpacing
+            spacing: settingsScreen.mainSpacing
 
-            RowLayout {
+            Button {
                 Layout.fillWidth: true
-                Layout.preferredHeight: settinsScreen.topActionsHeight
-                spacing: settinsScreen.mainSpacing
+                Layout.fillHeight: true
+                Layout.preferredWidth: parent.width * 0.56
+                text: settingsScreen.startupMode ? qsTr("Рекомендованные\nпрограммы") : qsTr("Рекомендованные программы")
+                onPressed: settingsScreen.recommendButtonPressed()
+
+                background: Rectangle {
+                    radius: 28
+                    color: "white"
+                    border.width: 2
+                    border.color: settingsScreen.fotekOrange
+                }
+
+                contentItem: Text {
+                    text: parent.text
+                    color: settingsScreen.fotekBlue
+                    font.pixelSize: settingsScreen.startupMode ? 36 : 42
+                    font.bold: true
+                    horizontalAlignment: Text.AlignHCenter
+                    verticalAlignment: Text.AlignVCenter
+                    wrapMode: Text.WordWrap
+                }
+            }
+
+            ColumnLayout {
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                Layout.preferredWidth: parent.width * 0.44
+                spacing: settingsScreen.mainSpacing
 
                 Button {
+                    visible: settingsScreen.startupMode
                     Layout.fillWidth: true
-                    Layout.preferredHeight: settinsScreen.topActionsHeight
-                    text: qsTr("Рекомендованные программы")
-                    onPressed: recommendButtonPressed()
+                    Layout.fillHeight: true
+                    text: qsTr("Последние установки")
+                    onPressed: settingsScreen.lastSettingsButtonPressed()
 
                     background: Rectangle {
-                        radius: 28
-                        color: "white"
-                        border.width: 2
-                        border.color: settinsScreen.fotekOrange
+                        radius: 24
+                        color: settingsScreen.fotekBlue
+                        border.width: 1
+                        border.color: "#1E3274"
                     }
 
                     contentItem: Text {
                         text: parent.text
-                        color: settinsScreen.fotekBlue
-                        font.pixelSize: 42
+                        color: "white"
+                        font.pixelSize: 24
                         font.bold: true
                         horizontalAlignment: Text.AlignHCenter
                         verticalAlignment: Text.AlignVCenter
@@ -171,74 +278,40 @@ Item {
                     }
                 }
 
-                ColumnLayout {
+                Button {
                     Layout.fillWidth: true
-                    Layout.preferredHeight: settinsScreen.topActionsHeight
-                    spacing: settinsScreen.mainSpacing
+                    Layout.fillHeight: true
+                    text: qsTr("Пользовательские программы")
+                    onPressed: settingsScreen.userButtonPressed()
 
-                    Button {
-                        Layout.fillWidth: true
-                        Layout.preferredHeight: settinsScreen.actionButtonHeight
-                        text: qsTr("Пользовательские программы")
-                        onPressed: userButtonPressed()
-
-                        background: Rectangle {
-                            radius: 24
-                            color: settinsScreen.fotekOrange
-                            border.width: 1
-                            border.color: "#D88714"
-                        }
-
-                        contentItem: Text {
-                            text: parent.text
-                            color: "#111111"
-                            font.pixelSize: 30
-                            font.bold: true
-                            horizontalAlignment: Text.AlignHCenter
-                            verticalAlignment: Text.AlignVCenter
-                            wrapMode: Text.WordWrap
-                        }
+                    background: Rectangle {
+                        radius: 24
+                        color: settingsScreen.fotekOrange
+                        border.width: 1
+                        border.color: "#D88714"
                     }
 
-                    Button {
-                        Layout.fillWidth: true
-                        Layout.preferredHeight: settinsScreen.actionButtonHeight
-                        text: qsTr("Свободные установки")
-                        onPressed: {
-                            recomHandle.loadFreeSettings()
-                            freeSettingsButtonPressed()
-                        }
-
-                        background: Rectangle {
-                            radius: 24
-                            color: "white"
-                            border.width: 1
-                            border.color: "#C7CEDA"
-                        }
-
-                        contentItem: Text {
-                            text: parent.text
-                            color: "black"
-                            font.pixelSize: 30
-                            font.bold: true
-                            horizontalAlignment: Text.AlignHCenter
-                            verticalAlignment: Text.AlignVCenter
-                            wrapMode: Text.WordWrap
-                        }
+                    contentItem: Text {
+                        text: parent.text
+                        color: "#111111"
+                        font.pixelSize: settingsScreen.startupMode ? 22 : 30
+                        font.bold: true
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                        wrapMode: Text.WordWrap
                     }
                 }
-            }
-
-            RowLayout {
-                Layout.fillWidth: true
-                Layout.preferredHeight: settinsScreen.actionButtonHeight
-                spacing: settinsScreen.mainSpacing
 
                 Button {
                     Layout.fillWidth: true
-                    Layout.preferredHeight: settinsScreen.actionButtonHeight
-                    text: qsTr("Видеоинструкции")
-                    onPressed: settinsScreen.videoPlayerVisible = true
+                    Layout.fillHeight: true
+                    text: settingsScreen.startupMode ? qsTr("Свободная установка") : qsTr("Свободные установки")
+                    onPressed: {
+                        if (!settingsScreen.startupMode) {
+                            recomHandle.loadFreeSettings()
+                        }
+                        settingsScreen.freeSettingsButtonPressed()
+                    }
 
                     background: Rectangle {
                         radius: 24
@@ -250,31 +323,7 @@ Item {
                     contentItem: Text {
                         text: parent.text
                         color: "black"
-                        font.pixelSize: 30
-                        font.bold: true
-                        horizontalAlignment: Text.AlignHCenter
-                        verticalAlignment: Text.AlignVCenter
-                        wrapMode: Text.WordWrap
-                    }
-                }
-
-                Button {
-                    Layout.fillWidth: true
-                    Layout.preferredHeight: settinsScreen.actionButtonHeight
-                    text: qsTr("Сервисное меню")
-                    onPressed: serviceMenuButtonPressed()
-
-                    background: Rectangle {
-                        radius: 24
-                        color: settinsScreen.fotekBlue
-                        border.width: 1
-                        border.color: "#1E3274"
-                    }
-
-                    contentItem: Text {
-                        text: parent.text
-                        color: "white"
-                        font.pixelSize: 30
+                        font.pixelSize: settingsScreen.startupMode ? 22 : 30
                         font.bold: true
                         horizontalAlignment: Text.AlignHCenter
                         verticalAlignment: Text.AlignVCenter
@@ -289,7 +338,7 @@ Item {
         id: videoPlayerLoader
         anchors.fill: parent
         z: 1000
-        active: settinsScreen.videoPlayerVisible
+        active: settingsScreen.videoPlayerVisible
         sourceComponent: videoPlayerComponent
     }
 
@@ -297,7 +346,7 @@ Item {
         id: videoPlayerComponent
         VideoPlayer {
             anchors.fill: parent
-            onCloseRequested: settinsScreen.videoPlayerVisible = false
+            onCloseRequested: settingsScreen.videoPlayerVisible = false
         }
     }
 }

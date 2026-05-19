@@ -5,6 +5,7 @@ Item {
 
     property alias source : menuLoader.source
     property bool shortcut : false
+    property bool closeOnServiceRootReturn: false
     property alias item : menuLoader.item
     readonly property var loader : menuLoader
     focus: true
@@ -43,11 +44,12 @@ Item {
         return base === "ServiceMenu.qml"
                 || base === "SerialNumberSettings.qml"
                 || base === "updateWindow.qml"
-                || base === "ServiceNetworkSettings.qml"
                 || base === "WifiFileReceive.qml"
                 || base === "WiFiConnector.qml"
                 || base === "TouchScreenTest.qml"
                 || base === "AboutScreen.qml"
+                || base === "LogFileScreen.qml"
+                || base === "logUpdate.qml"
     }
 
     signal returnButtonPressed()
@@ -85,6 +87,12 @@ Item {
                     }
                     if (menuLoader.item.infoButtonPressed) {
                         menuLoader.item.infoButtonPressed.disconnect()
+                    }
+                    if (menuLoader.item.logFileButtonPressed) {
+                        menuLoader.item.logFileButtonPressed.disconnect()
+                    }
+                    if (menuLoader.item.logUpdateButtonPressed) {
+                        menuLoader.item.logUpdateButtonPressed.disconnect()
                     }
                 } catch(e) {
                     // Игнорируем ошибки отключения
@@ -152,11 +160,6 @@ Item {
                             navigateTo("qrc:/updateWindow.qml")
                         })
                     }
-                    if (menuLoader.item.networkSettingsButtonPressed) {
-                        menuLoader.item.networkSettingsButtonPressed.connect(function() {
-                            navigateTo("qrc:/ServiceNetworkSettings.qml")
-                        })
-                    }
                     if (menuLoader.item.wifiFileReceiveButtonPressed) {
                         menuLoader.item.wifiFileReceiveButtonPressed.connect(function() {
                             navigateTo("qrc:/WifiFileReceive.qml")
@@ -175,6 +178,16 @@ Item {
                     if (menuLoader.item.touchScreenTestButtonPressed) {
                         menuLoader.item.touchScreenTestButtonPressed.connect(function() {
                             navigateTo("qrc:/TouchScreenTest.qml")
+                        })
+                    }
+                    if (menuLoader.item.logFileButtonPressed) {
+                        menuLoader.item.logFileButtonPressed.connect(function() {
+                            navigateTo("qrc:/LogFileScreen.qml")
+                        })
+                    }
+                    if (menuLoader.item.logUpdateButtonPressed) {
+                        menuLoader.item.logUpdateButtonPressed.connect(function() {
+                            navigateTo("qrc:/logUpdate.qml")
                         })
                     }
                     if (menuLoader.item.deleteAllUserProgsRequested) {
@@ -218,7 +231,11 @@ Item {
             if (inServiceFlow && base !== "ServiceMenu.qml") {
                 navigateTo("qrc:/ServiceMenu.qml")
             } else if (inServiceFlow && base === "ServiceMenu.qml") {
-                navigateTo("qrc:/MainMenu.qml")
+                if (closeOnServiceRootReturn) {
+                    closeMe()
+                } else {
+                    navigateTo("qrc:/MainMenu.qml")
+                }
             } else if (shortcut) {
                 shortcut = false
                 closeMe()

@@ -7,6 +7,8 @@ CONFIG += c++17
 LIBS += -lm
 
 HEADERS += \
+    $$PWD/DeviceLogManager.h \
+    $$PWD/UpdateLogManager.h \
     $$PWD/EshfProgStringBuilder.h \
     $$PWD/Structures.h \
     $$PWD/controlcenter.h \
@@ -37,6 +39,8 @@ HEADERS += \
     $$PWD/systemmonitor.h 
 
 SOURCES += \
+    $$PWD/DeviceLogManager.cpp \
+    $$PWD/UpdateLogManager.cpp \
     $$PWD/EshfProgStringBuilder.cpp \
     $$PWD/controlcenter.cpp \
     $$PWD/HttpUploadController.cpp \

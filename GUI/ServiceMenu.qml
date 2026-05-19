@@ -10,12 +10,13 @@ Item {
     signal deleteAllUserProgsRequested()
     signal serialNumberButtonPressed()
     signal softwareUpdateButtonPressed()
-    signal networkSettingsButtonPressed()
     signal wifiFileReceiveButtonPressed()
     signal wifiSettingsButtonPressed()
     signal touchScreenTestButtonPressed()
     signal aboutButtonPressed()
-    readonly property int menuButtonWidth: 410
+    signal logFileButtonPressed()
+    signal logUpdateButtonPressed()
+    readonly property int menuButtonWidth: 550
     readonly property int menuButtonHeight: 96
     readonly property int menuColumnsSpacing: 24
     
@@ -66,15 +67,6 @@ Item {
         }
 
         SButton {
-            id: networkSettingsButton
-            style: "btn-primary lg"
-            Layout.preferredWidth: serviceMenuRoot.menuButtonWidth
-            Layout.preferredHeight: serviceMenuRoot.menuButtonHeight
-            text: qsTr("Настройка сети")
-            onPressed: serviceMenuRoot.networkSettingsButtonPressed()
-        }
-
-        SButton {
             id: wifiFileReceiveButton
             style: "btn-primary lg"
             Layout.preferredWidth: serviceMenuRoot.menuButtonWidth
@@ -97,7 +89,7 @@ Item {
             style: "btn-primary lg"
             Layout.preferredWidth: serviceMenuRoot.menuButtonWidth
             Layout.preferredHeight: serviceMenuRoot.menuButtonHeight
-            text: qsTr("О программе")
+            text: qsTr("Об аппарате")
             onPressed: serviceMenuRoot.aboutButtonPressed()
         }
 
@@ -108,6 +100,24 @@ Item {
             Layout.preferredHeight: serviceMenuRoot.menuButtonHeight
             text: qsTr("Проверка тач-скрина")
             onPressed: serviceMenuRoot.touchScreenTestButtonPressed()
+        }
+
+        SButton {
+            id: logFileButton
+            style: "btn-primary lg"
+            Layout.preferredWidth: serviceMenuRoot.menuButtonWidth
+            Layout.preferredHeight: serviceMenuRoot.menuButtonHeight
+            text: qsTr("Журнал событий")
+            onPressed: serviceMenuRoot.logFileButtonPressed()
+        }
+
+        SButton {
+            id: logUpdateButton
+            style: "btn-primary lg"
+            Layout.preferredWidth: serviceMenuRoot.menuButtonWidth
+            Layout.preferredHeight: serviceMenuRoot.menuButtonHeight
+            text: qsTr("Лог обновлений")
+            onPressed: serviceMenuRoot.logUpdateButtonPressed()
         }
 
         SButton {

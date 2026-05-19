@@ -239,6 +239,9 @@ void LinkStm::sendCommand()
         }
     }
     else {
+        if (!m_waitAnswer) {
+            preState = STATE_OK;
+        }
         errCounter = 0;
     }
 
@@ -270,6 +273,9 @@ void LinkStm::sendCommand()
                     activeSocket.autoMode = m_socketList[activeSocket.id].autoMode > 0 ? true : false;
                     QElapsedTimer m_elapsedTimer;
                     m_elapsedTimer.start();
+                    emit sigActivationStartedDetails(activeSocket.id, activeSocket.isCut,
+                                                     mode, power, activeSocket.autoMode,
+                                                     static_cast<quint8>(m_unitState.pedalKnob));
                     emit sigStartActivation(activeSocket.id, activeSocket.isCut);
                     qint64 afterEmit = m_elapsedTimer.elapsed();
                     if (afterEmit > 5) {
@@ -582,7 +588,9 @@ void LinkStm::readRxCommand()
         break;
     // Ответ на спец.запросы
     case RxSpecial:
-
+        if (m_rxCommand.com == PowerOff) {
+            emit sigPowerOffCommand();
+        }
         break;
     // Присылаемые ошибки
     case RxErrors:

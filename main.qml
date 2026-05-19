@@ -6,8 +6,6 @@ import QtQuick.CuteKeyboard 1.0
 import StratifyLabs.UI 2.0
 import BackEnd 1.0
 
-// О-хо-хо, будем сливать
-
 Window {
 	id: container
 	width: 1280
@@ -447,6 +445,8 @@ Window {
                     return recommendedProgramsComponent
                 case "userProgramList":
                     return userProgramsComponent
+                case "serviceMenu":
+                    return startupServiceMenuComponent
                 default:
                     return startupMenuComponent
                 }
@@ -472,26 +472,63 @@ Window {
         Component {
             id: startupMenuComponent
 
-            StartupMenu {
-                fotekBlue: container.fotekBlue
-                fotekOrange: container.fotekOrange
-                onRecommendedProgramsPressed: container.showStartupScreen("recommendedList")
-                onUserProgramsPressed: container.showStartupScreen("userProgramList")
-                onFreeSettingsPressed: {
-                    recomHandle.loadEmptyFreeSettings()
-                    container.currentProgramIsUser = false
-                    container.setCurrentProgramTitle(qsTr("СВОБОДНЫЕ УСТАНОВКИ"))
-                    container.resetUnsavedChanges()
-                    container.showMainScreen()
+            Loader {
+                id: startupMainMenuLoader
+                anchors.fill: parent
+                source: "qrc:/MainMenu.qml"
+
+                onItemChanged: {
+                    if (!item)
+                        return
+                    item.startupMode = true
+                    item.fotekBlue = container.fotekBlue
+                    item.fotekOrange = container.fotekOrange
                 }
-                onLastSettingsPressed: {
-                    recomHandle.loadLastSettings()
-                    if (!container.restoreCurrentProgramInfo()) {
-                        container.setCurrentProgramTitle(qsTr("Последние установки"))
+
+                Connections {
+                    target: startupMainMenuLoader.item
+                    ignoreUnknownSignals: true
+                    function onRecommendButtonPressed() {
+                        container.showStartupScreen("recommendedList")
                     }
-                    container.showMainScreen()
+                    function onUserButtonPressed() {
+                        container.showStartupScreen("userProgramList")
+                    }
+                    function onFreeSettingsButtonPressed() {
+                        recomHandle.loadEmptyFreeSettings()
+                        container.currentProgramIsUser = false
+                        container.setCurrentProgramTitle(qsTr("СВОБОДНЫЕ УСТАНОВКИ"))
+                        container.resetUnsavedChanges()
+                        container.showMainScreen()
+                    }
+                    function onLastSettingsButtonPressed() {
+                        recomHandle.loadLastSettings()
+                        if (!container.restoreCurrentProgramInfo()) {
+                            container.setCurrentProgramTitle(qsTr("Последние установки"))
+                        }
+                        container.showMainScreen()
+                    }
+                    function onServiceMenuButtonPressed() {
+                        container.showStartupScreen("serviceMenu")
+                    }
+                    function onInfoButtonPressed() {
+                        container.startupInfoVisible = true
+                    }
+                    function onLanguageButtonPressed() {
+                        container.language = container.language === "en" ? "ru" : "en"
+                    }
                 }
-                onInfoButtonPressed: container.startupInfoVisible = true
+            }
+        }
+
+        Component {
+            id: startupServiceMenuComponent
+
+            MenuLoader {
+                source: "qrc:/ServiceMenu.qml"
+                closeOnServiceRootReturn: true
+                onCloseMe: container.showStartupScreen("startMenu")
+                onDeleteAllUserProgsRequested: recomHandle.deleteAllUserProgs()
             }
         }
 

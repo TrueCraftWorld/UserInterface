@@ -43,7 +43,7 @@ Item {
         serialRoot.serialValid = isSerialValid(serialRoot.serialNumber)
         serialRoot.serialSaveStatus = serialRoot.serialValid
                                    ? qsTr("Сохранено")
-                                   : qsTr("Введите серийный номер в диапазоне 260000-1000000")
+                                   : qsTr("Введите серийный номер в диапазоне 260 000 - 1 000 000")
     }
 
     Component.onDestruction: {
@@ -136,14 +136,14 @@ Item {
 
         SPanel {
             style: "panel-primary"
-            heading: qsTr("Тип аппарата (будущее поле)")
+            heading: qsTr("Тип аппарата")
             Layout.fillWidth: true
 
             TextField {
                 id: typeInput
                 width: parent.width - 30
                 anchors.horizontalCenter: parent.horizontalCenter
-                placeholderText: qsTr("Например: RK3566 Rev.A")
+                placeholderText: qsTr("Например: ONYX-AM")
                 text: serialRoot.deviceType
                 onTextChanged: {
                     serialRoot.deviceType = text
@@ -163,7 +163,7 @@ Item {
 
         SPanel {
             style: "panel-primary"
-            heading: qsTr("Особенности (будущее поле)")
+            heading: qsTr("Комментарии")
             Layout.fillWidth: true
             Layout.fillHeight: true
 
@@ -172,7 +172,7 @@ Item {
                 width: parent.width - 30
                 height: 180
                 anchors.horizontalCenter: parent.horizontalCenter
-                placeholderText: qsTr("Комментарий: комплектация, ревизия, кастомные параметры")
+                placeholderText: qsTr("Дата производства, особенности")
                 text: serialRoot.featureNotes
                 wrapMode: Text.Wrap
                 onTextChanged: {

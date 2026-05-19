@@ -22,6 +22,7 @@
         <file>ModeEditor.qml</file>
         <file>ProgItemList.qml</file>
         <file>MainMenu.qml</file>
+        <file>MenuActionButton.qml</file>
         <file>MenuLoader.qml</file>
         <file>ServiceMenu.qml</file>
         <file>SerialNumberSettings.qml</file>

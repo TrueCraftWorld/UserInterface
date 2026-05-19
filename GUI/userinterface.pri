@@ -16,6 +16,7 @@ DISTFILES += \
     $$PWD/LogFileScreen.qml \
     $$PWD/logUpdate.qml \
     $$PWD/MainMenu.qml \
+    $$PWD/MenuActionButton.qml \
     $$PWD/MenuLoader.qml \
     $$PWD/ModeEditor.qml \
     $$PWD/ModePowerRect.qml \

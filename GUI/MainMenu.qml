@@ -21,6 +21,7 @@ Item {
     property bool startupMode: false
     property color fotekBlue: "#264093"
     property color fotekOrange: "#faa731"
+    readonly property string iconsBasePath: "file:///home/kikorik/FOTEK/Images/icons/"
     readonly property int screenMargin: 34
     readonly property int topButtonWidth: 160
     readonly property int topButtonHeight: 64
@@ -29,6 +30,10 @@ Item {
     readonly property int headerHeight: startupMode ? 110 : 70
     readonly property int bottomActionsHeight: 132
     readonly property int bottomRowBottomInset: screenMargin + 72 + 24
+    readonly property int menuActionIconSize: startupMode ? 96 : 96
+    readonly property int menuActionLabelSize: 38
+    readonly property int menuActionLargeLabelSize: 42
+    readonly property int menuActionLargeIconSize: startupMode ? 112 : 112
 
     property bool videoPlayerVisible: false
 
@@ -156,52 +161,28 @@ Item {
         height: settingsScreen.bottomActionsHeight
         spacing: settingsScreen.mainSpacing
 
-        Button {
+        MenuActionButton {
             Layout.fillWidth: true
             Layout.fillHeight: true
             text: qsTr("Видеоинструкции")
+            iconSource: settingsScreen.iconsBasePath + "iconVideo.png"
+            accentColor: settingsScreen.fotekOrange
+            textColor: settingsScreen.fotekBlue
+            iconSize: settingsScreen.menuActionIconSize
+            labelPixelSize: settingsScreen.menuActionLabelSize
             onPressed: settingsScreen.videoPlayerVisible = true
-
-            background: Rectangle {
-                radius: 24
-                color: "white"
-                border.width: 1
-                border.color: "#C7CEDA"
-            }
-
-            contentItem: Text {
-                text: parent.text
-                color: "black"
-                font.pixelSize: 30
-                font.bold: true
-                horizontalAlignment: Text.AlignHCenter
-                verticalAlignment: Text.AlignVCenter
-                wrapMode: Text.WordWrap
-            }
         }
 
-        Button {
+        MenuActionButton {
             Layout.fillWidth: true
             Layout.fillHeight: true
             text: qsTr("Сервисное меню")
+            iconSource: settingsScreen.iconsBasePath + "iconSetting.png"
+            accentColor: settingsScreen.fotekOrange
+            textColor: settingsScreen.fotekBlue
+            iconSize: settingsScreen.menuActionIconSize
+            labelPixelSize: settingsScreen.menuActionLabelSize
             onPressed: settingsScreen.serviceMenuButtonPressed()
-
-            background: Rectangle {
-                radius: 24
-                color: settingsScreen.fotekBlue
-                border.width: 1
-                border.color: "#1E3274"
-            }
-
-            contentItem: Text {
-                text: parent.text
-                color: "white"
-                font.pixelSize: 30
-                font.bold: true
-                horizontalAlignment: Text.AlignHCenter
-                verticalAlignment: Text.AlignVCenter
-                wrapMode: Text.WordWrap
-            }
         }
     }
 
@@ -222,112 +203,62 @@ Item {
             anchors.fill: parent
             spacing: settingsScreen.mainSpacing
 
-            Button {
+            MenuActionButton {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
-                Layout.preferredWidth: parent.width * 0.56
-                text: settingsScreen.startupMode ? qsTr("Рекомендованные\nпрограммы") : qsTr("Рекомендованные программы")
+                text: qsTr("Рекомендованные\nпрограммы")
+                iconSource: settingsScreen.iconsBasePath + "iconRecom.png"
+                accentColor: settingsScreen.fotekOrange
+                textColor: settingsScreen.fotekBlue
+                iconSize: settingsScreen.menuActionLargeIconSize
+                labelPixelSize: settingsScreen.menuActionLargeLabelSize
                 onPressed: settingsScreen.recommendButtonPressed()
-
-                background: Rectangle {
-                    radius: 28
-                    color: "white"
-                    border.width: 2
-                    border.color: settingsScreen.fotekOrange
-                }
-
-                contentItem: Text {
-                    text: parent.text
-                    color: settingsScreen.fotekBlue
-                    font.pixelSize: settingsScreen.startupMode ? 36 : 42
-                    font.bold: true
-                    horizontalAlignment: Text.AlignHCenter
-                    verticalAlignment: Text.AlignVCenter
-                    wrapMode: Text.WordWrap
-                }
             }
 
             ColumnLayout {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
-                Layout.preferredWidth: parent.width * 0.44
                 spacing: settingsScreen.mainSpacing
 
-                Button {
+                MenuActionButton {
                     visible: settingsScreen.startupMode
                     Layout.fillWidth: true
                     Layout.fillHeight: true
-                    text: qsTr("Последние установки")
+                    text: qsTr("Последние\nустановки")
+                    iconSource: settingsScreen.iconsBasePath + "iconLast.png"
+                    accentColor: settingsScreen.fotekOrange
+                    textColor: settingsScreen.fotekBlue
+                    iconSize: settingsScreen.menuActionIconSize
+                    labelPixelSize: settingsScreen.menuActionLabelSize
                     onPressed: settingsScreen.lastSettingsButtonPressed()
-
-                    background: Rectangle {
-                        radius: 24
-                        color: settingsScreen.fotekBlue
-                        border.width: 1
-                        border.color: "#1E3274"
-                    }
-
-                    contentItem: Text {
-                        text: parent.text
-                        color: "white"
-                        font.pixelSize: 24
-                        font.bold: true
-                        horizontalAlignment: Text.AlignHCenter
-                        verticalAlignment: Text.AlignVCenter
-                        wrapMode: Text.WordWrap
-                    }
                 }
 
-                Button {
+                MenuActionButton {
                     Layout.fillWidth: true
                     Layout.fillHeight: true
-                    text: qsTr("Пользовательские программы")
+                    text: qsTr("Пользовательские\nпрограммы")
+                    iconSource: settingsScreen.iconsBasePath + "iconUser.png"
+                    accentColor: settingsScreen.fotekOrange
+                    textColor: settingsScreen.fotekBlue
+                    iconSize: settingsScreen.menuActionIconSize
+                    labelPixelSize: settingsScreen.menuActionLabelSize
                     onPressed: settingsScreen.userButtonPressed()
-
-                    background: Rectangle {
-                        radius: 24
-                        color: settingsScreen.fotekOrange
-                        border.width: 1
-                        border.color: "#D88714"
-                    }
-
-                    contentItem: Text {
-                        text: parent.text
-                        color: "#111111"
-                        font.pixelSize: settingsScreen.startupMode ? 22 : 30
-                        font.bold: true
-                        horizontalAlignment: Text.AlignHCenter
-                        verticalAlignment: Text.AlignVCenter
-                        wrapMode: Text.WordWrap
-                    }
                 }
 
-                Button {
+                MenuActionButton {
                     Layout.fillWidth: true
                     Layout.fillHeight: true
-                    text: settingsScreen.startupMode ? qsTr("Свободная установка") : qsTr("Свободные установки")
+                    text: qsTr("Свободная\nустановка режимов")
+                    iconSource: settingsScreen.iconsBasePath + "iconFree.png"
+                    accentColor: settingsScreen.fotekOrange
+                    textColor: settingsScreen.fotekBlue
+                    iconSize: settingsScreen.menuActionIconSize
+                    labelPixelSize: settingsScreen.menuActionLabelSize
                     onPressed: {
                         if (!settingsScreen.startupMode) {
                             recomHandle.loadFreeSettings()
                         }
                         settingsScreen.freeSettingsButtonPressed()
-                    }
-
-                    background: Rectangle {
-                        radius: 24
-                        color: "white"
-                        border.width: 1
-                        border.color: "#C7CEDA"
-                    }
-
-                    contentItem: Text {
-                        text: parent.text
-                        color: "black"
-                        font.pixelSize: settingsScreen.startupMode ? 22 : 30
-                        font.bold: true
-                        horizontalAlignment: Text.AlignHCenter
-                        verticalAlignment: Text.AlignVCenter
-                        wrapMode: Text.WordWrap
                     }
                 }
             }

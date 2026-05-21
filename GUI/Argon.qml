@@ -17,10 +17,25 @@ Rectangle {
     property int minFlowRate: 1
     property int maxFlowRate: 80
     property bool showControls: true       // Показывать элементы управления (в развернутом состоянии)
+    property bool compactOnLightBackground: false  // PeripheryPanel: белая карточка, тёмные подписи
     property bool activCylinderFirst: true // Активный баллон 1 (или 2)
+
+    readonly property color compactLabelColor: compactOnLightBackground ? "#2c2c2c" : "white"
     
-    // Внутренние свойства для размеров
-    property int step: showControls ? 16 : 12  // Базовый шаг размера: 12 свёрнуто, 16 развёрнуто
+    // Эталонная ширина боковой панели; compactLayoutScale сохраняет пропорции баллонов при изменении ширины
+    readonly property real compactReferenceWidth: 100
+    readonly property real compactLayoutScale: showControls ? 1.0 : Math.max(1.0, width / compactReferenceWidth)
+    property int step: showControls ? 16 : Math.round(12 * compactLayoutScale)
+    readonly property int compactCylinderWidth: Math.min(Math.round(44 * compactLayoutScale),
+                                                         Math.floor((width - 8) / 2))
+    readonly property int compactCylinderHeight: Math.round(step * 9.5)
+    readonly property int compactContentHeight: {
+        if (showControls)
+            return 0
+        var bottom = Math.max(firstCylinder.y + firstCylinder.height,
+                              argonFlowRect.y + argonFlowRect.height)
+        return Math.max(1, Math.ceil(bottom + Math.round(4 * compactLayoutScale)))
+    }
 
     // Внутреннее свойства для размеров кнопок
     readonly property int  buttonStep: 16
@@ -135,22 +150,22 @@ Rectangle {
         Text {
             id: arLabel
             anchors.top: parent.top
-            anchors.topMargin: showControls ? 5 : 7
+            anchors.topMargin: showControls ? 5 : Math.round(7 * compactLayoutScale)
             anchors.horizontalCenter: parent.horizontalCenter
             text: showControls ? qsTr("РАСХОД АРГОНА") : qsTr("АРГОН")
-            font.pixelSize: showControls ? 24 : 18
+            font.pixelSize: showControls ? 24 : Math.round(18 * compactLayoutScale)
             font.bold: true
-            color: showControls ? "#2c2c2c" : "white"
+            color: showControls ? "#2c2c2c" : argonRoot.compactLabelColor
         }
 
         ArgCylinder {
             id: firstCylinder
             isFirst: true;
-            width: showControls ? 85 : Math.min(44, (parent.width - 8) / 2)
-            height: showControls ? (step * 12.5) : (step * 9.5)
+            width: showControls ? 85 : compactCylinderWidth
+            height: showControls ? (step * 12.5) : compactCylinderHeight
             anchors.top: arLabel.bottom
-            anchors.topMargin: showControls ? 8 : 7
-            x: showControls ? 100 : 2
+            anchors.topMargin: showControls ? 8 : Math.round(6 * compactLayoutScale)
+            x: showControls ? 100 : Math.round(2 * compactLayoutScale)
             cylConnected: cylinder1Connected
             cylSelected: activCylinderFirst
             interactive: showControls  // Баллоны кликабельны только в развернутом состоянии
@@ -246,7 +261,7 @@ Rectangle {
             height: step * 4
             // anchors.top: showControls ? arLabel.bottom : firstCylinderRect.bottom
             anchors.top: showControls ? undefined : firstCylinder.bottom
-            anchors.topMargin: showControls ? 0 : 4
+//            anchors.topMargin: showControls ? 0 : Math.round(2 * compactLayoutScale)
             anchors.left: showControls ? undefined : parent.left
             anchors.horizontalCenter: showControls ? flowControlsArea.horizontalCenter : undefined
             anchors.verticalCenter: showControls ? flowControlsArea.verticalCenter : undefined
@@ -255,26 +270,30 @@ Rectangle {
             Text {
                 id: argonFlow
                 anchors.top: parent.top
+                anchors.topMargin: showControls ? 0 : -15
                 anchors.horizontalCenter: parent.horizontalCenter
                 // Во время активации показываем реальный расход, иначе установленный
                 property int displayRate: isActivation ? realFlowRate : flowRate
                 text: Math.floor(displayRate / 10)
 //                text: Math.floor(displayRate / 10) + "." + (displayRate % 10)
-                font.pixelSize: step * 3
+                font.pixelSize: 56
+//                font.pixelSize: step * 3
                 font.bold: true
                 // В развернутом виде — тёмный текст, в свернутом (PeripheryPanel) — светлый для тёмного фона
                 color: isActivation
                        ? "#000000"
-                       : (argonRoot.showControls ? "#2c2c2c" : "white")
+                       : (argonRoot.showControls ? "#2c2c2c" : argonRoot.compactLabelColor)
             }
             Text {
                 id: litrPerMin
                 anchors.top: argonFlow.bottom
+                anchors.topMargin: showControls ? 0 : -10
                 anchors.horizontalCenter: parent.horizontalCenter
                 text: qsTr("л/мин")
-                font.pixelSize: 20
+                font.pixelSize: 24
+//                font.pixelSize: showControls ? 20 : Math.round(20 * compactLayoutScale)
                 font.bold: true
-                color: argonRoot.showControls ? "#2c2c2c" : "white"
+                color: argonRoot.showControls ? "#2c2c2c" : argonRoot.compactLabelColor
             }
         }
 
@@ -345,8 +364,9 @@ Rectangle {
             width: firstCylinder.width
             height: firstCylinder.height
             anchors.top: arLabel.bottom
-            anchors.topMargin: showControls ? 8 : 7
-            x: showControls ? (parent.width - width - 100) : (parent.width - width - 2)
+            anchors.topMargin: showControls ? 8 : Math.round(7 * compactLayoutScale)
+            x: showControls ? (parent.width - width - 100)
+                            : (parent.width - width - Math.round(2 * compactLayoutScale))
             isFirst: false;
             cylConnected: cylinder2Connected
             cylSelected: !activCylinderFirst

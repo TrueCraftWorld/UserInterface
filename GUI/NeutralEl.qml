@@ -102,14 +102,10 @@ Rectangle {
         neutColor: neutralConnected ? "green" : "red"
         theColor: neutralConnected ? "lightgray" : "white"
 
-        anchors.left: parent.left
-        anchors.bottom: parent.bottom
-//        anchors.bottomMargin: showControls ? 10 : 0  // Отступ только в режиме с контролами
-        height: parent.height
-        width: parent.width
-//        width: showControls ? 160 : parent.width
+        anchors.fill: parent
         button: false
-        innerTextFontSize: showControls ? 18 : 14  // Меньший шрифт в компактном режиме (PeripheryPanel)
+        innerTextFontSize: 24
+//        innerTextFontSize: showControls ? 18 : 14  // Меньший шрифт в компактном режиме (PeripheryPanel)
         innerText: {
             if (neutralSize === 0)
                 qsTr("< 5кг\nМакс.50")

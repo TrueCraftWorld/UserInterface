@@ -132,11 +132,14 @@ Item {
 
     MouseArea {
         anchors.fill: parent
+        z: 1
         hoverEnabled: false
         preventStealing: true
-        propagateComposedEvents: false
+        // Кнопка «Назад» (z: 4) и подписи (z: 3) остаются кликабельными
+        propagateComposedEvents: true
 
         onPressed: function(mouse) {
+            mouse.accepted = true
             touchTestRoot.pressX = mouse.x
             touchTestRoot.pressY = mouse.y
             touchTestRoot.pressTimestampMs = Date.now()
@@ -217,8 +220,8 @@ Item {
         id: retButton
         style: "btn-secondary"
         text: qsTr("Назад")
+        z: 10
         onPressed: touchTestRoot.returnButtonPressed()
-        z: 4
         anchors {
             left: parent.left
             bottom: parent.bottom

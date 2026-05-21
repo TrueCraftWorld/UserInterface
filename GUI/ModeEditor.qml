@@ -17,32 +17,25 @@ Popup {
     x: 0
     y: 0
 
+    readonly property color fotekBlue: "#264093"
+    readonly property color fotekOrange: "#faa731"
+    readonly property int screenMargin: 34
+
     property var itemIdArr: []
     property var itemNameArr: []
     property var itemNumArr: []
-    property int initiallySelectedItem
-    
-    // Определяем префикс для изображения на основе типа сокета
     property string imagePrefix: (socId <= 1) ? "bimode" : "monomode"
-    // property string imagePrefix: {
-    //     // socId: 0 = БИ1, 1 = БИ2, 2 = МОНО1, 3 = МОНО2
-    //     return (socId <= 1) ? "bimode" : "monomode"
-    // }
-    
-    // Получаем Num текущего режима
+
     property int currentModeNum: {
-        if (modeIndex < 0
-            || modeIndex >= itemNumArr.length)
+        if (modeIndex < 0 || modeIndex >= itemNumArr.length)
             return 0
         return itemNumArr[modeIndex]
     }
-    
 
     ListModel {
         id: combinedModel
     }
 
-    // Function to update the model when C++ data changes
     function updateModel() {
         combinedModel.clear()
 
@@ -52,9 +45,8 @@ Popup {
         }
         for (var i = 0; i < itemIdArr.length; i++) {
             combinedModel.append({
-                itemId: itemNumArr[i],  // Используем Num вместо ID для изображений
+                itemId: itemNumArr[i],
                 itemName: itemNameArr[i],
-                // rowIndex: i
             })
         }
         modeListView.innerModel = combinedModel
@@ -66,30 +58,16 @@ Popup {
         itemNameArr = modeEditor.modeNames
         itemIdArr = modeEditor.modeNamesIds()
         itemNumArr = modeEditor.modeNamesNums()
-        
+
         updateModel()
         modeEditor.currentModeIndex = root.modeIndex
         modeListView.curIndex = modeEditor.currentModeIndex
-
-        initiallySelectedItem = root.modeIndex
-    }
-    
-    onClosed: {
-        // Активация управляется централизованно через main.qml
     }
 
     Rectangle {
         id: back
         anchors.fill: parent
-        color: "#0a0a0a"
-        
-        GradientBack {
-            id: gradientBack
-            anchors.fill: parent
-            startColor: isCoag ? "#000066" : "#443300"
-            stopColor: isCoag ? "#0000aa" : "#665500"
-            beamColor: isCoag ? "#5078FF" : "#B4963C"
-        }
+        color: "#F3F5F9"
 
         Rectangle {
             id: header
@@ -99,28 +77,35 @@ Popup {
             height: 100
             color: "transparent"
 
-            Label {
-                id: titleLable
-                text: !isCoag ? (qsTr("Выбор режима РЕЗАНИЯ для выхода %1")
-                        .arg(modeEditor.socketName)) :
-                               (qsTr("Выбор режима КОАГУЛЯЦИИ для выхода %1")
-                        .arg(modeEditor.socketName))
-                horizontalAlignment: Qt.AlignHCenter
-                verticalAlignment: Qt.AlignVCenter
-                wrapMode: Text.WordWrap
-                font.pixelSize: 28
-                font.bold: true
-                anchors.horizontalCenter: parent.horizontalCenter
-                anchors.top: parent.top
-                height: parent.height / 2
-                width: parent.width * 0.8
-                color: isCoag ? "white" : "black"
-                background:
-                    Rectangle {
-                        id: titleRect
-                        color: isCoag ? "blue" : "yellow"
-                        anchors.fill: parent
-                    }
+            Rectangle {
+                id: titleCard
+                anchors {
+                    left: parent.left
+                    right: cancelButton.left
+                    verticalCenter: parent.verticalCenter
+                    leftMargin: root.screenMargin
+                    rightMargin: 16
+                }
+                height: 72
+                radius: 18
+                color: "white"
+                border.width: 2
+                border.color: root.fotekOrange
+
+                Label {
+                    id: titleLable
+                    anchors.fill: parent
+                    anchors.margins: 12
+                    text: !isCoag
+                          ? qsTr("Выбор режима РЕЗАНИЯ для выхода %1").arg(modeEditor.socketName)
+                          : qsTr("Выбор режима КОАГУЛЯЦИИ для выхода %1").arg(modeEditor.socketName)
+                    horizontalAlignment: Qt.AlignHCenter
+                    verticalAlignment: Text.AlignVCenter
+                    wrapMode: Text.WordWrap
+                    font.pixelSize: 26
+                    font.bold: true
+                    color: root.fotekBlue
+                }
             }
 
             Button {
@@ -129,26 +114,28 @@ Popup {
                     top: parent.top
                     bottom: parent.bottom
                     right: parent.right
-                    left: titleLable.right
+                    rightMargin: root.screenMargin
                 }
-                background: Rectangle {
-                    color: "transparent"
-                    radius: 8
-                }
-
-                Text {
-                    id: cancelText
-                    text: qsTr("X")
-                    font.pixelSize: 34
-                    font.bold: true
-                    anchors.fill: parent
-                    horizontalAlignment: Qt.AlignHCenter
-                    verticalAlignment: Qt.AlignVCenter
-                    color: "white"
-                }
+                width: 72
                 onClicked: {
                     modeEditor.rollBack()
                     root.close()
+                }
+
+                background: Rectangle {
+                    radius: 18
+                    color: "white"
+                    border.width: 1
+                    border.color: root.fotekBlue
+                }
+
+                contentItem: Text {
+                    text: qsTr("X")
+                    font.pixelSize: 30
+                    font.bold: true
+                    color: root.fotekBlue
+                    horizontalAlignment: Text.AlignHCenter
+                    verticalAlignment: Text.AlignVCenter
                 }
             }
         }
@@ -161,80 +148,89 @@ Popup {
                 bottom: parent.bottom
                 top: header.bottom
             }
-            width: .3 * parent.width
+            width: 0.3 * parent.width
+
             ItemList {
                 id: modeListView
-                initialIndex: initiallySelectedItem
                 curIndex: modeEditor.currentModeIndex
                 color: "transparent"
+                itemFontPixelSize: 22
+                itemCornerRadius: 24
+                selectedBackgroundColor: "white"
+                selectedTextColor: root.fotekBlue
+                unselectedTextColor: root.fotekBlue
+                itemBackgroundColor: "white"
+                selectedBorderColor: root.fotekOrange
+                itemBorderColor: "#C7CEDA"
+                selectedBorderWidth: 2
+                itemBorderWidth: 1
                 anchors {
                     top: parent.top
                     bottom: footer.top
                     left: parent.left
                     right: parent.right
+                    leftMargin: root.screenMargin
+                    rightMargin: 8
                 }
                 imageSourceTemplate: "image://modes/" + imagePrefix + "%1"
             }
-            Rectangle {
+
+            RowLayout {
                 id: footer
-                height: 100
-                color: "transparent"
+                height: 80
                 anchors {
                     bottom: parent.bottom
                     left: parent.left
                     right: parent.right
+                    leftMargin: root.screenMargin
+                    rightMargin: 8
+                    bottomMargin: 8
                 }
+                spacing: 16
+
                 Button {
                     id: downButton
-                    width: modeList.width * .4
-                    anchors {
-                        top: parent.top
-                        bottom: parent.bottom
-                        left: parent.left
-                    }
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    onClicked: modeListView.scrollDown()
+
                     background: Rectangle {
-                        color: "transparent"
-                        radius: 8
-                    }
-                    Text {
-                        id: downText
-                        text: qsTr("▼")
-                        font.pixelSize: 34
-                        font.bold: true
-                        anchors.fill: parent
-                        horizontalAlignment: Qt.AlignHCenter
-                        verticalAlignment: Qt.AlignVCenter
+                        radius: 18
                         color: "white"
+                        border.width: 1
+                        border.color: root.fotekBlue
                     }
-                    onClicked: {
-                        modeListView.scrollDown()
+
+                    contentItem: Text {
+                        text: qsTr("▼")
+                        font.pixelSize: 28
+                        font.bold: true
+                        color: root.fotekBlue
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
                     }
                 }
+
                 Button {
                     id: upButton
-                    width: downButton.width
-                    anchors {
-                        top: parent.top
-                        bottom: parent.bottom
-                        left: downButton.right
-                        leftMargin: 20
-                    }
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    onClicked: modeListView.scrollUp()
+
                     background: Rectangle {
-                        color: "transparent"
-                        radius: 8
-                    }
-                    Text {
-                        id: upText
-                        text: qsTr("▲")
-                        font.pixelSize: 34
-                        font.bold: true
-                        anchors.fill: parent
-                        horizontalAlignment: Qt.AlignHCenter
-                        verticalAlignment: Qt.AlignVCenter
+                        radius: 18
                         color: "white"
+                        border.width: 1
+                        border.color: root.fotekBlue
                     }
-                    onClicked: {
-                        modeListView.scrollUp()
+
+                    contentItem: Text {
+                        text: qsTr("▲")
+                        font.pixelSize: 28
+                        font.bold: true
+                        color: root.fotekBlue
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
                     }
                 }
             }
@@ -247,110 +243,104 @@ Popup {
                 bottom: declineButton.top
                 right: parent.right
                 left: modeList.right
+                rightMargin: root.screenMargin
             }
             color: "transparent"
 
-            // Краткое описание
             Rectangle {
                 id: briefRect
                 height: previewImage.height
                 anchors {
                     top: parent.top
                     left: parent.left
-                    right: previewImage.left
-                    margins: 10
+                    right: previewImageFrame.left
+                    topMargin: 12
+                    rightMargin: 12
                 }
+                radius: 24
+                color: "white"
+                border.width: 2
+                border.color: root.fotekOrange
 
-                color: "transparent"
-                border.color: "cyan"
-                border.width: 1
-                radius: 5
-                //я не знаю зачем именно так - но так можно улистать
-                // весть текст вбок так что его не видно
-                // ScrollView {
-                //     anchors.fill: parent
-                //     anchors.margins: 10
-                //     clip: true
-
-                    Label {
-                        anchors.fill: parent
-                        anchors.margins: 10
-                        id: briefText
-                        text: modeEditor.modeBrief
-                        color: "cyan"
-                        font.pixelSize: 21
-                        font.bold: true
-                        wrapMode: Text.WordWrap
-                        width: briefRect.width - 10
-
-                    }
-                // }
+                Label {
+                    id: briefText
+                    anchors.fill: parent
+                    anchors.margins: 14
+                    text: modeEditor.modeBrief
+                    color: root.fotekBlue
+                    font.pixelSize: 22
+                    font.bold: true
+                    wrapMode: Text.WordWrap
+                }
             }
 
-            Image {
-                id: previewImage
+            Rectangle {
+                id: previewImageFrame
                 width: 150
                 height: width
-                fillMode: Image.PreserveAspectFit
-                asynchronous: true
-                source: ("image://modes/" + imagePrefix + "%1").arg(currentModeNum)
-                // source: "file"
+                radius: 24
+                color: "white"
+                border.width: 1
+                border.color: "#C7CEDA"
                 anchors {
                     right: parent.right
                     top: parent.top
-                    margins: 10
+                    topMargin: 12
+                }
+
+                Image {
+                    id: previewImage
+                    anchors.fill: parent
+                    anchors.margins: 10
+                    fillMode: Image.PreserveAspectFit
+                    asynchronous: true
+                    source: ("image://modes/" + imagePrefix + "%1").arg(currentModeNum)
                 }
             }
-            // Полное описание
+
             Rectangle {
                 id: descriptRect
-                width: parent.width
                 anchors {
                     left: parent.left
-                    top: previewImage.bottom
+                    top: previewImageFrame.bottom
                     bottom: parent.bottom
-                    margins: 10
+                    topMargin: 12
                 }
+                width: parent.width
+                radius: 24
+                color: "white"
+                border.width: 1
+                border.color: "#C7CEDA"
 
-                color: "transparent"
-
-                // ScrollView {
-                //     anchors.fill: parent
-                //     anchors.margins: 10
-                //     clip: true
-
-                    Label {
-                        id: descriptText
-                        anchors.fill: parent
-                        anchors.margins: 10
-                        text: modeEditor.modeDescript
-                        color: "white"
-                        font.pixelSize: 24
-                        wrapMode: Text.WordWrap
-                        width: descriptRect.width - 10
-                    }
-                // }
+                Label {
+                    id: descriptText
+                    anchors.fill: parent
+                    anchors.margins: 16
+                    text: modeEditor.modeDescript
+                    color: root.fotekBlue
+                    font.pixelSize: 24
+                    wrapMode: Text.WordWrap
+                }
             }
         }
 
         DialogActionButton {
             id: declineButton
-            // visible: modeEditor.hasChanges
-            width: parent.width * .2
-            height: parent.height * .15
+            width: parent.width * 0.2
+            height: parent.height * 0.15
             anchors {
                 bottom: parent.bottom
-                bottomMargin: 10
+                bottomMargin: root.screenMargin
                 left: modeList.right
                 leftMargin: 20
             }
             text: qsTr("ОТМЕНА")
-            secondaryColor: "transparent"
-            secondaryBorderWidth: 3
-            secondaryBorderColor: "white"
-            cornerRadius: 8
-            labelPixelSize: 34
-            labelColor: "white"
+            secondaryColor: "white"
+            secondaryBorderWidth: 2
+            secondaryBorderColor: root.fotekBlue
+            cornerRadius: 20
+            labelPixelSize: 30
+            labelColor: root.fotekBlue
             onClicked: {
                 modeEditor.rollBack()
                 root.close()
@@ -359,27 +349,27 @@ Popup {
 
         DialogActionButton {
             id: acceptButton
-            width: parent.width * .2
-            height: parent.height * .15
+            width: parent.width * 0.2
+            height: parent.height * 0.15
             visible: modeEditor.hasChanges
             anchors {
                 bottom: parent.bottom
-                bottomMargin: 10
+                bottomMargin: root.screenMargin
                 left: declineButton.right
-                leftMargin: 80
+                leftMargin: 24
             }
             text: qsTr("ПРИНЯТЬ")
             primary: true
-            primaryEnabledColor: "transparent"
-            primaryDisabledColor: "transparent"
-            primaryBorderWidth: 3
-            primaryBorderColor: "lightgreen"
-            cornerRadius: 8
-            labelPixelSize: 34
-            labelColor: "lightgreen"
+            primaryEnabledColor: root.fotekBlue
+            primaryDisabledColor: "#26409370"
+            primaryBorderWidth: 1
+            primaryBorderColor: "#1E3274"
+            cornerRadius: 20
+            labelPixelSize: 30
+            labelColor: "white"
             onClicked: {
                 modeEditor.commitChanges()
-                root.close();
+                root.close()
             }
         }
     }

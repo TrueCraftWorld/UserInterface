@@ -10,25 +10,66 @@ Rectangle {
 
     color: "#2c2c2c"
 
-    Argon {
-        id: argonView
+    NeutralEl {
+        id: neutralView
+        height: 280
+        anchors {
+            left: parent.left
+            right: parent.right
+            bottom: parent.bottom
+        }
+        neutralConnected: periphHandle.neutralElConnected
+        neutralDivided: periphHandle.neutralElDivided
+        neutralSize: periphHandle.neutralSize
+        showControls: false
+    }
+
+    Rectangle {
+        id: futurePanel
+        anchors {
+            left: parent.left
+            right: parent.right
+            top: argonCard.bottom
+            bottom: neutralView.top
+        }
+        color: "white"
+        radius: 10
+        border.color: "purple"
+        border.width: 3
+    }
+
+    Rectangle {
+        id: argonCard
         anchors {
             top: parent.top
             left: parent.left
             right: parent.right
-            // topMargin: 50
-
         }
-        height: 430
-        showControls: false
-        //не передаём ибо у меня нет стм
-        cylinder1Connected: periphHandle.argonCylinder1Connected
-        cylinder2Connected: periphHandle.argonCylinder2Connected
-        flowRate: periphHandle.argonFlowRate
-        realFlowRate: periphHandle.argonRealRate
-        isActivation: periphHandle.activation
-        activCylinderFirst: periphHandle.activCylinderFirst
+        height: argonView.compactContentHeight
+        color: "white"
+        radius: 10
+        border.color: "purple"
+        border.width: 3
+
+        Argon {
+            id: argonView
+            anchors {
+                top: parent.top
+                left: parent.left
+                right: parent.right
+            }
+            height: compactContentHeight
+            showControls: false
+            compactOnLightBackground: true
+            cylinder1Connected: periphHandle.argonCylinder1Connected
+            cylinder2Connected: periphHandle.argonCylinder2Connected
+            flowRate: periphHandle.argonFlowRate
+            realFlowRate: periphHandle.argonRealRate
+            isActivation: periphHandle.activation
+            activCylinderFirst: periphHandle.activCylinderFirst
+        }
     }
+
     Connections {
         target: argonView
         function onFlowRateUpdated(newRate) {
@@ -42,35 +83,11 @@ Rectangle {
             periphHandle.activCylinderFirst = first
         }
     }
-    NeutralEl {
-        id: neutralView
-        height: 165
-        anchors {
-            left: parent.left
-            right: parent.right
-            bottom: parent.bottom
-            margins: 5
-        }
-        // Передаем параметры
-        neutralConnected: periphHandle.neutralElConnected
-        neutralDivided: periphHandle.neutralElDivided
-        neutralSize: periphHandle.neutralSize
-        showControls: false
-    }
-    
-    // MouseArea для открытия drawer - размещаем в конце для наивысшего z-order
+
+    // Касание по компактной панели — открыть drawer (внутри drawer свои контролы)
     MouseArea {
         anchors.fill: parent
-        z: 1000  // Очень высокий z
-        onPressed: {
-//            console.log("PeripheryPanel PRESSED at", mouse.x, mouse.y)
-            peripheryPanelRoot.openPeriphDrawer()
-        }
-        onReleased: {
-//            console.log("PeripheryPanel RELEASED")
-        }
-        onClicked: {
-//            console.log("PeripheryPanel CLICKED - opening drawer")
-        }
+        z: 10
+        onClicked: peripheryPanelRoot.openPeriphDrawer()
     }
 }

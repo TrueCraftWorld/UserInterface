@@ -21,8 +21,6 @@ Popup {
     property var itemIdArr: []
     property var itemNameArr: []
     property var itemNumArr: []
-    property int initiallySelectedItem
-
     ListModel {
         id: combinedModel
     }
@@ -61,9 +59,6 @@ Popup {
         //и триггерятся сигналы
         var bla = modeEditor.currentInstrIndex
         modeEditor.currentInstrIndex = bla
-
-        //запоминаем тот индекс, что был изначально, чтобы отметить элемент
-        initiallySelectedItem = modeEditor.currentInstrIndex
     }
     
     Rectangle {
@@ -168,7 +163,6 @@ Popup {
             ItemList {
                 id: instrumListView
                 curIndex: modeEditor.currentInstrIndex
-                initialIndex: initiallySelectedItem
                 anchors {
                     top: parent.top
                     bottom: footer.top

@@ -37,7 +37,7 @@ Button {
             color: control.textColor
             font.pixelSize: control.labelPixelSize
             font.bold: true
-            horizontalAlignment: Text.AlignHCenter
+            horizontalAlignment: Text.AlignLeft
             verticalAlignment: Text.AlignVCenter
             wrapMode: Text.WordWrap
             maximumLineCount: control.maxLabelLines

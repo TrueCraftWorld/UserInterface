@@ -11,6 +11,7 @@ Rectangle {
     property int modeId
     property int maxPower
     property int socketId
+    property string socketName: ""
     property int instrumNum
     property string instrumName: qsTr("не выбран")
     property bool isEndo: false
@@ -29,6 +30,13 @@ Rectangle {
     readonly property int endoCoagEffect: modePower % 10
     readonly property int normalModeNameFont: 36
     readonly property int singleLineModeNameFont: 42
+    readonly property string modeLabelText: {
+        if (modeId !== 1000) {
+            return modeName
+        }
+        var role = isCoag ? qsTr("коагуляция") : qsTr("резание")
+        return socketName !== "" ? socketName + ": " + role : role
+    }
 
     Canvas {
         id: socketBackground
@@ -103,7 +111,7 @@ Rectangle {
     Label {
         id: modeLabel
         visible: halfSocketRoot.hasAvailableModes
-        text: modeId === 1000 ? qsTr("выберите режим") : halfSocketRoot.modeName
+        text: halfSocketRoot.modeLabelText
         color: (!halfSocketRoot.isCoag || modeId === 1000) ? "black" : "white"
         font.pixelSize: modeId === 1000
                         ? 24
@@ -128,7 +136,7 @@ Rectangle {
 
     TextMetrics {
         id: singleLineModeMetrics
-        text: modeId === 1000 ? "" : halfSocketRoot.modeName
+        text: halfSocketRoot.modeLabelText
         font.pixelSize: halfSocketRoot.singleLineModeNameFont
         font.bold: true
     }

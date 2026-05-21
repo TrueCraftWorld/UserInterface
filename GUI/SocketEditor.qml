@@ -11,14 +11,17 @@ Popup {
     height: parent.height
     x: 0
     y: 0
+    padding: 0
+
+    background: Rectangle {
+        color: "#F3F5F9"
+    }
 
     property int socId: -1
     property int modeIndex: -1
     property bool isCoag: false
     readonly property var modeEditor: Editor
 
-    property int initiallySelectedMode: -1
-    property int initiallySelectedInstr: -1
     property var modeNums: []
     property var instrNums: []
     property string centerView: "power" // power, modePreview, instrPreview
@@ -31,17 +34,23 @@ Popup {
     property var autoModeBaseline: [0, 0, 0, 0]
     property int autoDelayBaseline: 0
     property int socketAutoModeState: 0
-    readonly property int controlButtonHeight: 72
+    readonly property color fotekBlue: "#264093"
+    readonly property color fotekOrange: "#faa731"
+    readonly property int screenMargin: 20
+    readonly property int controlButtonHeight: 80
     readonly property int recommendedButtonHeight: 90
     readonly property int recommendedEndoButtonHeight: 70
-    readonly property color powerStepButtonBg: isCoag ? "#1565C0" : "#F9D648"
-    readonly property color powerStepButtonText: isCoag ? "white" : "#111111"
-    readonly property int powerStepButtonWidth: 96
-    readonly property color uiMidGray: "#BBBBBB"
-    readonly property color autoBtnOnFill: "#1565C0"
-    readonly property color autoBtnOnBorder: "#E3F2FD"
-    readonly property color autoBtnOffBorder: "#99FFFFFF"
-    readonly property color autoBtnOffText: "#B0BEC5"
+    readonly property color powerStepButtonBg: "white"
+    readonly property color powerStepButtonText: fotekBlue
+    readonly property int powerStepButtonWidth: 110
+    readonly property color uiMidGray: "#5A6478"
+    readonly property color autoBtnOnFill: fotekOrange
+    readonly property color autoBtnOnBorder: "#1E3274"
+    readonly property color autoBtnOffFill: "white"
+    readonly property color autoBtnOffBorder: "#C7CEDA"
+    readonly property color autoBtnOffText: fotekBlue
+    readonly property color listSelectedBackground: isCoag ? "#0B4FB3" : "#F4D13D"
+    readonly property color listSelectedText: isCoag ? "white" : "black"
 
     function modeImagePrefix() {
         var socketName = modeEditor.socketName ? String(modeEditor.socketName).toUpperCase() : ""
@@ -148,6 +157,23 @@ Popup {
         return currentMode.name
     }
 
+    function endoPulseRateText() {
+        var match = modeTitleText().match(/-([1-3])\s*$/)
+        if (!match) {
+            return qsTr("Подача импульсов СРЕДНЯЯ")
+        }
+        switch (parseInt(match[1])) {
+        case 1:
+            return qsTr("Подача импульсов РЕДКАЯ")
+        case 2:
+            return qsTr("Подача импульсов СРЕДНЯЯ")
+        case 3:
+            return qsTr("Подача импульсов ЧАСТАЯ")
+        default:
+            return qsTr("Подача импульсов СРЕДНЯЯ")
+        }
+    }
+
     function currentInstrName() {
         if (modeEditor.currentInstrIndex < 0 || modeEditor.currentInstrIndex >= modeEditor.instrList.length) {
             return ""
@@ -160,6 +186,15 @@ Popup {
             return false
         }
         return parseInt(instrNums[modeEditor.currentInstrIndex]) !== 1000
+    }
+
+    function instrumentIconSource() {
+        if (!instrumentSelected()) {
+            return ""
+        }
+        return "image://instruments/"
+                + (isCoag ? "coaginstr" : "cutinstr")
+                + instrNums[modeEditor.currentInstrIndex]
     }
 
     function socketAutoMode() {
@@ -285,7 +320,44 @@ Popup {
         centerView = "power"
     }
 
+    function visibleRecommendedPowers() {
+        var result = []
+        if (modeEditor.lowPowerBound !== 0)
+            result.push(modeEditor.lowPowerBound)
+        if (modeEditor.midPowerBound !== 0)
+            result.push(modeEditor.midPowerBound)
+        if (modeEditor.highPowerBound !== 0)
+            result.push(modeEditor.highPowerBound)
+        return result
+    }
+
+    function isRecommendedPowerSelected() {
+        var bounds = visibleRecommendedPowers()
+        for (var i = 0; i < bounds.length; ++i) {
+            if (modeEditor.currentPower === bounds[i])
+                return true
+        }
+        return bounds.length === 0
+    }
+
+    function defaultRecommendedPower() {
+        var bounds = visibleRecommendedPowers()
+        if (bounds.length === 0)
+            return modeEditor.currentPower
+        if (bounds.length <= 2)
+            return bounds[0]
+        return bounds[1]
+    }
+
+    function ensureRecommendedPowerIfNeeded() {
+        if (!modeSelected())
+            return
+        if (!isRecommendedPowerSelected())
+            modeEditor.updateParameter("currentpower", defaultRecommendedPower())
+    }
+
     function applyPreviewSelection() {
+        ensureRecommendedPowerIfNeeded()
         committedModeIndex = modeEditor.currentModeIndex
         committedInstrIndex = modeEditor.currentInstrIndex
         centerView = "power"
@@ -297,8 +369,6 @@ Popup {
         modeEditor.initialize(socId, modeIndex, isCoag)
         updateModeModel()
         updateInstrModel()
-        initiallySelectedMode = modeEditor.currentModeIndex
-        initiallySelectedInstr = modeEditor.currentInstrIndex
         committedModeIndex = modeEditor.currentModeIndex
         committedInstrIndex = modeEditor.currentInstrIndex
         centerView = "power"
@@ -321,14 +391,7 @@ Popup {
 
     Rectangle {
         anchors.fill: parent
-        color: "#0a0a0a"
-
-        GradientBack {
-            anchors.fill: parent
-            startColor: isCoag ? "#000066" : "#443300"
-            stopColor: isCoag ? "#0000aa" : "#665500"
-            beamColor: isCoag ? "#5078FF" : "#B4963C"
-        }
+        color: "#F3F5F9"
 
         Rectangle {
             id: header
@@ -340,11 +403,16 @@ Popup {
 
             Label {
                 id: titleLabel
+                anchors {
+                    left: parent.left
+                    right: closeButton.left
+                    verticalCenter: parent.verticalCenter
+                    leftMargin: root.screenMargin
+                    rightMargin: 12
+                }
                 text: isCoag
                       ? qsTr("Настройка КОАГУЛЯЦИИ для выхода %1").arg(modeEditor.socketName)
                       : qsTr("Настройка РЕЗАНИЯ для выхода %1").arg(modeEditor.socketName)
-                anchors.centerIn: parent
-                width: parent.width * 0.85
                 horizontalAlignment: Qt.AlignHCenter
                 verticalAlignment: Qt.AlignVCenter
                 wrapMode: Text.WordWrap
@@ -354,12 +422,20 @@ Popup {
             }
 
             Button {
-                anchors.top: parent.top
-                anchors.bottom: parent.bottom
-                anchors.right: parent.right
-                width: 120
-                background: Rectangle { color: "transparent" }
+                id: closeButton
+                anchors {
+                    top: parent.top
+                    bottom: parent.bottom
+                    right: parent.right
+                    rightMargin: root.screenMargin
+                }
+                width: 68
                 onPressed: cancelEditorAndClose()
+
+                background: Rectangle {
+                    color: "transparent"
+                }
+
                 contentItem: Text {
                     text: qsTr("X")
                     font.pixelSize: 34
@@ -386,12 +462,12 @@ Popup {
                 color: "transparent"
 
                 Label {
-                    text: previewRect.visible ? qsTr("Выберите режим") : qsTr("Режим")
+                    text: qsTr("Выберите режим")
                     anchors.top: parent.top
                     anchors.horizontalCenter: parent.horizontalCenter
-                    font.pixelSize: 20
+                    font.pixelSize: 24
                     font.bold: true
-                    color: previewRect.visible ? "white" : uiMidGray
+                    color: uiMidGray
                 }
 
                 ItemList {
@@ -402,13 +478,19 @@ Popup {
                     anchors.right: parent.right
                     anchors.bottom: modeButtons.top
                     curIndex: modeEditor.currentModeIndex
-                    initialIndex: initiallySelectedMode
                     imageSourceTemplate: "image://modes/" + modeImagePrefix() + "%1"
-                    selectedBackgroundColor: "white"
-                    selectedTextColor: "black"
+                    selectedBackgroundColor: root.listSelectedBackground
+                    selectedTextColor: root.listSelectedText
+                    unselectedTextColor: root.fotekBlue
+                    itemBackgroundColor: "transparent"
+                    selectedBorderColor: "transparent"
+                    itemBorderColor: "transparent"
+                    selectedBorderWidth: 0
+                    itemBorderWidth: 0
+                    itemCornerRadius: 8
                     keepSelectedItemAtTop: true
                     noAutoScrollItemId: 1000
-                    itemFontPixelSize: 24
+                    itemFontPixelSize: 22
                 }
 
                 RowLayout {
@@ -422,38 +504,17 @@ Popup {
                     Button {
                         Layout.fillWidth: true
                         Layout.fillHeight: true
-                        text: qsTr("▼")
-                        font.pixelSize: 24
-                        background: Rectangle {
-                            radius: 10
-                            color: "#22000000"
-                            border.color: "#66ffffff"
-                            border.width: 1
-                        }
-                        contentItem: Text {
-                            text: parent.text
-                            color: "#BDBDBD"
-                            font.pixelSize: 24
-                            font.bold: true
-                            horizontalAlignment: Text.AlignHCenter
-                            verticalAlignment: Text.AlignVCenter
-                        }
-                        onPressed: modeListView.scrollDown()
-                    }
-                    Button {
-                        Layout.fillWidth: true
-                        Layout.fillHeight: true
                         text: qsTr("▲")
                         font.pixelSize: 24
                         background: Rectangle {
-                            radius: 10
-                            color: "#22000000"
-                            border.color: "#66ffffff"
+                            radius: 18
+                            color: "white"
+                            border.color: root.fotekBlue
                             border.width: 1
                         }
                         contentItem: Text {
                             text: parent.text
-                            color: "#BDBDBD"
+                            color: root.fotekBlue
                             font.pixelSize: 24
                             font.bold: true
                             horizontalAlignment: Text.AlignHCenter
@@ -461,13 +522,34 @@ Popup {
                         }
                         onPressed: modeListView.scrollUp()
                     }
+                    Button {
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+                        text: qsTr("▼")
+                        font.pixelSize: 24
+                        background: Rectangle {
+                            radius: 18
+                            color: "white"
+                            border.color: root.fotekBlue
+                            border.width: 1
+                        }
+                        contentItem: Text {
+                            text: parent.text
+                            color: root.fotekBlue
+                            font.pixelSize: 24
+                            font.bold: true
+                            horizontalAlignment: Text.AlignHCenter
+                            verticalAlignment: Text.AlignVCenter
+                        }
+                        onPressed: modeListView.scrollDown()
+                    }
                 }
             }
 
             Rectangle {
                 Layout.fillHeight: true
                 Layout.preferredWidth: 1
-                color: "#55FFFFFF"
+                color: "#C7CEDA"
             }
 
             Rectangle {
@@ -476,12 +558,12 @@ Popup {
                 color: "transparent"
 
                 Label {
-                    text: previewRect.visible ? qsTr("Выберите инструмент") : qsTr("Инструмент")
+                    text: qsTr("Выберите инструмент")
                     anchors.top: parent.top
                     anchors.horizontalCenter: parent.horizontalCenter
-                    font.pixelSize: 20
+                    font.pixelSize: 24
                     font.bold: true
-                    color: previewRect.visible ? "white" : uiMidGray
+                    color: uiMidGray
                 }
 
                 ItemList {
@@ -492,15 +574,20 @@ Popup {
                     anchors.right: parent.right
                     anchors.bottom: instrButtons.top
                     curIndex: modeEditor.currentInstrIndex
-                    initialIndex: initiallySelectedInstr
                     noImage: true
                     hideNoImageSymbol: true
-                    selectedBackgroundColor: "white"
-                    selectedTextColor: "black"
+                    selectedBackgroundColor: root.listSelectedBackground
+                    selectedTextColor: root.listSelectedText
+                    unselectedTextColor: root.fotekBlue
+                    itemBackgroundColor: "transparent"
+                    selectedBorderColor: "transparent"
+                    itemBorderColor: "transparent"
+                    selectedBorderWidth: 0
+                    itemBorderWidth: 0
+                    itemCornerRadius: 8
                     keepSelectedItemAtTop: true
                     noAutoScrollItemId: 1000
-                    itemFontPixelSize: 24
-                    // imageSourceTemplate: "image://instruments/minstr%1"
+                    itemFontPixelSize: 22
                 }
 
                 RowLayout {
@@ -514,38 +601,17 @@ Popup {
                     Button {
                         Layout.fillWidth: true
                         Layout.fillHeight: true
-                        text: qsTr("▼")
-                        font.pixelSize: 24
-                        background: Rectangle {
-                            radius: 10
-                            color: "#22000000"
-                            border.color: "#66ffffff"
-                            border.width: 1
-                        }
-                        contentItem: Text {
-                            text: parent.text
-                            color: "#BDBDBD"
-                            font.pixelSize: 24
-                            font.bold: true
-                            horizontalAlignment: Text.AlignHCenter
-                            verticalAlignment: Text.AlignVCenter
-                        }
-                        onPressed: instrListView.scrollDown()
-                    }
-                    Button {
-                        Layout.fillWidth: true
-                        Layout.fillHeight: true
                         text: qsTr("▲")
                         font.pixelSize: 24
                         background: Rectangle {
-                            radius: 10
-                            color: "#22000000"
-                            border.color: "#66ffffff"
+                            radius: 18
+                            color: "white"
+                            border.color: root.fotekBlue
                             border.width: 1
                         }
                         contentItem: Text {
                             text: parent.text
-                            color: "#BDBDBD"
+                            color: root.fotekBlue
                             font.pixelSize: 24
                             font.bold: true
                             horizontalAlignment: Text.AlignHCenter
@@ -553,40 +619,75 @@ Popup {
                         }
                         onPressed: instrListView.scrollUp()
                     }
+                    Button {
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+                        text: qsTr("▼")
+                        font.pixelSize: 24
+                        background: Rectangle {
+                            radius: 18
+                            color: "white"
+                            border.color: root.fotekBlue
+                            border.width: 1
+                        }
+                        contentItem: Text {
+                            text: parent.text
+                            color: root.fotekBlue
+                            font.pixelSize: 24
+                            font.bold: true
+                            horizontalAlignment: Text.AlignHCenter
+                            verticalAlignment: Text.AlignVCenter
+                        }
+                        onPressed: instrListView.scrollDown()
+                    }
                 }
             }
 
             Rectangle {
                 Layout.fillHeight: true
                 Layout.preferredWidth: 1
-                color: "#55FFFFFF"
+                color: "#C7CEDA"
             }
 
             Rectangle {
                 id: centerPanel
                 Layout.fillWidth: true
                 Layout.fillHeight: true
-                color: centerView === "power" ? "transparent" : "white"
+                radius: 24
+                color: "transparent"
 
                 ColumnLayout {
-                    anchors.fill: parent
-                    anchors.margins: 10
-                    spacing: modeEditor.isEndo ? 11 : 14
-                    opacity: centerView === "power" ? 1.0 : 0.2
+                    anchors {
+                        fill: parent
+                        leftMargin: 10
+                        rightMargin: 10
+                    }
+                    spacing: modeEditor.isEndo ? 10 : 14
+                    visible: centerView === "power"
 
                     Label {
                         Layout.fillWidth: true
                         text: modeTitleText()
                         wrapMode: Text.WordWrap
                         horizontalAlignment: Text.AlignHCenter
-                        font.pixelSize: 34
+                        font.pixelSize: 38
                         font.bold: true
-                        color: "white"
+                        color: root.fotekBlue
+                    }
+
+                    Image {
+                        Layout.alignment: Qt.AlignHCenter
+                        Layout.preferredWidth: 400
+                        Layout.preferredHeight: 140
+                        visible: instrumentSelected()
+                        fillMode: Image.PreserveAspectFit
+                        asynchronous: true
+                        source: instrumentIconSource()
                     }
 
                     Item {
                         height: 50
-                        visible: !modeEditor.isEndo && !isBiCoagMode()
+                        visible: !modeEditor.isEndo && !isBiCoagMode() && !instrumentSelected()
                     }
 
                     Label {
@@ -595,7 +696,7 @@ Popup {
                         horizontalAlignment: Text.AlignHCenter
                         visible: modeSelected() && !modeEditor.isEndo
                         color: uiMidGray
-                        font.pixelSize: 20
+                        font.pixelSize: 24
                         font.bold: true
                     }
 
@@ -613,14 +714,14 @@ Popup {
                             flat: true
                             background: Rectangle {
                                 radius: 16
-                                color: enabled ? powerStepButtonBg : "#555555"
-                                border.width: 1
-                                border.color: enabled ? "#00000030" : "transparent"
+                                color: enabled ? powerStepButtonBg : "#E8ECF2"
+                                border.width: enabled ? 2 : 1
+                                border.color: enabled ? root.fotekOrange : "#C7CEDA"
                             }
                             contentItem: Text {
                                 text: parent.text
-                                color: enabled ? powerStepButtonText : "#AAAAAA"
-                                font.pixelSize: 44
+                                color: enabled ? powerStepButtonText : uiMidGray
+                                font.pixelSize: 54
                                 font.bold: true
                                 horizontalAlignment: Text.AlignHCenter
                                 verticalAlignment: Text.AlignVCenter
@@ -636,7 +737,7 @@ Popup {
                             font.bold: true
                             horizontalAlignment: Text.AlignHCenter
                             verticalAlignment: Text.AlignVCenter
-                            color: "white"
+                            color: root.fotekBlue
                         }
                         Button {
                             Layout.preferredWidth: powerStepButtonWidth
@@ -646,13 +747,13 @@ Popup {
                             flat: true
                             background: Rectangle {
                                 radius: 16
-                                color: enabled ? powerStepButtonBg : "#555555"
-                                border.width: 1
-                                border.color: enabled ? "#00000030" : "transparent"
+                                color: enabled ? powerStepButtonBg : "#E8ECF2"
+                                border.width: enabled ? 2 : 1
+                                border.color: enabled ? root.fotekOrange : "#C7CEDA"
                             }
                             contentItem: Text {
                                 text: parent.text
-                                color: enabled ? powerStepButtonText : "#AAAAAA"
+                                color: enabled ? powerStepButtonText : uiMidGray
                                 font.pixelSize: 44
                                 font.bold: true
                                 horizontalAlignment: Text.AlignHCenter
@@ -671,7 +772,7 @@ Popup {
                         visible: modeSelected() && modeEditor.isEndo
                         horizontalAlignment: Text.AlignHCenter
                         color: uiMidGray
-                        font.pixelSize: 20
+                        font.pixelSize: 24
                         font.bold: true
                     }
                     RowLayout {
@@ -689,13 +790,13 @@ Popup {
                             background: Rectangle {
                                 radius: 16
                                 color: powerStepButtonBg
-                                border.width: 1
-                                border.color: "#00000030"
+                                border.width: 2
+                                border.color: root.fotekOrange
                             }
                             contentItem: Text {
                                 text: parent.text
                                 color: powerStepButtonText
-                                font.pixelSize: 44
+                                font.pixelSize: 48
                                 font.bold: true
                                 horizontalAlignment: Text.AlignHCenter
                                 verticalAlignment: Text.AlignVCenter
@@ -705,7 +806,7 @@ Popup {
                         Label {
                             Layout.preferredWidth: 140
                             text: endoCutEffect()
-                            color: "white"
+                            color: root.fotekBlue
                             font.pixelSize: 52
                             font.bold: true
                             horizontalAlignment: Text.AlignHCenter
@@ -719,13 +820,13 @@ Popup {
                             background: Rectangle {
                                 radius: 16
                                 color: powerStepButtonBg
-                                border.width: 1
-                                border.color: "#00000030"
+                                border.width: 2
+                                border.color: root.fotekOrange
                             }
                             contentItem: Text {
                                 text: parent.text
                                 color: powerStepButtonText
-                                font.pixelSize: 44
+                                font.pixelSize: 48
                                 font.bold: true
                                 horizontalAlignment: Text.AlignHCenter
                                 verticalAlignment: Text.AlignVCenter
@@ -741,7 +842,7 @@ Popup {
                         visible: modeSelected() && modeEditor.isEndo
                         horizontalAlignment: Text.AlignHCenter
                         color: uiMidGray
-                        font.pixelSize: 20
+                        font.pixelSize: 24
                         font.bold: true
                     }
                     RowLayout {
@@ -759,13 +860,13 @@ Popup {
                             background: Rectangle {
                                 radius: 16
                                 color: powerStepButtonBg
-                                border.width: 1
-                                border.color: "#00000030"
+                                border.width: 2
+                                border.color: root.fotekOrange
                             }
                             contentItem: Text {
                                 text: parent.text
                                 color: powerStepButtonText
-                                font.pixelSize: 44
+                                font.pixelSize: 48
                                 font.bold: true
                                 horizontalAlignment: Text.AlignHCenter
                                 verticalAlignment: Text.AlignVCenter
@@ -775,7 +876,7 @@ Popup {
                         Label {
                             Layout.preferredWidth: 140
                             text: endoCoagEffect()
-                            color: "white"
+                            color: root.fotekBlue
                             font.pixelSize: 52
                             font.bold: true
                             horizontalAlignment: Text.AlignHCenter
@@ -789,13 +890,13 @@ Popup {
                             background: Rectangle {
                                 radius: 16
                                 color: powerStepButtonBg
-                                border.width: 1
-                                border.color: "#00000030"
+                                border.width: 2
+                                border.color: root.fotekOrange
                             }
                             contentItem: Text {
                                 text: parent.text
                                 color: powerStepButtonText
-                                font.pixelSize: 44
+                                font.pixelSize: 48
                                 font.bold: true
                                 horizontalAlignment: Text.AlignHCenter
                                 verticalAlignment: Text.AlignVCenter
@@ -803,51 +904,6 @@ Popup {
                             onPressed: setEndoPower(endoCutEffect(), endoCoagEffect() + 1)
                         }
                         Item { Layout.fillWidth: true; Layout.minimumWidth: 24 }
-                    }
-
-                    Label {
-                        Layout.fillWidth: true
-                        text: qsTr("Рекомендуемый уровень\nдля выбранного инструмента")
-                        visible: modeSelected() && instrumentSelected()
-                        horizontalAlignment: Text.AlignHCenter
-                        color: uiMidGray
-                        font.pixelSize: 20
-                        font.bold: true
-                        wrapMode: Text.WordWrap
-                    }
-
-                    RowLayout {
-                        Layout.fillWidth: true
-                        Layout.preferredHeight: modeEditor.isEndo ? recommendedEndoButtonHeight : recommendedButtonHeight
-                        visible: modeSelected()
-                        spacing: 8
-                        PowerRect {
-                            Layout.fillWidth: true
-                            Layout.preferredHeight: modeEditor.isEndo ? recommendedEndoButtonHeight : recommendedButtonHeight
-                            borderColor: "#A5D6A7"
-                            power: modeEditor.lowPowerBound
-                            selected: modeEditor.currentPower === power
-                            isEndo: modeEditor.isEndo
-                            onPowerChosen: modeEditor.updateParameter("currentpower", pwr)
-                        }
-                        PowerRect {
-                            Layout.fillWidth: true
-                            Layout.preferredHeight: modeEditor.isEndo ? recommendedEndoButtonHeight : recommendedButtonHeight
-                            borderColor: "#78D87C"
-                            power: modeEditor.midPowerBound
-                            selected: modeEditor.currentPower === power
-                            isEndo: modeEditor.isEndo
-                            onPowerChosen: modeEditor.updateParameter("currentpower", pwr)
-                        }
-                        PowerRect {
-                            Layout.fillWidth: true
-                            Layout.preferredHeight: modeEditor.isEndo ? recommendedEndoButtonHeight : recommendedButtonHeight
-                            borderColor: "#51D456"
-                            power: modeEditor.highPowerBound
-                            selected: modeEditor.currentPower === power
-                            isEndo: modeEditor.isEndo
-                            onPowerChosen: modeEditor.updateParameter("currentpower", pwr)
-                        }
                     }
 
                     ColumnLayout {
@@ -864,25 +920,25 @@ Popup {
 
                         RowLayout {
                             Layout.fillWidth: true
-                            Layout.preferredHeight: 62
+                            Layout.preferredHeight: controlButtonHeight
                             spacing: 12
                             visible: socId <= 1 && isBiCoagMode()
 
                             Button {
                                 Layout.fillWidth: true
-                                Layout.preferredHeight: 62
+                                Layout.preferredHeight: controlButtonHeight
                                 text: qsTr("АВТОСТОП")
                                 flat: true
                                 background: Rectangle {
                                     radius: 14
                                     border.width: socketAutoMode() === 1 ? 2 : 1
                                     border.color: socketAutoMode() === 1 ? root.autoBtnOnBorder : root.autoBtnOffBorder
-                                    color: socketAutoMode() === 1 ? root.autoBtnOnFill : "transparent"
+                                    color: socketAutoMode() === 1 ? root.autoBtnOnFill : root.autoBtnOffFill
                                 }
                                 contentItem: Text {
                                     text: parent.text
-                                    color: socketAutoMode() === 1 ? "white" : root.autoBtnOffText
-                                    font.pixelSize: 20
+                                    color: socketAutoMode() === 1 ? "black" : root.autoBtnOffText
+                                    font.pixelSize: 24
                                     font.bold: true
                                     horizontalAlignment: Text.AlignHCenter
                                     verticalAlignment: Text.AlignVCenter
@@ -892,19 +948,19 @@ Popup {
 
                             Button {
                                 Layout.fillWidth: true
-                                Layout.preferredHeight: 62
+                                Layout.preferredHeight: controlButtonHeight
                                 text: qsTr("АВТОСТАРТ/СТОП")
                                 flat: true
                                 background: Rectangle {
                                     radius: 14
                                     border.width: socketAutoMode() === 2 ? 2 : 1
                                     border.color: socketAutoMode() === 2 ? root.autoBtnOnBorder : root.autoBtnOffBorder
-                                    color: socketAutoMode() === 2 ? root.autoBtnOnFill : "transparent"
+                                    color: socketAutoMode() === 2 ? root.autoBtnOnFill : root.autoBtnOffFill
                                 }
                                 contentItem: Text {
                                     text: parent.text
-                                    color: socketAutoMode() === 2 ? "white" : root.autoBtnOffText
-                                    font.pixelSize: 20
+                                    color: socketAutoMode() === 2 ? "black" : root.autoBtnOffText
+                                    font.pixelSize: 24
                                     font.bold: true
                                     horizontalAlignment: Text.AlignHCenter
                                     verticalAlignment: Text.AlignVCenter
@@ -915,25 +971,25 @@ Popup {
 
                         RowLayout {
                             Layout.fillWidth: true
-                            Layout.preferredHeight: 62
+                            Layout.preferredHeight: controlButtonHeight
                             spacing: 12
                             visible: socId >= 2 && socId <= 3 && isSoftMode()
 
                             Button {
                                 Layout.fillWidth: true
-                                Layout.preferredHeight: 62
+                                Layout.preferredHeight: controlButtonHeight
                                 text: qsTr("АВТОСТОП")
                                 flat: true
                                 background: Rectangle {
                                     radius: 14
                                     border.width: socketAutoMode() === 1 ? 2 : 1
                                     border.color: socketAutoMode() === 1 ? root.autoBtnOnBorder : root.autoBtnOffBorder
-                                    color: socketAutoMode() === 1 ? root.autoBtnOnFill : "transparent"
+                                    color: socketAutoMode() === 1 ? root.autoBtnOnFill : root.autoBtnOffFill
                                 }
                                 contentItem: Text {
                                     text: parent.text
-                                    color: socketAutoMode() === 1 ? "white" : root.autoBtnOffText
-                                    font.pixelSize: 20
+                                    color: socketAutoMode() === 1 ? "black" : root.autoBtnOffText
+                                    font.pixelSize: 24
                                     font.bold: true
                                     horizontalAlignment: Text.AlignHCenter
                                     verticalAlignment: Text.AlignVCenter
@@ -948,31 +1004,31 @@ Popup {
                             visible: socId <= 1 && isBiCoagMode() && socketAutoMode() === 2
                             horizontalAlignment: Text.AlignHCenter
                             color: uiMidGray
-                            font.pixelSize: 20
+                            font.pixelSize: 24
                             font.bold: true
                         }
 
                         RowLayout {
                             Layout.fillWidth: true
-                            Layout.preferredHeight: 56
+                            Layout.preferredHeight: controlButtonHeight
                             spacing: 8
                             visible: socId <= 1 && isBiCoagMode() && socketAutoMode() === 2
 
                             Button {
                                 Layout.fillWidth: true
-                                Layout.preferredHeight: 56
+                                Layout.preferredHeight: controlButtonHeight
                                 text: qsTr("0 сек")
                                 flat: true
                                 background: Rectangle {
                                     radius: 12
                                     border.width: periphHandle.autoDelayMs === 0 ? 2 : 1
                                     border.color: periphHandle.autoDelayMs === 0 ? root.autoBtnOnBorder : root.autoBtnOffBorder
-                                    color: periphHandle.autoDelayMs === 0 ? root.autoBtnOnFill : "transparent"
+                                    color: periphHandle.autoDelayMs === 0 ? root.autoBtnOnFill : root.autoBtnOffFill
                                 }
                                 contentItem: Text {
                                     text: parent.text
-                                    color: periphHandle.autoDelayMs === 0 ? "white" : root.autoBtnOffText
-                                    font.pixelSize: 18
+                                    color: periphHandle.autoDelayMs === 0 ? "black" : root.autoBtnOffText
+                                    font.pixelSize: 22
                                     font.bold: true
                                     horizontalAlignment: Text.AlignHCenter
                                     verticalAlignment: Text.AlignVCenter
@@ -982,19 +1038,19 @@ Popup {
 
                             Button {
                                 Layout.fillWidth: true
-                                Layout.preferredHeight: 56
+                                Layout.preferredHeight: controlButtonHeight
                                 text: qsTr("0.5 сек")
                                 flat: true
                                 background: Rectangle {
                                     radius: 12
                                     border.width: periphHandle.autoDelayMs === 500 ? 2 : 1
                                     border.color: periphHandle.autoDelayMs === 500 ? root.autoBtnOnBorder : root.autoBtnOffBorder
-                                    color: periphHandle.autoDelayMs === 500 ? root.autoBtnOnFill : "transparent"
+                                    color: periphHandle.autoDelayMs === 500 ? root.autoBtnOnFill : root.autoBtnOffFill
                                 }
                                 contentItem: Text {
                                     text: parent.text
-                                    color: periphHandle.autoDelayMs === 500 ? "white" : root.autoBtnOffText
-                                    font.pixelSize: 18
+                                    color: periphHandle.autoDelayMs === 500 ? "black" : root.autoBtnOffText
+                                    font.pixelSize: 22
                                     font.bold: true
                                     horizontalAlignment: Text.AlignHCenter
                                     verticalAlignment: Text.AlignVCenter
@@ -1004,19 +1060,19 @@ Popup {
 
                             Button {
                                 Layout.fillWidth: true
-                                Layout.preferredHeight: 56
+                                Layout.preferredHeight: controlButtonHeight
                                 text: qsTr("1.0 сек")
                                 flat: true
                                 background: Rectangle {
                                     radius: 12
                                     border.width: periphHandle.autoDelayMs === 1000 ? 2 : 1
                                     border.color: periphHandle.autoDelayMs === 1000 ? root.autoBtnOnBorder : root.autoBtnOffBorder
-                                    color: periphHandle.autoDelayMs === 1000 ? root.autoBtnOnFill : "transparent"
+                                    color: periphHandle.autoDelayMs === 1000 ? root.autoBtnOnFill : root.autoBtnOffFill
                                 }
                                 contentItem: Text {
                                     text: parent.text
-                                    color: periphHandle.autoDelayMs === 1000 ? "white" : root.autoBtnOffText
-                                    font.pixelSize: 18
+                                    color: periphHandle.autoDelayMs === 1000 ? "black" : root.autoBtnOffText
+                                    font.pixelSize: 22
                                     font.bold: true
                                     horizontalAlignment: Text.AlignHCenter
                                     verticalAlignment: Text.AlignVCenter
@@ -1026,19 +1082,19 @@ Popup {
 
                             Button {
                                 Layout.fillWidth: true
-                                Layout.preferredHeight: 56
+                                Layout.preferredHeight: controlButtonHeight
                                 text: qsTr("1.5 сек")
                                 flat: true
                                 background: Rectangle {
                                     radius: 12
                                     border.width: periphHandle.autoDelayMs === 1500 ? 2 : 1
                                     border.color: periphHandle.autoDelayMs === 1500 ? root.autoBtnOnBorder : root.autoBtnOffBorder
-                                    color: periphHandle.autoDelayMs === 1500 ? root.autoBtnOnFill : "transparent"
+                                    color: periphHandle.autoDelayMs === 1500 ? root.autoBtnOnFill : root.autoBtnOffFill
                                 }
                                 contentItem: Text {
                                     text: parent.text
-                                    color: periphHandle.autoDelayMs === 1500 ? "white" : root.autoBtnOffText
-                                    font.pixelSize: 18
+                                    color: periphHandle.autoDelayMs === 1500 ? "black" : root.autoBtnOffText
+                                    font.pixelSize: 22
                                     font.bold: true
                                     horizontalAlignment: Text.AlignHCenter
                                     verticalAlignment: Text.AlignVCenter
@@ -1048,35 +1104,37 @@ Popup {
                         }
                     }
 
+                    Label {
+                        id: endoRateLabel
+                        Layout.fillWidth: true
+                        text: endoPulseRateText()
+                        visible: modeSelected() && modeEditor.isEndo
+                        horizontalAlignment: Text.AlignHCenter
+                        color: "black"
+                        font.pixelSize: 24
+                        font.bold: true
+                    }
                     EndoChart {
                         Layout.fillWidth: true
                         Layout.preferredHeight: 120
-                        Layout.topMargin: 8
+//                        Layout.topMargin: 8
                         visible: modeSelected() && modeEditor.isEndo
                         cutEffect: endoCutEffect()
                         coagEffect: endoCoagEffect()
                         modeName: modeTitleText()
-                    }
-                    Label {
-                        Layout.fillWidth: true
-                        text: qsTr("Визуализация для справки")
-                        visible: modeSelected() && modeEditor.isEndo
-                        horizontalAlignment: Text.AlignHCenter
-                        color: uiMidGray
-                        font.pixelSize: 18
-                        font.bold: true
                     }
                     Item { Layout.fillHeight: true }
                 }
 
                 Rectangle {
                     id: previewRect
+                    z: 2
                     anchors.fill: parent
                     anchors.margins: 8
-                    radius: 16
+                    radius: 20
                     color: "white"
-                    border.color: "#B0BEC5"
-                    border.width: 1
+                    border.width: 2
+                    border.color: root.fotekOrange
                     visible: centerView !== "power"
 
                     ColumnLayout {
@@ -1090,7 +1148,7 @@ Popup {
                             text: centerView === "modePreview" ? modeTitleText() : currentInstrName()
                             wrapMode: Text.WordWrap
                             horizontalAlignment: Text.AlignHCenter
-                            color: "#111111"
+                            color: root.fotekBlue
                             font.pixelSize: 28
                             font.bold: true
                         }
@@ -1143,13 +1201,65 @@ Popup {
                                                  : modeEditor.instrBrief)  + "</b>")  // Если описание совпадает с названием, то не выводим
                                     textFormat: Text.RichText
                                     wrapMode: Text.WordWrap
-                                    color: "#263238"
+                                    color: root.fotekBlue
                                     font.pixelSize: 22
                                 }
 
                                 ScrollBar.vertical: ScrollBar {
                                     policy: ScrollBar.AsNeeded
                                 }
+                            }
+                        }
+
+                        Label {
+                            Layout.fillWidth: true
+                            text: qsTr("Рекомендуемый уровень\nдля выбранного инструмента")
+                            visible: modeSelected() && instrumentSelected()
+                            horizontalAlignment: Text.AlignHCenter
+                            color: uiMidGray
+                            font.pixelSize: 24
+                            font.bold: true
+                            wrapMode: Text.WordWrap
+                        }
+
+                        RowLayout {
+                            Layout.fillWidth: true
+                            Layout.preferredHeight: modeEditor.isEndo ? recommendedEndoButtonHeight : recommendedButtonHeight
+                            visible: modeSelected()
+                            spacing: 8
+
+                            PowerRect {
+                                Layout.fillWidth: true
+                                Layout.preferredHeight: modeEditor.isEndo ? recommendedEndoButtonHeight : recommendedButtonHeight
+                                borderColor: "#A5D6A7"
+                                idleFillColor: "#F3F5F9"
+                                idleTextColor: root.fotekBlue
+                                power: modeEditor.lowPowerBound
+                                selected: modeEditor.currentPower === power
+                                isEndo: modeEditor.isEndo
+                                onPowerChosen: modeEditor.updateParameter("currentpower", pwr)
+                            }
+                            PowerRect {
+                                Layout.fillWidth: true
+                                Layout.preferredHeight: modeEditor.isEndo ? recommendedEndoButtonHeight : recommendedButtonHeight
+                                borderColor: "#78D87C"
+                                idleFillColor: "#F3F5F9"
+                                idleTextColor: root.fotekBlue
+                                power: modeEditor.midPowerBound
+                                selected: modeEditor.currentPower === power
+                                isEndo: modeEditor.isEndo
+                                onPowerChosen: modeEditor.updateParameter("currentpower", pwr)
+                            }
+                            PowerRect {
+                                Layout.fillWidth: true
+                                Layout.preferredHeight: modeEditor.isEndo ? recommendedEndoButtonHeight : recommendedButtonHeight
+                                borderColor: "#51D456"
+                                idleFillColor: "#F3F5F9"
+                                idleTextColor: root.fotekBlue
+                                power: modeEditor.highPowerBound
+                                selected: modeEditor.currentPower === power
+                                isEndo: modeEditor.isEndo
+                                onPowerChosen: modeEditor.updateParameter("currentpower", pwr)
                             }
                         }
 
@@ -1162,6 +1272,12 @@ Popup {
                                 Layout.fillWidth: true
                                 Layout.preferredHeight: 64
                                 text: qsTr("ОТМЕНА")
+                                secondaryColor: "white"
+                                secondaryBorderWidth: 2
+                                secondaryBorderColor: root.fotekBlue
+                                cornerRadius: 20
+                                labelPixelSize: 28
+                                labelColor: root.fotekBlue
                                 onPressed: restoreCommittedSelection()
                             }
                             DialogActionButton {
@@ -1169,6 +1285,13 @@ Popup {
                                 Layout.preferredHeight: 64
                                 text: qsTr("ПРИНЯТЬ")
                                 primary: true
+                                primaryEnabledColor: root.fotekBlue
+                                primaryDisabledColor: "#26409370"
+                                primaryBorderWidth: 1
+                                primaryBorderColor: "#1E3274"
+                                cornerRadius: 20
+                                labelPixelSize: 28
+                                labelColor: "white"
                                 onPressed: applyPreviewSelection()
                             }
                         }
@@ -1188,23 +1311,36 @@ Popup {
 
             DialogActionButton {
                 anchors.left: parent.left
-                anchors.leftMargin: 20
+                anchors.leftMargin: root.screenMargin
                 anchors.verticalCenter: parent.verticalCenter
                 width: 180
                 height: 62
                 text: qsTr("ОТМЕНА")
+                secondaryColor: "white"
+                secondaryBorderWidth: 2
+                secondaryBorderColor: root.fotekBlue
+                cornerRadius: 20
+                labelPixelSize: 30
+                labelColor: root.fotekBlue
                 onPressed: cancelEditorAndClose()
             }
 
             DialogActionButton {
                 anchors.right: parent.right
-                anchors.rightMargin: 20
+                anchors.rightMargin: root.screenMargin
                 anchors.verticalCenter: parent.verticalCenter
                 width: 180
                 height: 62
                 text: qsTr("ПРИНЯТЬ")
                 primary: true
                 enabled: modeEditor.hasChanges
+                primaryEnabledColor: root.fotekBlue
+                primaryDisabledColor: "#26409370"
+                primaryBorderWidth: 1
+                primaryBorderColor: "#1E3274"
+                cornerRadius: 20
+                labelPixelSize: 30
+                labelColor: "white"
                 onPressed: {
                     modeEditor.commitChanges()
                     recomHandle.saveCurrentState()
@@ -1291,10 +1427,8 @@ Popup {
         height: 320
 
         background: Rectangle {
-            radius: 16
-            color: "#F4F4F4"
-            border.width: 1
-            border.color: "#8A8A8A"
+            radius: 20
+            color: "#F3F5F9"
         }
 
         ColumnLayout {
@@ -1309,7 +1443,7 @@ Popup {
                 wrapMode: Text.WordWrap
                 horizontalAlignment: Text.AlignHCenter
                 verticalAlignment: Text.AlignVCenter
-                color: "#111111"
+                color: root.fotekBlue
                 font.pixelSize: 24
                 font.bold: true
             }
@@ -1323,8 +1457,12 @@ Popup {
                     Layout.fillWidth: true
                     Layout.preferredHeight: 64
                     text: qsTr("ОТМЕНА")
-                    cornerRadius: 14
-                    labelPixelSize: 22
+                    secondaryColor: "white"
+                    secondaryBorderWidth: 2
+                    secondaryBorderColor: root.fotekBlue
+                    cornerRadius: 20
+                    labelPixelSize: 24
+                    labelColor: root.fotekBlue
                     onPressed: {
                         pendingAutoMode = -1
                         autoModeConfirmPopup.close()
@@ -1336,8 +1474,12 @@ Popup {
                     Layout.preferredHeight: 64
                     text: qsTr("ПРИНЯТЬ")
                     primary: true
-                    cornerRadius: 14
-                    labelPixelSize: 22
+                    primaryEnabledColor: root.fotekBlue
+                    primaryBorderWidth: 1
+                    primaryBorderColor: "#1E3274"
+                    cornerRadius: 20
+                    labelPixelSize: 24
+                    labelColor: "white"
                     onPressed: {
                         if (pendingAutoMode >= 0) {
                             setSocketAutoMode(pendingAutoMode)

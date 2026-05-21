@@ -46,8 +46,10 @@ int main(int argc, char *argv[])
     QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
 #endif
     QCoreApplication::setAttribute(Qt::AA_UseOpenGLES);
-    // Как было изначально: тач-события синтезируются в мышь
-    QCoreApplication::setAttribute(Qt::AA_SynthesizeMouseForUnhandledTouchEvents, false);
+    // Тач → мышь для MouseArea и прочих QML-элементов без своего touch-обработчика.
+    // false ломает касания: SButton/поля ввода работают, MouseArea — нет.
+    // Но это если в дисплее прошивка как мультитач, если он как мышь, то false, может быть и лучше
+    QCoreApplication::setAttribute(Qt::AA_SynthesizeMouseForUnhandledTouchEvents, true);
 
     // Настройки для Qt Multimedia
     qputenv("QT_GSTREAMER_USE_PLAYBIN_VOLUME", "1");

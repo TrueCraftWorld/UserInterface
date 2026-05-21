@@ -91,6 +91,7 @@ Rectangle {
                 width: Math.min(parent.width - 8, pedIcon.width + 60)
                 height: Math.min(implicitHeight, Math.max(0, pedIcon.y - 6))
                 anchors.top: parent.top
+                anchors.topMargin: 20
                 anchors.horizontalCenter: parent.horizontalCenter
                 color: "white"
                 font.pixelSize: 22
@@ -110,6 +111,19 @@ Rectangle {
                 anchors.bottom: parent.bottom
                 pedalStateIdx: model.socketpedal
                 socketId: index
+            }
+
+            Text {
+                id: emptyPedalLabel
+                text: qsTr("выбор педали")
+                anchors.fill: pedIcon
+                color: "white"
+                font.pixelSize: 18
+//                font.bold: true
+                horizontalAlignment: Text.AlignHCenter
+                verticalAlignment: Text.AlignVCenter
+                wrapMode: Text.WordWrap
+                visible: pedIcon.state === "empty"
             }
 
             Connections {

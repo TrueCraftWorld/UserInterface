@@ -22,7 +22,7 @@ Window {
     property bool leftPanelExpanded: false
     property bool rightPanelExpanded: false
     readonly property int pedalPanelWidth: 100
-    readonly property int argNeutralPanelWidth: 100
+    readonly property int argNeutralPanelWidth: 150
 
     // Свойство для нейтрального электрода
     property bool neutralConnected: false
@@ -31,6 +31,7 @@ Window {
     property string currentProgName: ""
     property string currentProgramDisplayTitle: ""
     property bool currentProgramIsUser: false
+    property bool currentProgramIsRecom: false
     property bool hasUnsavedChanges: false
     property string language: "ru"
     readonly property color fotekBlue: "#264093"
@@ -47,7 +48,15 @@ Window {
                                           | startupFlowVisible)
     }
 
-    function setCurrentProgram(scopeName, progName) {
+    function setCurrentProgram(scopeName, progName, isUserProgram, isRecomProgram) {
+        if (isUserProgram === undefined) {
+            isUserProgram = false
+        }
+        if (isRecomProgram === undefined) {
+            isRecomProgram = false
+        }
+        currentProgramIsUser = isUserProgram
+        currentProgramIsRecom = isRecomProgram
         currentProgramDisplayTitle = scopeName + ": " + progName
         container.currentProgName = progName
         resetUnsavedChanges()
@@ -56,11 +65,34 @@ Window {
     }
 
     function setCurrentProgramTitle(titleText) {
+        currentProgramIsUser = false
+        currentProgramIsRecom = false
         currentProgramDisplayTitle = titleText
         container.currentProgName = titleText
         resetUnsavedChanges()
         refreshStatusTitle()
         persistCurrentProgramInfo()
+    }
+
+    function openProgramListFromStatus() {
+        if (currentProgramIsUser) {
+            if (startupFlowVisible) {
+                showStartupScreen("userProgramList")
+            } else {
+                menuLoad.loader.setSource("qrc:/ProgItemList.qml",
+                                          {"recommended": false, "editable": true})
+                leftDrawer.open()
+            }
+            return
+        }
+        if (currentProgramIsRecom) {
+            if (startupFlowVisible) {
+                showStartupScreen("recommendedList")
+            } else {
+                menuLoad.loader.setSource("qrc:/ProgItemList.qml", {"recommended": true})
+                leftDrawer.open()
+            }
+        }
     }
 
     function displayTitleWithoutUnsavedMark(value) {
@@ -154,8 +186,14 @@ Window {
     }
 
     function showMainScreen() {
+        if (leftDrawer.drawerActive) {
+            leftDrawer.opened = false
+            slideMenuAnimation.stop()
+            leftDrawer.x = -container.width
+        }
         startupScreen = "mainScreen"
         startupInfoVisible = false
+        Qt.inputMethod.hide()
         activationEnable()
     }
 
@@ -228,6 +266,7 @@ Window {
     }
 
     Component.onCompleted: {
+        Qt.inputMethod.hide()
         restoreLanguage()
         restoreCurrentProgramInfo()
         activationEnable()
@@ -242,7 +281,8 @@ Window {
             return
         }
         persistLanguage()
-        inputPanel.languageLayout = keyboardLayoutForLanguage()
+        if (keyboardLoader.item)
+            keyboardLoader.item.languageLayout = keyboardLayoutForLanguage()
     }
 
    StatusBar {
@@ -380,12 +420,14 @@ Window {
 
     Item {
         id: leftDrawer
-        width: container.width
-        height: container.height
+        readonly property bool drawerActive: opened || slideMenuAnimation.running
+        width: drawerActive ? container.width : 0
+        height: drawerActive ? container.height : 0
         x: -container.width
         y: 0
-        z: 9998
-        visible: opened || slideMenuAnimation.running
+        z: drawerActive ? 9998 : -1
+        visible: drawerActive
+        enabled: drawerActive
 
         property bool opened: false
 
@@ -435,6 +477,7 @@ Window {
         anchors.fill: parent
         z: 20000
         visible: startupFlowVisible
+        enabled: startupFlowVisible
 
         Loader {
             id: startupContentLoader
@@ -496,7 +539,6 @@ Window {
                     }
                     function onFreeSettingsButtonPressed() {
                         recomHandle.loadEmptyFreeSettings()
-                        container.currentProgramIsUser = false
                         container.setCurrentProgramTitle(qsTr("СВОБОДНЫЕ УСТАНОВКИ"))
                         container.resetUnsavedChanges()
                         container.showMainScreen()
@@ -540,8 +582,7 @@ Window {
                 editable: false
                 onReturnButtonPressed: container.showStartupScreen("startMenu")
                 onProgramSelected: {
-                    container.currentProgramIsUser = false
-                    container.setCurrentProgram(scopeName, progName)
+                    container.setCurrentProgram(scopeName, progName, false, true)
                 }
                 onClickedButton: container.showMainScreen()
             }
@@ -555,8 +596,7 @@ Window {
                 editable: true
                 onReturnButtonPressed: container.showStartupScreen("startMenu")
                 onProgramSelected: {
-                    container.currentProgramIsUser = true
-                    container.setCurrentProgram(scopeName, progName)
+                    container.setCurrentProgram(scopeName, progName, true, false)
                 }
                 onClickedButton: container.showMainScreen()
             }
@@ -698,7 +738,7 @@ Window {
                                  saveProgDialog.progName)
             recomHandle.saveCurrentState()
             container.currentProgramIsUser = true
-            container.setCurrentProgram(saveProgDialog.scopeName, saveProgDialog.progName)
+            container.setCurrentProgram(saveProgDialog.scopeName, saveProgDialog.progName, true, false)
             Qt.inputMethod.hide()
         }
         function onRejected() {
@@ -944,6 +984,9 @@ Window {
         function onSaveCalled() {
             saveProgDialog.open()
         }
+        function onProgramTitlePressed() {
+            container.openProgramListFromStatus()
+        }
     }
     Connections {
         target: menuLoad
@@ -955,10 +998,16 @@ Window {
                 menuLoad.shortcut = false
                 return
             }
-            container.setCurrentProgram(scopeName, progName)
+            var isUserProgram = false
+            var isRecomProgram = false
+            if (menuLoad.loaderSourceBaseName() === "ProgItemList.qml" && menuLoad.loader.item) {
+                isRecomProgram = menuLoad.loader.item.recommended
+                isUserProgram = !isRecomProgram
+            }
+            container.setCurrentProgram(scopeName, progName, isUserProgram, isRecomProgram)
         }
         function onFreeSettingsModeActivated() {
-            container.currentProgramIsUser = false
+            container.setCurrentProgramTitle(qsTr("СВОБОДНЫЕ УСТАНОВКИ"))
             container.markUnsavedChanges()
         }
         function onDeleteAllUserProgsRequested() {
@@ -1140,75 +1189,82 @@ Window {
 
    // }
    
-   // Виртуальная клавиатура CuteKeyboard
-   InputPanel {
-      id: inputPanel
-     
-      function tuneKeyboardTree(node) {
-         if (!node)
-            return
-         if (node.autoRepeat !== undefined) {
-            node.autoRepeat = false
-         }
-         if (node.alternativeKeys !== undefined) {
-            node.alternativeKeys = []
-         }
-         if (!node.children)
-            return
-         for (var i = 0; i < node.children.length; ++i) {
-            tuneKeyboardTree(node.children[i])
-         }
-      }
-
-      function applyTouchTuning() {
-         tuneKeyboardTree(inputPanel)
-      }
-      
-      z: 9999
-      y: container.height
-      languageLayout: container.keyboardLayoutForLanguage()
-      availableLanguageLayouts: ["Ru","En"]
+   // Клавиатура только в дереве, когда реально нужна — иначе InputPanel (z:9999) перехватывает тач
+   Loader {
+      id: keyboardLoader
       anchors.left: parent.left
       anchors.right: parent.right
+      anchors.bottom: parent.bottom
+      z: 9999
+      active: Qt.inputMethod.visible
+      sourceComponent: keyboardPanelComponent
+   }
 
-      onActiveChanged: {
-         if (active) {
-            inputPanel.languageLayout = container.keyboardLayoutForLanguage()
-            keyboardTuningTimer.restart()
+   Component {
+      id: keyboardPanelComponent
+
+      InputPanel {
+         id: inputPanel
+         y: container.height
+         languageLayout: container.keyboardLayoutForLanguage()
+         availableLanguageLayouts: ["Ru", "En"]
+         anchors.left: parent.left
+         anchors.right: parent.right
+
+         function tuneKeyboardTree(node) {
+            if (!node)
+               return
+            if (node.autoRepeat !== undefined)
+               node.autoRepeat = false
+            if (node.alternativeKeys !== undefined)
+               node.alternativeKeys = []
+            if (!node.children)
+               return
+            for (var i = 0; i < node.children.length; ++i)
+               tuneKeyboardTree(node.children[i])
          }
-      }
 
-      onLanguageLayoutChanged: {
-         keyboardTuningTimer.restart()
-      }
-
-      Timer {
-         id: keyboardTuningTimer
-         interval: 40
-         repeat: false
-         onTriggered: {
-            inputPanel.applyTouchTuning()
-            Qt.callLater(inputPanel.applyTouchTuning)
+         function applyTouchTuning() {
+            tuneKeyboardTree(inputPanel)
          }
-      }
 
-      states: State {
-         name: "visible"
-         when: Qt.inputMethod.visible
-         PropertyChanges {
-            target: inputPanel
-            y: container.height - inputPanel.height
+         onActiveChanged: {
+            if (active) {
+               inputPanel.languageLayout = container.keyboardLayoutForLanguage()
+               keyboardTuningTimer.restart()
+            }
          }
-      }
-      transitions: Transition {
-         from: ""
-         to: "visible"
-         reversible: true
-         ParallelAnimation {
-            NumberAnimation {
-               properties: "y"
-               duration: 0
-               easing.type: Easing.InOutQuad
+
+         onLanguageLayoutChanged: keyboardTuningTimer.restart()
+
+         Timer {
+            id: keyboardTuningTimer
+            interval: 40
+            repeat: false
+            onTriggered: {
+               inputPanel.applyTouchTuning()
+               Qt.callLater(inputPanel.applyTouchTuning)
+            }
+         }
+
+         states: State {
+            name: "visible"
+            when: inputPanel.active
+            PropertyChanges {
+               target: inputPanel
+               y: container.height - inputPanel.height
+            }
+         }
+         transitions: Transition {
+            from: ""
+            to: "visible"
+            reversible: true
+            ParallelAnimation {
+               NumberAnimation {
+                  properties: "y"
+                  duration: 0
+                  easing.type: Easing.InOutQuad
+               }
             }
          }
       }

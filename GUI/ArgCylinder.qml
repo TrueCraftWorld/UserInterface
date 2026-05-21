@@ -25,10 +25,10 @@ Rectangle {
         width: bodyWidth
         height: bodyHeight
         radius: width / 2
-        color: cylConnected ? (cylSelected ? "#30f020" : "#80f070") : "gray"
+        color: cylConnected ? (cylSelected ? "#30f020" : "#80f070") : "#d9d9d9"
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.bottom: parent.bottom
-        border.color: "#d9d9d9"
+        border.color: "gray"
         border.width: borderSize
     }
     Rectangle {
@@ -36,7 +36,7 @@ Rectangle {
         width: unit
         height: unit * 2
         radius: width / 2
-        color: "#d9d9d9"
+        color: "gray"
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.bottom: cylinderBody.top
         anchors.bottomMargin: -(unit / 2)
@@ -46,7 +46,7 @@ Rectangle {
         width: unit * 3
         height: unit
         radius: height / 2
-        color: "#d9d9d9"
+        color: "gray"
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.top: cylinderNeck.top
         anchors.topMargin: Math.max(1, unit * 0.2)

@@ -5,6 +5,7 @@ Rectangle {
     id: statusRoot
     signal drawerCalled()
     signal saveCalled()
+    signal programTitlePressed()
     property alias text: mainText.text
     property alias versionText: appVersionText.text
     property bool saveHighlighted: false
@@ -53,6 +54,10 @@ Rectangle {
         wrapMode: Text.WordWrap
         maximumLineCount: statusRoot.useCompactTitle ? 2 : 1
         elide: Text.ElideRight
+    }
+    MouseArea {
+        anchors.fill: mainText
+        onClicked: statusRoot.programTitlePressed()
     }
     TextMetrics {
         id: mainTextLargeMetrics

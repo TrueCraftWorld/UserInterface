@@ -119,7 +119,7 @@ Rectangle {
         text: qsTr("рез")
         font.pixelSize: 13
         font.bold: true
-        color: "#E0E0E0"
+        color: uiMidGray
         x: root.sidePadding + 2
         y: Math.max(0, root.height - root.yellowHeight - height - 2)
         z: 3
@@ -129,7 +129,7 @@ Rectangle {
         text: qsTr("коаг")
         font.pixelSize: 13
         font.bold: true
-        color: "#E0E0E0"
+        color: uiMidGray
         x: root.sidePadding + root.yellowWidth + 2
         y: Math.max(0, root.height - root.blueHeight - height - 2)
         z: 3

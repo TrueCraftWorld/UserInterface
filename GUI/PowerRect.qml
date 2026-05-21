@@ -3,6 +3,9 @@ import QtQuick.Controls 2.15
 
 Button {
     property color borderColor: "transparent"
+    property color idleFillColor: "transparent"
+    property color idleTextColor: "white"
+    property color selectedTextColor: "black"
     property int power
     property bool selected: false
     property bool isEndo: false
@@ -13,7 +16,7 @@ Button {
         radius: 8
         border.width: 2
         border.color: borderColor
-        color: selected ? borderColor : "transparent"
+        color: selected ? borderColor : idleFillColor
     }
     Label {
         id:powerText
@@ -26,7 +29,7 @@ Button {
 
         font.bold: true
         font.pixelSize: 48
-        color: selected ? "black" : "white"
+        color: selected ? selectedTextColor : idleTextColor
     }
     Column {
         id: endoRow
@@ -41,7 +44,7 @@ Button {
             horizontalAlignment: Qt.AlignHCenter
             verticalAlignment: Qt.AlignVCenter
             font.pixelSize: 32
-            color: selected ? "black" : "white"
+            color: selected ? selectedTextColor : idleTextColor
         }
 //        Text {
 //            text: Math.floor(power / 10)

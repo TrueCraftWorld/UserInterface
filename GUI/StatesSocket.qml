@@ -83,6 +83,7 @@ Rectangle {
     HalfSocket {
         id:         leftRect
         isCoag:     false
+        socketName: socketRoot.title
         modeName:   socketRoot.cutModeName
         modePower:  socketRoot.cutModePower
         modeId:     socketRoot.cutModeId
@@ -110,6 +111,7 @@ Rectangle {
     HalfSocket {
         id:         rightRect
         isCoag:     true
+        socketName: socketRoot.title
         modeName:   socketRoot.coagModeNameForDisplay
         modePower:  socketRoot.coagModePower
         modeId:     socketRoot.coagModeId

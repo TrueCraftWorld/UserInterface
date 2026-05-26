@@ -136,7 +136,7 @@ Item {
         hoverEnabled: false
         preventStealing: true
         // Кнопка «Назад» (z: 4) и подписи (z: 3) остаются кликабельными
-        propagateComposedEvents: true
+        propagateComposedEvents: false
 
         onPressed: function(mouse) {
             mouse.accepted = true

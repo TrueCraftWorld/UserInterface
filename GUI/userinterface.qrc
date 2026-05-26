@@ -35,7 +35,8 @@
         <file>GradientBack.qml</file>
         <file>PedalDrawer.qml</file>
         <file>ArgCylinder.qml</file>
-        <file>PeripheryDrawer.qml</file>
+        <file>ArgonDrawer.qml</file>
+        <file>NeutralDrawer.qml</file>
         <file>PeripheryPanel.qml</file>
         <file>NeutralButton.qml</file>
         <file>VideoPlayer.qml</file>

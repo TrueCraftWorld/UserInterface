@@ -57,12 +57,26 @@ Item {
     signal programSelected(string scopeName, string progName)
     signal freeSettingsModeActivated()
     signal deleteAllUserProgsRequested()
-    Loader {
-        id: menuLoader
+
+    // Перехват касаний по пустым зонам; дочерние кнопки/поля — через propagateComposedEvents
+    MouseArea {
+        id: menuTouchShield
         anchors.fill: parent
-        source: "qrc:/MainMenu.qml"
-        
-        onItemChanged: {
+        propagateComposedEvents: true
+        z: 0
+
+        Rectangle {
+            anchors.fill: parent
+            color: "darkslategray"
+            z: -1
+        }
+
+        Loader {
+            id: menuLoader
+            anchors.fill: parent
+            source: "qrc:/MainMenu.qml"
+
+            onItemChanged: {
             // Отключаем все предыдущие подключения
             /// TODO: даже учитывая пользу от коннекта таким образом, в виде отсутствия варнингов
             /// необходимо вернуться к коннектам как обхъектам т.к. у нас много динамики и коннект как функция может уронить приложение
@@ -218,6 +232,17 @@ Item {
                     }
                 }
             }
+        }
+        }
+
+        onPressed: function(mouse) {
+            mouse.accepted = true
+        }
+        onReleased: function(mouse) {
+            mouse.accepted = true
+        }
+        onClicked: function(mouse) {
+            mouse.accepted = true
         }
     }
 

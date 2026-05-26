@@ -28,7 +28,8 @@ DISTFILES += \
     $$PWD/PedalDrawer.qml \
     $$PWD/PedalEditor.qml \
     $$PWD/PedalRepeater.qml \
-    $$PWD/PeripheryDrawer.qml \
+    $$PWD/ArgonDrawer.qml \
+    $$PWD/NeutralDrawer.qml \
     $$PWD/PeripheryPanel.qml \
     $$PWD/PowerRect.qml \
     $$PWD/ProgAdditionPop.qml \

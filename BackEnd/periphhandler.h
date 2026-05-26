@@ -3,6 +3,7 @@
 
 #include "Structures.h"
 
+#include <QByteArray>
 #include <QObject>
 #include <QHash>
 #include <QTimer>
@@ -28,6 +29,7 @@ class PeriphHandler : public QObject
     Q_PROPERTY(int bi1AutoMode READ bi1AutoMode NOTIFY biAutoModeChanged)
     Q_PROPERTY(int bi2AutoMode READ bi2AutoMode NOTIFY biAutoModeChanged)
     Q_PROPERTY(int autoDelayMs READ autoDelayMs WRITE setAutoDelayMs NOTIFY autoDelayMsChanged)
+    Q_PROPERTY(QString neutralResistText READ neutralResistText NOTIFY neutralResistTextChanged)
 public:
 	explicit PeriphHandler(QObject * parent = nullptr);
 
@@ -126,6 +128,7 @@ public:
     int bi1AutoMode() const;
     int bi2AutoMode() const;
     int autoDelayMs() const;
+    QString neutralResistText() const;
 
 	/**
 	 * @brief Запускает продувку аргона
@@ -144,8 +147,11 @@ public slots:
 	void setArgonRealRate(quint8 rate);
 	void showActivationStopWarning(quint8 stopReason);
 	void showWarningCode(quint8 warningCode);
+	void onNeutralResistReceived(const QByteArray &data);
 
 private:
+	static QString formatNeutralResistData(const QByteArray &data);
+
 	bool m_argonCylinder1Connected;         // Подключение баллона 1
 	bool m_argonCylinder2Connected;         // Баллона 2
 	bool m_autoStStopTissue;                // Захвачена ткань в режиме АСС
@@ -166,6 +172,7 @@ private:
     QHash<int, QTimer *> m_warningTimers;
     quint8 m_socketAutoModes[4];
     int m_autoDelayMs;
+    QString m_neutralResistText;
 
     void recomputeEnableActivation();
     void clearWarningCode(int warningCode);
@@ -186,6 +193,7 @@ signals:
     void biAutoModeChanged();
     void autoModeChanged(int socketId, int mode);
     void autoDelayMsChanged(int delayMs);
+    void neutralResistTextChanged();
 
 };
 

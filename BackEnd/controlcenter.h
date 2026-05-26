@@ -66,6 +66,7 @@ public:
 	QPointer<PeriphHandler> getPeripheryHandle() const;
 
 	Q_INVOKABLE bool loadProgram(int progId, bool clear);
+	Q_INVOKABLE void setNeutralResistPollEnabled(bool enabled);
 
 private:
 	QSharedPointer<SocketModel> m_socketModel;

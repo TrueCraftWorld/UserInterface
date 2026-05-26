@@ -5,7 +5,7 @@ import QtQuick.Layouts 1.15
 Rectangle {
     id: argonRoot
     
-    // Маркер для PeripheryDrawer: этот компонент имеет интерактивные элементы и должен получать события напрямую
+    // Маркер для ArgonDrawer: интерактивные элементы получают события напрямую
     property bool hasInteractiveContent: true
     
     // Публичные свойства

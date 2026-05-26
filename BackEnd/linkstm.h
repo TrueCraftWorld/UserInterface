@@ -7,6 +7,7 @@
 #include <QQueue>
 #include <QThread>
 #include <QDebug>
+#include <QByteArray>
 #include <QVariant>
 #include <QElapsedTimer>
 #include "uartqmlbridge.h"
@@ -221,10 +222,13 @@ public slots:
     void setBiAutoMode(int socketIndex, quint8 mode);
     void setActivCylinderFirst(bool first);
     void setArgonFlowRate(quint8 rate);
+    void setNeutralResistPollEnabled(bool enabled);
     void updateSocketData(int socketIndex, quint16 cutModeNum, quint16 coagModeNum, 
                          quint16 cutModePower, quint16 coagModePower, quint8 pedal);
     void updateSocketData(int socketIndex, const Onyx::SocketState& info);
     void initializeAllSockets();
+    /// Прервать передачу прошивки МК (пустое message — без сообщения об ошибке в UI).
+    void abortFirmwareUpdate(const QString &message);
 
 signals:
     //начинаем имена сигналов с sig или signal чтобы
@@ -245,6 +249,7 @@ signals:
                                      bool autoMode, quint8 sourceCode);
     void sigStopActivation(quint8 stopReason);
     void sigPowerOffCommand();
+    void sigNeutralResistReceived(const QByteArray &data);
     /// Версии ПО модулей МК: список из 5 QVariantMap (числа для UI и сравнения с обновлениями).
     void sigFirmwareVersionsChanged(const QVariantList &modules);
     void firmwareUpdateParseError(const QString &message);
@@ -269,7 +274,6 @@ private:
     void setNextCommand();
 
     void readRxCommand();
-    void abortFirmwareUpdate(const QString &message);
 
     ActiveSocket determineSocket(const PedalKnobPressed &pedalKnob);
 
@@ -294,6 +298,8 @@ private:
     UartState m_state;
     UartTx m_txCommand;
     UartRx m_rxCommand;
+    /// Пока ждём BootAck после GoBoot — не подменять m_txCommand на обычные команды.
+    bool m_fwUpdateAwaitingBoot = false;
     /// Пока ждём ReadyToUpdate после StartUpdate — не подменять m_txCommand на Allright.
     bool m_fwUpdateAwaitingReady = false;
     int m_softSize;
@@ -324,6 +330,7 @@ private:
     bool m_moduleHasWorkingApp[5] = {true, true, true, true, true};
     /// После sigPressed3rdKnob не повторять, пока педали/кнопки не вернутся в PRESS_NONE
     bool m_thirdKnobSignalConsumedUntilRelease = false;
+    bool m_neutralResistPollEnabled = false;
 };
 
 #endif // LINKSTM_H

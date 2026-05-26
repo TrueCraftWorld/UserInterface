@@ -97,7 +97,8 @@ int main(int argc, char *argv[])
     
     // Настройки для touch-устройств (как было до отладки)
     qputenv("QT_QPA_EVDEV_TOUCHSCREEN_PARAMETERS", "rotate=0");
-    qputenv("QT_LOGGING_RULES", "*.debug=false;qt.qpa.input=false");
+    // Не отключаем *.debug — иначе qDebug() не вызывает messageHandler и не виден в SSH
+    qputenv("QT_LOGGING_RULES", "qt.qpa.input=false");
 
     OnyxApp app(argc, argv);
     QCoreApplication::setApplicationVersion("1.1");
@@ -261,16 +262,14 @@ int main(int argc, char *argv[])
     // Связываем LinkStm с ControlCenter для обработки UART-данных
     ctrl->setLinkStm(m_linkStm);
 
+    qDebug() << "Start";
+
     return app.exec();
 }
 
 // Реализация обработчика
 void messageHandler(QtMsgType type, const QMessageLogContext &context, const QString &msg)
 {
-    if (type == QtDebugMsg) {
-        return;
-    }
-
     if (type == QtCriticalMsg || type == QtWarningMsg) {
         if (msg.startsWith("Failed to move cursor") ||
             msg.startsWith("Could not set cursor") ||
@@ -307,7 +306,12 @@ void messageHandler(QtMsgType type, const QMessageLogContext &context, const QSt
             << logLine << Qt::endl;
     }
 
-    // Выводим в консоль
-    QTextStream debugOut(stdout);
-    debugOut << logLine << Qt::endl;
+    // stderr — то, что видно при запуске по SSH с ПК
+    const QByteArray local = logLine.toLocal8Bit();
+    fputs(local.constData(), stderr);
+    fputc('\n', stderr);
+    fflush(stderr);
+
+    if (type == QtFatalMsg)
+        abort();
 }

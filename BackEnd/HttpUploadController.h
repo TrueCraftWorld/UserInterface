@@ -95,6 +95,7 @@ public:
     Q_INVOKABLE bool applyComVersion(const QString &version);
     Q_INVOKABLE bool applyArgVersion(const QString &version);
     Q_INVOKABLE bool applyGenVersion(const QString &version);
+    Q_INVOKABLE void abortMcFirmwareUpdate();
     Q_INVOKABLE bool restartDemo1UserService();
 
 public slots:

@@ -23,6 +23,8 @@ Window {
     property bool rightPanelExpanded: false
     readonly property int pedalPanelWidth: 100
     readonly property int argNeutralPanelWidth: 150
+    readonly property int peripheryDrawerWidth: container.width * 0.5 + 25
+    readonly property int pedalDrawerWidth: container.width * 0.5 - 25
 
     // Свойство для нейтрального электрода
     property bool neutralConnected: false
@@ -43,7 +45,8 @@ Window {
     function activationEnable() {
         periphHandle.enableActivation = !(pedDrawer.opened
                                           | leftDrawer.opened
-                                          | argNeutDrawer.opened
+                                          | argonDrawer.opened
+                                          | neutralDrawer.opened
                                           | socketsDummy.socketEditorOpened
                                           | startupFlowVisible)
     }
@@ -383,15 +386,18 @@ Window {
             top: statusDummy.bottom
         }
     }
-    Connections {
-        target: argNeutralPanel
-        function onOpenPeriphDrawer() {
-            argNeutDrawer.open()
-        }
+    ArgonDrawer {
+        id: argonDrawer
+        y: 0
+        width: container.peripheryDrawerWidth
+        height: container.height
+        edge: Qt.LeftEdge
     }
-    PeripheryDrawer {
-        id: argNeutDrawer
-        width: .5 * container.width
+
+    NeutralDrawer {
+        id: neutralDrawer
+        y: 0
+        width: container.peripheryDrawerWidth
         height: container.height
         edge: Qt.LeftEdge
     }
@@ -410,7 +416,7 @@ Window {
 	PedalDrawer {
 		id: pedDrawer
 		innerModel: theModel
-		width: .5 * container.width
+		width: container.pedalDrawerWidth
 		height: container.height
 		edge: Qt.RightEdge
 	}
@@ -455,17 +461,6 @@ Window {
             }
         }
 
-        // Блокируем прохождение событий к элементам за панелью.
-        // z: -1 гарантирует, что область всегда ниже контента MenuLoader (z:0)
-        // и получает только те события, которые не были приняты кнопками.
-        MouseArea {
-            anchors.fill: parent
-            z: -1
-            onPressed: mouse.accepted = true
-            onReleased: mouse.accepted = true
-            onPositionChanged: mouse.accepted = true
-        }
-
         MenuLoader {
             id: menuLoad
             anchors.fill: parent
@@ -479,7 +474,15 @@ Window {
         visible: startupFlowVisible
         enabled: startupFlowVisible
 
-        Loader {
+        MouseArea {
+            anchors.fill: parent
+            propagateComposedEvents: true
+            z: 0
+            onPressed: function(mouse) { mouse.accepted = true }
+            onReleased: function(mouse) { mouse.accepted = true }
+            onClicked: function(mouse) { mouse.accepted = true }
+
+            Loader {
             id: startupContentLoader
             anchors.fill: parent
             sourceComponent: {
@@ -493,6 +496,7 @@ Window {
                 default:
                     return startupMenuComponent
                 }
+            }
             }
         }
 
@@ -763,7 +767,13 @@ Window {
         }
     }
     Connections {
-        target: argNeutDrawer
+        target: argonDrawer
+        function onOpenedChanged() {
+            container.activationEnable()
+        }
+    }
+    Connections {
+        target: neutralDrawer
         function onOpenedChanged() {
             container.activationEnable()
         }
@@ -792,8 +802,11 @@ Window {
     }
     Connections {
         target: argNeutralPanel
-        function onOpenPeriphDrawer() {
-            argNeutDrawer.open()
+        function onOpenArgonDrawer() {
+            argonDrawer.open()
+        }
+        function onOpenNeutralDrawer() {
+            neutralDrawer.open()
         }
     }
 
@@ -801,7 +814,7 @@ Window {
         id: drawerOverlay
         anchors.fill: parent
         z: 1  // Выше основного контента, но drawer'ы будут иметь z намного выше (по умолчанию 10000)
-        visible: argNeutDrawer.opened || pedDrawer.opened
+        visible: argonDrawer.opened || neutralDrawer.opened || pedDrawer.opened
 
         Rectangle {
             anchors.fill: parent
@@ -814,7 +827,8 @@ Window {
                     mouse.accepted = true
                 }
                 onReleased: {
-                    if (argNeutDrawer.opened) argNeutDrawer.close()
+                    if (argonDrawer.opened) argonDrawer.close()
+                    if (neutralDrawer.opened) neutralDrawer.close()
                     if (pedDrawer.opened) pedDrawer.close()
                     mouse.accepted = true
                 }
@@ -870,7 +884,7 @@ Window {
 				var deltaX = mouse.x - startX
 				// Если свайп вправо больше порога, открываем drawer
 				if (deltaX > minSwipeDistance) {
-					argNeutDrawer.open()
+					argonDrawer.open()
 					mouse.accepted = true
 					isSwipeGesture = false
 					hadSwipeGesture = false

@@ -317,6 +317,9 @@ void ControlCenter::setLinkStm(LinkStm* linkStm)
 		connect(m_periphery, &PeriphHandler::sigArgonBlow,
 		        m_linkStm, &LinkStm::argonBlow,
 		        Qt::QueuedConnection);
+		connect(m_linkStm, &LinkStm::sigNeutralResistReceived,
+		        m_periphery, &PeriphHandler::onNeutralResistReceived,
+		        Qt::QueuedConnection);
         connect(m_periphery, &PeriphHandler::autoModeChanged,
                 this, [this](int socketId, int mode) {
             if (m_linkStm.isNull() || m_periphery.isNull()) {
@@ -366,6 +369,15 @@ void ControlCenter::initSocketsForPeriphery()
 QPointer<PeriphHandler> ControlCenter::getPeripheryHandle() const
 {
 	return m_periphery;
+}
+
+void ControlCenter::setNeutralResistPollEnabled(bool enabled)
+{
+    if (m_linkStm.isNull()) {
+        return;
+    }
+    QMetaObject::invokeMethod(m_linkStm.data(), "setNeutralResistPollEnabled", Qt::QueuedConnection,
+                              Q_ARG(bool, enabled));
 }
 
 bool ControlCenter::loadProgram(int progId, bool clear)

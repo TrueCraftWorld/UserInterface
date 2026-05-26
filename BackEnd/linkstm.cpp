@@ -58,6 +58,15 @@ void LinkStm::argonBlow()
     setTxCommand(argonBlowCommand);
 }
 
+void LinkStm::setNeutralResistPollEnabled(bool enabled)
+{
+    if (m_neutralResistPollEnabled == enabled) {
+        return;
+    }
+    m_neutralResistPollEnabled = enabled;
+    emit sigNeutralResistReceived(QByteArray());
+}
+
 void LinkStm::unpackRxCommand(const QByteArray &rxPacket)
 {
 //    qDebug() << "[LinkStm] unpackRxCommand, bytes:" << rxPacket.size();
@@ -154,7 +163,7 @@ void LinkStm::unpackRxCommand(const QByteArray &rxPacket)
     else {
         m_state = STATE_RX_ERR;
 //        qDebug() << "не тот ответ от stm";      // DEBUG
-        if (m_fwUpdateSessionActive) {
+        if (m_fwUpdateSessionActive && !m_fwUpdateAwaitingBoot) {
             if (!m_fwRxErrStreakTimer.isValid()) {
                 m_fwRxErrStreakTimer.start();
             } else if (m_fwRxErrStreakTimer.elapsed() >= 4000) {
@@ -183,6 +192,8 @@ bool LinkStm::checkRxCommand()
         return m_rxCommand.com == Erased ? true : false;
     case StartUpdate:
         return m_rxCommand.com == ReadyToUpdate ? true : false;
+    case GoBoot:
+        return m_rxCommand.com == BootAck ? true : false;
     case UpdateFinish:
         return m_rxCommand.com == UpdateResult ? true : false;
     case SoftData:
@@ -248,7 +259,8 @@ void LinkStm::sendCommand()
     if (m_state == STATE_OK) {
         readRxCommand();                    // Читаем ответ
 
-        if (!m_txCommandList.isEmpty()) {   // Какую-то спец команду надо передать
+        if (!m_neutralResistPollEnabled && !m_txCommandList.isEmpty()
+            && !m_fwUpdateSessionActive) {   // Какую-то спец команду надо передать
             m_txCommand = m_txCommandList.takeFirst();
             m_comState = SPECIAL;
             qDebug() << "txCom: " << m_txCommand.com << ": " << QString::number(m_txCommand.com, 16);
@@ -304,29 +316,34 @@ void LinkStm::sendCommand()
         }
 
         //__________________Команда по умолчанию_________________
-        if (m_comState == IDLE && !m_fwUpdateAwaitingReady) {
-            if (m_unitState.pedalKnob == PRESS_NONE
-                || m_unitState.pedalKnob == PRESS_WRONG) {
-                m_thirdKnobSignalConsumedUntilRelease = false;
+        if (m_comState == IDLE && !m_fwUpdateAwaitingBoot && !m_fwUpdateAwaitingReady) {
+            if (m_neutralResistPollEnabled) {
+                m_txCommand.com = AckNeutralResist;
+                m_txCommand.data.clear();
             } else {
-                activeSocket = determineSocket(m_unitState.pedalKnob);
-                if (activeSocket.is3rdKnob && activeSocket.id < 4) {
-                    if (!m_thirdKnobSignalConsumedUntilRelease) {
-                        emit sigPressed3rdKnob(activeSocket.id);
-                        m_thirdKnobSignalConsumedUntilRelease = true;
+                if (m_unitState.pedalKnob == PRESS_NONE
+                    || m_unitState.pedalKnob == PRESS_WRONG) {
+                    m_thirdKnobSignalConsumedUntilRelease = false;
+                } else {
+                    activeSocket = determineSocket(m_unitState.pedalKnob);
+                    if (activeSocket.is3rdKnob && activeSocket.id < 4) {
+                        if (!m_thirdKnobSignalConsumedUntilRelease) {
+                            emit sigPressed3rdKnob(activeSocket.id);
+                            m_thirdKnobSignalConsumedUntilRelease = true;
+                        }
                     }
                 }
+                m_txCommand.com = Allright;
+                if (m_socketList[0].autoMode == 2) {            // Режим АСС на выходе БИ1
+                    m_txCommand.com |= 1 << 2;
+                }
+                if (m_socketList[1].autoMode == 2) {            // Режим АСС на выходе БИ2
+                    m_txCommand.com |= 3 << 2;
+                }
+                m_txCommand.com |= m_neutralElDivided ? (1 << 1) : 0;
+                m_txCommand.com |= m_enableActivation ? 0 : 1;  // Запрет активации
+                m_txCommand.data.clear();
             }
-            m_txCommand.com = Allright;
-            if (m_socketList[0].autoMode == 2) {            // Режим АСС на выходе БИ1
-                m_txCommand.com |= 1 << 2;
-            }
-            if (m_socketList[1].autoMode == 2) {            // Режим АСС на выходе БИ2
-                m_txCommand.com |= 3 << 2;
-            }
-            m_txCommand.com |= m_neutralElDivided ? (1 << 1) : 0;
-            m_txCommand.com |= m_enableActivation ? 0 : 1;  // Запрет активации
-            m_txCommand.data.clear();
         }
 
         //______________Обновление________________
@@ -410,7 +427,7 @@ void LinkStm::sendCommand()
     if (!m_uart->writeData(txPacket)) {
         m_state = STATE_TX_ERR;
         txStr = "!Tx ERROR";
-        // qDebug() << "Tx ERR!";
+         qDebug() << "Tx ERR!";
    }
    else {
         txStr = getHexStr(txPacket);
@@ -526,7 +543,7 @@ void LinkStm::readRxCommand()
             case PRESS_PED2_B:
                 unitState.pedalKnob = static_cast<PedalKnobPressed>(pressValue);
                 qDebug() << "Pressed pedal: " << unitState.pedalKnob << "current m_comState:" << m_comState;
-                if (m_comState != ACTIVATION) {
+                if (!m_neutralResistPollEnabled && m_comState != ACTIVATION) {
                     m_comState = START_ACTIVATION;
                     qDebug() << "Set m_comState to START_ACTIVATION";
                     qDebug() << m_rxCommand.com << " " << getHexStr(m_rxCommand.data);
@@ -588,7 +605,9 @@ void LinkStm::readRxCommand()
         break;
     // Ответ на спец.запросы
     case RxSpecial:
-        if (m_rxCommand.com == PowerOff) {
+        if (m_rxCommand.com == NeutralResist) {
+            emit sigNeutralResistReceived(m_rxCommand.data);
+        } else if (m_rxCommand.com == PowerOff) {
             emit sigPowerOffCommand();
         }
         break;
@@ -604,6 +623,13 @@ void LinkStm::readRxCommand()
             m_comState = IDLE;
         }
         else if (m_rxCommand.com == BootAck) {
+            if (m_fwUpdateAwaitingBoot) {
+                m_txCommand.com = StartUpdate;
+                m_txCommand.data.clear();
+                m_txCommand.mc = m_mc;
+                m_fwUpdateAwaitingBoot = false;
+                m_fwUpdateAwaitingReady = true;
+            }
             m_comState = IDLE;
         }
         else {
@@ -739,19 +765,21 @@ void LinkStm::updateTransfer(QList<HexString> hexList, QString versionStr)
     m_fwRxErrStreakTimer.invalidate();
     // Организуем отправку
     UartTx txCom;
-    txCom.com = LinkStm::StartUpdate;
+    txCom.com = LinkStm::GoBoot;
     txCom.data.clear();
     txCom.mc = m_mc;
-    m_fwUpdateAwaitingReady = true;
+    m_fwUpdateAwaitingBoot = true;
+    m_fwUpdateAwaitingReady = false;
     m_txCommand = txCom;
     m_versionStr = versionStr;
-    qDebug() << "startUpdate";
+    qDebug() << "goBoot before startUpdate";
 }
 
 void LinkStm::abortFirmwareUpdate(const QString &message)
 {
     m_fwUpdateSessionActive = false;
     m_fwRxErrStreakTimer.invalidate();
+    m_fwUpdateAwaitingBoot = false;
     m_fwUpdateAwaitingReady = false;
     m_hexList.clear();
     m_softSize = 0;

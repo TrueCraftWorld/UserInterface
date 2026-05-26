@@ -2979,7 +2979,29 @@ void HttpUploadController::setMcFirmwareUpdateProgress(int progress)
 void HttpUploadController::onMcFirmwareParseError(const QString &message)
 {
     setMcFirmwareUpdateProgress(-1);
-    setLastError(message);
+    if (!message.isEmpty()) {
+        setLastError(message);
+    }
+}
+
+void HttpUploadController::abortMcFirmwareUpdate()
+{
+    if (m_mcFirmwareUpdateProgress < 0) {
+        return;
+    }
+    if (!m_linkStm) {
+        setMcFirmwareUpdateProgress(-1);
+        return;
+    }
+    LinkStm *const link = m_linkStm;
+    const bool invoked = QMetaObject::invokeMethod(link, [link]() {
+        link->abortFirmwareUpdate(QString());
+    }, Qt::QueuedConnection);
+    if (!invoked) {
+        setMcFirmwareUpdateProgress(-1);
+        return;
+    }
+    setMcFirmwareUpdateProgress(-1);
 }
 
 bool HttpUploadController::applyMcFirmwareFromReleases(const QString &version, const QString &releasesSubdir,

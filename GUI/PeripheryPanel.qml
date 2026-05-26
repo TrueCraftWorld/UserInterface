@@ -6,7 +6,8 @@ import BackEnd 1.0
 Rectangle {
 
     id: peripheryPanelRoot
-    signal openPeriphDrawer()
+    signal openArgonDrawer()
+    signal openNeutralDrawer()
 
     color: "#2c2c2c"
 
@@ -68,6 +69,12 @@ Rectangle {
             isActivation: periphHandle.activation
             activCylinderFirst: periphHandle.activCylinderFirst
         }
+
+        MouseArea {
+            anchors.fill: parent
+            z: 10
+            onClicked: peripheryPanelRoot.openArgonDrawer()
+        }
     }
 
     Connections {
@@ -84,10 +91,9 @@ Rectangle {
         }
     }
 
-    // Касание по компактной панели — открыть drawer (внутри drawer свои контролы)
     MouseArea {
-        anchors.fill: parent
+        anchors.fill: neutralView
         z: 10
-        onClicked: peripheryPanelRoot.openPeriphDrawer()
+        onClicked: peripheryPanelRoot.openNeutralDrawer()
     }
 }

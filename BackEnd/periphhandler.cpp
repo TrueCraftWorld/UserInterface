@@ -21,7 +21,8 @@ PeriphHandler::PeriphHandler(QObject *parent)
     m_activationStopWarningVisible(false),
     m_activationStopWarningCode(-1),
     m_socketAutoModes{0, 0, 0, 0},
-    m_autoDelayMs(0)
+    m_autoDelayMs(0),
+    m_neutralResistText(QStringLiteral("—"))
 {
 
 }
@@ -110,6 +111,42 @@ void PeriphHandler::setArgonFlowRate(quint8 rate)
 
 	m_argonFlowRate = rate;
     emit sigArgonFlowRateChanged(rate);
+}
+
+QString PeriphHandler::neutralResistText() const
+{
+    return m_neutralResistText;
+}
+
+QString PeriphHandler::formatNeutralResistData(const QByteArray &data)
+{
+    if (data.isEmpty()) {
+        return QStringLiteral("—");
+    }
+    if (data.size() == 1) {
+        return QString::number(static_cast<quint8>(data.at(0)));
+    }
+    if (data.size() == 2) {
+        const quint16 value = (static_cast<quint8>(data.at(0)) << 8)
+                | static_cast<quint8>(data.at(1));
+        return QString::number(value);
+    }
+    QStringList parts;
+    parts.reserve(data.size());
+    for (int i = 0; i < data.size(); ++i) {
+        parts << QString::number(static_cast<quint8>(data.at(i)));
+    }
+    return parts.join(QLatin1Char(' '));
+}
+
+void PeriphHandler::onNeutralResistReceived(const QByteArray &data)
+{
+    const QString formatted = formatNeutralResistData(data);
+    if (m_neutralResistText == formatted) {
+        return;
+    }
+    m_neutralResistText = formatted;
+    emit neutralResistTextChanged();
 }
 
 void PeriphHandler::argonBlow()

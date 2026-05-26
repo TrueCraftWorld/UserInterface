@@ -5,7 +5,7 @@ Rectangle {
     id: neutralEl
     color: "transparent"
 
-    // Маркер для PeripheryDrawer: этот компонент имеет интерактивные элементы и должен получать события напрямую
+    // Маркер для NeutralDrawer: интерактивные элементы получают события напрямую
     property bool hasInteractiveContent: true
 
     // Свойства компонента

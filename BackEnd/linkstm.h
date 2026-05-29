@@ -226,6 +226,7 @@ public slots:
     void setActivCylinderFirst(bool first);
     void setArgonFlowRate(quint8 rate);
     void setNeutralResistPollEnabled(bool enabled);
+    void setDebugUart(bool enabled);
     void updateSocketData(int socketIndex, quint16 cutModeNum, quint16 coagModeNum, 
                          quint16 cutModePower, quint16 coagModePower, quint8 pedal);
     void updateSocketData(int socketIndex, const Onyx::SocketState& info);
@@ -336,6 +337,7 @@ private:
     /// После sigPressed3rdKnob не повторять, пока педали/кнопки не вернутся в PRESS_NONE
     bool m_thirdKnobSignalConsumedUntilRelease = false;
     bool m_neutralResistPollEnabled = false;
+    bool m_debugUart = false;
 };
 
 #endif // LINKSTM_H

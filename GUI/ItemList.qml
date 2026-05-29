@@ -237,8 +237,8 @@ Rectangle {
 				Rectangle {
 					id: itemEditRect
 					property bool engaged : false
-					color: "#22000000"
-					border.color: "#55ffffff"
+                    color: "#80FFFFFF"
+                    border.color: "#AA4040C0"
 					border.width: 1
 					radius: 8
 					width: engaged ? 3 * height : height

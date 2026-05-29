@@ -63,7 +63,7 @@ Rectangle {
                     border.color: "white"
                     border.width: 1
                     radius: 6
-                    visible: theModel.subProgCount < 5 && !theModel.endoProgramView
+                    visible: theModel.subProgCount < 4 && !theModel.endoProgramView
 
                     Text {
                         text: "+"

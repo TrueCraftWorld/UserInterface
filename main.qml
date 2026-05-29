@@ -51,6 +51,15 @@ Window {
                                           | startupFlowVisible)
     }
 
+    function openMainMenuFromStatus() {
+        if (startupFlowVisible) {
+            showStartupScreen("startMenu")
+        } else {
+            menuLoad.navigateTo("qrc:/MainMenu.qml")
+            leftDrawer.open()
+        }
+    }
+
     function setCurrentProgram(scopeName, progName, isUserProgram, isRecomProgram) {
         if (isUserProgram === undefined) {
             isUserProgram = false
@@ -78,6 +87,15 @@ Window {
     }
 
     function openProgramListFromStatus() {
+        if (currentProgramIsRecom) {
+            if (startupFlowVisible) {
+                showStartupScreen("recommendedList")
+            } else {
+                menuLoad.loader.setSource("qrc:/ProgItemList.qml", {"recommended": true})
+                leftDrawer.open()
+            }
+            return
+        }
         if (currentProgramIsUser) {
             if (startupFlowVisible) {
                 showStartupScreen("userProgramList")
@@ -88,14 +106,7 @@ Window {
             }
             return
         }
-        if (currentProgramIsRecom) {
-            if (startupFlowVisible) {
-                showStartupScreen("recommendedList")
-            } else {
-                menuLoad.loader.setSource("qrc:/ProgItemList.qml", {"recommended": true})
-                leftDrawer.open()
-            }
-        }
+        openMainMenuFromStatus()
     }
 
     function displayTitleWithoutUnsavedMark(value) {
@@ -164,6 +175,9 @@ Window {
         var displayName = String(savedJson.readString("lastProgramDisplayName", "")).trim()
         var progName = String(savedJson.readString("lastProgramName", "")).trim()
         var restored = false
+
+        currentProgramIsUser = false
+        currentProgramIsRecom = false
 
         if (displayName !== "") {
             currentProgramDisplayTitle = displayTitleWithoutUnsavedMark(displayName)
@@ -1064,13 +1078,15 @@ Window {
         }
     }
 
-	// Монитор системы в правом нижнем углу
+    // Монитор системы в правом верхнем углу
 	SystemMonitor {
 		id: systemMonitor
-        visible: false
+        visible: typeof appControl !== "undefined"
+                 && appControl
+                 && appControl.cpuMonitorVisible
 		anchors {
 			right: parent.right
-			bottom: parent.bottom
+            top: parent.top
 			margins: 10
 		}
 		z: 9999  // Поверх всего
@@ -1101,8 +1117,9 @@ Window {
         border.width: 1
         visible: typeof appControl !== "undefined"
                  && appControl
+                 && appControl.debugUartEnabled
                  && appControl.debugOverlayText !== ""
-        z: 30000
+        z: 10000
         clip: true
 
         readonly property int textPadding: 10

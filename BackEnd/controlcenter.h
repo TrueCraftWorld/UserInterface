@@ -21,6 +21,8 @@ class ControlCenter : public QObject
 {
 	Q_OBJECT
     Q_PROPERTY(QString debugOverlayText READ debugOverlayText NOTIFY debugOverlayTextChanged)
+    Q_PROPERTY(bool debugUartEnabled READ debugUartEnabled WRITE setDebugUartEnabled NOTIFY debugUartEnabledChanged)
+    Q_PROPERTY(bool cpuMonitorVisible READ cpuMonitorVisible WRITE setCpuMonitorVisible NOTIFY cpuMonitorVisibleChanged)
 
 public:
 	explicit ControlCenter(QObject *parent = nullptr);
@@ -72,9 +74,15 @@ public:
     Q_INVOKABLE void appendDebugOverlayLine(const QString &line);
     Q_INVOKABLE void clearDebugOverlay();
     QString debugOverlayText() const;
+    bool debugUartEnabled() const;
+    void setDebugUartEnabled(bool enabled);
+    bool cpuMonitorVisible() const;
+    void setCpuMonitorVisible(bool visible);
 
 signals:
     void debugOverlayTextChanged();
+    void debugUartEnabledChanged();
+    void cpuMonitorVisibleChanged();
 
 private:
 	QSharedPointer<SocketModel> m_socketModel;
@@ -87,6 +95,8 @@ private:
     int m_autoDelay = 0; // Задержка автозапуска в мс (runtime)
     QStringList m_debugOverlayLines;
     QString m_debugOverlayText;
+    bool m_debugUartEnabled = false;
+    bool m_cpuMonitorVisible = false;
     static constexpr int kDebugOverlayMaxLines = 40;
 
 	QTimer* m_saveTimer = nullptr;  // Таймер для отложенного сохранения

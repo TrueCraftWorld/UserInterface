@@ -19,7 +19,8 @@ LinkStm::LinkStm(QObject *parent)
     m_enableActivation(true),
     m_neutralElDivided(true),
     m_argonFlowRate(0),
-    m_comState(IDLE)
+    m_comState(IDLE),
+    m_debugUart(false)
 {
     // Регистрируем типы для использования в Qt::QueuedConnection
     qRegisterMetaType<Onyx::UnitState>("Onyx::UnitState");
@@ -69,6 +70,11 @@ void LinkStm::setNeutralResistPollEnabled(bool enabled)
     emit sigNeutralResistReceived(QByteArray());
 }
 
+void LinkStm::setDebugUart(bool enabled)
+{
+    m_debugUart = enabled;
+}
+
 void LinkStm::unpackRxCommand(const QByteArray &rxPacket)
 {
 //    qDebug() << "[LinkStm] unpackRxCommand, bytes:" << rxPacket.size();
@@ -88,8 +94,9 @@ void LinkStm::unpackRxCommand(const QByteArray &rxPacket)
 
     m_rxCommand.data.clear();
 
-    qDebug() << "Rx: " << getHexStr(rxPacket) << "ms: " << m_uart->transmitDelay();  // DEBUG
-    emit sigDebugOverlayLine(QStringLiteral("Rx: %1").arg(getHexStr(rxPacket)));
+//    qDebug() << "Rx: " << getHexStr(rxPacket) << "ms: " << m_uart->transmitDelay();  // DEBUG
+    if (m_debugUart)
+        emit sigDebugOverlayLine(QStringLiteral("Rx: %1").arg(getHexStr(rxPacket)));
 //    emit sigReportRx(getHexStr(rxPacket), m_uart->transmitDelay());
 
     // Проверка длины посылки
@@ -434,8 +441,9 @@ void LinkStm::sendCommand()
    }
    else {
         txStr = getHexStr(txPacket);
-        qDebug() << "Tx: " << getHexStr(txPacket);   // DEBUG
-        emit sigDebugOverlayLine(QStringLiteral("Tx: %1").arg(getHexStr(txPacket)));
+//        qDebug() << "Tx: " << getHexStr(txPacket);   // DEBUG
+        if (m_debugUart)
+            emit sigDebugOverlayLine(QStringLiteral("Tx: %1").arg(getHexStr(txPacket)));
     }
     
     // Отладочный замер времени от таймера до reportTx удалён

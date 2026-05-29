@@ -323,6 +323,8 @@ void ControlCenter::setLinkStm(LinkStm* linkStm)
         connect(m_linkStm, &LinkStm::sigDebugOverlayLine,
                 this, &ControlCenter::appendDebugOverlayLine,
                 Qt::QueuedConnection);
+        QMetaObject::invokeMethod(m_linkStm.data(), "setDebugUart", Qt::QueuedConnection,
+                                  Q_ARG(bool, m_debugUartEnabled));
         connect(m_periphery, &PeriphHandler::autoModeChanged,
                 this, [this](int socketId, int mode) {
             if (m_linkStm.isNull() || m_periphery.isNull()) {
@@ -395,9 +397,44 @@ QString ControlCenter::debugOverlayText() const
     return m_debugOverlayText;
 }
 
+bool ControlCenter::debugUartEnabled() const
+{
+    return m_debugUartEnabled;
+}
+
+void ControlCenter::setDebugUartEnabled(bool enabled)
+{
+    if (m_debugUartEnabled == enabled) {
+        return;
+    }
+    m_debugUartEnabled = enabled;
+    if (!m_linkStm.isNull()) {
+        QMetaObject::invokeMethod(m_linkStm.data(), "setDebugUart", Qt::QueuedConnection,
+                                  Q_ARG(bool, enabled));
+    }
+    if (!enabled) {
+        clearDebugOverlay();
+    }
+    emit debugUartEnabledChanged();
+}
+
+bool ControlCenter::cpuMonitorVisible() const
+{
+    return m_cpuMonitorVisible;
+}
+
+void ControlCenter::setCpuMonitorVisible(bool visible)
+{
+    if (m_cpuMonitorVisible == visible) {
+        return;
+    }
+    m_cpuMonitorVisible = visible;
+    emit cpuMonitorVisibleChanged();
+}
+
 void ControlCenter::appendDebugOverlayLine(const QString &line)
 {
-    if (line.isEmpty()) {
+    if (!m_debugUartEnabled || line.isEmpty()) {
         return;
     }
 

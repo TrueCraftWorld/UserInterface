@@ -49,17 +49,19 @@ Rectangle {
         clip: true
         interactive: false
         boundsBehavior: Flickable.StopAtBounds
-        contentWidth: mainText.paintedWidth
+        contentWidth: needScroll ? mainText.paintedWidth : width
         contentHeight: height
 
-        readonly property real textRenderWidth: Math.ceil(contentWidth)
+        readonly property real metricsTextWidth: Math.ceil(titleScrollMetrics.width)
+        readonly property real textRenderWidth: needScroll ? Math.ceil(contentWidth) : metricsTextWidth
         readonly property real overflowWidth: Math.max(0, textRenderWidth - width)
         readonly property real endRevealPadding: 0
         readonly property real maxScrollX: Math.max(0, overflowWidth + endRevealPadding)
         readonly property real scrollDistance: maxScrollX
-        readonly property bool needScroll: overflowWidth > 1 && mainText.text !== ""
+        readonly property bool needScroll: metricsTextWidth > width + 1 && mainText.text !== ""
 
         onWidthChanged: contentX = 0
+        onNeedScrollChanged: contentX = 0
         onContentXChanged: {
             if (contentX < 0) {
                 contentX = 0
@@ -72,7 +74,8 @@ Rectangle {
             id: mainText
             y: Math.round((titleViewport.height - height) / 2)
             x: 0
-            horizontalAlignment: Text.AlignLeft
+            width: titleViewport.needScroll ? titleViewport.metricsTextWidth : titleViewport.width
+            horizontalAlignment: titleViewport.needScroll ? Text.AlignLeft : Text.AlignHCenter
             verticalAlignment: Text.AlignVCenter
             font.pixelSize: statusRoot.useCompactTitle
                             ? statusRoot.titleCompactFontSize
@@ -83,15 +86,6 @@ Rectangle {
 
             onTextChanged: {
                 titleViewport.contentX = 0
-//                Qt.callLater(function() {
-//                    console.log("[StatusBar] text update:",
-//                                "\"" + mainText.text + "\"",
-//                                "paintedWidth=", mainText.paintedWidth,
-//                                "contentWidth=", mainText.contentWidth,
-//                                "overflow=", titleViewport.overflowWidth,
-//                                "maxScrollX=", titleViewport.maxScrollX,
-//                                "scrollDist=", titleViewport.scrollDistance)
-//                })
             }
             onFontChanged: titleViewport.contentX = 0
 
@@ -105,8 +99,7 @@ Rectangle {
             NumberAnimation {
                 from: 0
                 to: titleViewport.scrollDistance
-//                duration: 200
-                duration: Math.max(700, titleViewport.scrollDistance * 4)
+                duration: Math.max(1200, titleViewport.scrollDistance * 8)
                 easing.type: Easing.Linear
             }
             PauseAnimation { duration: 800 }
@@ -130,6 +123,13 @@ Rectangle {
         id: mainTextLargeMetrics
         text: mainTextMeasure.text
         font.pixelSize: statusRoot.titleLargeFontSize
+    }
+    TextMetrics {
+        id: titleScrollMetrics
+        text: mainText.text
+        font.pixelSize: statusRoot.useCompactTitle
+                        ? statusRoot.titleCompactFontSize
+                        : statusRoot.titleLargeFontSize
     }
     SText {
         id: appVersionText

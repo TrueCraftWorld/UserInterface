@@ -55,6 +55,8 @@ void LinkStm::argonBlow()
 {
     UartTx argonBlowCommand;
     argonBlowCommand.com = ArgonBlow;
+    argonBlowCommand.mc = MC_COM;
+    argonBlowCommand.data.clear();
     setTxCommand(argonBlowCommand);
 }
 
@@ -86,8 +88,9 @@ void LinkStm::unpackRxCommand(const QByteArray &rxPacket)
 
     m_rxCommand.data.clear();
 
-//    qDebug() << "Rx: " << getHexStr(rxPacket) << "ms: " << m_uart->transmitDelay();  // DEBUG
-    emit sigReportRx(getHexStr(rxPacket), m_uart->transmitDelay());
+    qDebug() << "Rx: " << getHexStr(rxPacket) << "ms: " << m_uart->transmitDelay();  // DEBUG
+    emit sigDebugOverlayLine(QStringLiteral("Rx: %1").arg(getHexStr(rxPacket)));
+//    emit sigReportRx(getHexStr(rxPacket), m_uart->transmitDelay());
 
     // Проверка длины посылки
     if (rxPacket.size() < 4) {
@@ -162,7 +165,7 @@ void LinkStm::unpackRxCommand(const QByteArray &rxPacket)
     // Повторяем команду, если ответ не подходящий
     else {
         m_state = STATE_RX_ERR;
-//        qDebug() << "не тот ответ от stm";      // DEBUG
+        qDebug() << "не тот ответ от stm";      // DEBUG
         if (m_fwUpdateSessionActive && !m_fwUpdateAwaitingBoot) {
             if (!m_fwRxErrStreakTimer.isValid()) {
                 m_fwRxErrStreakTimer.start();
@@ -414,8 +417,8 @@ void LinkStm::sendCommand()
         m_uartTimer->setInterval(200);
         break;
     default:
-//        m_uartTimer->setInterval(500);
-        m_uartTimer->setInterval(50);
+        m_uartTimer->setInterval(250);
+//        m_uartTimer->setInterval(50);
     }
 
 //    qDebug() << "txCom: " << m_txCommand.com << ": " << QString::number(m_txCommand.com, 16);
@@ -431,7 +434,8 @@ void LinkStm::sendCommand()
    }
    else {
         txStr = getHexStr(txPacket);
-//        qDebug() << "Tx: " << getHexStr(txPacket);   // DEBUG
+        qDebug() << "Tx: " << getHexStr(txPacket);   // DEBUG
+        emit sigDebugOverlayLine(QStringLiteral("Tx: %1").arg(getHexStr(txPacket)));
     }
     
     // Отладочный замер времени от таймера до reportTx удалён
@@ -623,12 +627,14 @@ void LinkStm::readRxCommand()
             m_comState = IDLE;
         }
         else if (m_rxCommand.com == BootAck) {
+            qDebug() << "boot ack принят";
             if (m_fwUpdateAwaitingBoot) {
                 m_txCommand.com = StartUpdate;
                 m_txCommand.data.clear();
                 m_txCommand.mc = m_mc;
                 m_fwUpdateAwaitingBoot = false;
                 m_fwUpdateAwaitingReady = true;
+                qDebug() << "Запускаем обновление";
             }
             m_comState = IDLE;
         }

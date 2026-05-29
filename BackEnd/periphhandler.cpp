@@ -145,7 +145,9 @@ void PeriphHandler::onNeutralResistReceived(const QByteArray &data)
     if (m_neutralResistText == formatted) {
         return;
     }
-    m_neutralResistText = formatted;
+    m_neutralResistText = formatted == "255" ?
+                    QStringLiteral("—") :
+                    (formatted + QStringLiteral(" \u03A9"));
     emit neutralResistTextChanged();
 }
 

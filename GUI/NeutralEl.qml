@@ -34,10 +34,10 @@ Rectangle {
         width: parent.width * .7  // Уменьшена ширина, чтобы не перекрывать кнопки типа слева
         radius: 10
         
-        color: neutralSize === type ? "cyan" : "lightgray"
+        color: neutralSize === type ? fotekOrange : "lightgray"
         border {
-            color: neutralSize === type ? "purple" : "transparent"
-            width: neutralSize === type ? 3 : 0
+            color: neutralSize === type ? fotekBlue : "transparent"
+            width: neutralSize === type ? 5 : 0
         }
         
         Rectangle {
@@ -96,7 +96,7 @@ Rectangle {
     NeutralButton {
         id: neutralImage
         visible: !showControls
-        borderColor: "purple"
+        borderColor: fotekBlue
         borderWidth: 3
         divided: neutralDivided
         neutColor: neutralConnected ? "green" : "red"
@@ -130,19 +130,19 @@ Rectangle {
         height: parent.height
         color: "transparent"
         radius: 10
-        border.color: "purple"
+        border.color: fotekBlue
         border.width: 2
         visible: showControls
 
         NeutralButton {
             id: buttonDivided
             height: parent.height * .45
-            width: parent.width * .22
-            borderColor: neutralDivided ? "purple" : "transparent"
-            borderWidth: neutralDivided ? 3 : 0
+            width: parent.width * .24
+            borderColor: neutralDivided ? fotekBlue : "transparent"
+            borderWidth: neutralDivided ? 5 : 0
             divided: true
             neutColor: "green"
-            theColor: !neutralDivided ? "lightgray" : "cyan"
+            theColor: !neutralDivided ? "lightgray" : fotekOrange
             anchors {
                 top: parent.top
                 left: parent.left
@@ -153,12 +153,12 @@ Rectangle {
         NeutralButton {
             id: buttonNotDivided
             height: parent.height * .45
-            width: parent.width * .22
-            borderColor: !neutralDivided ? "purple" : "transparent"
-            borderWidth: !neutralDivided ? 3 : 0
+            width: parent.width * .24
+            borderColor: !neutralDivided ? fotekBlue : "transparent"
+            borderWidth: !neutralDivided ? 5 : 0
             divided: false
             neutColor: "green"
-            theColor: neutralDivided ? "lightgray" : "cyan"
+            theColor: neutralDivided ? "lightgray" : fotekOrange
             anchors {
                 bottom: parent.bottom
                 left: parent.left

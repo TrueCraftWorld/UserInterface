@@ -1,5 +1,6 @@
 import QtQuick 2.15
 import QtQuick.Layouts 1.15
+import QtQuick.Controls 2.15
 
 Rectangle {
     id: socketContainer
@@ -93,7 +94,7 @@ Rectangle {
                     border.color: "red"
                     border.width: 1
                     radius: 6
-                    visible: theModel.subProgCount < 5 && !theModel.endoProgramView
+                    visible: theModel.subProgCount > 1 && !theModel.endoProgramView
 
                     Text {
                         text: qsTr("удалить")
@@ -107,7 +108,7 @@ Rectangle {
                     MouseArea {
                         anchors.fill: parent
 
-                        onClicked: recomHandle.removeSubProg()
+                        onClicked: confirmDeleteSubProgDialog.open()
                     }
                 }
             }
@@ -134,6 +135,83 @@ Rectangle {
         height: socketContainer.height/3
         y: 0
         modal: true
+    }
+
+    Dialog {
+        id: confirmDeleteSubProgDialog
+        title: ""
+        modal: true
+        width: Math.min(socketContainer.width * 0.92, 980)
+        height: 420
+        x: (socketContainer.width - width) / 2
+        y: (socketContainer.height - height) / 2
+
+        contentItem: Rectangle {
+            color: "transparent"
+
+            ColumnLayout {
+                anchors.fill: parent
+                anchors.leftMargin: 28
+                anchors.rightMargin: 28
+                anchors.topMargin: 26
+                anchors.bottomMargin: 14
+                spacing: 18
+
+                Label {
+                    Layout.fillWidth: true
+                    text: qsTr("Подтверждение удаления")
+                    horizontalAlignment: Qt.AlignHCenter
+                    font.pixelSize: 40
+                    font.bold: true
+                }
+
+                Label {
+                    Layout.fillWidth: true
+                    text: qsTr("Текущий лист программы будет удалён. Продолжить?")
+                    horizontalAlignment: Qt.AlignHCenter
+                    wrapMode: Text.WordWrap
+                    font.pixelSize: 36
+                }
+
+                Item { Layout.fillHeight: true }
+            }
+        }
+
+        footer: Rectangle {
+            color: "transparent"
+            implicitHeight: 132
+
+            RowLayout {
+                anchors.fill: parent
+                anchors.leftMargin: 24
+                anchors.rightMargin: 24
+                anchors.topMargin: 20
+                anchors.bottomMargin: 20
+                spacing: 18
+
+                DialogActionButton {
+                    Layout.preferredWidth: 240
+                    Layout.fillHeight: true
+                    text: qsTr("ОТМЕНА")
+                    labelPixelSize: 34
+                    onPressed: confirmDeleteSubProgDialog.close()
+                }
+
+                Item { Layout.fillWidth: true }
+
+                DialogActionButton {
+                    Layout.preferredWidth: 240
+                    Layout.fillHeight: true
+                    text: qsTr("ПРИНЯТЬ")
+                    primary: true
+                    labelPixelSize: 34
+                    onPressed: {
+                        recomHandle.removeSubProg()
+                        confirmDeleteSubProgDialog.close()
+                    }
+                }
+            }
+        }
     }
 
     Connections {

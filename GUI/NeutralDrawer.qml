@@ -23,12 +23,12 @@ Drawer {
     }
 
     background: Rectangle {
-        color: "darkgray"
+        color: "white"
     }
 
     Rectangle {
         anchors.fill: parent
-        color: "darkgray"
+        color: "white"
         z: -1
 
         MouseArea {
@@ -56,8 +56,8 @@ Drawer {
             }
             horizontalAlignment: Qt.AlignHCenter
             text: qsTr("СОПРОТИВЛЕНИЕ НЭ")
-            color: "white"
-            font.pixelSize: 20
+            color: fotekBlue
+            font.pixelSize: 24
             font.bold: true
         }
 
@@ -71,7 +71,7 @@ Drawer {
             }
             horizontalAlignment: Qt.AlignHCenter
             text: periphHandle.neutralResistText
-            color: "white"
+            color: "black"
             font.pixelSize: 36
             font.bold: true
         }
@@ -80,14 +80,14 @@ Drawer {
             id: neutralChoice
             anchors {
                 top: neutralResistValue.bottom
-                topMargin: 20
+                topMargin: 100
                 left: parent.left
                 right: parent.right
             }
             horizontalAlignment: Qt.AlignHCenter
             text: qsTr("ВЫБОР НЕЙТРАЛЬНОГО ЭЛЕКТРОДА")
-            color: "white"
-            font.pixelSize: 20
+            color: fotekBlue
+            font.pixelSize: 26
             font.bold: true
         }
 
@@ -148,6 +148,33 @@ Drawer {
             if (isSwipeGesture && deltaX < -minSwipeDistance)
                 neutralDrawerRoot.close()
             isSwipeGesture = false
+        }
+    }
+
+    Button {
+        id: closeButton
+        anchors {
+            top: parent.top
+            topMargin: 10
+            right: parent.right
+            rightMargin: 10
+        }
+        width: 68
+        height: 68
+        z: 1001
+        onPressed: neutralDrawerRoot.close()
+
+        background: Rectangle {
+            color: "transparent"
+        }
+
+        contentItem: Text {
+            text: qsTr("X")
+            font.pixelSize: 34
+            font.bold: true
+            color: fotekBlue
+            horizontalAlignment: Text.AlignHCenter
+            verticalAlignment: Text.AlignVCenter
         }
     }
 

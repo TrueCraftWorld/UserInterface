@@ -80,7 +80,7 @@ Rectangle {
     Connections {
         target: argonView
         function onFlowRateUpdated(newRate) {
-            periphHandle.setArgonFlowRate(newRate)
+            periphHandle.argonFlowRate = newRate
         }
         function onArgonBlow() {
             periphHandle.argonBlow()

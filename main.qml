@@ -294,7 +294,7 @@ Window {
       text: qsTr("")
 //      versionText: qsTr("Текущая версия: ") + appVersion
       width: parent.width
-      height: 85
+      height: 75
       anchors {
          top: parent.top
       }
@@ -1080,6 +1080,63 @@ Window {
         MouseArea {
             anchors.fill: parent
             enabled: false  // Отключаем перехват событий - все проходят сквозь
+        }
+    }
+
+    Rectangle {
+        id: debugOverlay
+        anchors {
+            left: parent.left
+            right: parent.right
+            top: parent.top
+            bottom: parent.bottom
+            leftMargin: 800
+            topMargin: 300
+            bottomMargin: 30
+        }
+//        height: Math.min(parent.height * 0.45, debugText.implicitHeight + 20)
+        color: "#99000000"
+        radius: 8
+        border.color: "#66ffffff"
+        border.width: 1
+        visible: typeof appControl !== "undefined"
+                 && appControl
+                 && appControl.debugOverlayText !== ""
+        z: 30000
+        clip: true
+
+        readonly property int textPadding: 10
+        readonly property int maxVisibleLines: {
+            var available = height - textPadding * 2
+            var line = Math.max(1, debugFontMetrics.height)
+            return Math.max(1, Math.floor(available / line))
+        }
+        readonly property string visibleDebugText: {
+            var src = appControl && appControl.debugOverlayText ? appControl.debugOverlayText : ""
+            if (src === "")
+                return ""
+            var lines = src.split("\n")
+            var start = Math.max(0, lines.length - maxVisibleLines)
+            return lines.slice(start).join("\n")
+        }
+
+        FontMetrics {
+            id: debugFontMetrics
+            font.family: "monospace"
+            font.pixelSize: 18
+        }
+
+        Text {
+            id: debugText
+            anchors.fill: parent
+            anchors.margins: debugOverlay.textPadding
+            text: debugOverlay.visibleDebugText
+            color: "white"
+            wrapMode: Text.NoWrap
+            font.family: "monospace"
+            font.pixelSize: 18
+            elide: Text.ElideNone
+            clip: true
         }
     }
 

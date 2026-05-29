@@ -11,6 +11,8 @@ Popup {
     property bool isCoag: false
     property bool isEndo: false
     property var sizeTarget: null
+    // Подстройка положения относительно обновлённой зоны сокетов
+    property int verticalOffset: -80
     
     onPowerChanged: {
 //        console.log("Activation.qml: power changed to", power)
@@ -23,9 +25,10 @@ Popup {
     // Настройки popup
     modal: true  // Модальный - блокируем касания
     closePolicy: Popup.NoAutoClose  // Закрывается только программно
-    anchors.centerIn: parent
     width: sizeTarget ? sizeTarget.width : (parent ? parent.width : 0)
     height: sizeTarget ? sizeTarget.height : (parent ? parent.height : 0)
+    x: 0
+    y: verticalOffset
     
     
     // Перехватываем все события мыши
@@ -67,13 +70,13 @@ Popup {
         // Главный контейнер с информацией
         Column {
             anchors.centerIn: parent
-            spacing: 20
+            spacing: 32
             
             // Заголовок "АКТИВАЦИЯ"
             Label {
                 anchors.horizontalCenter: parent.horizontalCenter
                 text: qsTr("АКТИВАЦИЯ ") + socketName
-                font.pixelSize: 32
+                font.pixelSize: 64
                 font.bold: true
                 color: isCoag ? "white" : "black"
                 style: Text.Outline
@@ -82,8 +85,8 @@ Popup {
             
             // Разделитель
             Rectangle {
-                width: 350
-                height: 2
+                width: 560
+                height: 4
                 color: isCoag ? "white" : "black"
                 anchors.horizontalCenter: parent.horizontalCenter
             }
@@ -93,7 +96,7 @@ Popup {
                 id: modeNameLabel
                 anchors.horizontalCenter: parent.horizontalCenter
                 text: modeName
-                font.pixelSize: 48
+                font.pixelSize: 96
                 color: isCoag ? "white" : "black"
                 style: Text.Outline
                 styleColor: isCoag ? "black" : "white"
@@ -103,8 +106,8 @@ Popup {
             Rectangle {
                 id: powerInfoRect
                 anchors.horizontalCenter: parent.horizontalCenter
-                width: 400
-                height: 150
+                width: 680
+                height: 280
                 color: "transparent"
                 
                 Column {
@@ -113,10 +116,10 @@ Popup {
                     anchors.top: parent.top
                     anchors.bottom: parent.bottom
                     width: parent.width
-                    spacing: 10
+                    spacing: 16
                     Label {
                         width: parent.width
-                        font.pixelSize: 28
+                        font.pixelSize: 56
                         font.bold: true
                         color: activationPopup.isCoag ? "white" : "black"
                         style: Text.Outline
@@ -128,7 +131,7 @@ Popup {
                     Label {
                         width: parent.width
                         height: parent.height - parent.children[0].height - parent.spacing
-                        font.pixelSize: 70
+                        font.pixelSize: 140
                         font.bold: true
                         color: activationPopup.isCoag ? "white" : "black"
                         style: Text.Outline
@@ -146,10 +149,10 @@ Popup {
                     anchors.right: parent.horizontalCenter
                     anchors.top: parent.top
                     anchors.bottom: parent.bottom
-                    spacing: 10
+                    spacing: 16
                     Label {
                         width: parent.width
-                        font.pixelSize: 28
+                        font.pixelSize: 56
                         font.bold: true
                         color: activationPopup.isCoag ? "white" : "black"
                         style: Text.Outline
@@ -161,7 +164,7 @@ Popup {
                     Label {
                         width: parent.width
                         height: parent.height - parent.children[0].height - parent.spacing
-                        font.pixelSize: 70
+                        font.pixelSize: 140
                         font.bold: true
                         color: activationPopup.isCoag ? "white" : "black"
                         style: Text.Outline
@@ -182,10 +185,10 @@ Popup {
                     anchors.right: parent.right
                     anchors.top: parent.top
                     anchors.bottom: parent.bottom
-                    spacing: 10
+                    spacing: 16
                     Label {
                         width: parent.width
-                        font.pixelSize: 28
+                        font.pixelSize: 56
                         font.bold: true
                         color: activationPopup.isCoag ? "white" : "black"
                         style: Text.Outline
@@ -197,7 +200,7 @@ Popup {
                     Label {
                         width: parent.width
                         height: parent.height - parent.children[0].height - parent.spacing
-                        font.pixelSize: 70
+                        font.pixelSize: 140
                         font.bold: true
                         color: activationPopup.isCoag ? "white" : "black"
                 style: Text.Outline

@@ -11,12 +11,12 @@ Drawer {
     closePolicy: Popup.NoAutoClose
 
     background: Rectangle {
-        color: "darkgray"
+        color: "white"
     }
 
     Rectangle {
         anchors.fill: parent
-        color: "darkgray"
+        color: "white"
         z: -1
 
         MouseArea {
@@ -43,8 +43,8 @@ Drawer {
             }
             horizontalAlignment: Qt.AlignHCenter
             text: qsTr("НАСТРОЙКА ГАЗОВОГО ТРАКТА")
-            color: "white"
-            font.pixelSize: 20
+            color: fotekBlue
+            font.pixelSize: 24
             font.bold: true
         }
 
@@ -111,10 +111,37 @@ Drawer {
         }
     }
 
+    Button {
+        id: closeButton
+        anchors {
+            top: parent.top
+            topMargin: 10
+            right: parent.right
+            rightMargin: 10
+        }
+        width: 68
+        height: 68
+        z: 1001
+        onPressed: argonDrawerRoot.close()
+
+        background: Rectangle {
+            color: "transparent"
+        }
+
+        contentItem: Text {
+            text: qsTr("X")
+            font.pixelSize: 34
+            font.bold: true
+            color: fotekBlue
+            horizontalAlignment: Text.AlignHCenter
+            verticalAlignment: Text.AlignVCenter
+        }
+    }
+
     Connections {
         target: argonView
         function onFlowRateUpdated(newRate) {
-            periphHandle.setArgonFlowRate(newRate)
+            periphHandle.argonFlowRate = newRate
         }
         function onArgonBlow() {
             periphHandle.argonBlow()

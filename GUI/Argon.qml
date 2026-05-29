@@ -14,7 +14,7 @@ Rectangle {
     property int flowRate: 5               // Уровень расхода (л/мин) - установленный
     property int realFlowRate: 0           // Реальный расход аргона во время активации
     property bool isActivation: false      // Активация в данный момент
-    property int minFlowRate: 1
+    property int minFlowRate: 10
     property int maxFlowRate: 80
     property bool showControls: true       // Показывать элементы управления (в развернутом состоянии)
     property bool compactOnLightBackground: false  // PeripheryPanel: белая карточка, тёмные подписи
@@ -39,8 +39,8 @@ Rectangle {
 
     // Внутреннее свойства для размеров кнопок
     readonly property int  buttonStep: 16
-    readonly property int  flowButtonHeight: 56
-    readonly property int  flowButtonMinWidth: 52
+    readonly property int  flowButtonHeight: 80
+    readonly property int  flowButtonMinWidth: 80
     readonly property int  flowButtonMaxWidth: 80
     
     // Сигналы
@@ -80,7 +80,7 @@ Rectangle {
         signal pressed()
 
         radius: 16
-        color: isPressed ? "#66BB6A" : "#8BC34A"
+        color: isPressed ? fotekOrange : fotekBlue
         border {
             color: "#00000030"
             width: 1
@@ -91,7 +91,7 @@ Rectangle {
             text: iconText
             font.pixelSize: 44
             font.bold: true
-            color: "#111111"
+            color: isPressed ? "black" : "white"
         }
         
         MouseArea {
@@ -150,22 +150,22 @@ Rectangle {
         Text {
             id: arLabel
             anchors.top: parent.top
-            anchors.topMargin: showControls ? 5 : Math.round(7 * compactLayoutScale)
+            anchors.topMargin: showControls ? 120 : Math.round(7 * compactLayoutScale)
             anchors.horizontalCenter: parent.horizontalCenter
             text: showControls ? qsTr("РАСХОД АРГОНА") : qsTr("АРГОН")
             font.pixelSize: showControls ? 24 : Math.round(18 * compactLayoutScale)
             font.bold: true
-            color: showControls ? "#2c2c2c" : argonRoot.compactLabelColor
+            color: showControls ? fotekBlue : argonRoot.compactLabelColor
         }
 
         ArgCylinder {
             id: firstCylinder
             isFirst: true;
-            width: showControls ? 85 : compactCylinderWidth
-            height: showControls ? (step * 12.5) : compactCylinderHeight
-            anchors.top: arLabel.bottom
-            anchors.topMargin: showControls ? 8 : Math.round(6 * compactLayoutScale)
-            x: showControls ? 100 : Math.round(2 * compactLayoutScale)
+            width: showControls ? 120 : compactCylinderWidth
+            height: showControls ? (step * 20) : compactCylinderHeight
+            anchors.top: showControls ? parent.top : arLabel.bottom
+            anchors.topMargin: showControls ? 80 : Math.round(6 * compactLayoutScale)
+            x: showControls ? 20 : Math.round(2 * compactLayoutScale)
             cylConnected: cylinder1Connected
             cylSelected: activCylinderFirst
             interactive: showControls  // Баллоны кликабельны только в развернутом состоянии
@@ -199,6 +199,7 @@ Rectangle {
                             Math.min(flowButtonMaxWidth, (flowControlsArea.width - argonFlowRect.width - 24) / 2))
             height: flowButtonHeight
             anchors.left: flowControlsArea.left
+            anchors.leftMargin: 20
             anchors.verticalCenter: flowControlsArea.verticalCenter
             delta: -10
             iconText: "−"
@@ -287,13 +288,13 @@ Rectangle {
             Text {
                 id: litrPerMin
                 anchors.top: argonFlow.bottom
-                anchors.topMargin: showControls ? 0 : -10
+                anchors.topMargin: showControls ? 20 : -10
                 anchors.horizontalCenter: parent.horizontalCenter
                 text: qsTr("л/мин")
                 font.pixelSize: 24
 //                font.pixelSize: showControls ? 20 : Math.round(20 * compactLayoutScale)
                 font.bold: true
-                color: argonRoot.showControls ? "#2c2c2c" : argonRoot.compactLabelColor
+                color: argonRoot.showControls ? fotekBlue: argonRoot.compactLabelColor
             }
         }
 
@@ -303,6 +304,7 @@ Rectangle {
             width: minus10BtnNew.width
             height: flowButtonHeight
             anchors.right: flowControlsArea.right
+            anchors.rightMargin: 20
             anchors.verticalCenter: flowControlsArea.verticalCenter
             delta: 10
             iconText: "+"
@@ -363,9 +365,9 @@ Rectangle {
             id: secondCylinder
             width: firstCylinder.width
             height: firstCylinder.height
-            anchors.top: arLabel.bottom
-            anchors.topMargin: showControls ? 8 : Math.round(7 * compactLayoutScale)
-            x: showControls ? (parent.width - width - 100)
+            anchors.top: showControls ? parent.top : arLabel.bottom
+            anchors.topMargin: showControls ? 80 : Math.round(7 * compactLayoutScale)
+            x: showControls ? (parent.width - width - 20)
                             : (parent.width - width - Math.round(2 * compactLayoutScale))
             isFirst: false;
             cylConnected: cylinder2Connected
@@ -387,14 +389,14 @@ Rectangle {
         Rectangle {
             id: blowButton
             width: parent.width - 40
-            height: buttonStep * 4.5
+            height: buttonStep * 8
             anchors.horizontalCenter: parent.horizontalCenter
             anchors.bottom: parent.bottom
-            anchors.bottomMargin: 10
+            anchors.bottomMargin: 30
             radius: 10
             visible: showControls
             property bool isPressed: false
-            color: isPressed ? "#4CAF50" : "#8BC34A"
+            color: isPressed ? fotekOrange : fotekBlue
             border {
                 color: "#558B2F"
                 width: 3
@@ -402,10 +404,10 @@ Rectangle {
             
             Text {
                 anchors.centerIn: parent
-                text: qsTr("ПРОДУВКА")
+                text: qsTr("ПРОДУТЬ")
                 font.pixelSize: buttonStep * 2
                 font.bold: true
-                color: "#1B5E20"
+                color: blowButton.isPressed ? "black" : "white"
             }
             
             MouseArea {

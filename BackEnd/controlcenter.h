@@ -4,6 +4,7 @@
 #include <QObject>
 #include <QPointer>
 #include <QTimer>
+#include <QStringList>
 
 #include "BackEnd/socketmodeeditor.h"
 #include "socketmodel.h"
@@ -19,6 +20,7 @@
 class ControlCenter : public QObject
 {
 	Q_OBJECT
+    Q_PROPERTY(QString debugOverlayText READ debugOverlayText NOTIFY debugOverlayTextChanged)
 
 public:
 	explicit ControlCenter(QObject *parent = nullptr);
@@ -67,6 +69,12 @@ public:
 
 	Q_INVOKABLE bool loadProgram(int progId, bool clear);
 	Q_INVOKABLE void setNeutralResistPollEnabled(bool enabled);
+    Q_INVOKABLE void appendDebugOverlayLine(const QString &line);
+    Q_INVOKABLE void clearDebugOverlay();
+    QString debugOverlayText() const;
+
+signals:
+    void debugOverlayTextChanged();
 
 private:
 	QSharedPointer<SocketModel> m_socketModel;
@@ -77,6 +85,9 @@ private:
 	QPointer<PeriphHandler> m_periphery;
 	QPointer<LinkStm> m_linkStm;
     int m_autoDelay = 0; // Задержка автозапуска в мс (runtime)
+    QStringList m_debugOverlayLines;
+    QString m_debugOverlayText;
+    static constexpr int kDebugOverlayMaxLines = 40;
 
 	QTimer* m_saveTimer = nullptr;  // Таймер для отложенного сохранения
 

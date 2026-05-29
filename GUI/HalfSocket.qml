@@ -30,6 +30,52 @@ Rectangle {
     readonly property int endoCoagEffect: modePower % 10
     readonly property int normalModeNameFont: 36
     readonly property int singleLineModeNameFont: 42
+    readonly property int collapsedInstrBaseSize: 150
+    readonly property int collapsedInstrMinSize: 56
+    readonly property int cutLabelLeftInset: 8
+    readonly property int cutLabelToImageGap: 6
+    readonly property int instrImageRightInset: 8
+    readonly property int coagLabelToImageGap: 6
+    readonly property int coagLabelRightInset: 8
+    readonly property int coagImageLeftInset: 8
+    // Реальная ширина подписи режима (см. anchors у modeLabel и collapsedInstrImage)
+    readonly property int cutModeLabelMarginTotal: cutLabelLeftInset + cutLabelToImageGap + instrImageRightInset
+    readonly property int coagModeLabelMarginTotal: coagImageLeftInset + coagLabelToImageGap + coagLabelRightInset
+    readonly property int modeNameMeasurePadding: 8
+    readonly property int cutModeNameWidth: Math.ceil(largeModeNameMetrics.width) + modeNameMeasurePadding
+    readonly property int coagModeNameWidthLarge: Math.ceil(largeModeNameMetrics.width) + modeNameMeasurePadding
+    readonly property int coagModeNameWidthNormal: Math.ceil(normalModeNameMetrics.width) + modeNameMeasurePadding
+    readonly property int coagModeLabelAreaWidth: Math.max(0, halfSocketRoot.width
+            - (halfSocketRoot.hasInstrImage ? collapsedInstrBaseSize : 0)
+            - coagModeLabelMarginTotal)
+
+    // Резание: уменьшаем только картинку, шрифт режима фиксированный (42)
+    readonly property int collapsedInstrSize: {
+        if (halfSocketRoot.isCoag || halfSocketRoot.modeId === 1000)
+            return halfSocketRoot.hasInstrImage ? collapsedInstrBaseSize : 0
+        if (!halfSocketRoot.hasInstrImage)
+            return 0
+        var w = halfSocketRoot.width
+        if (w <= 0)
+            return collapsedInstrBaseSize
+        var availAtBase = w - collapsedInstrBaseSize - cutModeLabelMarginTotal
+        if (cutModeNameWidth <= availAtBase)
+            return collapsedInstrBaseSize
+        var required = w - cutModeLabelMarginTotal - cutModeNameWidth
+        return Math.max(collapsedInstrMinSize, Math.min(collapsedInstrBaseSize, required))
+    }
+
+    readonly property int modeNameFontSize: {
+        if (modeId === 1000)
+            return 24
+        if (!isCoag)
+            return singleLineModeNameFont
+        return coagModeNameWidthLarge <= coagModeLabelAreaWidth
+                ? singleLineModeNameFont
+                : normalModeNameFont
+    }
+
+    readonly property bool cutModeNameSingleLine: !isCoag && modeId !== 1000
     readonly property string modeLabelText: {
         if (modeId !== 1000) {
             return modeName
@@ -95,17 +141,17 @@ Rectangle {
         fillMode: Image.PreserveAspectFit
         smooth: true
         mipmap: true
-        width: 150
-        height: 150
+        width: collapsedInstrSize
+        height: collapsedInstrSize
         source: "image://instruments/"
                 + (halfSocketRoot.isCoag ? "coaginstr" : "cutinstr")
                 + halfSocketRoot.instrumNum
         anchors.bottom: parent.bottom
         anchors.bottomMargin: 4
         anchors.left: halfSocketRoot.isCoag ? parent.left : undefined
-        anchors.leftMargin: halfSocketRoot.isCoag ? 4 : undefined
+        anchors.leftMargin: halfSocketRoot.isCoag ? coagImageLeftInset : undefined
         anchors.right: halfSocketRoot.isCoag ? undefined : parent.right
-        anchors.rightMargin: halfSocketRoot.isCoag ? undefined : 4
+        anchors.rightMargin: halfSocketRoot.isCoag ? undefined : instrImageRightInset
     }
 
     Label {
@@ -113,31 +159,42 @@ Rectangle {
         visible: halfSocketRoot.hasAvailableModes
         text: halfSocketRoot.modeLabelText
         color: (!halfSocketRoot.isCoag || modeId === 1000) ? "black" : "white"
-        font.pixelSize: modeId === 1000
-                        ? 24
-                        : (singleLineModeMetrics.width <= modeLabel.width
-                           ? halfSocketRoot.singleLineModeNameFont
-                           : halfSocketRoot.normalModeNameFont)
+        font.pixelSize: halfSocketRoot.modeNameFontSize
         font.bold: true
-        wrapMode: Text.Wrap
+        wrapMode: halfSocketRoot.cutModeNameSingleLine ? Text.NoWrap : Text.Wrap
         lineHeight: 0.82
         lineHeightMode: Text.ProportionalHeight
-        maximumLineCount: 2
-        elide: Text.ElideRight
+        maximumLineCount: halfSocketRoot.cutModeNameSingleLine ? 1 : 2
+        elide: Text.ElideNone
         horizontalAlignment: halfSocketRoot.isCoag ? Text.AlignRight : Text.AlignLeft
         verticalAlignment: Text.AlignTop
         anchors.top: parent.top
         anchors.topMargin: 8
-        anchors.left: halfSocketRoot.isCoag ? collapsedInstrImage.right : parent.left
-        anchors.leftMargin: halfSocketRoot.isCoag ? 6 : 8
-        anchors.right: halfSocketRoot.isCoag ? parent.right : collapsedInstrImage.left
-        anchors.rightMargin: halfSocketRoot.isCoag ? 8 : 6
+        anchors.left: halfSocketRoot.isCoag
+                     ? (halfSocketRoot.hasInstrImage ? collapsedInstrImage.right : parent.left)
+                     : parent.left
+        anchors.leftMargin: halfSocketRoot.isCoag
+                            ? (halfSocketRoot.hasInstrImage ? coagLabelToImageGap : coagImageLeftInset)
+                            : cutLabelLeftInset
+        anchors.right: halfSocketRoot.isCoag
+                      ? parent.right
+                      : (halfSocketRoot.hasInstrImage ? collapsedInstrImage.left : parent.right)
+        anchors.rightMargin: halfSocketRoot.isCoag
+                             ? coagLabelRightInset
+                             : (halfSocketRoot.hasInstrImage ? cutLabelToImageGap : cutLabelLeftInset)
     }
 
     TextMetrics {
-        id: singleLineModeMetrics
+        id: largeModeNameMetrics
         text: halfSocketRoot.modeLabelText
         font.pixelSize: halfSocketRoot.singleLineModeNameFont
+        font.bold: true
+    }
+
+    TextMetrics {
+        id: normalModeNameMetrics
+        text: halfSocketRoot.modeLabelText
+        font.pixelSize: halfSocketRoot.normalModeNameFont
         font.bold: true
     }
 
@@ -152,10 +209,18 @@ Rectangle {
         verticalAlignment: Text.AlignBottom
         anchors.bottom: parent.bottom
         anchors.bottomMargin: 5
-        anchors.left: halfSocketRoot.isCoag ? collapsedInstrImage.right : parent.left
-        anchors.leftMargin: halfSocketRoot.isCoag ? 6 : 8
-        anchors.right: halfSocketRoot.isCoag ? parent.right : collapsedInstrImage.left
-        anchors.rightMargin: halfSocketRoot.isCoag ? 8 : 6
+        anchors.left: halfSocketRoot.isCoag
+                     ? (halfSocketRoot.hasInstrImage ? collapsedInstrImage.right : parent.left)
+                     : parent.left
+        anchors.leftMargin: halfSocketRoot.isCoag
+                            ? (halfSocketRoot.hasInstrImage ? coagLabelToImageGap : coagImageLeftInset)
+                            : cutLabelLeftInset
+        anchors.right: halfSocketRoot.isCoag
+                      ? parent.right
+                      : (halfSocketRoot.hasInstrImage ? collapsedInstrImage.left : parent.right)
+        anchors.rightMargin: halfSocketRoot.isCoag
+                             ? coagLabelRightInset
+                             : (halfSocketRoot.hasInstrImage ? cutLabelToImageGap : cutLabelLeftInset)
     }
 
     Row {
@@ -164,10 +229,18 @@ Rectangle {
         spacing: 18
         anchors.bottom: parent.bottom
         anchors.bottomMargin: 5
-        anchors.left: halfSocketRoot.isCoag ? collapsedInstrImage.right : parent.left
-        anchors.leftMargin: halfSocketRoot.isCoag ? 6 : 8
-        anchors.right: halfSocketRoot.isCoag ? parent.right : collapsedInstrImage.left
-        anchors.rightMargin: halfSocketRoot.isCoag ? 8 : 6
+        anchors.left: halfSocketRoot.isCoag
+                     ? (halfSocketRoot.hasInstrImage ? collapsedInstrImage.right : parent.left)
+                     : parent.left
+        anchors.leftMargin: halfSocketRoot.isCoag
+                            ? (halfSocketRoot.hasInstrImage ? coagLabelToImageGap : coagImageLeftInset)
+                            : cutLabelLeftInset
+        anchors.right: halfSocketRoot.isCoag
+                      ? parent.right
+                      : (halfSocketRoot.hasInstrImage ? collapsedInstrImage.left : parent.right)
+        anchors.rightMargin: halfSocketRoot.isCoag
+                             ? coagLabelRightInset
+                             : (halfSocketRoot.hasInstrImage ? cutLabelToImageGap : cutLabelLeftInset)
 
         Row {
             spacing: 6

@@ -320,6 +320,9 @@ void ControlCenter::setLinkStm(LinkStm* linkStm)
 		connect(m_linkStm, &LinkStm::sigNeutralResistReceived,
 		        m_periphery, &PeriphHandler::onNeutralResistReceived,
 		        Qt::QueuedConnection);
+        connect(m_linkStm, &LinkStm::sigDebugOverlayLine,
+                this, &ControlCenter::appendDebugOverlayLine,
+                Qt::QueuedConnection);
         connect(m_periphery, &PeriphHandler::autoModeChanged,
                 this, [this](int socketId, int mode) {
             if (m_linkStm.isNull() || m_periphery.isNull()) {
@@ -385,6 +388,40 @@ bool ControlCenter::loadProgram(int progId, bool clear)
 	if (m_progLoader.isNull())
 		return false;
 	return m_progLoader->programmLoadSocketInit(progId, clear);
+}
+
+QString ControlCenter::debugOverlayText() const
+{
+    return m_debugOverlayText;
+}
+
+void ControlCenter::appendDebugOverlayLine(const QString &line)
+{
+    if (line.isEmpty()) {
+        return;
+    }
+
+    m_debugOverlayLines.append(line);
+    while (m_debugOverlayLines.size() > kDebugOverlayMaxLines) {
+        m_debugOverlayLines.removeFirst();
+    }
+
+    const QString nextText = m_debugOverlayLines.join(QStringLiteral("\n"));
+    if (nextText == m_debugOverlayText) {
+        return;
+    }
+    m_debugOverlayText = nextText;
+    emit debugOverlayTextChanged();
+}
+
+void ControlCenter::clearDebugOverlay()
+{
+    if (m_debugOverlayLines.isEmpty() && m_debugOverlayText.isEmpty()) {
+        return;
+    }
+    m_debugOverlayLines.clear();
+    m_debugOverlayText.clear();
+    emit debugOverlayTextChanged();
 }
 
 //не понял задумки в этих фнкциях

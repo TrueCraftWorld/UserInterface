@@ -23,6 +23,7 @@ Rectangle {
 	property int itemBorderWidth: 0
 	property bool keepSelectedItemAtTop: false
 	property int noAutoScrollItemId: -1
+	property bool scrollSelectsItem: true
 	property int itemFontPixelSize: 18
 	property int itemCornerRadius: 8
 	property int listItemHeight: 100
@@ -43,14 +44,37 @@ Rectangle {
 		newIndexSelected(index)
 	}
 
+	function highlightIndex(index) {
+		if (!theView.model || index < 0 || index >= theView.count)
+			return
+		theView.currentIndex = index
+		if (keepSelectedItemAtTop) {
+			positionSelectedItem()
+		} else if (theView.count > 0) {
+			theView.positionViewAtIndex(index, ListView.Contain)
+		}
+	}
+
 	function scrollUp() {
-		if (theView.currentIndex > 0)
-			selectIndex(theView.currentIndex - 1)
+		if (theView.count <= 0 || theView.currentIndex <= 0)
+			return
+		var nextIndex = theView.currentIndex - 1
+		if (scrollSelectsItem)
+			selectIndex(nextIndex)
+		else
+			highlightIndex(nextIndex)
 	}
 
 	function scrollDown() {
-		if (theView.currentIndex < theView.count - 1)
-			selectIndex(theView.currentIndex + 1)
+		if (theView.count <= 0)
+			return
+		var nextIndex = theView.currentIndex < 0 ? 0 : theView.currentIndex + 1
+		if (nextIndex >= theView.count)
+			return
+		if (scrollSelectsItem)
+			selectIndex(nextIndex)
+		else
+			highlightIndex(nextIndex)
 	}
 
 	function currentItemId() {

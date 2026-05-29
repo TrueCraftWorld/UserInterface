@@ -15,9 +15,9 @@ Rectangle {
                                             + (appVersionText.visible ? appVersionText.width + sideSpacing : 0)
                                             + sideSpacing
     readonly property int titleSideMargin: Math.max(leftOccupiedWidth, rightOccupiedWidth)
-    readonly property int titleLargeFontSize: 42
-    readonly property int titleCompactFontSize: 30
-    readonly property bool useCompactTitle: mainTextLargeMetrics.width > mainText.width
+    readonly property int titleLargeFontSize: 50
+    readonly property int titleCompactFontSize: 36
+    readonly property bool useCompactTitle: mainTextLargeMetrics.width > titleViewport.width
 
     border {
         width: 1
@@ -39,29 +39,96 @@ Rectangle {
             statusRoot.drawerCalled()
         }
     }
-    SText {
-        id: mainText
+    Flickable {
+        id: titleViewport
         height: parent.height
         anchors.left: parent.left
         anchors.leftMargin: titleSideMargin
         anchors.right: parent.right
         anchors.rightMargin: titleSideMargin
-        horizontalAlignment: Text.AlignHCenter
-        verticalAlignment: Text.AlignVCenter
+        clip: true
+        interactive: false
+        boundsBehavior: Flickable.StopAtBounds
+        contentWidth: mainText.paintedWidth
+        contentHeight: height
+
+        readonly property real textRenderWidth: Math.ceil(contentWidth)
+        readonly property real overflowWidth: Math.max(0, textRenderWidth - width)
+        readonly property real endRevealPadding: 0
+        readonly property real maxScrollX: Math.max(0, overflowWidth + endRevealPadding)
+        readonly property real scrollDistance: maxScrollX
+        readonly property bool needScroll: overflowWidth > 1 && mainText.text !== ""
+
+        onWidthChanged: contentX = 0
+        onContentXChanged: {
+            if (contentX < 0) {
+                contentX = 0
+            } else if (contentX > maxScrollX) {
+                contentX = maxScrollX
+            }
+        }
+
+        Text {
+            id: mainText
+            y: Math.round((titleViewport.height - height) / 2)
+            x: 0
+            horizontalAlignment: Text.AlignLeft
+            verticalAlignment: Text.AlignVCenter
+            font.pixelSize: statusRoot.useCompactTitle
+                            ? statusRoot.titleCompactFontSize
+                            : statusRoot.titleLargeFontSize
+            wrapMode: Text.NoWrap
+            maximumLineCount: 1
+            elide: Text.ElideNone
+
+            onTextChanged: {
+                titleViewport.contentX = 0
+//                Qt.callLater(function() {
+//                    console.log("[StatusBar] text update:",
+//                                "\"" + mainText.text + "\"",
+//                                "paintedWidth=", mainText.paintedWidth,
+//                                "contentWidth=", mainText.contentWidth,
+//                                "overflow=", titleViewport.overflowWidth,
+//                                "maxScrollX=", titleViewport.maxScrollX,
+//                                "scrollDist=", titleViewport.scrollDistance)
+//                })
+            }
+            onFontChanged: titleViewport.contentX = 0
+
+        }
+
+        SequentialAnimation on contentX {
+            running: titleViewport.needScroll
+            loops: Animation.Infinite
+
+            PauseAnimation { duration: 2000 }
+            NumberAnimation {
+                from: 0
+                to: titleViewport.scrollDistance
+//                duration: 200
+                duration: Math.max(700, titleViewport.scrollDistance * 4)
+                easing.type: Easing.Linear
+            }
+            PauseAnimation { duration: 800 }
+            PropertyAction { target: titleViewport; property: "contentX"; value: 0 }
+        }
+    }
+
+    SText {
+        id: mainTextMeasure
+        visible: false
+        text: mainText.text
         font.pixelSize: statusRoot.useCompactTitle
                         ? statusRoot.titleCompactFontSize
                         : statusRoot.titleLargeFontSize
-        wrapMode: Text.WordWrap
-        maximumLineCount: statusRoot.useCompactTitle ? 2 : 1
-        elide: Text.ElideRight
     }
     MouseArea {
-        anchors.fill: mainText
+        anchors.fill: titleViewport
         onClicked: statusRoot.programTitlePressed()
     }
     TextMetrics {
         id: mainTextLargeMetrics
-        text: mainText.text
+        text: mainTextMeasure.text
         font.pixelSize: statusRoot.titleLargeFontSize
     }
     SText {

@@ -38,7 +38,8 @@ public:
         WirelessSearch = 0x68,          // Поиск беспроводных устройств
         TxAddrWireless = 0x69,          // Передача адреса для беспроводных устройств
         TxDataWireless = 0x6A,          // Передача данных для беспроводных устройств
-        ArgonBlow = 0x6F,               // Продувка газового тракта
+        StopArgon = 0x6B,              // Остановка опроса газового тракта
+        ArgonBlow = 0x6C,               // Продувка газового тракта
 
         SignalAlarm = 0x80,             // Выдача звукового сигнала (аварии)
 
@@ -78,6 +79,8 @@ public:
         WirelessDetected = 0x68,        // Обнаружено беспроводное устройство
         ConfirmAddrWireless = 0x69,     // Подтверждение приёма адреса для беспроводных устройств
         DataWireless = 0x6A,            // Данные от беспроводного устройства
+        StopArgonAck = 0x6B,            // Подтверждение остановки опроса аргона
+        ArgonBlowAck = 0x6C,            // Подтверждение продувки баллона
         PowerOff = 0x6F,                // Команда на выключение питания
 
         ErrComm = 0x80,                 // Модуль связи не принимает сигналы от МИФ
@@ -250,6 +253,8 @@ signals:
     void sigStopActivation(quint8 stopReason);
     void sigPowerOffCommand();
     void sigNeutralResistReceived(const QByteArray &data);
+    // Отладочные строки для полупрозрачного оверлея в main.qml
+    void sigDebugOverlayLine(const QString &line);
     /// Версии ПО модулей МК: список из 5 QVariantMap (числа для UI и сравнения с обновлениями).
     void sigFirmwareVersionsChanged(const QVariantList &modules);
     void firmwareUpdateParseError(const QString &message);

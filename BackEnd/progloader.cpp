@@ -1,6 +1,7 @@
 #include "progloader.h"
 #include "BackEnd/recomprogloader.h"
 #include "BackEnd/userprogloader.h"
+#include "BackEnd/jsonstorage.h"
 #include "socket.h"
 #include "onyxapp.h"
 #include "EshfProgStringBuilder.h"
@@ -476,7 +477,7 @@ void ProgLoader::defaultSocketInit(bool clear)
 	QList<QVariantList> allModes = m_dbReaderPtr->slotSendSelectQuery(
 	                                   QStringList{"Modes"},
 	                                   QStringList{"id"},
-	                                   "");
+	                                   QString("1=1%1").arg(deviceModeFilterCondition()));
 	allowedModesId.reserve(allModes.size());
 	for (const auto& item : allModes) {
 		allowedModesId.push_back(item.at(0).toInt());
@@ -524,7 +525,8 @@ void ProgLoader::defaultSocketInit(bool clear)
 				                                                                   queryConditionModes
 				                                                                   .arg(socket->socketType() <= Onyx::BIPOLAR_2 ? 0 : 1)
 				                                                                   .arg(halfSocket)
-				                                                                   .arg(makeCommaSeparatedNumbers(allowedModesId)));
+				                                                                   .arg(makeCommaSeparatedNumbers(allowedModesId))
+				                                                                   + deviceModeFilterCondition());
 
 				// Сортируем по Num (index 3)
 				std::sort(modesList.begin(), modesList.end(),
@@ -826,7 +828,8 @@ bool ProgLoader::freeSettingsSocketInit(bool clear)
                                     "Brief_RU", "Descript_RU", "ENDO_REG"},
                         queryConditionModes
                                     .arg(socket->socketType() <= Onyx::BIPOLAR_2 ? 0 : 1)
-                                    .arg(halfSocket));
+                                    .arg(halfSocket)
+                                    + deviceModeFilterCondition());
             
             std::sort(modesList.begin(), modesList.end(),
                 [](const QVariantList& a, const QVariantList& b) {
@@ -1335,13 +1338,81 @@ ProgLoaderBase *ProgLoader::getLoader(progType type)
 
 	switch (type) {
 	case ptRecom:
-		return new RecomProgLoader();
+		return new RecomProgLoader(argonProgramsEnabled());
 	case ptUser:
-		return new UserProgLoader();
+		return new UserProgLoader(argonProgramsEnabled());
 	default:
 		break;
 	}
 	return nullptr;
+}
+
+void ProgLoader::setJsonStorage(JsonStorage *jsonStorage)
+{
+	m_jsonStorage = jsonStorage;
+}
+
+bool ProgLoader::deviceHasArgon() const
+{
+	if (m_jsonStorage.isNull()) {
+		return true;
+	}
+
+	const QString deviceType = m_jsonStorage->readString(QStringLiteral("deviceType"),
+	                                                     QStringLiteral("ONYX-AM")).trimmed().toUpper();
+	return deviceType != QStringLiteral("ONYX-M");
+}
+
+bool ProgLoader::argonModesEnabled() const
+{
+	if (!deviceHasArgon()) {
+		return false;
+	}
+	if (m_jsonStorage.isNull()) {
+		return false;
+	}
+
+	return m_jsonStorage->readString(QStringLiteral("argonModesEnabled"),
+	                                 QStringLiteral("0")) == QStringLiteral("1");
+}
+
+bool ProgLoader::argonProgramsEnabled() const
+{
+	return deviceHasArgon() && argonModesEnabled();
+}
+
+QString ProgLoader::deviceModeFilterCondition() const
+{
+	return deviceHasArgon() ? QString() : QStringLiteral(" AND Num NOT IN (17, 18, 19, 20)");
+}
+
+std::vector<int> ProgLoader::filterModesForDevice(const std::vector<int>& modeIds) const
+{
+	if (deviceHasArgon() || modeIds.empty() || m_dbReaderPtr.isNull()) {
+		return modeIds;
+	}
+
+	QList<QVariantList> allowedModeRows = m_dbReaderPtr->slotSendSelectQuery(
+	            QStringList{"Modes"},
+	            QStringList{"id"},
+	            QString("id IN (%1)%2")
+	            .arg(makeCommaSeparatedNumbers(modeIds))
+	            .arg(deviceModeFilterCondition()));
+
+	std::unordered_set<int> allowedModeIds;
+	allowedModeIds.reserve(static_cast<size_t>(allowedModeRows.size()));
+	for (const auto& row : allowedModeRows) {
+		allowedModeIds.insert(row.at(0).toInt());
+	}
+
+	std::vector<int> filtered;
+	filtered.reserve(modeIds.size());
+	for (int modeId : modeIds) {
+		if (modeId == 1000 || allowedModeIds.find(modeId) != allowedModeIds.end()) {
+			filtered.push_back(modeId);
+		}
+	}
+	return filtered;
 }
 
 std::vector<int> ProgLoader::getAllowedInstrs(int progId, const QVariantList& progItem)
@@ -1435,7 +1506,7 @@ std::vector<int> ProgLoader::getAllowedModes(int progId, const QVariantList& pro
 
 		// allowedModesId = QList<int>::fromVector(QVector<int>(allowedModesId__.begin(), allowedModesId__.end()));
 	}
-	return allowedModesId;
+	return filterModesForDevice(allowedModesId);
 
 }
 
@@ -1450,14 +1521,18 @@ void ProgLoader::fillHalfSocket(int halfSocket,
 	bool isCoag = (halfSocket == 0);
 	const int biMonoFlag = (socket->socketType() <= Onyx::BIPOLAR_2 ? 0 : 1);
 	QMap<int, SurgModePtr> modes;
-	QList<QVariantList> modesList = m_dbReaderPtr->slotSendSelectQuery(
-	                                    QStringList{"Modes"},
-	                                    QStringList{"MaxPower","Name_RU", "id", "Num",
-	                                                "Brief_RU", "Descript_RU", "ENDO_REG"},
-	                                    queryConditionModes
-	                                    .arg(biMonoFlag)
-	                                    .arg(halfSocket)
-	                                    .arg(makeCommaSeparatedNumbers(allowedModesId)));
+	QList<QVariantList> modesList;
+	if (!allowedModesId.empty()) {
+		modesList = m_dbReaderPtr->slotSendSelectQuery(
+		            QStringList{"Modes"},
+		            QStringList{"MaxPower","Name_RU", "id", "Num",
+		                        "Brief_RU", "Descript_RU", "ENDO_REG"},
+		            queryConditionModes
+		            .arg(biMonoFlag)
+		            .arg(halfSocket)
+		            .arg(makeCommaSeparatedNumbers(allowedModesId))
+		            + deviceModeFilterCondition());
+	}
 
 	// Сортируем по Num (index 3)
 	std::sort(modesList.begin(), modesList.end(),
@@ -1496,7 +1571,9 @@ void ProgLoader::fillHalfSocket(int halfSocket,
 	defaultPower = progItem.at(start + 2 + 6*socketNumber).toInt();
 	defaultPower = std::max(1, defaultPower);
 
-	socket->setModeId(firstModeId, isCoag);
+	if (!socket->setModeId(firstModeId, isCoag)) {
+		socket->setModeId(1000, isCoag);
+	}
 	socket->setInstrumId(firstInstrId, isCoag);
 
 	// Проверка для эндоскопических режимов: если мощность = 1, устанавливаем 11

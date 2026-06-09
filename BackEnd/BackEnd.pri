@@ -7,6 +7,7 @@ CONFIG += c++17
 LIBS += -lm
 
 HEADERS += \
+    $$PWD/datetimecontroller.h \
     $$PWD/DeviceLogManager.h \
     $$PWD/UpdateLogManager.h \
     $$PWD/EshfProgStringBuilder.h \
@@ -39,6 +40,7 @@ HEADERS += \
     $$PWD/systemmonitor.h 
 
 SOURCES += \
+    $$PWD/datetimecontroller.cpp \
     $$PWD/DeviceLogManager.cpp \
     $$PWD/UpdateLogManager.cpp \
     $$PWD/EshfProgStringBuilder.cpp \

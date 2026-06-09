@@ -11,13 +11,15 @@ Item {
     property string serialNumber: ""
     property string deviceType: ""
     property string featureNotes: ""
+    property bool serviceMenuNoPassword: false
+    readonly property var deviceTypeOptions: ["ONYX-M", "ONYX-AM"]
     readonly property int minSerialNumber: 260000
     readonly property int maxSerialNumber: 1000000
     property bool serialValid: false
     property string serialSaveStatus: ""
     function saveSettings() {
         if (!serialRoot.serialValid) {
-            serialRoot.serialSaveStatus = qsTr("Введите серийный номер в диапазоне 260000-1000000")
+            serialRoot.serialSaveStatus = qsTr("Введите серийный номер в диапазоне 260 000 - 1 000 000")
             return
         }
 
@@ -25,6 +27,7 @@ Item {
             savedJson.saveString("serialNumber", serialRoot.serialNumber)
             savedJson.saveString("deviceType", serialRoot.deviceType)
             savedJson.saveString("featureNotes", serialRoot.featureNotes)
+            savedJson.saveString("serviceMenuNoPassword", serialRoot.serviceMenuNoPassword ? "1" : "0")
         }
 
         if (typeof remoteUpdater !== "undefined" && remoteUpdater) {
@@ -39,6 +42,10 @@ Item {
             serialRoot.serialNumber = savedJson.readString("serialNumber", "")
             serialRoot.deviceType = savedJson.readString("deviceType", "")
             serialRoot.featureNotes = savedJson.readString("featureNotes", "")
+            serialRoot.serviceMenuNoPassword = savedJson.readString("serviceMenuNoPassword", "0") === "1"
+        }
+        if (deviceTypeOptions.indexOf(serialRoot.deviceType) < 0) {
+            serialRoot.deviceType = deviceTypeOptions[1]
         }
         serialRoot.serialValid = isSerialValid(serialRoot.serialNumber)
         serialRoot.serialSaveStatus = serialRoot.serialValid
@@ -58,6 +65,20 @@ Item {
         return numeric >= minSerialNumber && numeric <= maxSerialNumber
     }
 
+    function setDeviceType(value) {
+        serialRoot.deviceType = value
+        if (serialRoot.serialValid) {
+            serialRoot.serialSaveStatus = qsTr("Не сохранено")
+        }
+    }
+
+    function setServiceMenuNoPassword(enabled) {
+        serialRoot.serviceMenuNoPassword = enabled
+        if (typeof savedJson !== "undefined" && savedJson) {
+            savedJson.saveString("serviceMenuNoPassword", enabled ? "1" : "0")
+        }
+    }
+
     Rectangle {
         anchors.fill: parent
         color: "darkslategray"
@@ -66,7 +87,7 @@ Item {
     SLabel {
         id: screenTitle
         style: "label-primary lg"
-        text: qsTr("Параметры аппарата")
+        text: qsTr("СЕРИЙНЫЙ НОМЕР И ТИП")
         anchors {
             top: parent.top
             left: parent.left
@@ -110,7 +131,7 @@ Item {
                         if (serialRoot.serialValid) {
                             serialRoot.serialSaveStatus = qsTr("Не сохранено")
                         } else {
-                            serialRoot.serialSaveStatus = qsTr("Введите серийный номер в диапазоне 260000-1000000")
+                            serialRoot.serialSaveStatus = qsTr("Введите серийный номер в диапазоне 260 000 - 1 000 000")
                         }
                     }
                     color: "white"
@@ -139,24 +160,20 @@ Item {
             heading: qsTr("Тип аппарата")
             Layout.fillWidth: true
 
-            TextField {
-                id: typeInput
+            RowLayout {
                 width: parent.width - 30
                 anchors.horizontalCenter: parent.horizontalCenter
-                placeholderText: qsTr("Например: ONYX-AM")
-                text: serialRoot.deviceType
-                onTextChanged: {
-                    serialRoot.deviceType = text
-                    if (serialRoot.serialValid) {
-                        serialRoot.serialSaveStatus = qsTr("Не сохранено")
+                spacing: 14
+
+                Repeater {
+                    model: serialRoot.deviceTypeOptions
+                    delegate: SButton {
+                        Layout.fillWidth: true
+                        style: serialRoot.deviceType === modelData ? "btn-danger" : "btn-secondary"
+//                        style: serialRoot.deviceType === modelData ? "btn-primary" : "btn-secondary"
+                        text: modelData
+                        onPressed: serialRoot.setDeviceType(modelData)
                     }
-                }
-                color: "white"
-                background: Rectangle {
-                    color: "#1a2a3a"
-                    border.color: typeInput.activeFocus ? "#4a9eff" : "#3a4a5a"
-                    border.width: 2
-                    radius: 5
                 }
             }
         }
@@ -194,6 +211,18 @@ Item {
     }
 
     SButton {
+        id: noPasswordButton
+        style: serialRoot.serviceMenuNoPassword ? "btn-danger" : "btn-secondary"
+        text: qsTr("Вход без пароля")
+        onPressed: serialRoot.setServiceMenuNoPassword(!serialRoot.serviceMenuNoPassword)
+        anchors {
+            horizontalCenter: parent.horizontalCenter
+            bottom: saveButton.top
+            bottomMargin: 12
+        }
+    }
+
+    SButton {
         id: saveButton
         style: "btn-primary"
         text: qsTr("Сохранить")
@@ -214,7 +243,6 @@ Item {
         text: qsTr("Назад")
         onPressed: {
             serialInput.focus = false
-            typeInput.focus = false
             featuresInput.focus = false
             Qt.inputMethod.hide()
             returnButtonPressed()

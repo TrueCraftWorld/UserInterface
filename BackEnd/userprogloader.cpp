@@ -3,7 +3,11 @@
 
 
 UserProgLoader::UserProgLoader(QObject *parent)
-    : ProgLoaderBase{parent}
+    : UserProgLoader(true, parent)
+{}
+
+UserProgLoader::UserProgLoader(bool deviceHasArgon, QObject *parent)
+    : ProgLoaderBase{deviceHasArgon, parent}
 {
     if (m_dbReader.isNull()) {
         OnyxApp* app = dynamic_cast<OnyxApp*>(qApp);
@@ -17,14 +21,11 @@ UserProgLoader::UserProgLoader(QObject *parent)
 
 std::map<int, QString> UserProgLoader::getPrograms(int scopeID)
 {
-    //захардкодили, но это нужно знать
-    bool isMyselfArgon = false;
-
     QString queryCondition = "Scope_ID = %1 AND (Argon = 0 OR Argon = %2)";
 
     QList<QVariantList> progListVariant = m_dbReader->slotSendSelectQuery(QStringList{"Progs"},
                                                                         QStringList{"Name_RU","id", "Prog_NUM", "Subprog_RU"},
-                                                                        queryCondition.arg(scopeID).arg(isMyselfArgon ? 2 : 1));
+                                                                        queryCondition.arg(scopeID).arg(m_deviceHasArgon ? 2 : 1));
 
     std::map<int, QString> progList;
     for (const auto& item : progListVariant) {

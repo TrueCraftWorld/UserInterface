@@ -144,6 +144,7 @@ public:
 
 public slots:
 	void unitStateHandler(Onyx::UnitState state);
+	void setActivationActive(bool active);
 	void setArgonRealRate(quint8 rate);
 	void showActivationStopWarning(quint8 stopReason);
 	void showWarningCode(quint8 warningCode);

@@ -23,6 +23,7 @@ Popup {
     readonly property var modeEditor: Editor
 
     property var modeNums: []
+    property var modeIds: []
     property var instrNums: []
     property string centerView: "power" // power, modePreview, instrPreview
     property int committedModeIndex: -1
@@ -63,14 +64,53 @@ Popup {
         return socId <= 1 ? "bimode" : "monomode"
     }
 
+    function endoscopyEnabled() {
+        return typeof savedJson !== "undefined"
+                && savedJson
+                && savedJson.readString("endoscopyEnabled", "0") === "1"
+    }
+
+    function deviceType() {
+        return typeof savedJson !== "undefined" && savedJson
+                ? String(savedJson.readString("deviceType", "ONYX-AM")).trim().toUpperCase()
+                : "ONYX-AM"
+    }
+
+    function argonModesEnabled() {
+        if (deviceType() !== "ONYX-AM") {
+            return true
+        }
+        return typeof savedJson !== "undefined"
+                && savedJson
+                && savedJson.readString("argonModesEnabled", "0") === "1"
+    }
+
+    function isEndoscopyModeId(modeId) {
+        var id = parseInt(modeId)
+        return id >= 13 && id <= 18
+    }
+
+    function isArgonModeNum(modeNum) {
+        var num = parseInt(modeNum)
+        return num >= 17 && num <= 20
+    }
+
     function updateModeModel() {
         modeModel.clear()
         modeNums = modeEditor.modeNamesNums()
+        modeIds = modeEditor.modeNamesIds()
         var modeNames = modeEditor.modeNames
+        var endoscopyAvailable = endoscopyEnabled()
+        var argonAvailable = argonModesEnabled()
         for (var i = 0; i < modeNames.length; ++i) {
+            var modeNum = i < modeNums.length ? modeNums[i] : "0"
             modeModel.append({
-                                 itemId: i < modeNums.length ? modeNums[i] : "0",
-                                 itemName: modeNames[i]
+                                 itemId: modeNum,
+                                 itemName: modeNames[i],
+                                 locked: (!endoscopyAvailable
+                                          && i < modeIds.length
+                                          && isEndoscopyModeId(modeIds[i]))
+                                         || (!argonAvailable && isArgonModeNum(modeNum))
                              })
         }
         modeListView.innerModel = modeModel
@@ -1179,6 +1219,7 @@ Popup {
                             Layout.alignment: Qt.AlignHCenter
                             Layout.fillWidth: true
                             Layout.fillHeight: true
+                            Layout.minimumHeight: centerView === "modePreview" ? 120 : 0
                             color: "transparent"
                             clip: true
 
@@ -1213,7 +1254,7 @@ Popup {
 
                         Label {
                             Layout.fillWidth: true
-                            text: qsTr("Рекомендуемый уровень\nдля выбранного инструмента")
+                            text: qsTr("Рекомендуемый уровень")
                             visible: modeSelected() && instrumentSelected()
                             horizontalAlignment: Text.AlignHCenter
                             color: uiMidGray
@@ -1225,7 +1266,7 @@ Popup {
                         RowLayout {
                             Layout.fillWidth: true
                             Layout.preferredHeight: modeEditor.isEndo ? recommendedEndoButtonHeight : recommendedButtonHeight
-                            visible: modeSelected()
+                            visible: modeSelected() && instrumentSelected()
                             spacing: 8
 
                             PowerRect {
@@ -1354,6 +1395,9 @@ Popup {
         target: modeListView
         function onNewIndexSelected(index) {
             if (internalIndexChange || openingInProgress) {
+                return
+            }
+            if (index >= 0 && index < modeModel.count && modeModel.get(index).locked) {
                 return
             }
             if (index === modeEditor.currentModeIndex && centerView === "modePreview") {

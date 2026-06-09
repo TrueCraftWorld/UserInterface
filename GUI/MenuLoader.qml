@@ -27,6 +27,24 @@ Item {
         })
     }
 
+    function navigateToWithProperties(sourcePath, properties) {
+        hideKeyboardAndDropFocus()
+        menuLoader.setSource(sourcePath, properties)
+        Qt.callLater(function() {
+            hideKeyboardAndDropFocus()
+            if (menuLoader.item && menuLoader.item.forceActiveFocus) {
+                menuLoader.item.forceActiveFocus()
+            }
+        })
+    }
+
+    function savedJsonString(key) {
+        if (typeof savedJson === "undefined" || !savedJson) {
+            return ""
+        }
+        return savedJson.readString(key, "")
+    }
+
     function loaderSourceString() {
         var s = menuLoader.source
         if (s === undefined || s === null)
@@ -40,16 +58,22 @@ Item {
         return slash >= 0 ? src.substring(slash + 1) : src
     }
 
-    function isServiceFlowScreenBaseName(base) {
-        return base === "ServiceMenu.qml"
-                || base === "SerialNumberSettings.qml"
+    function isServiceMenuChildScreenBaseName(base) {
+        return base === "SerialNumberSettings.qml"
                 || base === "updateWindow.qml"
                 || base === "WifiFileReceive.qml"
                 || base === "WiFiConnector.qml"
                 || base === "TouchScreenTest.qml"
                 || base === "AboutScreen.qml"
-                || base === "LogFileScreen.qml"
+                || base === "SpecialCommands.qml"
                 || base === "logUpdate.qml"
+    }
+
+    function isSettingsMenuChildScreenBaseName(base) {
+        return base === "ServiceMenu.qml"
+                || base === "LogFileScreen.qml"
+                || base === "DateTimeSettings.qml"
+                || base === "StartupInfoScreen.qml"
     }
 
     signal returnButtonPressed()
@@ -105,8 +129,14 @@ Item {
                     if (menuLoader.item.logFileButtonPressed) {
                         menuLoader.item.logFileButtonPressed.disconnect()
                     }
+                    if (menuLoader.item.dateTimeSettingsButtonPressed) {
+                        menuLoader.item.dateTimeSettingsButtonPressed.disconnect()
+                    }
                     if (menuLoader.item.logUpdateButtonPressed) {
                         menuLoader.item.logUpdateButtonPressed.disconnect()
+                    }
+                    if (menuLoader.item.specialCommandsButtonPressed) {
+                        menuLoader.item.specialCommandsButtonPressed.disconnect()
                     }
                 } catch(e) {
                     // Игнорируем ошибки отключения
@@ -122,7 +152,7 @@ Item {
                     }
                     if (menuLoader.item.settingsButtonPressed) {
                         menuLoader.item.settingsButtonPressed.connect(function() {
-                            navigateTo("qrc:/ServiceMenu.qml")
+                            navigateTo("qrc:/SettingsMenu.qml")
                         })
                     }
                     if (menuLoader.item.secretKeysButtonPressed) {
@@ -149,7 +179,11 @@ Item {
                     }
                     if (menuLoader.item.serviceMenuButtonPressed) {
                         menuLoader.item.serviceMenuButtonPressed.connect(function() {
-                            navigateTo("qrc:/ServiceMenu.qml")
+                            if (loaderSourceBaseName() === "MainMenu.qml") {
+                                navigateTo("qrc:/SettingsMenu.qml")
+                            } else {
+                                navigateTo("qrc:/ServiceMenu.qml")
+                            }
                         })
                     }
                     if (menuLoader.item.infoButtonPressed) {
@@ -186,7 +220,16 @@ Item {
                     }
                     if (menuLoader.item.aboutButtonPressed) {
                         menuLoader.item.aboutButtonPressed.connect(function() {
-                            navigateTo("qrc:/AboutScreen.qml")
+                            navigateToWithProperties("qrc:/AboutScreen.qml", {
+                                "serialNumber": savedJsonString("serialNumber"),
+                                "deviceType": savedJsonString("deviceType"),
+                                "featureNotes": savedJsonString("featureNotes")
+                            })
+                        })
+                    }
+                    if (menuLoader.item.specialCommandsButtonPressed) {
+                        menuLoader.item.specialCommandsButtonPressed.connect(function() {
+                            navigateTo("qrc:/SpecialCommands.qml")
                         })
                     }
                     if (menuLoader.item.touchScreenTestButtonPressed) {
@@ -197,6 +240,11 @@ Item {
                     if (menuLoader.item.logFileButtonPressed) {
                         menuLoader.item.logFileButtonPressed.connect(function() {
                             navigateTo("qrc:/LogFileScreen.qml")
+                        })
+                    }
+                    if (menuLoader.item.dateTimeSettingsButtonPressed) {
+                        menuLoader.item.dateTimeSettingsButtonPressed.connect(function() {
+                            navigateTo("qrc:/DateTimeSettings.qml")
                         })
                     }
                     if (menuLoader.item.logUpdateButtonPressed) {
@@ -252,10 +300,11 @@ Item {
         enabled: loaderSourceBaseName() !== "MainMenu.qml"
         function onReturnButtonPressed() {
             var base = loaderSourceBaseName()
-            var inServiceFlow = isServiceFlowScreenBaseName(base)
-            if (inServiceFlow && base !== "ServiceMenu.qml") {
+            if (isServiceMenuChildScreenBaseName(base)) {
                 navigateTo("qrc:/ServiceMenu.qml")
-            } else if (inServiceFlow && base === "ServiceMenu.qml") {
+            } else if (isSettingsMenuChildScreenBaseName(base)) {
+                navigateTo("qrc:/SettingsMenu.qml")
+            } else if (base === "SettingsMenu.qml") {
                 if (closeOnServiceRootReturn) {
                     closeMe()
                 } else {

@@ -14,6 +14,9 @@ class ProgLoaderBase : public QObject
 public:
 	explicit ProgLoaderBase(QObject *parent = nullptr)
 	    : QObject{parent} {};
+	explicit ProgLoaderBase(bool deviceHasArgon, QObject *parent = nullptr)
+	    : QObject{parent},
+	      m_deviceHasArgon(deviceHasArgon) {};
 
 	virtual std::map<int, QString> getPrograms(int scopeID) = 0;
 	virtual std::map<int, QString> getCategories() = 0;
@@ -24,6 +27,7 @@ signals:
 
 protected:
 	QSharedPointer<DataBaseReader> m_dbReader;
+	bool m_deviceHasArgon = true;
 
 };
 

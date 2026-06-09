@@ -36,7 +36,7 @@ public slots:
                              bool autoMode, quint8 sourceCode);
     void onActivationStopped(quint8 stopReason);
     void onWarningCode(quint8 warningCode);
-    void onPowerOffCommand();
+    void logPowerOff(const QString &message);
 
 private:
     struct ActivationInfo {

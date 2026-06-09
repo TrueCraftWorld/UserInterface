@@ -17,6 +17,51 @@ Item {
         var value = String(savedJson.readString("serialNumber", "")).trim()
         return value === "" ? qsTr("Не указан") : value
     }
+    readonly property string softwareVersionsText: buildSoftwareVersionsText()
+
+    function normalizedVersion(value) {
+        var text = (value === undefined || value === null) ? "" : String(value).trim()
+        return text.length > 0 && text !== "—" ? text : "0.0"
+    }
+
+    function moduleAt(index) {
+        if (typeof mcFirmware === "undefined" || !mcFirmware
+                || !mcFirmware.modules || mcFirmware.modules.length <= index) {
+            return null
+        }
+        return mcFirmware.modules[index]
+    }
+
+    function moduleAppVersion(index) {
+        var mod = moduleAt(index)
+        if (!mod) {
+            return "0.0"
+        }
+        return normalizedVersion(mod.appMain + "." + mod.appSub)
+    }
+
+    function moduleBootAndAppVersion(index) {
+        var mod = moduleAt(index)
+        if (!mod) {
+            return "0.0/0.0"
+        }
+        return normalizedVersion(mod.bootMain + "." + mod.bootSub)
+                + "/" + normalizedVersion(mod.appMain + "." + mod.appSub)
+    }
+
+    function buildSoftwareVersionsText() {
+        var interfaceVersion = normalizedVersion(typeof appVersion !== "undefined" ? appVersion : "")
+        var mediaVersion = normalizedVersion(typeof httpUpload !== "undefined" && httpUpload
+                                             ? httpUpload.currentMediaVersion : "")
+
+        return "IF-" + interfaceVersion
+                + ":MF-" + mediaVersion
+                + ":S-" + moduleBootAndAppVersion(0)
+                + ":G-" + moduleBootAndAppVersion(2)
+                + ":A-" + moduleBootAndAppVersion(1)
+                + ":R-" + moduleAppVersion(3)
+                + ":N-" + moduleAppVersion(4)
+    }
 
     Rectangle {
         anchors.fill: parent
@@ -58,12 +103,12 @@ Item {
 
                 ColumnLayout {
                     anchors.centerIn: parent
-                    width: Math.min(parent.width, 720)
-                    spacing: 18
+                    width: Math.min(parent.width, 920)
+                    spacing: 14
 
                     Rectangle {
                         Layout.fillWidth: true
-                        Layout.preferredHeight: 160
+                        Layout.preferredHeight: 130
                         radius: 22
                         color: "#F7F9FD"
                         border.width: 1
@@ -78,7 +123,7 @@ Item {
                                 width: parent.width
                                 text: qsTr("Тип аппарата")
                                 color: "#616161"
-                                font.pixelSize: 24
+                                font.pixelSize: 22
                                 font.bold: true
                             }
 
@@ -86,7 +131,7 @@ Item {
                                 width: parent.width
                                 text: startupInfo.deviceTypeText
                                 color: "black"
-                                font.pixelSize: 36
+                                font.pixelSize: 34
                                 font.bold: true
                                 wrapMode: Text.WordWrap
                             }
@@ -95,7 +140,7 @@ Item {
 
                     Rectangle {
                         Layout.fillWidth: true
-                        Layout.preferredHeight: 160
+                        Layout.preferredHeight: 130
                         radius: 22
                         color: "#F7F9FD"
                         border.width: 1
@@ -110,7 +155,7 @@ Item {
                                 width: parent.width
                                 text: qsTr("Серийный номер")
                                 color: "#616161"
-                                font.pixelSize: 24
+                                font.pixelSize: 22
                                 font.bold: true
                             }
 
@@ -118,9 +163,43 @@ Item {
                                 width: parent.width
                                 text: startupInfo.serialNumberText
                                 color: "black"
-                                font.pixelSize: 36
+                                font.pixelSize: 34
                                 font.bold: true
                                 wrapMode: Text.WordWrap
+                            }
+                        }
+                    }
+
+                    Rectangle {
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: 150
+                        radius: 22
+                        color: "#F7F9FD"
+                        border.width: 1
+                        border.color: "#D3D9E6"
+
+                        ColumnLayout {
+                            anchors.fill: parent
+                            anchors.margins: 20
+                            spacing: 10
+
+                            Label {
+                                Layout.fillWidth: true
+                                text: qsTr("Версии ПО")
+                                color: "#616161"
+                                font.pixelSize: 22
+                                font.bold: true
+                            }
+
+                            Label {
+                                Layout.fillWidth: true
+                                Layout.fillHeight: true
+                                text: startupInfo.softwareVersionsText
+                                color: "black"
+                                font.pixelSize: 26
+                                font.bold: true
+                                wrapMode: Text.WrapAnywhere
+                                verticalAlignment: Text.AlignVCenter
                             }
                         }
                     }

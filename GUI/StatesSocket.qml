@@ -4,7 +4,7 @@ import QtQuick.Controls 2.15
 Rectangle {
     id: socketRoot
     color: "transparent"
-    property var activationSizeTarget: null
+    property var activationOverlay: null
     property bool dimmed: false
     property bool allowEditing: true
 
@@ -58,25 +58,27 @@ Rectangle {
     }
 
     onSocketStateChanged: {
-//        console.log("socketState", socketState)
+        if (!activationOverlay) {
+            return
+        }
         if (socketState === socketStateActiveCoag) {
-            activationIndicator.socketName = title
-            activationIndicator.isCoag = true
-            activationIndicator.modeName = coagModeNameForDisplay
-            activationIndicator.power = coagModePower
-            activationIndicator.isEndo = coagIsEndo
-//            console.log("Activation: socketName=", title, "modeName=", coagModeName, "power=", coagModePower, "isEndo=", coagIsEndo)
-            activationIndicator.open();
+            activationOverlay.activeSocketId = socketId
+            activationOverlay.socketName = title
+            activationOverlay.isCoag = true
+            activationOverlay.modeName = coagModeNameForDisplay
+            activationOverlay.power = coagModePower
+            activationOverlay.isEndo = coagIsEndo
+            activationOverlay.open()
         } else if (socketState === socketStateActiveCut) {
-            activationIndicator.socketName = title
-            activationIndicator.isCoag = false
-            activationIndicator.modeName = cutModeName
-            activationIndicator.power = cutModePower
-            activationIndicator.isEndo = cutIsEndo
-//            console.log("Activation: socketName=", title, "modeName=", cutModeName, "power=", cutModePower, "isEndo=", cutIsEndo)
-            activationIndicator.open();
-        } else {
-            activationIndicator.close();
+            activationOverlay.activeSocketId = socketId
+            activationOverlay.socketName = title
+            activationOverlay.isCoag = false
+            activationOverlay.modeName = cutModeName
+            activationOverlay.power = cutModePower
+            activationOverlay.isEndo = cutIsEndo
+            activationOverlay.open()
+        } else if (activationOverlay.activeSocketId === socketId) {
+            activationOverlay.close()
         }
     }
 
@@ -153,12 +155,6 @@ Rectangle {
         visible: socketRoot.dimmed
         color: "#66000000"
         z: 3
-    }
-
-    Activation {
-        id: activationIndicator
-        parent: socketRoot
-        sizeTarget: socketRoot.activationSizeTarget
     }
 
     Connections {

@@ -27,6 +27,7 @@
 #include "BackEnd/McFirmwareVersionsBridge.h"
 #include "BackEnd/DeviceLogManager.h"
 #include "BackEnd/UpdateLogManager.h"
+#include "BackEnd/datetimecontroller.h"
 
 // Умный указатель на файл логирования
 QScopedPointer<QFile>   m_logFile;
@@ -133,6 +134,8 @@ int main(int argc, char *argv[])
     // Создаём генератор секретных ключей
     KeyGenerator *keyGen = new KeyGenerator();
 
+    auto *dateTimeController = new DateTimeController(&app);
+
     QQmlApplicationEngine engine;
     engine.rootContext()->setContextProperty("theModel", ctrl->getSocketModel());
     engine.rootContext()->setContextProperty("Editor", ctrl->getModeEditor());
@@ -142,6 +145,7 @@ int main(int argc, char *argv[])
 
     engine.rootContext()->setContextProperty("sysMonitor", sysMonitor);
     engine.rootContext()->setContextProperty("keyGenerator", keyGen);
+    engine.rootContext()->setContextProperty("dateTimeController", dateTimeController);
     engine.rootContext()->setContextProperty("appVersion", QCoreApplication::applicationVersion());
 
     QVariantMap *initMap = new QVariantMap();
@@ -150,12 +154,16 @@ int main(int argc, char *argv[])
     initMap->insert("serialNumber", "");
     initMap->insert("deviceType", "");
     initMap->insert("featureNotes", "");
+    initMap->insert("serviceMenuNoPassword", "0");
+    initMap->insert("endoscopyEnabled", "0");
+    initMap->insert("argonModesEnabled", "0");
     initMap->insert("totalRuntimeMs", 0);
     initMap->insert("totalActivationMs", 0);
     initMap->insert("httpUploadListenAddress", "");
     initMap->insert("httpUploadPublicBaseUrl", "");
     initMap->insert("httpUploadTrustProxyHeaders", "0");
     m_savedJson = new JsonStorage(nullptr, initMap);
+    ctrl->setJsonStorage(m_savedJson);
     engine.rootContext()->setContextProperty("savedJson", m_savedJson);
 
     auto *deviceLog = new DeviceLogManager(m_savedJson, ctrl->getSocketModel(), &app);
@@ -233,8 +241,7 @@ int main(int argc, char *argv[])
                      deviceLog, &DeviceLogManager::onWarningCode, Qt::QueuedConnection);
     QObject::connect(m_linkStm, &LinkStm::sigError,
                      deviceLog, &DeviceLogManager::onWarningCode, Qt::QueuedConnection);
-    QObject::connect(m_linkStm, &LinkStm::sigPowerOffCommand,
-                     deviceLog, &DeviceLogManager::onPowerOffCommand, Qt::QueuedConnection);
+    ctrl->setDeviceLogManager(deviceLog);
 
     // Переносим LinkStm в отдельный поток для работы с UART
     QThread *linkStmThread = new QThread();

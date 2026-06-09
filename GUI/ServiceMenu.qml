@@ -14,8 +14,8 @@ Item {
     signal wifiSettingsButtonPressed()
     signal touchScreenTestButtonPressed()
     signal aboutButtonPressed()
-    signal logFileButtonPressed()
     signal logUpdateButtonPressed()
+    signal specialCommandsButtonPressed()
     readonly property int menuButtonWidth: 550
     readonly property int menuButtonHeight: 96
     readonly property int menuColumnsSpacing: 24
@@ -47,6 +47,15 @@ Item {
         columnSpacing: serviceMenuRoot.menuColumnsSpacing
         rowSpacing: 20
         width: serviceMenuRoot.menuButtonWidth * 2 + serviceMenuRoot.menuColumnsSpacing
+
+        SButton {
+            id: specialCommandsButton
+            style: "btn-primary lg"
+            Layout.preferredWidth: serviceMenuRoot.menuButtonWidth
+            Layout.preferredHeight: serviceMenuRoot.menuButtonHeight
+            text: qsTr("СПЕЦ КОМАНДЫ")
+            onPressed: serviceMenuRoot.specialCommandsButtonPressed()
+        }
 
         SButton {
             id: serialNumberButton
@@ -100,15 +109,6 @@ Item {
             Layout.preferredHeight: serviceMenuRoot.menuButtonHeight
             text: qsTr("Проверка тач-скрина")
             onPressed: serviceMenuRoot.touchScreenTestButtonPressed()
-        }
-
-        SButton {
-            id: logFileButton
-            style: "btn-primary lg"
-            Layout.preferredWidth: serviceMenuRoot.menuButtonWidth
-            Layout.preferredHeight: serviceMenuRoot.menuButtonHeight
-            text: qsTr("Журнал событий")
-            onPressed: serviceMenuRoot.logFileButtonPressed()
         }
 
         SButton {

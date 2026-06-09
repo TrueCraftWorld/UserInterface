@@ -10,9 +10,7 @@ Popup {
     property int power: 0
     property bool isCoag: false
     property bool isEndo: false
-    property var sizeTarget: null
-    // Подстройка положения относительно обновлённой зоны сокетов
-    property int verticalOffset: -80
+    property int activeSocketId: -1
     
     onPowerChanged: {
 //        console.log("Activation.qml: power changed to", power)
@@ -25,12 +23,11 @@ Popup {
     // Настройки popup
     modal: true  // Модальный - блокируем касания
     closePolicy: Popup.NoAutoClose  // Закрывается только программно
-    width: sizeTarget ? sizeTarget.width : (parent ? parent.width : 0)
-    height: sizeTarget ? sizeTarget.height : (parent ? parent.height : 0)
-    x: 0
-    y: verticalOffset
-    
-    
+
+    onClosed: {
+        activeSocketId = -1
+    }
+
     // Перехватываем все события мыши
     MouseArea {
         anchors.fill: parent

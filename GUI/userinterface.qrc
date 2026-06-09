@@ -24,7 +24,10 @@
         <file>MainMenu.qml</file>
         <file>MenuActionButton.qml</file>
         <file>MenuLoader.qml</file>
+        <file>SettingsMenu.qml</file>
+        <file>DateTimeSettings.qml</file>
         <file>ServiceMenu.qml</file>
+        <file>SpecialCommands.qml</file>
         <file>SerialNumberSettings.qml</file>
         <file>Pedal.qml</file>
         <file>PedalEditor.qml</file>

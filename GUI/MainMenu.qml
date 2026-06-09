@@ -15,21 +15,17 @@ Item {
     signal freeSettingsButtonPressed()
     signal lastSettingsButtonPressed()
     signal serviceMenuButtonPressed()
-    signal languageButtonPressed()
-    signal infoButtonPressed()
 
     property bool startupMode: false
     property color fotekBlue: "#264093"
     property color fotekOrange: "#faa731"
     readonly property string iconsBasePath: "file:///home/kikorik/FOTEK/Images/icons/"
     readonly property int screenMargin: 34
-    readonly property int topButtonWidth: 160
-    readonly property int topButtonHeight: 64
     readonly property int mainSpacing: startupMode ? 18 : 24
     readonly property int actionButtonHeight: startupMode ? 96 : 132
     readonly property int headerHeight: startupMode ? 110 : 70
-    readonly property int bottomActionsHeight: 132
-    readonly property int bottomRowBottomInset: screenMargin + 72 + 24
+    readonly property int videoButtonWidth: 500
+    readonly property int videoButtonHeight: 80
     readonly property int menuActionIconSize: startupMode ? 96 : 96
     readonly property int menuActionLabelSize: 38
     readonly property int menuActionLargeLabelSize: 42
@@ -42,62 +38,6 @@ Item {
         color: "#F3F5F9"
     }
 
-    Button {
-        id: infoButton
-        anchors.top: parent.top
-        anchors.left: parent.left
-        anchors.topMargin: settingsScreen.screenMargin
-        anchors.leftMargin: settingsScreen.screenMargin
-        width: settingsScreen.topButtonWidth
-        height: settingsScreen.topButtonHeight
-        text: qsTr("ИНФО")
-        onPressed: settingsScreen.infoButtonPressed()
-
-        background: Rectangle {
-            radius: 18
-            color: "white"
-            border.width: 1
-            border.color: settingsScreen.fotekBlue
-        }
-
-        contentItem: Text {
-            text: parent.text
-            color: settingsScreen.fotekBlue
-            font.pixelSize: 24
-            font.bold: true
-            horizontalAlignment: Text.AlignHCenter
-            verticalAlignment: Text.AlignVCenter
-        }
-    }
-
-    Button {
-        id: languageButton
-        anchors.top: parent.top
-        anchors.right: parent.right
-        anchors.topMargin: settingsScreen.screenMargin
-        anchors.rightMargin: settingsScreen.screenMargin
-        width: settingsScreen.topButtonWidth
-        height: settingsScreen.topButtonHeight
-        text: qsTr("RU / EN")
-        onPressed: settingsScreen.languageButtonPressed()
-
-        background: Rectangle {
-            radius: 18
-            color: "white"
-            border.width: 1
-            border.color: settingsScreen.fotekBlue
-        }
-
-        contentItem: Text {
-            text: parent.text
-            color: settingsScreen.fotekBlue
-            font.pixelSize: 24
-            font.bold: true
-            horizontalAlignment: Text.AlignHCenter
-            verticalAlignment: Text.AlignVCenter
-        }
-    }
-
     Item {
         id: headerArea
         anchors {
@@ -105,7 +45,7 @@ Item {
             horizontalCenter: parent.horizontalCenter
             topMargin: settingsScreen.screenMargin - 8
         }
-        width: parent.width - settingsScreen.screenMargin * 2 - settingsScreen.topButtonWidth * 2
+        width: parent.width - settingsScreen.screenMargin * 2
         height: settingsScreen.headerHeight
 
         Image {
@@ -147,42 +87,52 @@ Item {
         }
     }
 
-    RowLayout {
-        id: bottomActionsRow
-        z: 2
+    Button {
+        id: serviceMenuButton
+        width: exitButton.width
+        height: exitButton.height
+        onPressed: settingsScreen.serviceMenuButtonPressed()
         anchors {
-            left: parent.left
             right: parent.right
-            bottom: settingsScreen.startupMode ? parent.bottom : exitButton.top
-            leftMargin: settingsScreen.screenMargin
-            rightMargin: settingsScreen.screenMargin
-            bottomMargin: settingsScreen.startupMode ? settingsScreen.bottomRowBottomInset : 24
-        }
-        height: settingsScreen.bottomActionsHeight
-        spacing: settingsScreen.mainSpacing
-
-        MenuActionButton {
-            Layout.fillWidth: true
-            Layout.fillHeight: true
-            text: qsTr("Видеоинструкции")
-            iconSource: settingsScreen.iconsBasePath + "iconVideo.png"
-            accentColor: settingsScreen.fotekOrange
-            textColor: settingsScreen.fotekBlue
-            iconSize: settingsScreen.menuActionIconSize
-            labelPixelSize: settingsScreen.menuActionLabelSize
-            onPressed: settingsScreen.videoPlayerVisible = true
+            bottom: parent.bottom
+            margins: settingsScreen.screenMargin
         }
 
-        MenuActionButton {
-            Layout.fillWidth: true
-            Layout.fillHeight: true
-            text: qsTr("Сервисное меню")
-            iconSource: settingsScreen.iconsBasePath + "iconSetting.png"
-            accentColor: settingsScreen.fotekOrange
-            textColor: settingsScreen.fotekBlue
-            iconSize: settingsScreen.menuActionIconSize
-            labelPixelSize: settingsScreen.menuActionLabelSize
-            onPressed: settingsScreen.serviceMenuButtonPressed()
+        background: Rectangle {
+            radius: exitButton.cornerRadius
+            color: "white"
+            border.width: 1
+            border.color: settingsScreen.fotekBlue
+        }
+
+        contentItem: Image {
+            source: settingsScreen.iconsBasePath + "iconSetting.png"
+            width: 48
+            height: 48
+            fillMode: Image.PreserveAspectFit
+            asynchronous: true
+            horizontalAlignment: Image.AlignHCenter
+            verticalAlignment: Image.AlignVCenter
+        }
+    }
+
+    MenuActionButton {
+        id: videoInstructionsButton
+        z: 2
+        width: settingsScreen.videoButtonWidth
+        height: settingsScreen.videoButtonHeight
+        text: qsTr("ВИДЕОИНСТРУКЦИИ")
+        iconSource: settingsScreen.iconsBasePath + "iconVideo.png"
+        accentColor: settingsScreen.fotekOrange
+        textColor: settingsScreen.fotekBlue
+        iconSize: 52
+        labelPixelSize: 26
+        cornerRadius: 20
+        onPressed: settingsScreen.videoPlayerVisible = true
+        anchors {
+            horizontalCenter: parent.horizontalCenter
+            bottom: parent.bottom
+            bottomMargin: settingsScreen.screenMargin
         }
     }
 
@@ -193,7 +143,7 @@ Item {
             topMargin: settingsScreen.startupMode ? 12 : 26
             left: parent.left
             right: parent.right
-            bottom: bottomActionsRow.top
+            bottom: videoInstructionsButton.top
             bottomMargin: settingsScreen.mainSpacing
             leftMargin: settingsScreen.screenMargin
             rightMargin: settingsScreen.screenMargin
@@ -206,7 +156,7 @@ Item {
             MenuActionButton {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
-                text: qsTr("Рекомендованные\nпрограммы")
+                text: qsTr("РЕКОМЕНДУЕМЫЕ\nПРОГРАММЫ")
                 iconSource: settingsScreen.iconsBasePath + "iconRecom.png"
                 accentColor: settingsScreen.fotekOrange
                 textColor: settingsScreen.fotekBlue
@@ -224,7 +174,7 @@ Item {
                     visible: settingsScreen.startupMode
                     Layout.fillWidth: true
                     Layout.fillHeight: true
-                    text: qsTr("Последние\nустановки")
+                    text: qsTr("ПОСЛЕДНИЕ\nУСТАНОВКИ")
                     iconSource: settingsScreen.iconsBasePath + "iconLast.png"
                     accentColor: settingsScreen.fotekOrange
                     textColor: settingsScreen.fotekBlue
@@ -236,7 +186,7 @@ Item {
                 MenuActionButton {
                     Layout.fillWidth: true
                     Layout.fillHeight: true
-                    text: qsTr("Пользовательские\nпрограммы")
+                    text: qsTr("ПРОГРАММЫ\nПОЛЬЗОВАТЕЛЯ")
                     iconSource: settingsScreen.iconsBasePath + "iconUser.png"
                     accentColor: settingsScreen.fotekOrange
                     textColor: settingsScreen.fotekBlue
@@ -248,7 +198,7 @@ Item {
                 MenuActionButton {
                     Layout.fillWidth: true
                     Layout.fillHeight: true
-                    text: qsTr("Свободная\nустановка режимов")
+                    text: qsTr("СВОБОДНАЯ\nУСТАНОВКА")
                     iconSource: settingsScreen.iconsBasePath + "iconFree.png"
                     accentColor: settingsScreen.fotekOrange
                     textColor: settingsScreen.fotekBlue

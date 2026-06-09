@@ -7,6 +7,7 @@ DISTFILES += \
     $$PWD/Activation.qml \
     $$PWD/ArgCylinder.qml \
     $$PWD/Argon.qml \
+    $$PWD/DateTimeSettings.qml \
     $$PWD/DialogActionButton.qml \
     $$PWD/GradientBack.qml \
     $$PWD/HalfSocket.qml \

@@ -6,6 +6,7 @@
 #include "BackEnd/progloaderbase.h"
 #include "instrument.h"
 #include "databasereader.h"
+#include "jsonstorage.h"
 #include "socketmodel.h"
 #include "Structures.h"
 
@@ -14,8 +15,6 @@
 #include <map>
 // #include "userprogsloadmodel.h"
 // bi1CutInstr = "0", bi1CutMode = "1000", bi1CutPower = "1";
-
-
 
 class ProgLoader : public QObject
 {
@@ -97,6 +96,7 @@ public:
 	std::map<int, std::map<int, Onyx::InstrInfo>> getConstraints(const std::vector<int> &idList);
 	
 	void setSocketModelPtr(QSharedPointer<SocketModel> newSocketModelPtr);
+	void setJsonStorage(JsonStorage *jsonStorage);
 
 	int addUserScope(const QString& name);
 	
@@ -119,10 +119,16 @@ private:
 
 	QSharedPointer<DataBaseReader> listsDbForProg(int progId) const;
 	QSharedPointer<DataBaseReader> progsDbForProg(int progId) const;
+	bool deviceHasArgon() const;
+	bool argonModesEnabled() const;
+	bool argonProgramsEnabled() const;
+	QString deviceModeFilterCondition() const;
+	std::vector<int> filterModesForDevice(const std::vector<int>& modeIds) const;
 
 	QSharedPointer<DataBaseReader> m_dbReaderPtr;
 	QSharedPointer<DataBaseReader> m_userDbReaderPtr;
 	QSharedPointer<SocketModel> m_socketModelPtr;
+	QPointer<JsonStorage> m_jsonStorage;
 	progType m_curLoaderType = ptRecom;	
 };
 

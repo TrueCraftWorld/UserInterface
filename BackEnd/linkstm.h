@@ -40,6 +40,7 @@ public:
         TxDataWireless = 0x6A,          // Передача данных для беспроводных устройств
         StopArgon = 0x6B,              // Остановка опроса газового тракта
         ArgonBlow = 0x6C,               // Продувка газового тракта
+        ReadyToPowerOff = 0x6F,         // Команда на выключение питания
 
         SignalAlarm = 0x80,             // Выдача звукового сигнала (аварии)
 
@@ -227,6 +228,8 @@ public slots:
     void setArgonFlowRate(quint8 rate);
     void setNeutralResistPollEnabled(bool enabled);
     void setDebugUart(bool enabled);
+    void requestReadyToPowerOff();
+    void requestReadyToPowerOffWithData(quint8 byte0, quint8 byte1);
     void updateSocketData(int socketIndex, quint16 cutModeNum, quint16 coagModeNum, 
                          quint16 cutModePower, quint16 coagModePower, quint8 pedal);
     void updateSocketData(int socketIndex, const Onyx::SocketState& info);
@@ -253,6 +256,7 @@ signals:
                                      bool autoMode, quint8 sourceCode);
     void sigStopActivation(quint8 stopReason);
     void sigPowerOffCommand();
+    void sigReadyToPowerOffSent();
     void sigNeutralResistReceived(const QByteArray &data);
     // Отладочные строки для полупрозрачного оверлея в main.qml
     void sigDebugOverlayLine(const QString &line);
@@ -338,6 +342,8 @@ private:
     bool m_thirdKnobSignalConsumedUntilRelease = false;
     bool m_neutralResistPollEnabled = false;
     bool m_debugUart = false;
+    bool m_readyToPowerOffPending = false;
+    QByteArray m_readyToPowerOffData;
 };
 
 #endif // LINKSTM_H

@@ -36,10 +36,12 @@ Window {
     property bool currentProgramIsRecom: false
     property bool hasUnsavedChanges: false
     property string language: "ru"
+    property bool argonAvailable: true
     readonly property color fotekBlue: "#264093"
     readonly property color fotekOrange: "#faa731"
     property string startupScreen: "startMenu"
     property bool startupInfoVisible: false
+    property bool powerOffShutdownPending: false
     readonly property bool startupFlowVisible: startupScreen !== "mainScreen"
 
     function activationEnable() {
@@ -48,7 +50,9 @@ Window {
                                           | argonDrawer.opened
                                           | neutralDrawer.opened
                                           | socketsDummy.socketEditorOpened
-                                          | startupFlowVisible)
+                                          | startupFlowVisible
+                                          | powerOffShutdownPending
+                                          | powerOffConfirmDialog.opened)
     }
 
     function openMainMenuFromStatus() {
@@ -58,6 +62,30 @@ Window {
             menuLoad.navigateTo("qrc:/MainMenu.qml")
             leftDrawer.open()
         }
+    }
+
+    function readArgonAvailable() {
+        if (typeof savedJson === "undefined" || !savedJson) {
+            return true
+        }
+        var deviceType = String(savedJson.readString("deviceType", "ONYX-AM")).trim().toUpperCase()
+        return deviceType === "ONYX-AM"
+                && savedJson.readString("argonModesEnabled", "0") === "1"
+    }
+
+    function refreshArgonAvailability() {
+        argonAvailable = readArgonAvailable()
+        if (!argonAvailable && argonDrawer.opened) {
+            argonDrawer.close()
+        }
+    }
+
+    function requestOpenArgonDrawer() {
+        refreshArgonAvailability()
+        if (!argonAvailable) {
+            return
+        }
+        argonDrawer.open()
     }
 
     function setCurrentProgram(scopeName, progName, isUserProgram, isRecomProgram) {
@@ -286,6 +314,7 @@ Window {
         Qt.inputMethod.hide()
         restoreLanguage()
         restoreCurrentProgramInfo()
+        refreshArgonAvailability()
         activationEnable()
     }
 
@@ -394,6 +423,7 @@ Window {
     PeripheryPanel {
         id: argNeutralPanel
         width: argNeutralPanelWidth
+        argonAvailable: container.argonAvailable
         anchors {
             left: parent.left
             bottom: parent.bottom
@@ -505,8 +535,10 @@ Window {
                     return recommendedProgramsComponent
                 case "userProgramList":
                     return userProgramsComponent
+                case "settingsMenu":
+                    return startupSettingsMenuComponent
                 case "serviceMenu":
-                    return startupServiceMenuComponent
+                    return startupSettingsMenuComponent
                 default:
                     return startupMenuComponent
                 }
@@ -569,23 +601,17 @@ Window {
                         container.showMainScreen()
                     }
                     function onServiceMenuButtonPressed() {
-                        container.showStartupScreen("serviceMenu")
-                    }
-                    function onInfoButtonPressed() {
-                        container.startupInfoVisible = true
-                    }
-                    function onLanguageButtonPressed() {
-                        container.language = container.language === "en" ? "ru" : "en"
+                        container.showStartupScreen("settingsMenu")
                     }
                 }
             }
         }
 
         Component {
-            id: startupServiceMenuComponent
+            id: startupSettingsMenuComponent
 
             MenuLoader {
-                source: "qrc:/ServiceMenu.qml"
+                source: "qrc:/SettingsMenu.qml"
                 closeOnServiceRootReturn: true
                 onCloseMe: container.showStartupScreen("startMenu")
                 onDeleteAllUserProgsRequested: recomHandle.deleteAllUserProgs()
@@ -629,6 +655,119 @@ Window {
         y: statusDummy.height
         originalProgName: container.currentProgName
         currentProgramIsUser: container.currentProgramIsUser
+    }
+    Dialog {
+        id: powerOffConfirmDialog
+        modal: true
+        closePolicy: Popup.NoAutoClose
+        width: Math.min(container.width * 0.82, 900)
+        height: 360
+        x: Math.round((container.width - width) / 2)
+        y: Math.round((container.height - height) / 2)
+
+        property int secondsRemaining: 10
+
+        function openWithTimeout(seconds) {
+            secondsRemaining = seconds
+            powerOffTimer.restart()
+            open()
+            periphHandle.enableActivation = false
+        }
+
+        function cancelPowerOff() {
+            powerOffTimer.stop()
+            close()
+            appControl.cancelPowerOff()
+            container.activationEnable()
+        }
+
+        function confirmPowerOff() {
+            powerOffTimer.stop()
+            container.powerOffShutdownPending = true
+            close()
+            periphHandle.enableActivation = false
+            appControl.confirmPowerOff()
+        }
+
+        background: Rectangle {
+            color: "#f5f5f5"
+            border.color: container.fotekBlue
+            border.width: 3
+            radius: 6
+        }
+
+        contentItem: Rectangle {
+            color: "transparent"
+
+            Text {
+                anchors.fill: parent
+                anchors.leftMargin: 32
+                anchors.rightMargin: 32
+                wrapMode: Text.WordWrap
+                horizontalAlignment: Text.AlignHCenter
+                verticalAlignment: Text.AlignVCenter
+                text: qsTr("Питание будет выключено через %1 секунд").arg(powerOffConfirmDialog.secondsRemaining)
+                font.pixelSize: 38
+                font.bold: true
+                color: "black"
+            }
+        }
+
+        footer: Rectangle {
+            color: "transparent"
+            implicitHeight: 118
+
+            RowLayout {
+                anchors.fill: parent
+                anchors.leftMargin: 28
+                anchors.rightMargin: 28
+                anchors.topMargin: 20
+                anchors.bottomMargin: 20
+                spacing: 18
+
+                DialogActionButton {
+                    Layout.preferredWidth: 240
+                    Layout.fillHeight: true
+                    text: qsTr("ОТМЕНА")
+                    labelPixelSize: 32
+                    onPressed: powerOffConfirmDialog.cancelPowerOff()
+                }
+
+                Item { Layout.fillWidth: true }
+
+                DialogActionButton {
+                    Layout.preferredWidth: 260
+                    Layout.fillHeight: true
+                    text: qsTr("ВЫКЛЮЧИТЬ")
+                    primary: true
+                    primaryEnabledColor: "#B71C1C"
+                    labelPixelSize: 32
+                    onPressed: powerOffConfirmDialog.confirmPowerOff()
+                }
+            }
+        }
+
+        Timer {
+            id: powerOffTimer
+            interval: 1000
+            repeat: true
+            onTriggered: {
+                if (powerOffConfirmDialog.secondsRemaining <= 1) {
+                    powerOffConfirmDialog.confirmPowerOff()
+                } else {
+                    powerOffConfirmDialog.secondsRemaining--
+                }
+            }
+        }
+
+        onOpened: periphHandle.enableActivation = false
+    }
+    Connections {
+        target: appControl
+        function onPowerOffConfirmationRequested(timeoutSeconds) {
+            container.powerOffShutdownPending = false
+            powerOffConfirmDialog.openWithTimeout(timeoutSeconds)
+        }
     }
     Dialog {
         id: overwriteConfirmDialog
@@ -771,6 +910,9 @@ Window {
     Connections {
         target: leftDrawer
         function onOpenedChanged() {
+            if (!leftDrawer.opened) {
+                container.refreshArgonAvailability()
+            }
             container.activationEnable()
         }
     }
@@ -817,7 +959,7 @@ Window {
     Connections {
         target: argNeutralPanel
         function onOpenArgonDrawer() {
-            argonDrawer.open()
+            container.requestOpenArgonDrawer()
         }
         function onOpenNeutralDrawer() {
             neutralDrawer.open()
@@ -898,7 +1040,7 @@ Window {
 				var deltaX = mouse.x - startX
 				// Если свайп вправо больше порога, открываем drawer
 				if (deltaX > minSwipeDistance) {
-					argonDrawer.open()
+					container.requestOpenArgonDrawer()
 					mouse.accepted = true
 					isSwipeGesture = false
 					hadSwipeGesture = false

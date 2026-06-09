@@ -1,6 +1,8 @@
 #include "controlcenter.h"
+#include "DeviceLogManager.h"
 #include "proghandle.h"
 
+#include <QProcess>
 #include <algorithm>
 // #include <iostream>
 #include <vector>
@@ -219,6 +221,21 @@ void ControlCenter::flushPendingSave()
 	}
 }
 
+void ControlCenter::setDeviceLogManager(DeviceLogManager *deviceLog)
+{
+    m_deviceLog = deviceLog;
+}
+
+void ControlCenter::setJsonStorage(JsonStorage *jsonStorage)
+{
+	if (m_progLoader.isNull()) {
+		return;
+	}
+
+	m_progLoader->setJsonStorage(jsonStorage);
+	initSockets();
+}
+
 void ControlCenter::setLinkStm(LinkStm* linkStm)
 {
 	if (m_linkStm == linkStm)
@@ -272,8 +289,18 @@ void ControlCenter::setLinkStm(LinkStm* linkStm)
 		connect(m_linkStm, &LinkStm::sigStartActivation,
 		        m_socketModel.data(), &SocketModel::startActivation,
 		        Qt::QueuedConnection);
+		connect(m_linkStm, &LinkStm::sigStartActivation,
+		        m_periphery, [this](quint8, bool) {
+			        m_periphery->setActivationActive(true);
+		        },
+		        Qt::QueuedConnection);
 		connect(m_linkStm, &LinkStm::sigStopActivation,
 		        m_socketModel.data(), &SocketModel::stopActivation,
+		        Qt::QueuedConnection);
+		connect(m_linkStm, &LinkStm::sigStopActivation,
+		        m_periphery, [this](quint8) {
+			        m_periphery->setActivationActive(false);
+		        },
 		        Qt::QueuedConnection);
 		connect(m_linkStm, &LinkStm::sigPressed3rdKnob,
 		        m_socketModel.data(),
@@ -338,6 +365,13 @@ void ControlCenter::setLinkStm(LinkStm* linkStm)
             m_autoDelay = delayMs;
         }, Qt::QueuedConnection);
 
+        connect(m_linkStm, &LinkStm::sigPowerOffCommand,
+                this, &ControlCenter::onPowerOffCommand,
+                Qt::QueuedConnection);
+        connect(m_linkStm, &LinkStm::sigReadyToPowerOffSent,
+                this, &ControlCenter::shutdownSystem,
+                Qt::QueuedConnection);
+
 		// Инициализируем все сокеты текущими данными
 		initSocketsForPeriphery();
         m_autoDelay = m_periphery->autoDelayMs();
@@ -374,6 +408,104 @@ void ControlCenter::initSocketsForPeriphery()
 QPointer<PeriphHandler> ControlCenter::getPeripheryHandle() const
 {
 	return m_periphery;
+}
+
+void ControlCenter::logPowerOff(const QString &message)
+{
+    if (m_deviceLog) {
+        m_deviceLog->logPowerOff(message);
+    }
+}
+
+void ControlCenter::onPowerOffCommand()
+{
+    if (m_powerOffConfirmationActive || m_powerOffRequested) {
+        return;
+    }
+
+    m_powerOffConfirmationActive = true;
+    if (m_periphery) {
+        m_periphery->setEnableActivation(false);
+    }
+    if (!m_linkStm.isNull()) {
+        QMetaObject::invokeMethod(m_linkStm.data(), "requestReadyToPowerOff", Qt::QueuedConnection);
+    }
+    emit powerOffConfirmationRequested(10);
+    logPowerOff(QStringLiteral("Получена команда PowerOff по UART LinkStm; ожидание подтверждения выключения"));
+}
+
+void ControlCenter::cancelPowerOff()
+{
+    if (!m_powerOffConfirmationActive || m_powerOffRequested) {
+        return;
+    }
+
+    m_powerOffConfirmationActive = false;
+    logPowerOff(QStringLiteral("Выключение аппарата отменено пользователем"));
+}
+
+void ControlCenter::confirmPowerOff()
+{
+    if (m_powerOffRequested) {
+        return;
+    }
+
+    m_powerOffConfirmationActive = false;
+    m_powerOffRequested = true;
+    if (m_periphery) {
+        m_periphery->setEnableActivation(false);
+    }
+    if (m_deviceLog) {
+        m_deviceLog->finalizeSession();
+    }
+    logPowerOff(QStringLiteral("Выключение аппарата подтверждено; отправка ReadyToPowerOff по UART LinkStm"));
+
+    if (!m_linkStm.isNull()) {
+        QMetaObject::invokeMethod(m_linkStm.data(), "requestReadyToPowerOffWithData",
+                                  Qt::QueuedConnection,
+                                  Q_ARG(quint8, static_cast<quint8>(0x00)),
+                                  Q_ARG(quint8, static_cast<quint8>(0x03)));
+    }
+}
+
+void ControlCenter::shutdownSystemFromUi()
+{
+    if (m_shutdownStarted) {
+        return;
+    }
+
+    m_powerOffConfirmationActive = false;
+    m_powerOffRequested = true;
+    if (m_periphery) {
+        m_periphery->setEnableActivation(false);
+    }
+    if (m_deviceLog) {
+        m_deviceLog->finalizeSession();
+    }
+    logPowerOff(QStringLiteral("Выключение roc-RK3566 запрошено кнопкой в интерфейсе"));
+    shutdownSystem();
+}
+
+void ControlCenter::shutdownSystem()
+{
+    if (m_shutdownStarted) {
+        return;
+    }
+
+    m_shutdownStarted = true;
+    logPowerOff(QStringLiteral("Запуск системной команды выключения roc-RK3566"));
+
+    if (QProcess::startDetached(QStringLiteral("systemctl"), QStringList{QStringLiteral("poweroff")})) {
+        return;
+    }
+    if (QProcess::startDetached(QStringLiteral("shutdown"), QStringList{QStringLiteral("-h"), QStringLiteral("now")})) {
+        return;
+    }
+    if (QProcess::startDetached(QStringLiteral("poweroff"), QStringList{})) {
+        return;
+    }
+
+    logPowerOff(QStringLiteral("Не удалось запустить системную команду выключения"));
 }
 
 void ControlCenter::setNeutralResistPollEnabled(bool enabled)

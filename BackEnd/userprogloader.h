@@ -9,6 +9,7 @@ class UserProgLoader : public ProgLoaderBase
 	Q_OBJECT
 public:
 	explicit UserProgLoader(QObject *parent = nullptr);
+	explicit UserProgLoader(bool deviceHasArgon, QObject *parent = nullptr);
 
 	// ProgLoaderBase interface
 public:

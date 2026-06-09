@@ -265,11 +265,9 @@ void DeviceLogManager::onWarningCode(quint8 warningCode)
                     .arg(warningTextForCode(code)));
 }
 
-void DeviceLogManager::onPowerOffCommand()
+void DeviceLogManager::logPowerOff(const QString &message)
 {
-    finalizeSession();
-    appendEvent(QStringLiteral("POWER_OFF"),
-                QStringLiteral("Выключение аппарата; получена команда PowerOff по UART LinkStm"));
+    appendEvent(QStringLiteral("POWER_OFF"), message);
 }
 
 QString DeviceLogManager::logDirPath() const

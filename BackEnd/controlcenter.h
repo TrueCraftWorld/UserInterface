@@ -13,6 +13,9 @@
 #include "progloader.h"
 #include "linkstm.h"
 
+class DeviceLogManager;
+class JsonStorage;
+
 /**
  * @brief Управляющий класс бэкэнда, осуществляющий
  * композицию моделей данных и классов связи с железом
@@ -66,9 +69,14 @@ public:
 	 * @param linkStm Указатель на объект LinkStm
 	 */
 	void setLinkStm(LinkStm* linkStm);
+	void setDeviceLogManager(DeviceLogManager *deviceLog);
+	void setJsonStorage(JsonStorage *jsonStorage);
 
 	QPointer<PeriphHandler> getPeripheryHandle() const;
 
+	Q_INVOKABLE void cancelPowerOff();
+	Q_INVOKABLE void confirmPowerOff();
+    Q_INVOKABLE void shutdownSystemFromUi();
 	Q_INVOKABLE bool loadProgram(int progId, bool clear);
 	Q_INVOKABLE void setNeutralResistPollEnabled(bool enabled);
     Q_INVOKABLE void appendDebugOverlayLine(const QString &line);
@@ -83,6 +91,13 @@ signals:
     void debugOverlayTextChanged();
     void debugUartEnabledChanged();
     void cpuMonitorVisibleChanged();
+    void powerOffConfirmationRequested(int timeoutSeconds);
+
+public slots:
+    void onPowerOffCommand();
+
+private slots:
+    void shutdownSystem();
 
 private:
 	QSharedPointer<SocketModel> m_socketModel;
@@ -92,7 +107,11 @@ private:
 	QPointer<ProgLoader> m_progLoader;
 	QPointer<PeriphHandler> m_periphery;
 	QPointer<LinkStm> m_linkStm;
+	DeviceLogManager *m_deviceLog = nullptr;
     int m_autoDelay = 0; // Задержка автозапуска в мс (runtime)
+    bool m_powerOffConfirmationActive = false;
+    bool m_powerOffRequested = false;
+    bool m_shutdownStarted = false;
     QStringList m_debugOverlayLines;
     QString m_debugOverlayText;
     bool m_debugUartEnabled = false;
@@ -108,6 +127,7 @@ private:
 	 */
 	void makeHandleConnections();
 	void initSocketsForPeriphery();
+	void logPowerOff(const QString &message);
 
 	void initSockets();
 	void prepareConnectios();

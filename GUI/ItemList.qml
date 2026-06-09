@@ -39,9 +39,29 @@ Rectangle {
 	function selectIndex(index) {
 		if (!theView.model || index < 0 || index >= theView.count)
 			return
+		if (isIndexLocked(index))
+			return
 		theView.currentIndex = index
 		positionSelectedItem()
 		newIndexSelected(index)
+	}
+
+	function isIndexLocked(index) {
+		if (!theView.model || index < 0 || index >= theView.count
+				|| typeof theView.model.get !== "function") {
+			return false
+		}
+		return theView.model.get(index).locked === true
+	}
+
+	function nextSelectableIndex(fromIndex, step) {
+		var index = fromIndex + step
+		while (index >= 0 && index < theView.count) {
+			if (!isIndexLocked(index))
+				return index
+			index += step
+		}
+		return -1
 	}
 
 	function highlightIndex(index) {
@@ -58,7 +78,10 @@ Rectangle {
 	function scrollUp() {
 		if (theView.count <= 0 || theView.currentIndex <= 0)
 			return
-		var nextIndex = theView.currentIndex - 1
+		var nextIndex = scrollSelectsItem ? nextSelectableIndex(theView.currentIndex, -1)
+		                                  : theView.currentIndex - 1
+		if (nextIndex < 0)
+			return
 		if (scrollSelectsItem)
 			selectIndex(nextIndex)
 		else
@@ -68,8 +91,12 @@ Rectangle {
 	function scrollDown() {
 		if (theView.count <= 0)
 			return
-		var nextIndex = theView.currentIndex < 0 ? 0 : theView.currentIndex + 1
+		var nextIndex = scrollSelectsItem
+				? nextSelectableIndex(theView.currentIndex < 0 ? -1 : theView.currentIndex, 1)
+				: (theView.currentIndex < 0 ? 0 : theView.currentIndex + 1)
 		if (nextIndex >= theView.count)
+			return
+		if (nextIndex < 0)
 			return
 		if (scrollSelectsItem)
 			selectIndex(nextIndex)
@@ -135,15 +162,17 @@ Rectangle {
 			delegate: Rectangle {
 				id: itemRoot
 				property bool isSelected: (index === curIndex)
+				readonly property bool locked: model.locked === true
 				readonly property bool showImage: !noImage && imageSourceTemplate !== "" && itemImage.status === Image.Ready
 				readonly property bool reserveLeftSymbolSpace: noImage && !hideNoImageSymbol
-				readonly property bool showEditPanel: itemList.editable
+				readonly property bool showEditPanel: itemList.editable && !locked
 				height: itemList.listItemHeight
 				width: ListView.view.width
 				radius: itemList.itemCornerRadius
 				color: isSelected ? selectedBackgroundColor : itemBackgroundColor
 				border.width: isSelected ? selectedBorderWidth : itemBorderWidth
 				border.color: isSelected ? selectedBorderColor : itemBorderColor
+				opacity: locked ? 0.58 : 1.0
 				Rectangle {
 					id: itemImageRectBorder
 					width: 10
@@ -215,9 +244,10 @@ Rectangle {
 						bottom: parent.bottom
 						left: showImage ? itemImageRect.right
 						                : (reserveLeftSymbolSpace ? itemSymbol.right : parent.left)
-						right: showEditPanel ? itemEditRect.left : parent.right
+						right: locked ? lockIcon.left
+						              : (showEditPanel ? itemEditRect.left : parent.right)
 						leftMargin: showImage || reserveLeftSymbolSpace ? 10 : 0
-						rightMargin: showEditPanel ? 10 : 0
+						rightMargin: (showEditPanel || locked) ? 10 : 0
 					}
 					Label {
 						anchors.fill: parent
@@ -231,8 +261,24 @@ Rectangle {
 					}
 					MouseArea {
 						anchors.fill: parent
+						enabled: !itemRoot.locked
 						onClicked: itemList.selectIndex(index)
 					}
+				}
+				Text {
+					id: lockIcon
+					visible: itemRoot.locked
+					width: parent.height
+					anchors {
+						top: parent.top
+						bottom: parent.bottom
+						right: parent.right
+					}
+					text: "🔒"
+					font.pixelSize: Math.round(itemList.itemFontPixelSize * 2.0)
+					horizontalAlignment: Text.AlignHCenter
+					verticalAlignment: Text.AlignVCenter
+					color: itemRoot.isSelected ? selectedTextColor : unselectedTextColor
 				}
 				Rectangle {
 					id: itemEditRect

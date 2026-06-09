@@ -18,6 +18,10 @@ Rectangle {
     property bool loadClear: true
     required property bool recommended
     property bool editable: false
+    property int pendingDeleteIndex: -1
+    property bool pendingDeleteIsScope: false
+    property string pendingDeleteName: ""
+    property bool endoscopyEnabled: false
 
     readonly property color fotekBlue: "#264093"
     readonly property color fotekOrange: "#faa731"
@@ -34,6 +38,28 @@ Rectangle {
 
     ListModel {
         id: progsModel
+    }
+
+    function readEndoscopyEnabled() {
+        return typeof savedJson !== "undefined"
+                && savedJson
+                && savedJson.readString("endoscopyEnabled", "0") === "1"
+    }
+
+    function isEndoscopyScopeId(scopeId) {
+        return parseInt(scopeId) === 5
+    }
+
+    function isScopeLocked(scopeId) {
+        return !endoscopyEnabled && isEndoscopyScopeId(scopeId)
+    }
+
+    function firstUnlockedScopeIndex() {
+        for (var i = 0; i < scopeModel.count; ++i) {
+            if (!scopeModel.get(i).locked)
+                return i
+        }
+        return -1
     }
 
     function updateModel() {
@@ -56,6 +82,7 @@ Rectangle {
     }
 
     function init() {
+        endoscopyEnabled = readEndoscopyEnabled()
         scopeModel.clear()
         itemNameArr = recomHandle.scopeNameList
         itemIdArr = recomHandle.scopeIdList
@@ -67,11 +94,39 @@ Rectangle {
             scopeModel.append({
                                   itemId: itemIdArr[i],
                                   itemName: itemNameArr[i],
-                                  rowIndex: i
+                                  rowIndex: i,
+                                  locked: isScopeLocked(itemIdArr[i])
                               })
         }
         scopeList.innerModel = scopeModel
-        scopeList.curIndex = recomHandle.scopeIdx
+        var selectedIndex = recomHandle.scopeIdx
+        if (selectedIndex >= 0 && selectedIndex < scopeModel.count
+                && scopeModel.get(selectedIndex).locked) {
+            selectedIndex = firstUnlockedScopeIndex()
+            if (selectedIndex >= 0)
+                recomHandle.scopeIdx = selectedIndex
+        }
+        scopeList.curIndex = selectedIndex
+    }
+
+    function requestDeleteScope(index) {
+        if (index < 0 || index >= scopeModel.count)
+            return
+
+        pendingDeleteIndex = index
+        pendingDeleteIsScope = true
+        pendingDeleteName = scopeModel.get(index).itemName
+        confirmDeleteDialog.open()
+    }
+
+    function requestDeleteProg(index) {
+        if (index < 0 || index >= progsModel.count)
+            return
+
+        pendingDeleteIndex = index
+        pendingDeleteIsScope = false
+        pendingDeleteName = progsModel.get(index).itemName
+        confirmDeleteDialog.open()
     }
 
     Component.onCompleted: {
@@ -107,8 +162,8 @@ Rectangle {
             anchors.leftMargin: screenMargin
             anchors.rightMargin: screenMargin
             text: recommended
-                  ? qsTr("РЕКОМЕНДОВАННЫЕ ПРОГРАММЫ")
-                  : qsTr("ПОЛЬЗОВАТЕЛЬСКИЕ ПРОГРАММЫ")
+                  ? qsTr("РЕКОМЕНДУЕМЫЕ ПРОГРАММЫ")
+                  : qsTr("ПРОГРАММЫ ПОЛЬЗОВАТЕЛЯ")
             horizontalAlignment: Qt.AlignHCenter
             verticalAlignment: Qt.AlignVCenter
             wrapMode: Text.WordWrap
@@ -358,14 +413,105 @@ Rectangle {
         }
     }
 
+    Dialog {
+        id: confirmDeleteDialog
+        title: ""
+        modal: true
+        width: Math.min(recProgs.width * 0.92, 980)
+        height: 420
+        x: (recProgs.width - width) / 2
+        y: (recProgs.height - height) / 2
+
+        contentItem: Rectangle {
+            color: "transparent"
+
+            ColumnLayout {
+                anchors.fill: parent
+                anchors.leftMargin: 28
+                anchors.rightMargin: 28
+                anchors.topMargin: 26
+                anchors.bottomMargin: 14
+                spacing: 18
+
+                Label {
+                    Layout.fillWidth: true
+                    text: qsTr("Подтверждение удаления")
+                    horizontalAlignment: Qt.AlignHCenter
+                    font.pixelSize: 40
+                    font.bold: true
+                }
+
+                Label {
+                    Layout.fillWidth: true
+                    text: recProgs.pendingDeleteIsScope
+                          ? qsTr("Область \"%1\" будет удалена. Продолжить?").arg(recProgs.pendingDeleteName)
+                          : qsTr("Программа \"%1\" будет удалена. Продолжить?").arg(recProgs.pendingDeleteName)
+                    horizontalAlignment: Qt.AlignHCenter
+                    wrapMode: Text.WordWrap
+                    font.pixelSize: 36
+                }
+
+                Item { Layout.fillHeight: true }
+            }
+        }
+
+        footer: Rectangle {
+            color: "transparent"
+            implicitHeight: 132
+
+            RowLayout {
+                anchors.fill: parent
+                anchors.leftMargin: 24
+                anchors.rightMargin: 24
+                anchors.topMargin: 20
+                anchors.bottomMargin: 20
+                spacing: 18
+
+                DialogActionButton {
+                    Layout.preferredWidth: 240
+                    Layout.fillHeight: true
+                    text: qsTr("ОТМЕНА")
+                    labelPixelSize: 34
+                    onPressed: confirmDeleteDialog.close()
+                }
+
+                Item { Layout.fillWidth: true }
+
+                DialogActionButton {
+                    Layout.preferredWidth: 240
+                    Layout.fillHeight: true
+                    text: qsTr("ПРИНЯТЬ")
+                    primary: true
+                    labelPixelSize: 34
+                    onPressed: {
+                        if (recProgs.pendingDeleteIndex >= 0) {
+                            if (recProgs.pendingDeleteIsScope)
+                                recomHandle.deleteScopeRequest(recProgs.pendingDeleteIndex)
+                            else
+                                recomHandle.deleteProgRequest(recProgs.pendingDeleteIndex)
+                        }
+                        confirmDeleteDialog.close()
+                    }
+                }
+            }
+        }
+
+        onClosed: {
+            recProgs.pendingDeleteIndex = -1
+            recProgs.pendingDeleteName = ""
+        }
+    }
+
     Connections {
         target: scopeList
         function onNewIndexSelected(index) {
+            if (index >= 0 && index < scopeModel.count && scopeModel.get(index).locked)
+                return
             recomHandle.scopeIdx = index
             recProgs.updateModel()
         }
         function onDeleteItem(index) {
-            recomHandle.deleteScopeRequest(index)
+            recProgs.requestDeleteScope(index)
         }
         function onEditItemName(index, name) {
             recomHandle.renameScopeRequest(index, name)
@@ -375,6 +521,10 @@ Rectangle {
     Connections {
         target: progList
         function onNewIndexSelected(index) {
+            if (scopeList.curIndex >= 0 && scopeList.curIndex < scopeModel.count
+                    && scopeModel.get(scopeList.curIndex).locked) {
+                return
+            }
             var pid = (index >= 0 && index < recomHandle.progIdList.length)
                     ? recomHandle.progIdList[index] : -1
             if (pid < 0)
@@ -395,7 +545,7 @@ Rectangle {
             recProgs.clickedButton(-1)
         }
         function onDeleteItem(index) {
-            recomHandle.deleteProgRequest(index)
+            recProgs.requestDeleteProg(index)
         }
         function onEditItemName(index, name) {
             recomHandle.renameProgRequest(index, name)

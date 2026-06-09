@@ -9,6 +9,7 @@ class RecomProgLoader : public ProgLoaderBase
 	Q_OBJECT
 public:
 	explicit RecomProgLoader(QObject *parent = nullptr);
+	explicit RecomProgLoader(bool deviceHasArgon, QObject *parent = nullptr);
 
 	// ProgLoaderBase interface
 public:

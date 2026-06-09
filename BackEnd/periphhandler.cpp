@@ -58,10 +58,7 @@ void PeriphHandler::unitStateHandler(Onyx::UnitState state)
 
 	// Обновляем состояние активации на основе activOutput
 	bool isActivating = (state.activOutput != 0);
-	if (m_activation != isActivating) {
-		m_activation = isActivating;
-		emit activationChanged(m_activation);
-	}
+	setActivationActive(isActivating);
 
 	// Автоматическое переключение активного баллона
 	if (cylinder1Changed || cylinder2Changed) {
@@ -255,6 +252,21 @@ void PeriphHandler::setNeutralSize(int size)
 
 	m_neutralSize = size;
 	emit neutralSizeChanged(size);
+}
+
+void PeriphHandler::setActivationActive(bool active)
+{
+	if (m_activation == active) {
+		return;
+	}
+
+	m_activation = active;
+	emit activationChanged(m_activation);
+
+	if (!active && m_argonRealRate != 0) {
+		m_argonRealRate = 0;
+		emit argonRealRateChanged(m_argonRealRate);
+	}
 }
 
 void PeriphHandler::setArgonRealRate(quint8 rate)

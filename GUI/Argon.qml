@@ -21,6 +21,13 @@ Rectangle {
     property bool activCylinderFirst: true // Активный баллон 1 (или 2)
 
     readonly property color compactLabelColor: compactOnLightBackground ? "#2c2c2c" : "white"
+    readonly property int displayedArgonRate: isActivation ? realFlowRate : flowRate
+
+    function formatFlowRate(rate) {
+        var value = Math.max(0, rate)
+        return Math.floor(value / 10)
+//        return Math.floor(value / 10) + "." + (value % 10)
+    }
     
     // Эталонная ширина боковой панели; compactLayoutScale сохраняет пропорции баллонов при изменении ширины
     readonly property real compactReferenceWidth: 100
@@ -273,10 +280,7 @@ Rectangle {
                 anchors.top: parent.top
                 anchors.topMargin: showControls ? 0 : -15
                 anchors.horizontalCenter: parent.horizontalCenter
-                // Во время активации показываем реальный расход, иначе установленный
-                property int displayRate: isActivation ? realFlowRate : flowRate
-                text: Math.floor(displayRate / 10)
-//                text: Math.floor(displayRate / 10) + "." + (displayRate % 10)
+                text: argonRoot.formatFlowRate(argonRoot.displayedArgonRate)
                 font.pixelSize: 56
 //                font.pixelSize: step * 3
                 font.bold: true

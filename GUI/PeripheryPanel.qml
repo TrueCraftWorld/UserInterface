@@ -9,6 +9,8 @@ Rectangle {
     signal openArgonDrawer()
     signal openNeutralDrawer()
 
+    property bool argonAvailable: true
+
     color: "#2c2c2c"
 
     NeutralEl {
@@ -30,7 +32,7 @@ Rectangle {
         anchors {
             left: parent.left
             right: parent.right
-            top: argonCard.bottom
+            top: peripheryPanelRoot.argonAvailable ? argonCard.bottom : parent.top
             bottom: neutralView.top
         }
         color: "white"
@@ -41,12 +43,13 @@ Rectangle {
 
     Rectangle {
         id: argonCard
+        visible: peripheryPanelRoot.argonAvailable
         anchors {
             top: parent.top
             left: parent.left
             right: parent.right
         }
-        height: argonView.compactContentHeight
+        height: visible ? argonView.compactContentHeight : 0
         color: "white"
         radius: 10
         border.color: "purple"
@@ -73,6 +76,7 @@ Rectangle {
         MouseArea {
             anchors.fill: parent
             z: 10
+            enabled: peripheryPanelRoot.argonAvailable
             onClicked: peripheryPanelRoot.openArgonDrawer()
         }
     }

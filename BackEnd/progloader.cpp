@@ -938,7 +938,15 @@ std::map<int, QString> ProgLoader::getProgs(int scopeID)
 {
 	//захардкодили, но это нужно знать
 	const std::unique_ptr<ProgLoaderBase> loader{getLoader(m_curLoaderType)};
-	return loader->getPrograms(scopeID);
+	const auto programs = loader->getPrograms(scopeID);
+	m_lastProgSubLists.clear();
+	if (m_curLoaderType == ptRecom) {
+		const auto* recomLoader = dynamic_cast<RecomProgLoader*>(loader.get());
+		if (recomLoader) {
+			m_lastProgSubLists = recomLoader->cachedSubLists();
+		}
+	}
+	return programs;
 }
 
 std::map<int, QString> ProgLoader::getCategories()

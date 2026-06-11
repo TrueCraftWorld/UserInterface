@@ -10,7 +10,9 @@
 #include "socketmodel.h"
 #include "Structures.h"
 
+#include <QList>
 #include <QObject>
+#include <QPair>
 #include <QPointer>
 #include <map>
 // #include "userprogsloadmodel.h"
@@ -71,6 +73,7 @@ public:
 	 * @return
 	 */
 	std::map<int, QString> getProgs(int scopeID);
+	const QList<QList<QPair<int, QString>>>& lastProgSubLists() const { return m_lastProgSubLists; }
 	
 	std::map<int, QString> getCategories();
 	
@@ -129,7 +132,8 @@ private:
 	QSharedPointer<DataBaseReader> m_userDbReaderPtr;
 	QSharedPointer<SocketModel> m_socketModelPtr;
 	QPointer<JsonStorage> m_jsonStorage;
-	progType m_curLoaderType = ptRecom;	
+	progType m_curLoaderType = ptRecom;
+	QList<QList<QPair<int, QString>>> m_lastProgSubLists;
 };
 
 #endif // PROGLOADER_H

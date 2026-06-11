@@ -198,7 +198,38 @@ void ProgHandle::setProgList(const std::map<int, QString>& lst/*, bool isRecom*/
 //		qDebug() << "[ProgFlow] setProgList first entry id:" << it->first << "name:" << it->second;
 	}
 	m_progs = lst;
+}
+
+void ProgHandle::setProgSubLists(const QList<QList<QPair<int, QString>>>& subLists)
+{
+	m_progSubLists = subLists;
+	while (m_progSubLists.size() < static_cast<int>(m_progs.size())) {
+		m_progSubLists.append(QList<QPair<int, QString>>());
+	}
 	emit progNameListChanged();
+}
+
+bool ProgHandle::hasSubPrograms(int index) const
+{
+	return index >= 0
+	        && index < m_progSubLists.size()
+	        && !m_progSubLists.at(index).isEmpty();
+}
+
+QVariantList ProgHandle::subProgramsAt(int index) const
+{
+	QVariantList result;
+	if (index < 0 || index >= m_progSubLists.size()) {
+		return result;
+	}
+
+	for (const auto& subProgram : m_progSubLists.at(index)) {
+		QVariantMap entry;
+		entry.insert(QStringLiteral("id"), subProgram.first);
+		entry.insert(QStringLiteral("name"), subProgram.second);
+		result.append(entry);
+	}
+	return result;
 }
 
 void ProgHandle::setScopeList(const std::map<int, QString> &scopes/*, bool isRecom*/)
@@ -220,6 +251,7 @@ void ProgHandle::setScopeList(const std::map<int, QString> &scopes/*, bool isRec
 	if (m_scopes.empty()) {
 		m_scopeIdx = 0;
 		m_progs.clear();
+		m_progSubLists.clear();
 		emit progNameListChanged();
 		emit scopeIdxChanged();
 		return;

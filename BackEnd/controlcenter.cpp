@@ -122,6 +122,7 @@ void ControlCenter::makeHandleConnections()
 	        this, [this] (int id) {
 //		qDebug() << "[ProgFlow] signalScopeRequest scopeId:" << id;
 		m_handle->setProgList(m_progLoader->getProgs(id));
+		m_handle->setProgSubLists(m_progLoader->lastProgSubLists());
 	});
 
 	connect(m_handle, &ProgHandle::updateScopes,

@@ -21,6 +21,8 @@ Rectangle {
     property int pendingDeleteIndex: -1
     property bool pendingDeleteIsScope: false
     property string pendingDeleteName: ""
+    property int pendingSubProgParentIndex: -1
+    property string pendingSubProgParentName: ""
     property bool endoscopyEnabled: false
 
     readonly property color fotekBlue: "#264093"
@@ -31,6 +33,12 @@ Rectangle {
     readonly property color progSelectedBackground: fotekOrange
     readonly property color progSelectedText: "black"
     readonly property int screenMargin: 20
+    readonly property bool subProgramsPanelVisible: subProgsModel.count > 0
+    readonly property int mainListPreferredWidth: 320
+    readonly property int subListPreferredWidth: 170
+    readonly property color subProgItemBackground: fotekOrange
+    readonly property color subProgUnselectedText: "black"
+    readonly property color subProgSelectedText: "black"
 
     ListModel {
         id: scopeModel
@@ -38,6 +46,10 @@ Rectangle {
 
     ListModel {
         id: progsModel
+    }
+
+    ListModel {
+        id: subProgsModel
     }
 
     function readEndoscopyEnabled() {
@@ -74,11 +86,13 @@ Rectangle {
             progsModel.append({
                                   itemId: itemIdArr[i],
                                   itemName: itemNameArr[i],
-                                  rowIndex: i
+                                  rowIndex: i,
+                                  hasSubPrograms: recommended && recomHandle.hasSubPrograms(i)
                               })
         }
         progList.innerModel = progsModel
         progList.curIndex = -1
+        closeSubProgramsPanel()
     }
 
     function init() {
@@ -127,6 +141,78 @@ Rectangle {
         pendingDeleteIsScope = false
         pendingDeleteName = progsModel.get(index).itemName
         confirmDeleteDialog.open()
+    }
+
+    function scopeNameAtCurrentIndex() {
+        return scopeList.curIndex >= 0 && scopeList.curIndex < scopeModel.count
+                ? scopeModel.get(scopeList.curIndex).itemName
+                : ""
+    }
+
+    function loadSelectedProgram(progId, progName) {
+        if (progId < 0)
+            return false
+        if (!appControl.loadProgram(progId, loadClear))
+            return false
+
+        recProgs.programSelected(scopeNameAtCurrentIndex(), progName)
+        recProgs.clickedButton(-1)
+        return true
+    }
+
+    function subProgramSuffix(parentName, subName) {
+        if (!subName)
+            return ""
+        if (!parentName)
+            return subName
+
+        var prefix = parentName + " "
+        if (subName.indexOf(prefix) === 0)
+            return subName.substring(prefix.length)
+
+        var parentLower = parentName.toLowerCase()
+        var subLower = subName.toLowerCase()
+        if (subLower.indexOf(parentLower) === 0) {
+            var rest = subName.substring(parentName.length).replace(/^\s+/, "")
+            if (rest.length > 0)
+                return rest
+        }
+
+        return subName
+    }
+
+    function closeSubProgramsPanel() {
+        pendingSubProgParentIndex = -1
+        pendingSubProgParentName = ""
+        subProgsModel.clear()
+        subProgList.curIndex = -1
+    }
+
+    function showSubProgramsPanel(index) {
+        if (index < 0 || index >= progsModel.count)
+            return
+
+        var subPrograms = recomHandle.subProgramsAt(index)
+        if (!subPrograms || subPrograms.length === 0) {
+            closeSubProgramsPanel()
+            return
+        }
+
+        if (pendingSubProgParentIndex === index && subProgramsPanelVisible)
+            return
+
+        pendingSubProgParentIndex = index
+        pendingSubProgParentName = progsModel.get(index).itemName
+        subProgsModel.clear()
+        for (var i = 0; i < subPrograms.length; ++i) {
+            subProgsModel.append({
+                                     itemId: subPrograms[i].id,
+                                     itemName: subProgramSuffix(pendingSubProgParentName, subPrograms[i].name),
+                                     rowIndex: i
+                                 })
+        }
+        subProgList.curIndex = -1
+        progList.curIndex = index
     }
 
     Component.onCompleted: {
@@ -188,7 +274,7 @@ Rectangle {
             id: scopeRect
             Layout.fillHeight: true
             Layout.fillWidth: true
-            Layout.preferredWidth: 320
+            Layout.preferredWidth: mainListPreferredWidth
             color: "transparent"
 
             Label {
@@ -291,7 +377,7 @@ Rectangle {
             id: progRect
             Layout.fillHeight: true
             Layout.fillWidth: true
-            Layout.preferredWidth: 320
+            Layout.preferredWidth: mainListPreferredWidth
             color: "transparent"
 
             Label {
@@ -328,6 +414,8 @@ Rectangle {
                 keepSelectedItemAtTop: true
                 noAutoScrollItemId: 1000
                 itemFontPixelSize: 22
+                showExpandIndicator: recProgs.recommended
+                expandIndicatorActiveIndex: pendingSubProgParentIndex
             }
 
             RowLayout {
@@ -380,6 +468,114 @@ Rectangle {
                         verticalAlignment: Text.AlignVCenter
                     }
                     onPressed: progList.scrollDown()
+                }
+            }
+        }
+
+        Rectangle {
+            Layout.fillHeight: true
+            Layout.preferredWidth: 1
+            color: "#C7CEDA"
+            visible: subProgramsPanelVisible
+        }
+
+        Rectangle {
+            id: subProgRect
+            Layout.fillHeight: true
+            Layout.fillWidth: true
+            Layout.preferredWidth: subListPreferredWidth
+            color: "transparent"
+            visible: subProgramsPanelVisible
+
+            Label {
+                text: qsTr("Выберите вариант")
+                anchors.top: parent.top
+                anchors.horizontalCenter: parent.horizontalCenter
+                font.pixelSize: 20
+                font.bold: true
+                color: uiMidGray
+                wrapMode: Text.WordWrap
+                horizontalAlignment: Text.AlignHCenter
+                width: parent.width
+            }
+
+            ItemList {
+                id: subProgList
+                anchors {
+                    top: parent.top
+                    topMargin: 28
+                    left: parent.left
+                    right: parent.right
+                    bottom: subProgButtons.top
+                }
+                innerModel: subProgsModel
+                noImage: true
+                hideNoImageSymbol: true
+                scrollSelectsItem: false
+                selectedBackgroundColor: subProgItemBackground
+                selectedTextColor: subProgSelectedText
+                unselectedTextColor: subProgUnselectedText
+                itemBackgroundColor: subProgItemBackground
+                selectedBorderColor: fotekBlue
+                itemBorderColor: "transparent"
+                selectedBorderWidth: 2
+                itemBorderWidth: 0
+                itemCornerRadius: 8
+                keepSelectedItemAtTop: true
+                noAutoScrollItemId: 1000
+                itemFontPixelSize: 20
+            }
+
+            RowLayout {
+                id: subProgButtons
+                height: 56
+                anchors.left: parent.left
+                anchors.right: parent.right
+                anchors.bottom: parent.bottom
+                spacing: 10
+
+                Button {
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    text: qsTr("▲")
+                    font.pixelSize: 24
+                    background: Rectangle {
+                        radius: 18
+                        color: "white"
+                        border.color: fotekOrange
+                        border.width: 1
+                    }
+                    contentItem: Text {
+                        text: parent.text
+                        color: fotekOrange
+                        font.pixelSize: 24
+                        font.bold: true
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                    }
+                    onPressed: subProgList.scrollUp()
+                }
+
+                Button {
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    text: qsTr("▼")
+                    font.pixelSize: 24
+                    background: Rectangle {
+                        radius: 18
+                        color: "white"
+                        border.color: fotekOrange
+                        border.width: 1
+                    }
+                    contentItem: Text {
+                        text: parent.text
+                        color: fotekOrange
+                        font.pixelSize: 24
+                        font.bold: true
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                    }
+                    onPressed: subProgList.scrollDown()
                 }
             }
         }
@@ -519,30 +715,45 @@ Rectangle {
     }
 
     Connections {
+        target: subProgList
+        function onNewIndexSelected(index) {
+            if (index < 0 || index >= subProgsModel.count)
+                return
+
+            var subProgId = subProgsModel.get(index).itemId
+            var subProgName = subProgsModel.get(index).itemName
+            var fullProgName = recProgs.pendingSubProgParentName
+            if (fullProgName.length > 0 && subProgName.length > 0)
+                fullProgName += " — " + subProgName
+
+            recProgs.loadSelectedProgram(subProgId, fullProgName)
+        }
+    }
+
+    Connections {
         target: progList
         function onNewIndexSelected(index) {
             if (scopeList.curIndex >= 0 && scopeList.curIndex < scopeModel.count
                     && scopeModel.get(scopeList.curIndex).locked) {
                 return
             }
+            if (recProgs.recommended && recomHandle.hasSubPrograms(index)) {
+                recProgs.showSubProgramsPanel(index)
+                return
+            }
+
+            recProgs.closeSubProgramsPanel()
+
             var pid = (index >= 0 && index < recomHandle.progIdList.length)
                     ? recomHandle.progIdList[index] : -1
             if (pid < 0)
                 return
-            if (!appControl.loadProgram(pid, loadClear))
-                return
-
-            var scopeName = ""
-            scopeName = scopeList.curIndex >= 0 && scopeList.curIndex < scopeModel.count
-                    ? scopeModel.get(scopeList.curIndex).itemName
-                    : ""
 
             var progName = index >= 0 && index < progsModel.count
                     ? progsModel.get(index).itemName
                     : ""
 
-            recProgs.programSelected(scopeName, progName)
-            recProgs.clickedButton(-1)
+            recProgs.loadSelectedProgram(pid, progName)
         }
         function onDeleteItem(index) {
             recProgs.requestDeleteProg(index)

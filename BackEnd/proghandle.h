@@ -1,7 +1,9 @@
 #ifndef PROGHANDLE_H
 #define PROGHANDLE_H
 
+#include <QList>
 #include <QObject>
+#include <QPair>
 #include <QVariant>
 #include <QVariantMap>
 
@@ -39,6 +41,8 @@ public:
 
 	Q_INVOKABLE void deleteScopeRequest(int index);
 	Q_INVOKABLE void renameScopeRequest(int index, const QString& name);
+	Q_INVOKABLE bool hasSubPrograms(int index) const;
+	Q_INVOKABLE QVariantList subProgramsAt(int index) const;
 
 	///TODO: убрать видео из класса работы с программами
 	Q_INVOKABLE QString readTextFile(const QString& filePath);
@@ -53,6 +57,7 @@ public:
 	void setScopeIdx(int newScopeIdx);
 	
 	void setProgList(const std::map<int, QString>& lst/*, bool isRecom = true*/);
+	void setProgSubLists(const QList<QList<QPair<int, QString>>>& subLists);
 	void setScopeList(const std::map<int, QString>& scopes/*, bool isRecom = true*/);
 	
 	bool isRecomProgs() const;
@@ -106,6 +111,7 @@ private:
 	int m_scopeIdx = 0;
 	std::map<int, QString> m_scopes;
 	std::map<int, QString> m_progs;
+	QList<QList<QPair<int, QString>>> m_progSubLists;
 	bool m_isRecomProgs;
 };
 

@@ -29,6 +29,8 @@ Rectangle {
 	property int itemCornerRadius: 8
 	property int listItemHeight: 100
 	property int listItemSpacing: 10
+	property bool showExpandIndicator: false
+	property int expandIndicatorActiveIndex: -1
 
 	signal newIndexSelected(int newIndex)
 	signal deleteItem(int index)
@@ -259,11 +261,27 @@ Rectangle {
 						rightMargin: (showEditPanel || locked) ? 10 : 0
 					}
 					Label {
+						id: itemNameLabel
 						anchors.fill: parent
+						anchors.rightMargin: expandIcon.visible ? expandIcon.implicitWidth + 8 : 0
 						text: model.itemName
 						horizontalAlignment: Qt.AlignHCenter
 						verticalAlignment: Qt.AlignVCenter
 						wrapMode: Text.WordWrap
+						font.bold: true
+						font.pixelSize: itemList.itemFontPixelSize
+						color: isSelected ? selectedTextColor : unselectedTextColor
+					}
+
+					Text {
+						id: expandIcon
+						anchors {
+							right: parent.right
+							verticalCenter: parent.verticalCenter
+							rightMargin: 6
+						}
+						visible: itemList.showExpandIndicator && model.hasSubPrograms
+						text: itemList.expandIndicatorActiveIndex === model.rowIndex ? "\u25BE" : "\u25B8"
 						font.bold: true
 						font.pixelSize: itemList.itemFontPixelSize
 						color: isSelected ? selectedTextColor : unselectedTextColor

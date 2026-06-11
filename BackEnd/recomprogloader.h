@@ -2,7 +2,9 @@
 #define RECOMPROGLOADER_H
 
 #include "progloaderbase.h"
+#include <QList>
 #include <QObject>
+#include <QPair>
 
 class RecomProgLoader : public ProgLoaderBase
 {
@@ -16,7 +18,10 @@ public:
 	virtual std::map<int, QString> getPrograms(int scopeID) override;
 	virtual std::map<int, QString> getCategories() override;
 	virtual int type() override {return 0;};
-	// virtual void deleteProg(int /*id*/) override { ;};
+	const QList<QList<QPair<int, QString>>>& cachedSubLists() const { return m_cachedSubLists; }
+
+private:
+	QList<QList<QPair<int, QString>>> m_cachedSubLists;
 };
 
 #endif // RECOMPROGLOADER_H

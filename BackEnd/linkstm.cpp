@@ -110,7 +110,7 @@ void LinkStm::unpackRxCommand(const QByteArray &rxPacket)
 
     m_rxCommand.data.clear();
 
-    qDebug() << "Rx: " << getHexStr(rxPacket) << "ms: " << m_uart->transmitDelay();  // DEBUG
+//    qDebug() << "Rx: " << getHexStr(rxPacket) << "ms: " << m_uart->transmitDelay();  // DEBUG
     if (m_debugUart)
         emit sigDebugOverlayLine(QStringLiteral("Rx: %1").arg(getHexStr(rxPacket)));
 //    emit sigReportRx(getHexStr(rxPacket), m_uart->transmitDelay());
@@ -157,7 +157,7 @@ void LinkStm::unpackRxCommand(const QByteArray &rxPacket)
         errStr.append(QString::number(destuffedBuffer.at(0)));
         errStr.append(" rxCom ");
         errStr.append(QString::number(m_rxCommand.data.size()));
-        qDebug() << errStr;
+//        qDebug() << errStr;                     // DEBUG
         m_state = STATE_RX_LEN_ERR;
         return;
     }
@@ -193,7 +193,7 @@ void LinkStm::unpackRxCommand(const QByteArray &rxPacket)
             if (!m_fwRxErrStreakTimer.isValid()) {
                 m_fwRxErrStreakTimer.start();
             } else if (m_fwRxErrStreakTimer.elapsed() >= 4000) {
-                abortFirmwareUpdate(QStringLiteral("Не удалось обновить модуль"));
+                abortFirmwareUpdate(tr("Не удалось обновить модуль"));
             }
         }
     }
@@ -853,7 +853,7 @@ void LinkStm::startFirmwareUpdateFromFile(const QString &filePath, const QString
 {
     QFileInfo fi(filePath);
     if (!fi.exists() || !fi.isFile()) {
-        emit firmwareUpdateParseError(QStringLiteral("Файл прошивки не найден"));
+        emit firmwareUpdateParseError(tr("Файл прошивки не найден"));
         return;
     }
 
@@ -869,7 +869,7 @@ void LinkStm::startFirmwareUpdateFromFile(const QString &filePath, const QString
         return;
     }
     if (hexList.isEmpty()) {
-        emit firmwareUpdateParseError(QStringLiteral("Пустой или некорректный hex"));
+        emit firmwareUpdateParseError(tr("Пустой или некорректный hex"));
         return;
     }
 

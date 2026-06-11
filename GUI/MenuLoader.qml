@@ -66,6 +66,7 @@ Item {
                 || base === "TouchScreenTest.qml"
                 || base === "AboutScreen.qml"
                 || base === "SpecialCommands.qml"
+                || base === "SecretKeysWindow.qml"
                 || base === "logUpdate.qml"
     }
 
@@ -116,6 +117,9 @@ Item {
                     }
                     if (menuLoader.item.clickedButton) {
                         menuLoader.item.clickedButton.disconnect()
+                    }
+                    if (menuLoader.item.secretKeysButtonPressed) {
+                        menuLoader.item.secretKeysButtonPressed.disconnect()
                     }
                     if (menuLoader.item.userButtonPressed) {
                         menuLoader.item.userButtonPressed.disconnect()
@@ -194,7 +198,11 @@ Item {
                     if (menuLoader.item.languageButtonPressed) {
                         menuLoader.item.languageButtonPressed.connect(function() {
                             if (typeof container !== "undefined" && container.language !== undefined) {
-                                container.language = container.language === "en" ? "ru" : "en"
+                                if (typeof translationController !== "undefined" && translationController) {
+                                    container.language = translationController.nextLanguage(container.language)
+                                } else {
+                                    container.language = container.language === "en" ? "ru" : "en"
+                                }
                             }
                         })
                     }

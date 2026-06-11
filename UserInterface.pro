@@ -23,6 +23,10 @@ SOURCES += \
 
 RESOURCES += qml.qrc
 
+TRANSLATIONS += \
+    translations/UserInterface_en.ts \
+    translations/UserInterface_es.ts
+
 # Additional import path used to resolve QML modules in Qt Creator's code model
 # QML_IMPORT_PATH =
 

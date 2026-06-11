@@ -41,6 +41,48 @@ Item {
         return String(savedJson.readString("deviceType", "ONYX-AM")).trim().toUpperCase() === "ONYX-AM"
     }
 
+    function serialNumberValue() {
+        if (typeof savedJson === "undefined" || !savedJson) {
+            return -1
+        }
+        var serialText = String(savedJson.readString("serialNumber", "")).trim()
+        if (!/^\d+$/.test(serialText)) {
+            return -1
+        }
+        return parseInt(serialText, 10)
+    }
+
+    function deviceTypeValue() {
+        if (typeof savedJson === "undefined" || !savedJson) {
+            return "ONYX-AM"
+        }
+        return String(savedJson.readString("deviceType", "ONYX-AM")).trim().toUpperCase()
+    }
+
+    function isUnlockKeyValid(featureCode, value) {
+        var serial = serialNumberValue()
+        if (serial < 260000 || serial > 1000000) {
+            return false
+        }
+        if (typeof keyGenerator === "undefined" || !keyGenerator) {
+            return false
+        }
+        return keyGenerator.validateUnlockKey(serial, deviceTypeValue(), featureCode, unlockKeyDigits(value))
+    }
+
+    function unlockKeyDigits(value) {
+        return String(value === undefined || value === null ? "" : value).replace(/\D/g, "").substring(0, 12)
+    }
+
+    function formattedUnlockKey(value) {
+        var digits = unlockKeyDigits(value)
+        var groups = []
+        for (var i = 0; i < digits.length; i += 3) {
+            groups.push(digits.substring(i, i + 3))
+        }
+        return groups.join("-")
+    }
+
     function saveEndoscopyEnabled(enabled) {
         endoscopyEnabled = enabled
         if (typeof savedJson !== "undefined" && savedJson) {
@@ -147,7 +189,7 @@ Item {
             style: "btn-primary lg"
             Layout.preferredWidth: settingsMenuRoot.menuButtonWidth
             Layout.preferredHeight: settingsMenuRoot.menuButtonHeight
-            text: qsTr("RU / EN")
+            text: qsTr("RU / EN / ES")
             onPressed: settingsMenuRoot.languageButtonPressed()
         }
 
@@ -344,7 +386,7 @@ Item {
 
                 Label {
                     Layout.fillWidth: true
-                    text: qsTr("Для разблокировки эндоскопических функций введите пароль")
+                    text: qsTr("Для разблокировки эндоскопических функций введите ключ")
                     wrapMode: Text.WordWrap
                     horizontalAlignment: Text.AlignHCenter
                     font.pixelSize: 28
@@ -355,8 +397,10 @@ Item {
                     id: endoscopyPasswordInput
                     Layout.fillWidth: true
                     Layout.preferredHeight: 64
-                    placeholderText: qsTr("Пароль")
-                    echoMode: TextInput.Password
+                    placeholderText: qsTr("123-456-789-012")
+                    echoMode: TextInput.Normal
+                    maximumLength: 15
+                    inputMethodHints: Qt.ImhDigitsOnly
                     selectByMouse: true
                     font.pixelSize: 24
                     color: "black"
@@ -365,6 +409,13 @@ Item {
                         border.color: endoscopyPasswordInput.activeFocus ? "#4a9eff" : "#7a7a7a"
                         border.width: 2
                         radius: 6
+                    }
+                    onTextChanged: {
+                        var formatted = settingsMenuRoot.formattedUnlockKey(text)
+                        if (text !== formatted) {
+                            text = formatted
+                            cursorPosition = text.length
+                        }
                     }
                     onAccepted: endoscopyPasswordDialog.trySubmit()
                 }
@@ -384,7 +435,11 @@ Item {
         }
 
         function trySubmit() {
-            if (settingsMenuRoot.isServiceMenuPasswordValid(endoscopyPasswordInput.text)) {
+            if (settingsMenuRoot.serialNumberValue() < 260000) {
+                endoscopyPasswordDialog.passwordError = qsTr("Сначала сохраните серийный номер аппарата")
+                return
+            }
+            if (settingsMenuRoot.isUnlockKeyValid("ENDO", endoscopyPasswordInput.text)) {
                 endoscopyPasswordInput.text = ""
                 endoscopyPasswordDialog.passwordError = ""
                 settingsMenuRoot.saveEndoscopyEnabled(true)
@@ -457,7 +512,7 @@ Item {
 
                 Label {
                     Layout.fillWidth: true
-                    text: qsTr("Для разблокировки аргонусиленной коагуляции введите пароль")
+                    text: qsTr("Для разблокировки аргонусиленной коагуляции введите ключ")
                     wrapMode: Text.WordWrap
                     horizontalAlignment: Text.AlignHCenter
                     font.pixelSize: 28
@@ -468,8 +523,10 @@ Item {
                     id: argonPasswordInput
                     Layout.fillWidth: true
                     Layout.preferredHeight: 64
-                    placeholderText: qsTr("Пароль")
-                    echoMode: TextInput.Password
+                    placeholderText: qsTr("123-456-789-012")
+                    echoMode: TextInput.Normal
+                    maximumLength: 15
+                    inputMethodHints: Qt.ImhDigitsOnly
                     selectByMouse: true
                     font.pixelSize: 24
                     color: "black"
@@ -478,6 +535,13 @@ Item {
                         border.color: argonPasswordInput.activeFocus ? "#4a9eff" : "#7a7a7a"
                         border.width: 2
                         radius: 6
+                    }
+                    onTextChanged: {
+                        var formatted = settingsMenuRoot.formattedUnlockKey(text)
+                        if (text !== formatted) {
+                            text = formatted
+                            cursorPosition = text.length
+                        }
                     }
                     onAccepted: argonPasswordDialog.trySubmit()
                 }
@@ -497,7 +561,11 @@ Item {
         }
 
         function trySubmit() {
-            if (settingsMenuRoot.isServiceMenuPasswordValid(argonPasswordInput.text)) {
+            if (settingsMenuRoot.serialNumberValue() < 260000) {
+                argonPasswordDialog.passwordError = qsTr("Сначала сохраните серийный номер аппарата")
+                return
+            }
+            if (settingsMenuRoot.isUnlockKeyValid("ARGON", argonPasswordInput.text)) {
                 argonPasswordInput.text = ""
                 argonPasswordDialog.passwordError = ""
                 settingsMenuRoot.saveArgonModesEnabled(true)

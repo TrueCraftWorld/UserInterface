@@ -31,7 +31,7 @@ Dialog {
         SPanel {
             id: scopePanel
             style: "panel-primary";
-            heading: "Выберите папку или создайте новую";
+            heading: qsTr("Выберите папку или создайте новую");
             width: 0.9 * parent.width
             anchors.top : contRect.top
             anchors.topMargin: 10
@@ -51,7 +51,7 @@ Dialog {
                 SInput {
                     id: newScopeNameInput
                     Layout.fillWidth: true
-                    placeholder: "Категория"
+                    placeholder: qsTr("Категория")
                     visible: contRect.isNewScope
                 }
 
@@ -68,7 +68,7 @@ Dialog {
 
         SPanel {
             id: inputPanel
-            heading: "Укажите название программы";
+            heading: qsTr("Укажите название программы");
             width: 0.9 * parent.width
             anchors.top : scopePanel.bottom
             anchors.topMargin: 10
@@ -76,7 +76,7 @@ Dialog {
 
             SInput {
                 id: progNameInput
-                placeholder: "Название";
+                placeholder: qsTr("Название");
                 anchors.horizontalCenter: parent.horizontalCenter
                 width: parent.width * .9
             }

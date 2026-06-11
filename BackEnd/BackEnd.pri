@@ -7,6 +7,8 @@ CONFIG += c++17
 LIBS += -lm
 
 HEADERS += \
+    $$PWD/dblocale.h \
+    $$PWD/translationcontroller.h \
     $$PWD/datetimecontroller.h \
     $$PWD/DeviceLogManager.h \
     $$PWD/UpdateLogManager.h \
@@ -40,6 +42,8 @@ HEADERS += \
     $$PWD/systemmonitor.h 
 
 SOURCES += \
+    $$PWD/dblocale.cpp \
+    $$PWD/translationcontroller.cpp \
     $$PWD/datetimecontroller.cpp \
     $$PWD/DeviceLogManager.cpp \
     $$PWD/UpdateLogManager.cpp \

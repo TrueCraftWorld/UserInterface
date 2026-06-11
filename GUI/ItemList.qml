@@ -385,8 +385,8 @@ Rectangle {
 		height: 320
 		parent: Overlay.overlay
 		modal: true
-		x: (parent.width - width) / 2
-		y: Math.max(20, Math.round(parent.height * 0.14))
+		x: parent ? (parent.width - width) / 2 : 0
+		y: parent ? Math.max(20, Math.round(parent.height * 0.14)) : 20
 		title: qsTr("Редактирование названия")
 		Overlay.modal: Rectangle {
 			color: "#70000000"

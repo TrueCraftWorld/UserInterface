@@ -8,7 +8,7 @@ StmUpdater::StmUpdater(QObject *parent,
     // Открываем файл с прошивкой
     hexFile.setFileName(fileInfo->absoluteFilePath());
     if (!hexFile.open(QIODevice::ReadOnly |QIODevice::Text))
-        emit updateError("Ошибка открытия hex-файла");
+        emit updateError(tr("Ошибка открытия hex-файла"));
     // Считываем все строки файла в список
     while(!hexFile.atEnd())
         m_hexStrList << hexFile.readLine();
@@ -50,10 +50,10 @@ QList<LinkStm::HexString> StmUpdater::getHexList()
     QList<LinkStm::HexString> hexList;
     static uint16_t addrHighByte = 0;
     bool endOfHex = false;
-    const QString errStr[] = {"Ошибка чтения hex-файла",
-                       "Ошибка контрольной суммы hex-строки",
-                       "Ошибка символов в hex-файле",
-                       "Ошибка чтения hex-файла"};
+    const QString errStr[] = {tr("Ошибка чтения hex-файла"),
+                       tr("Ошибка контрольной суммы hex-строки"),
+                       tr("Ошибка символов в hex-файле"),
+                       tr("Ошибка чтения hex-файла")};
     for (const auto& hexStr : m_hexStrList) {
         QByteArray hexData;
         uint16_t addrOffset = 0;
@@ -81,7 +81,7 @@ QList<LinkStm::HexString> StmUpdater::getHexList()
         }
     }
     if (!endOfHex) {
-        emit updateError("Ошибка завершения hex-файла");
+        emit updateError(tr("Ошибка завершения hex-файла"));
     }
     qDebug() << "hexList is ready, strings: " << hexList.length();
     return hexList;

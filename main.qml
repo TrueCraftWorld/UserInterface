@@ -3,6 +3,7 @@ import QtQuick.Layouts 1.15
 import QtQuick.Window 2.15
 import QtQuick.Controls 2.15
 import QtQuick.CuteKeyboard 1.0
+import CuteKeyboard 1.0
 import StratifyLabs.UI 2.0
 import BackEnd 1.0
 
@@ -177,12 +178,34 @@ Window {
     }
 
     function normalizedLanguage(value) {
+        if (typeof translationController !== "undefined" && translationController) {
+            return translationController.normalizedLanguage(value)
+        }
+
         var lang = String(value === undefined || value === null ? "" : value).trim().toLowerCase()
-        return lang === "en" ? "en" : "ru"
+        return lang === "en" || lang === "es" ? lang : "ru"
+    }
+
+    function keyboardPrimaryLayout() {
+        var lang = normalizedLanguage(container.language)
+        if (lang === "en")
+            return "En"
+        if (lang === "es")
+            return "Es"
+        return "Ru"
     }
 
     function keyboardLayoutForLanguage() {
-        return container.language === "en" ? "En" : "Ru"
+        return keyboardPrimaryLayout()
+    }
+
+    function availableKeyboardLayouts() {
+        var lang = normalizedLanguage(container.language)
+        if (lang === "en")
+            return ["En"]
+        if (lang === "es")
+            return ["Es", "En"]
+        return ["Ru", "En"]
     }
 
     function persistLanguage() {
@@ -327,8 +350,18 @@ Window {
             return
         }
         persistLanguage()
+        if (typeof translationController !== "undefined" && translationController) {
+            if (!translationController.setLanguage(normalized)) {
+                container.language = "ru"
+                return
+            }
+            // Имена режимов/инструментов читаются из БД при загрузке программы,
+            // поэтому пересобираем модель сокетов из сохранённого состояния
+            recomHandle.saveCurrentState()
+            recomHandle.loadLastSettings()
+        }
         if (keyboardLoader.item)
-            keyboardLoader.item.languageLayout = keyboardLayoutForLanguage()
+            keyboardLoader.item.syncKeyboardLocales()
     }
 
    StatusBar {
@@ -1436,18 +1469,48 @@ Window {
       InputPanel {
          id: inputPanel
          y: container.height
-         languageLayout: container.keyboardLayoutForLanguage()
-         availableLanguageLayouts: ["Ru", "En"]
+         languageLayout: container.keyboardPrimaryLayout()
+         availableLanguageLayouts: container.availableKeyboardLayouts()
+         btnTextFontFamily: STheme.font_family_base.name || "DejaVu Sans"
          anchors.left: parent.left
          anchors.right: parent.right
+
+         function keyboardFontFamily() {
+            var fontName = STheme.font_family_base.name
+            return fontName ? fontName : "DejaVu Sans"
+         }
+
+         function applyKeyboardFont() {
+            var fontName = keyboardFontFamily()
+            btnTextFontFamily = fontName
+            InputPanel.btnTextFontFamily = fontName
+         }
+
+         function applyKeyboardUppercase() {
+            InputEngine.uppercase = true
+            Qt.callLater(function() { InputEngine.uppercase = true })
+         }
+
+         function syncKeyboardLocales() {
+            var layouts = container.availableKeyboardLayouts()
+            var primary = container.keyboardPrimaryLayout()
+            availableLanguageLayouts = layouts
+            InputPanel.availableLanguageLayouts = layouts
+            languageLayout = primary
+            InputPanel.languageLayout = primary
+            applyKeyboardFont()
+            applyKeyboardUppercase()
+         }
 
          function tuneKeyboardTree(node) {
             if (!node)
                return
             if (node.autoRepeat !== undefined)
-               node.autoRepeat = false
-            if (node.alternativeKeys !== undefined)
-               node.alternativeKeys = []
+               node.autoRepeat = node.btnKey !== undefined && node.btnKey === Qt.Key_Backspace
+            if (node.inputPanelRef !== undefined && !node.inputPanelRef)
+               node.inputPanelRef = inputPanel
+            if (node.item)
+               tuneKeyboardTree(node.item)
             if (!node.children)
                return
             for (var i = 0; i < node.children.length; ++i)
@@ -1455,13 +1518,16 @@ Window {
          }
 
          function applyTouchTuning() {
+            applyKeyboardFont()
+            applyKeyboardUppercase()
             tuneKeyboardTree(inputPanel)
          }
 
          onActiveChanged: {
             if (active) {
-               inputPanel.languageLayout = container.keyboardLayoutForLanguage()
+               syncKeyboardLocales()
                keyboardTuningTimer.restart()
+               keyboardUppercaseTimer.restart()
             }
          }
 
@@ -1475,6 +1541,13 @@ Window {
                inputPanel.applyTouchTuning()
                Qt.callLater(inputPanel.applyTouchTuning)
             }
+         }
+
+         Timer {
+            id: keyboardUppercaseTimer
+            interval: 120
+            repeat: false
+            onTriggered: inputPanel.applyKeyboardUppercase()
          }
 
          states: State {

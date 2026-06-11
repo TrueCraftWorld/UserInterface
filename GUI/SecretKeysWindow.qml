@@ -2,13 +2,48 @@ import QtQuick 2.15
 import QtQuick.Layouts 1.15
 import QtQuick.Controls 2.15
 import QtQuick.CuteKeyboard 1.0
+import CuteKeyboard 1.0
 
 import StratifyLabs.UI 2.0
 
 Item {
     id: secretKeysRoot
     signal returnButtonPressed()
-    
+
+    readonly property var deviceTypeOptions: ["ONYX-M", "ONYX-AM"]
+    readonly property var featureOptions: [
+        qsTr("Эндоскопические функции"),
+        qsTr("Аргонусиленная коагуляция")
+    ]
+
+    function featureCode(index) {
+        return index === 1 ? "ARGON" : "ENDO"
+    }
+
+    function uiLanguage() {
+        if (typeof container !== "undefined" && container.language !== undefined)
+            return container.normalizedLanguage(container.language)
+        return "ru"
+    }
+
+    function keyboardPrimaryLayout() {
+        var lang = uiLanguage()
+        if (lang === "en")
+            return "En"
+        if (lang === "es")
+            return "Es"
+        return "Ru"
+    }
+
+    function availableKeyboardLayouts() {
+        var lang = uiLanguage()
+        if (lang === "en")
+            return ["En"]
+        if (lang === "es")
+            return ["Es", "En"]
+        return ["Ru", "En"]
+    }
+
     Rectangle {
         id: background
         anchors.fill: parent
@@ -43,7 +78,7 @@ Item {
         id: contentArea
         anchors {
             top: screenTitle.bottom
-            topMargin: 25
+            topMargin: 5
             left: parent.left
             right: parent.right
             bottom: returnButton.top
@@ -55,10 +90,10 @@ Item {
             anchors {
                 horizontalCenter: parent.horizontalCenter
                 top: parent.top
-                topMargin: 20
+                topMargin: 5
             }
-            spacing: 30
-            width: 600
+            spacing: 15
+            width: 1000
             
             // Секция генерации ключа
             Rectangle {
@@ -91,17 +126,17 @@ Item {
                         
                         SLabel {
                             style: "label-secondary sm"
-                            text: qsTr("Серийный номер (0-999999):")
+                            text: qsTr("Серийный номер:")
                             anchors.verticalCenter: parent.verticalCenter
                         }
                         
                         TextField {
                             id: serialNumberInput
-                            width: 150
+                            width: 170
                             height: 40
                             font.pixelSize: 16
-                            placeholderText: "123456"
-                            validator: IntValidator { bottom: 0; top: 999999 }
+                            placeholderText: "260000"
+                            validator: IntValidator { bottom: 260000; top: 1000000 }
                             inputMethodHints: Qt.ImhDigitsOnly
                             color: "white"
                             background: Rectangle {
@@ -112,6 +147,38 @@ Item {
                             }
                         }
                     }
+
+                    Row {
+                        spacing: 15
+                        anchors.horizontalCenter: parent.horizontalCenter
+
+                        SLabel {
+                            style: "label-secondary sm"
+                            text: qsTr("Тип аппарата:")
+                            anchors.verticalCenter: parent.verticalCenter
+                        }
+
+                        ComboBox {
+                            id: generationDeviceType
+                            width: 170
+                            height: 40
+                            model: secretKeysRoot.deviceTypeOptions
+                            currentIndex: 1
+                        }
+
+                        SLabel {
+                            style: "label-secondary sm"
+                            text: qsTr("Функция:")
+                            anchors.verticalCenter: parent.verticalCenter
+                        }
+
+                        ComboBox {
+                            id: generationFeature
+                            width: 400
+                            height: 40
+                            model: secretKeysRoot.featureOptions
+                        }
+                    }
                     
                     SButton {
                         style: "btn-primary"
@@ -120,7 +187,9 @@ Item {
                         onClicked: {
                             if (serialNumberInput.text !== "") {
                                 var serial = parseInt(serialNumberInput.text)
-                                var key = keyGenerator.generateKey(serial)
+                                var key = keyGenerator.generateUnlockKey(serial,
+                                                                         generationDeviceType.currentText,
+                                                                         secretKeysRoot.featureCode(generationFeature.currentIndex))
                                 generatedKeyDisplay.text = key
                                 generationResult.text = qsTr("✓ Ключ сгенерирован успешно!")
                                 generationResult.color = "#4ade80"
@@ -143,7 +212,7 @@ Item {
                         
                         TextField {
                             id: generatedKeyDisplay
-                            width: 200
+                            width: 240
                             height: 40
                             font.pixelSize: 18
                             font.bold: true
@@ -207,8 +276,8 @@ Item {
                             width: 150
                             height: 40
                             font.pixelSize: 16
-                            placeholderText: "123456"
-                            validator: IntValidator { bottom: 0; top: 999999 }
+                            placeholderText: "260000"
+                            validator: IntValidator { bottom: 260000; top: 1000000 }
                             inputMethodHints: Qt.ImhDigitsOnly
                             color: "white"
                             background: Rectangle {
@@ -217,6 +286,38 @@ Item {
                                 border.width: 2
                                 radius: 5
                             }
+                        }
+                    }
+
+                    Row {
+                        spacing: 15
+                        anchors.horizontalCenter: parent.horizontalCenter
+
+                        SLabel {
+                            style: "label-secondary sm"
+                            text: qsTr("Тип аппарата:")
+                            anchors.verticalCenter: parent.verticalCenter
+                        }
+
+                        ComboBox {
+                            id: validationDeviceType
+                            width: 170
+                            height: 40
+                            model: secretKeysRoot.deviceTypeOptions
+                            currentIndex: 1
+                        }
+
+                        SLabel {
+                            style: "label-secondary sm"
+                            text: qsTr("Функция:")
+                            anchors.verticalCenter: parent.verticalCenter
+                        }
+
+                        ComboBox {
+                            id: validationFeature
+                            width: 400
+                            height: 40
+                            model: secretKeysRoot.featureOptions
                         }
                     }
                     
@@ -232,11 +333,11 @@ Item {
                         
                         TextField {
                             id: keyToValidate
-                            width: 200
+                            width: 240
                             height: 40
                             font.pixelSize: 16
-                            placeholderText: "1234567890"
-                            maximumLength: 10
+                            placeholderText: "123456789012"
+                            maximumLength: 12
                             inputMethodHints: Qt.ImhDigitsOnly
                             color: "white"
                             background: Rectangle {
@@ -255,7 +356,10 @@ Item {
                         onClicked: {
                             if (checkSerialInput.text !== "" && keyToValidate.text !== "") {
                                 var serial = parseInt(checkSerialInput.text)
-                                var isValid = keyGenerator.validateKey(serial, keyToValidate.text)
+                                var isValid = keyGenerator.validateUnlockKey(serial,
+                                                                            validationDeviceType.currentText,
+                                                                            secretKeysRoot.featureCode(validationFeature.currentIndex),
+                                                                            keyToValidate.text)
                                 
                                 if (isValid) {
                                     validationResult.text = qsTr("✓ КЛЮЧ ВЕРНЫЙ! Проверка пройдена успешно")
@@ -315,7 +419,7 @@ Item {
                     
                     SLabel {
                         style: "label-secondary sm"
-                        text: qsTr("• Каждый серийный номер имеет уникальный 10-значный ключ")
+                        text: qsTr("• Для каждого типа аппарата и функции формируется отдельный 12-значный ключ")
                         wrapMode: Text.WordWrap
                         width: parent.width
                     }
@@ -339,11 +443,12 @@ Item {
             if (!node)
                 return
             if (node.autoRepeat !== undefined) {
-                node.autoRepeat = false
+                node.autoRepeat = node.btnKey !== undefined && node.btnKey === Qt.Key_Backspace
             }
-            if (node.alternativeKeys !== undefined) {
-                node.alternativeKeys = []
-            }
+            if (node.inputPanelRef !== undefined && !node.inputPanelRef)
+                node.inputPanelRef = inputPanel
+            if (node.item)
+                tuneKeyboardTree(node.item)
             if (!node.children)
                 return
             for (var i = 0; i < node.children.length; ++i) {
@@ -351,19 +456,52 @@ Item {
             }
         }
 
+        function keyboardFontFamily() {
+            var fontName = STheme.font_family_base.name
+            return fontName ? fontName : "DejaVu Sans"
+        }
+
+        function applyKeyboardFont() {
+            var fontName = keyboardFontFamily()
+            btnTextFontFamily = fontName
+            InputPanel.btnTextFontFamily = fontName
+        }
+
+        function applyKeyboardUppercase() {
+            InputEngine.uppercase = true
+            Qt.callLater(function() { InputEngine.uppercase = true })
+        }
+
         function applyTouchTuning() {
+            applyKeyboardFont()
+            applyKeyboardUppercase()
             tuneKeyboardTree(inputPanel)
         }
-        
+
+        function syncKeyboardLocales() {
+            var layouts = secretKeysRoot.availableKeyboardLayouts()
+            var primary = secretKeysRoot.keyboardPrimaryLayout()
+            availableLanguageLayouts = layouts
+            InputPanel.availableLanguageLayouts = layouts
+            languageLayout = primary
+            InputPanel.languageLayout = primary
+            applyKeyboardFont()
+            applyKeyboardUppercase()
+        }
+
         z: 999
         y: secretKeysRoot.height
-        availableLanguageLayouts: ["Ru","En"]
+        languageLayout: secretKeysRoot.keyboardPrimaryLayout()
+        availableLanguageLayouts: secretKeysRoot.availableKeyboardLayouts()
+        btnTextFontFamily: STheme.font_family_base.name || "DejaVu Sans"
         anchors.left: parent.left
         anchors.right: parent.right
 
         onActiveChanged: {
             if (active) {
+                syncKeyboardLocales()
                 keyboardTuningTimer.restart()
+                keyboardUppercaseTimer.restart()
             }
         }
 
@@ -377,6 +515,13 @@ Item {
                 inputPanel.applyTouchTuning()
                 Qt.callLater(inputPanel.applyTouchTuning)
             }
+        }
+
+        Timer {
+            id: keyboardUppercaseTimer
+            interval: 120
+            repeat: false
+            onTriggered: inputPanel.applyKeyboardUppercase()
         }
 
         states: State {

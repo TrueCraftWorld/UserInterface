@@ -1,4 +1,5 @@
 #include "progloader.h"
+#include "BackEnd/dblocale.h"
 #include "BackEnd/recomprogloader.h"
 #include "BackEnd/userprogloader.h"
 #include "BackEnd/jsonstorage.h"
@@ -11,6 +12,7 @@
 #include <set>
 #include <vector>
 #include <functional>
+#include <QCoreApplication>
 #include <QDebug>
 #include <QSqlDatabase>
 #include <QSqlQuery>
@@ -133,22 +135,24 @@ int listsPedalColumnToSocketIndex(int v)
 }
 
 QString makeSocketName(Onyx::SocType type) {
+	// Перевод применяется при (пере)загрузке программы: при смене языка
+	// модель сокетов пересобирается, поэтому имена обновляются
 	QString socketName = "";
 	switch (type) {
 	case Onyx::EMPTY:
 		socketName = QString("EMPTY");
 		break;
 	case Onyx::BIPOLAR_1:
-        socketName = QString("БИ1");
+		socketName = QCoreApplication::translate("SocketNames", "БИ1");
 		break;
 	case Onyx::BIPOLAR_2:
-        socketName = QString("БИ2");
-        break;
-    case Onyx::MONOPOLAR_1:
-        socketName = QString("МОНО1");
+		socketName = QCoreApplication::translate("SocketNames", "БИ2");
+		break;
+	case Onyx::MONOPOLAR_1:
+		socketName = QCoreApplication::translate("SocketNames", "МОНО1");
 		break;
 	case Onyx::MONOPOLAR_2:
-        socketName = QString("МОНО2");
+		socketName = QCoreApplication::translate("SocketNames", "МОНО2");
 		break;
 	}
 	return socketName;
@@ -164,7 +168,7 @@ void makeModes(QMap<int, SurgModePtr>& container,
                bool skipInstrFilter = false) {
 	int start = isCoag ? 6 : 3;
 
-	container.insert(1000, SurgModePtr::create(ESHF::modesNames.last(),
+	container.insert(1000, SurgModePtr::create(QCoreApplication::translate("Modes", "НЕ ВЫБРАН"),
                                                                    isCoag,
 	                                           1,
 	                                           1,
@@ -499,7 +503,7 @@ void ProgLoader::defaultSocketInit(bool clear)
 
 	//Шаг 6--------------------------------------------------------
 	QList<QVariantList> modeNamesListV = m_dbReaderPtr->slotSendSelectQuery(QStringList{"Modes"},
-	                                                                        QStringList{"Name_RU","id"},
+	                                                                        QStringList{DbLocale::column("Name"),"id"},
 	                                                                        "");
 	QStringList modeNamesList;
 	modeNamesList.reserve(modeNamesListV.size());
@@ -521,7 +525,7 @@ void ProgLoader::defaultSocketInit(bool clear)
 				bool isCoag = (halfSocket == 0);
 				QMap<int, SurgModePtr> modes;
 				QList<QVariantList> modesList = m_dbReaderPtr->slotSendSelectQuery(QStringList{"Modes"},
-				                                                                   QStringList{"MaxPower","Name_RU", "id", "Num", "Brief_RU", "Descript_RU", "ENDO_REG"},
+				                                                                   QStringList{"MaxPower",DbLocale::column("Name"), "id", "Num", DbLocale::column("Brief"), DbLocale::column("Descript"), "ENDO_REG"},
 				                                                                   queryConditionModes
 				                                                                   .arg(socket->socketType() <= Onyx::BIPOLAR_2 ? 0 : 1)
 				                                                                   .arg(halfSocket)
@@ -660,7 +664,7 @@ bool ProgLoader::programmLoadSocketInit(int progId, bool clear)
 
 	//Шаг 6--------------------------------------------------------
 	QList<QVariantList> modeNamesListV = m_dbReaderPtr->slotSendSelectQuery(QStringList{"Modes"},
-	                                                                        QStringList{"Name_RU","id"},
+	                                                                        QStringList{DbLocale::column("Name"),"id"},
 	                                                                        "");
 	QStringList modeNamesList;
 	for (const auto& iter : modeNamesListV) {
@@ -801,7 +805,7 @@ bool ProgLoader::freeSettingsSocketInit(bool clear)
     std::vector<std::map<int, InstrPtr >> instrMapVector;
     
     QList<QVariantList> modeNamesListV = m_dbReaderPtr->slotSendSelectQuery(QStringList{"Modes"},
-                                                                        QStringList{"Name_RU","id"},
+                                                                        QStringList{DbLocale::column("Name"),"id"},
                                                                         "");
     QStringList modeNamesList;
     for (const auto& iter : modeNamesListV)
@@ -824,8 +828,8 @@ bool ProgLoader::freeSettingsSocketInit(bool clear)
             QString queryConditionModes = "BI_MONO = %1 AND CUT_COAG = %2";
             QList<QVariantList> modesList = m_dbReaderPtr->slotSendSelectQuery(
                         QStringList{"Modes"},
-                        QStringList{"MaxPower","Name_RU", "id", "Num",
-                                    "Brief_RU", "Descript_RU", "ENDO_REG"},
+                        QStringList{"MaxPower",DbLocale::column("Name"), "id", "Num",
+                                    DbLocale::column("Brief"), DbLocale::column("Descript"), "ENDO_REG"},
                         queryConditionModes
                                     .arg(socket->socketType() <= Onyx::BIPOLAR_2 ? 0 : 1)
                                     .arg(halfSocket)
@@ -1143,7 +1147,7 @@ std::map<int, InstrPtr > ProgLoader::getInstrums()
 {
 	std::map<int, InstrPtr> result;
 	QList<QVariantList> instrListForMode = m_dbReaderPtr->slotSendSelectQuery(QStringList{"Instruments"},
-	                                                                          QStringList{"id","Num","BI_MONO","Name_Ru","Brief_Ru"},
+	                                                                          QStringList{"id","Num","BI_MONO",DbLocale::column("Name"),DbLocale::column("Brief")},
 	                                                                          "");
 	/* int id, int legacyNumber, const QString& name, bool mono */
 	for (const auto& item : instrListForMode) {
@@ -1525,8 +1529,8 @@ void ProgLoader::fillHalfSocket(int halfSocket,
 	if (!allowedModesId.empty()) {
 		modesList = m_dbReaderPtr->slotSendSelectQuery(
 		            QStringList{"Modes"},
-		            QStringList{"MaxPower","Name_RU", "id", "Num",
-		                        "Brief_RU", "Descript_RU", "ENDO_REG"},
+		            QStringList{"MaxPower",DbLocale::column("Name"), "id", "Num",
+		                        DbLocale::column("Brief"), DbLocale::column("Descript"), "ENDO_REG"},
 		            queryConditionModes
 		            .arg(biMonoFlag)
 		            .arg(halfSocket)

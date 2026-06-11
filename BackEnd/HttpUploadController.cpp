@@ -637,7 +637,7 @@ bool HttpUploadController::runCommandWithSudoFallback(const QString &program, co
         proc.start(runProgram, runArgs);
         if (!proc.waitForStarted(1000)) {
             if (err) {
-                *err = QString::fromUtf8("Не удалось запустить %1").arg(runProgram);
+                *err = tr("Не удалось запустить %1").arg(runProgram);
             }
             return false;
         }
@@ -645,7 +645,7 @@ bool HttpUploadController::runCommandWithSudoFallback(const QString &program, co
             proc.kill();
             proc.waitForFinished(1000);
             if (err) {
-                *err = QString::fromUtf8("Timeout команды %1").arg(runProgram);
+                *err = tr("Timeout команды %1").arg(runProgram);
             }
             return false;
         }
@@ -691,7 +691,7 @@ bool HttpUploadController::runNmcli(const QStringList &args, int timeoutMs,
     const QString nmcliPath = QStandardPaths::findExecutable(QStringLiteral("nmcli"));
     if (nmcliPath.isEmpty()) {
         if (stderrText) {
-            *stderrText = QString::fromUtf8("nmcli не найден.");
+            *stderrText = tr("nmcli не найден.");
         }
         return false;
     }
@@ -716,7 +716,7 @@ bool HttpUploadController::invokeUploadFirewallGuard(const QString &action, QStr
         return true;
     }
     if (!helper.isExecutable()) {
-        const QString msg = QString::fromUtf8("Скрипт управления firewall найден, но не исполняемый: %1")
+        const QString msg = tr("Скрипт управления firewall найден, но не исполняемый: %1")
                                     .arg(QString::fromLatin1(kUploadFirewallGuardPath));
         if (errorText) {
             *errorText = msg;
@@ -732,7 +732,7 @@ bool HttpUploadController::invokeUploadFirewallGuard(const QString &action, QStr
     };
     proc.start(QStringLiteral("sudo"), args);
     if (!proc.waitForStarted(1000)) {
-        const QString msg = QString::fromUtf8("Не удалось запустить helper firewall.");
+        const QString msg = tr("Не удалось запустить helper firewall.");
         if (errorText) {
             *errorText = msg;
         }
@@ -741,7 +741,7 @@ bool HttpUploadController::invokeUploadFirewallGuard(const QString &action, QStr
     if (!proc.waitForFinished(5000)) {
         proc.kill();
         proc.waitForFinished(1000);
-        const QString msg = QString::fromUtf8("Timeout вызова helper firewall.");
+        const QString msg = tr("Timeout вызова helper firewall.");
         if (errorText) {
             *errorText = msg;
         }
@@ -750,8 +750,8 @@ bool HttpUploadController::invokeUploadFirewallGuard(const QString &action, QStr
     if (proc.exitStatus() != QProcess::NormalExit || proc.exitCode() != 0) {
         const QString details = QString::fromUtf8(proc.readAllStandardError()).trimmed();
         const QString msg = details.isEmpty()
-                ? QString::fromUtf8("Helper firewall завершился с ошибкой.")
-                : QString::fromUtf8("Helper firewall завершился с ошибкой: %1").arg(details);
+                ? tr("Helper firewall завершился с ошибкой.")
+                : tr("Helper firewall завершился с ошибкой: %1").arg(details);
         if (errorText) {
             *errorText = msg;
         }
@@ -779,7 +779,7 @@ bool HttpUploadController::generateQrCodeImage(const QString &payload, const QSt
     const QString qrencodePath = QStandardPaths::findExecutable(QStringLiteral("qrencode"));
     if (qrencodePath.isEmpty()) {
         if (errorText) {
-            *errorText = QString::fromUtf8("QR недоступен: не установлен qrencode.");
+            *errorText = tr("QR недоступен: не установлен qrencode.");
         }
         return false;
     }
@@ -800,7 +800,7 @@ bool HttpUploadController::generateQrCodeImage(const QString &payload, const QSt
     if (!proc.waitForStarted(1000) || !proc.waitForFinished(3000)
         || proc.exitStatus() != QProcess::NormalExit || proc.exitCode() != 0 || !QFile::exists(outPath)) {
         if (errorText) {
-            *errorText = QString::fromUtf8("QR недоступен: ошибка запуска qrencode.");
+            *errorText = tr("QR недоступен: ошибка запуска qrencode.");
         }
         return false;
     }
@@ -1221,17 +1221,17 @@ void HttpUploadController::updateQrCode()
     if (m_apActive && !m_apClientConnected) {
         payload = accessPointQrPayload();
         fileName = QStringLiteral("wifi_ap_qr.png");
-        m_qrStatusText = QString::fromUtf8("Сначала подключите телефон или ноутбук к Wi-Fi %1. Пароль: %2")
+        m_qrStatusText = tr("Сначала подключите телефон или ноутбук к Wi-Fi %1. Пароль: %2")
                 .arg(m_apSsid, m_apPassword);
     } else {
         if (m_baseUrl.isEmpty()) {
-            m_qrStatusText = QString::fromUtf8("Адрес загрузки ещё не готов.");
+            m_qrStatusText = tr("Адрес загрузки ещё не готов.");
         } else {
             payload = m_baseUrl;
             fileName = QStringLiteral("upload_qr.png");
             m_qrStatusText = m_apActive && !m_apClientConnected
-                    ? QString::fromUtf8("Если телефон уже подключён к ONYX-TEST, откройте этот QR для страницы загрузки.")
-                    : QString::fromUtf8("Устройство подключено. Отсканируйте QR для открытия страницы загрузки.");
+                    ? tr("Если телефон уже подключён к ONYX-TEST, откройте этот QR для страницы загрузки.")
+                    : tr("Устройство подключено. Отсканируйте QR для открытия страницы загрузки.");
         }
     }
 
@@ -1304,7 +1304,7 @@ bool HttpUploadController::startAccessPoint(QString *errorText)
     m_apInterfaceName = selectWifiInterface();
     if (m_apInterfaceName.isEmpty()) {
         if (errorText) {
-            *errorText = QString::fromUtf8("Wi-Fi интерфейс не найден.");
+            *errorText = tr("Wi-Fi интерфейс не найден.");
         }
         return false;
     }
@@ -1313,7 +1313,7 @@ bool HttpUploadController::startAccessPoint(QString *errorText)
         m_apPassword = QStringLiteral("Electrosurgical");
     }
     setAccessPointClientConnected(false);
-    setAccessPointStatusText(QString::fromUtf8("Запуск точки доступа %1...").arg(m_apSsid));
+    setAccessPointStatusText(tr("Запуск точки доступа %1...").arg(m_apSsid));
     emit accessPointChanged();
 
     QString stderrText;
@@ -1333,8 +1333,8 @@ bool HttpUploadController::startAccessPoint(QString *errorText)
     if (!runNmcli(addArgs, 10000, nullptr, &stderrText)) {
         if (errorText) {
             *errorText = stderrText.isEmpty()
-                    ? QString::fromUtf8("Не удалось создать профиль точки доступа.")
-                    : QString::fromUtf8("Не удалось создать профиль точки доступа: %1").arg(stderrText);
+                    ? tr("Не удалось создать профиль точки доступа.")
+                    : tr("Не удалось создать профиль точки доступа: %1").arg(stderrText);
         }
         setAccessPointStatusText(QString());
         m_apPassword.clear();
@@ -1357,8 +1357,8 @@ bool HttpUploadController::startAccessPoint(QString *errorText)
                  5000, nullptr, nullptr);
         if (errorText) {
             *errorText = stderrText.isEmpty()
-                    ? QString::fromUtf8("Не удалось настроить точку доступа.")
-                    : QString::fromUtf8("Не удалось настроить точку доступа: %1").arg(stderrText);
+                    ? tr("Не удалось настроить точку доступа.")
+                    : tr("Не удалось настроить точку доступа: %1").arg(stderrText);
         }
         setAccessPointStatusText(QString());
         m_apPassword.clear();
@@ -1372,8 +1372,8 @@ bool HttpUploadController::startAccessPoint(QString *errorText)
                  5000, nullptr, nullptr);
         if (errorText) {
             *errorText = stderrText.isEmpty()
-                    ? QString::fromUtf8("Не удалось запустить точку доступа.")
-                    : QString::fromUtf8("Не удалось запустить точку доступа: %1").arg(stderrText);
+                    ? tr("Не удалось запустить точку доступа.")
+                    : tr("Не удалось запустить точку доступа: %1").arg(stderrText);
         }
         setAccessPointStatusText(QString());
         m_apPassword.clear();
@@ -1397,7 +1397,7 @@ bool HttpUploadController::startAccessPoint(QString *errorText)
         m_apAddress = QHostAddress(accessPointIpAddressString());
     }
 
-    setAccessPointStatusText(QString::fromUtf8("Точка доступа %1 активна. Ожидание подключения клиента.")
+    setAccessPointStatusText(tr("Точка доступа %1 активна. Ожидание подключения клиента.")
                              .arg(m_apSsid));
     m_apClientPollTimer.start();
     return true;
@@ -1477,8 +1477,8 @@ void HttpUploadController::pollAccessPointClient()
     const bool connected = hasConnectedAccessPointClient();
     setAccessPointClientConnected(connected);
     setAccessPointStatusText(connected
-                             ? QString::fromUtf8("К точке доступа подключено устройство.")
-                             : QString::fromUtf8("Точка доступа %1 активна. Ожидание подключения клиента.")
+                             ? tr("К точке доступа подключено устройство.")
+                             : tr("Точка доступа %1 активна. Ожидание подключения клиента.")
                                    .arg(m_apSsid));
 }
 
@@ -1528,7 +1528,7 @@ void HttpUploadController::startSession()
 
     m_listenAddress = preferredListenAddress();
     if (!m_server->listen(m_listenAddress, static_cast<quint16>(m_port))) {
-        setLastError(QString::fromUtf8("Не удалось занять порт %1: %2")
+        setLastError(tr("Не удалось занять порт %1: %2")
                              .arg(m_port)
                              .arg(m_server->errorString()));
         m_listenAddress = QHostAddress();
@@ -2792,7 +2792,7 @@ void HttpUploadController::tryProcessBuffer()
         }
         m_uploadInProgress = true;
         m_uploadProgress = 0.0;
-        m_uploadStatusText = QString::fromUtf8("Получение файла...");
+        m_uploadStatusText = tr("Получение файла...");
         emit uploadProgressChanged();
     }
 
@@ -2811,7 +2811,7 @@ void HttpUploadController::tryProcessBuffer()
             m_uploadProgress = p;
             if (m_uploadProgress < 0.0) m_uploadProgress = 0.0;
             if (m_uploadProgress > 1.0) m_uploadProgress = 1.0;
-            m_uploadStatusText = QString::fromUtf8("Получение файла: %1%")
+            m_uploadStatusText = tr("Получение файла: %1%")
                                  .arg(QString::number(m_uploadProgress * 100.0, 'f', 0));
             emit uploadProgressChanged();
         }
@@ -2833,7 +2833,7 @@ void HttpUploadController::tryProcessBuffer()
     if (!parseMultipartAndSave(body, ct, &nFiles, &err)) {
         m_uploadInProgress = false;
         m_uploadProgress = 0.0;
-        m_uploadStatusText = QString::fromUtf8("Ошибка загрузки");
+        m_uploadStatusText = tr("Ошибка загрузки");
         emit uploadProgressChanged();
         if (err == QStringLiteral("token")) {
             sendSimpleHtml(m_client, 403, QStringLiteral("Доступ запрещён"),
@@ -2877,7 +2877,7 @@ void HttpUploadController::tryProcessBuffer()
     emit filesReceived(nFiles);
     m_uploadInProgress = false;
     m_uploadProgress = 1.0;
-    m_uploadStatusText = QString::fromUtf8("Загрузка завершена");
+    m_uploadStatusText = tr("Загрузка завершена");
     emit uploadProgressChanged();
     sendSimpleHtml(m_client, 200, QStringLiteral("Готово"),
                    QStringLiteral("<p>Успешно загружено файлов: %1</p><p><a href=\"/\">Загрузить ещё</a></p>").arg(nFiles));
@@ -2902,7 +2902,7 @@ bool HttpUploadController::applyMainVersion(const QString &version)
 {
     const QString v = version.trimmed();
     if (!kSimpleVersionRe.match(v).hasMatch()) {
-        setLastError(QString::fromUtf8("Некорректная версия интерфейса"));
+        setLastError(tr("Некорректная версия интерфейса"));
         return false;
     }
 
@@ -2912,18 +2912,18 @@ bool HttpUploadController::applyMainVersion(const QString &version)
 
     if (QFile::exists(dstPath)) {
         if (QFile::exists(bakPath) && !QFile::remove(bakPath)) {
-            setLastError(QString::fromUtf8("Не удалось удалить старый backup UserInterface.bak"));
+            setLastError(tr("Не удалось удалить старый backup UserInterface.bak"));
             return false;
         }
         if (!QFile::copy(dstPath, bakPath)) {
-            setLastError(QString::fromUtf8("Не удалось создать backup UserInterface.bak"));
+            setLastError(tr("Не удалось создать backup UserInterface.bak"));
             return false;
         }
     }
 
     QString copyErr;
     if (!copyFileReplace(srcPath, dstPath, &copyErr)) {
-        setLastError(QString::fromUtf8("Не удалось обновить модуль интерфейса (%1)").arg(copyErr));
+        setLastError(tr("Не удалось обновить модуль интерфейса (%1)").arg(copyErr));
         return false;
     }
 
@@ -2932,7 +2932,7 @@ bool HttpUploadController::applyMainVersion(const QString &version)
         QFileDevice::ReadGroup | QFileDevice::ExeGroup |
         QFileDevice::ReadOther | QFileDevice::ExeOther;
     if (!QFile::setPermissions(dstPath, execPerms) || !QFileInfo(dstPath).isExecutable()) {
-        setLastError(QString::fromUtf8("Не удалось выставить права на запуск для UserInterface"));
+        setLastError(tr("Не удалось выставить права на запуск для UserInterface"));
         return false;
     }
 
@@ -2947,7 +2947,7 @@ bool HttpUploadController::applyMediaVersion(const QString &version)
 {
     const QString v = version.trimmed();
     if (!kSimpleVersionRe.match(v).hasMatch()) {
-        setLastError(QString::fromUtf8("Некорректная версия медиафайлов"));
+        setLastError(tr("Некорректная версия медиафайлов"));
         return false;
     }
 
@@ -2955,7 +2955,7 @@ bool HttpUploadController::applyMediaVersion(const QString &version)
     const QString dstDir = QDir::homePath() + QStringLiteral("/FOTEK");
     QString copyErr;
     if (!copyDirectoryContentsReplace(srcDir, dstDir, &copyErr)) {
-        setLastError(QString::fromUtf8("Не удалось обновить медиафайлы"));
+        setLastError(tr("Не удалось обновить медиафайлы"));
         return false;
     }
 
@@ -3009,20 +3009,20 @@ bool HttpUploadController::applyMcFirmwareFromReleases(const QString &version, c
 {
     if (!m_linkStm) {
         setMcFirmwareUpdateProgress(-1);
-        setLastError(QString::fromUtf8("Обновление МК недоступно"));
+        setLastError(tr("Обновление МК недоступно"));
         return false;
     }
     const QString v = version.trimmed();
     if (v.isEmpty() || v == QStringLiteral("—")) {
         setMcFirmwareUpdateProgress(-1);
-        setLastError(QString::fromUtf8("Не выбрана версия"));
+        setLastError(tr("Не выбрана версия"));
         return false;
     }
     const QString path = QDir::homePath() + QStringLiteral("/releases/") + releasesSubdir + QLatin1Char('/')
             + filePrefixUpper + QLatin1Char('-') + v + QStringLiteral(".hex");
     if (!QFileInfo::exists(path)) {
         setMcFirmwareUpdateProgress(-1);
-        setLastError(QString::fromUtf8("Файл не найден: %1").arg(path));
+        setLastError(tr("Файл не найден: %1").arg(path));
         return false;
     }
     LinkStm *const link = m_linkStm;
@@ -3031,7 +3031,7 @@ bool HttpUploadController::applyMcFirmwareFromReleases(const QString &version, c
     }, Qt::QueuedConnection);
     if (!invoked) {
         setMcFirmwareUpdateProgress(-1);
-        setLastError(QString::fromUtf8("Не удалось поставить обновление в очередь"));
+        setLastError(tr("Не удалось поставить обновление в очередь"));
         return false;
     }
     setMcFirmwareUpdateProgress(0);
@@ -3059,7 +3059,7 @@ bool HttpUploadController::applyGenVersion(const QString &version)
 
 bool HttpUploadController::restartDemo1UserService()
 {
-    setLastError(QString::fromUtf8("Команда перезагрузки после обновления"));
+    setLastError(tr("Команда перезагрузки после обновления"));
     QCoreApplication::exit(0);
     return true;
 }

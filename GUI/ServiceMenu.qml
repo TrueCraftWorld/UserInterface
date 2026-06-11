@@ -7,7 +7,6 @@ import StratifyLabs.UI 2.0
 Item {
     id: serviceMenuRoot
     signal returnButtonPressed()
-    signal deleteAllUserProgsRequested()
     signal serialNumberButtonPressed()
     signal softwareUpdateButtonPressed()
     signal wifiFileReceiveButtonPressed()
@@ -16,6 +15,7 @@ Item {
     signal aboutButtonPressed()
     signal logUpdateButtonPressed()
     signal specialCommandsButtonPressed()
+    signal secretKeysButtonPressed()
     readonly property int menuButtonWidth: 550
     readonly property int menuButtonHeight: 96
     readonly property int menuColumnsSpacing: 24
@@ -121,15 +121,12 @@ Item {
         }
 
         SButton {
-            id: deleteAllUserProgsButton
-            style: "btn-danger lg"
-            Layout.columnSpan: 2
-            Layout.alignment: Qt.AlignHCenter
-            Layout.topMargin: 4
-            Layout.preferredWidth: serviceMenuRoot.menuButtonWidth * 2 + serviceMenuRoot.menuColumnsSpacing
-            Layout.preferredHeight: 106
-            text: qsTr("Удалить все пользовательские программы")
-            onPressed: confirmDeleteDialog.open()
+            id: secretKeysButton
+            style: "btn-primary lg"
+            Layout.preferredWidth: serviceMenuRoot.menuButtonWidth
+            Layout.preferredHeight: serviceMenuRoot.menuButtonHeight
+            text: qsTr("Секретные ключи")
+            onPressed: serviceMenuRoot.secretKeysButtonPressed()
         }
     }
     
@@ -152,22 +149,5 @@ Item {
 //            verticalAlignment: Text.AlignVCenter
 //            elide: Text.ElideRight
 //        }
-    }
-    
-    Dialog {
-        id: confirmDeleteDialog
-        title: "Подтверждение удаления"
-        modal: true
-        standardButtons: Dialog.Ok | Dialog.Cancel
-        anchors.centerIn: parent
-        
-        Label {
-            text: "Удалить все пользовательские программы?\nЭто действие необратимо."
-            font.pixelSize: 20
-        }
-        
-        onAccepted: {
-            serviceMenuRoot.deleteAllUserProgsRequested()
-        }
     }
 }

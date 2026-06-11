@@ -1,5 +1,6 @@
 import QtQuick 2.15
 import QtQuick.Layouts 1.15
+import QtQuick.Controls 2.15
 
 import StratifyLabs.UI 2.0
 
@@ -7,6 +8,7 @@ Item {
     id: specialCommandsRoot
 
     signal returnButtonPressed()
+    signal deleteAllUserProgsRequested()
 
     property bool endoscopyEnabled: false
     property bool argonModesEnabled: false
@@ -148,6 +150,18 @@ Item {
                 remoteUpdater.stopDemo1UserServiceAndQuit()
             }
         }
+
+        SButton {
+            id: deleteAllUserProgsButton
+            style: "btn-danger lg"
+            Layout.columnSpan: 2
+            Layout.alignment: Qt.AlignHCenter
+            Layout.topMargin: 4
+            Layout.preferredWidth: specialCommandsRoot.menuButtonWidth * 2 + specialCommandsRoot.menuColumnsSpacing
+            Layout.preferredHeight: 106
+            text: qsTr("Удалить все пользовательские программы")
+            onPressed: confirmDeleteDialog.open()
+        }
     }
 
     SButton {
@@ -160,5 +174,20 @@ Item {
             margins: 15
         }
         onPressed: specialCommandsRoot.returnButtonPressed()
+    }
+
+    Dialog {
+        id: confirmDeleteDialog
+        title: qsTr("Подтверждение удаления")
+        modal: true
+        standardButtons: Dialog.Ok | Dialog.Cancel
+        anchors.centerIn: parent
+
+        Label {
+            text: qsTr("Удалить все пользовательские программы?\nЭто действие необратимо.")
+            font.pixelSize: 20
+        }
+
+        onAccepted: specialCommandsRoot.deleteAllUserProgsRequested()
     }
 }

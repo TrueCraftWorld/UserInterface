@@ -28,6 +28,7 @@
 #include "BackEnd/DeviceLogManager.h"
 #include "BackEnd/UpdateLogManager.h"
 #include "BackEnd/datetimecontroller.h"
+#include "BackEnd/translationcontroller.h"
 
 // Умный указатель на файл логирования
 QScopedPointer<QFile>   m_logFile;
@@ -137,6 +138,7 @@ int main(int argc, char *argv[])
     auto *dateTimeController = new DateTimeController(&app);
 
     QQmlApplicationEngine engine;
+    auto *translationController = new TranslationController(&engine, &app);
     engine.rootContext()->setContextProperty("theModel", ctrl->getSocketModel());
     engine.rootContext()->setContextProperty("Editor", ctrl->getModeEditor());
     engine.rootContext()->setContextProperty("recomHandle", ctrl->getHandle());
@@ -146,6 +148,7 @@ int main(int argc, char *argv[])
     engine.rootContext()->setContextProperty("sysMonitor", sysMonitor);
     engine.rootContext()->setContextProperty("keyGenerator", keyGen);
     engine.rootContext()->setContextProperty("dateTimeController", dateTimeController);
+    engine.rootContext()->setContextProperty("translationController", translationController);
     engine.rootContext()->setContextProperty("appVersion", QCoreApplication::applicationVersion());
 
     QVariantMap *initMap = new QVariantMap();

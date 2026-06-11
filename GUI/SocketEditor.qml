@@ -54,11 +54,12 @@ Popup {
     readonly property color listSelectedText: isCoag ? "white" : "black"
 
     function modeImagePrefix() {
+        // Имя сокета локализовано (МОНО1/MONO1), поэтому проверяем оба варианта
         var socketName = modeEditor.socketName ? String(modeEditor.socketName).toUpperCase() : ""
-        if (socketName.indexOf("МОНО") !== -1) {
+        if (socketName.indexOf("МОНО") !== -1 || socketName.indexOf("MONO") !== -1) {
             return "monomode"
         }
-        if (socketName.indexOf("БИ") !== -1) {
+        if (socketName.indexOf("БИ") !== -1 || socketName.indexOf("BI") !== -1) {
             return "bimode"
         }
         return socId <= 1 ? "bimode" : "monomode"

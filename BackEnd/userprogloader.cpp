@@ -1,4 +1,5 @@
 #include "userprogloader.h"
+#include "dblocale.h"
 #include "onyxapp.h"
 
 
@@ -24,7 +25,7 @@ std::map<int, QString> UserProgLoader::getPrograms(int scopeID)
     QString queryCondition = "Scope_ID = %1 AND (Argon = 0 OR Argon = %2)";
 
     QList<QVariantList> progListVariant = m_dbReader->slotSendSelectQuery(QStringList{"Progs"},
-                                                                        QStringList{"Name_RU","id", "Prog_NUM", "Subprog_RU"},
+                                                                        QStringList{DbLocale::column("Name"),"id", "Prog_NUM", DbLocale::column("Subprog")},
                                                                         queryCondition.arg(scopeID).arg(m_deviceHasArgon ? 2 : 1));
 
     std::map<int, QString> progList;
@@ -44,7 +45,7 @@ std::map<int, QString> UserProgLoader::getCategories()
 {
     QList<QVariantList> scopeListVariant
                 = m_dbReader->slotSendSelectQuery(QStringList{"Scopes"},
-                                                     QStringList{"id", "Name_RU"},
+                                                     QStringList{"id", DbLocale::column("Name")},
                                                      "id > 1000");
 
     std::map<int, QString> scopeList;

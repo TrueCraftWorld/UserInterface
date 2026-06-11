@@ -70,8 +70,7 @@ QString KeyGenerator::generateKey(int serialNumber)
         return QString();
     }
     
-    QString hash = generateHash(serialNumber);
-    QString key = hashToKey(hash);
+    QString key = generateUnlockKey(serialNumber, QStringLiteral("ONYX-AM"), QStringLiteral("ENDO"));
     
     qDebug() << "Generated key" << key << "for serial number" << serialNumber;
     
@@ -86,27 +85,96 @@ bool KeyGenerator::validateKey(int serialNumber, const QString &key)
         return false;
     }
     
-    if (key.length() != 10) {
-        qWarning() << "Key must be exactly 10 digits";
+    return validateUnlockKey(serialNumber, QStringLiteral("ONYX-AM"), QStringLiteral("ENDO"), key);
+}
+
+QString KeyGenerator::normalizeDeviceType(const QString &deviceType) const
+{
+    const QString normalized = deviceType.trimmed().toUpper();
+    return normalized == QStringLiteral("ONYX-M")
+            ? QStringLiteral("ONYX-M")
+            : QStringLiteral("ONYX-AM");
+}
+
+QString KeyGenerator::normalizeFeatureCode(const QString &featureCode) const
+{
+    const QString normalized = featureCode.trimmed().toUpper();
+    if (normalized == QStringLiteral("ARGON")
+            || normalized == QStringLiteral("ARGON_COAG")
+            || normalized == QStringLiteral("ARGON_MODES")) {
+        return QStringLiteral("ARGON");
+    }
+    return QStringLiteral("ENDO");
+}
+
+QString KeyGenerator::deviceSalt(const QString &deviceType) const
+{
+    return normalizeDeviceType(deviceType) == QStringLiteral("ONYX-M")
+            ? QStringLiteral("OnyxMDeviceSalt-8F39C1")
+            : QStringLiteral("OnyxAMDeviceSalt-42B7E6");
+}
+
+QString KeyGenerator::featureSalt(const QString &featureCode) const
+{
+    return normalizeFeatureCode(featureCode) == QStringLiteral("ARGON")
+            ? QStringLiteral("ArgonCoagUnlockSalt-73A91D")
+            : QStringLiteral("EndoscopyUnlockSalt-C58E20");
+}
+
+QString KeyGenerator::generateUnlockKey(int serialNumber,
+                                        const QString &deviceType,
+                                        const QString &featureCode)
+{
+    if (serialNumber < 260000 || serialNumber > 1000000) {
+        qWarning() << "Serial number must be between 260000 and 1000000";
+        return QString();
+    }
+
+    const QString normalizedDeviceType = normalizeDeviceType(deviceType);
+    const QString normalizedFeatureCode = normalizeFeatureCode(featureCode);
+    const QString input = QStringLiteral("ONYX-UNLOCK-v1|%1|%2|%3|%4|%5")
+            .arg(normalizedDeviceType)
+            .arg(normalizedFeatureCode)
+            .arg(serialNumber)
+            .arg(deviceSalt(normalizedDeviceType))
+            .arg(featureSalt(normalizedFeatureCode));
+
+    const QByteArray hash = QCryptographicHash::hash(input.toUtf8(), QCryptographicHash::Sha256);
+
+    quint64 value = 0;
+    for (int i = 0; i < 8 && i < hash.size(); ++i) {
+        value = (value << 8) | static_cast<quint8>(hash.at(i));
+    }
+
+    const quint64 key = 100000000000ULL + (value % 900000000000ULL);
+    return QString::number(key);
+}
+
+bool KeyGenerator::validateUnlockKey(int serialNumber,
+                                     const QString &deviceType,
+                                     const QString &featureCode,
+                                     const QString &key)
+{
+    const QString normalizedKey = key.trimmed();
+    if (normalizedKey.length() != 12) {
+        qWarning() << "Unlock key must be exactly 12 digits";
         return false;
     }
-    
-    // Проверка что ключ содержит только цифры
-    for (QChar c : key) {
+
+    for (QChar c : normalizedKey) {
         if (!c.isDigit()) {
-            qWarning() << "Key must contain only digits";
+            qWarning() << "Unlock key must contain only digits";
             return false;
         }
     }
-    
-    // Генерируем правильный ключ и сравниваем
-    QString correctKey = generateKey(serialNumber);
-    bool isValid = (key == correctKey);
-    
-    qDebug() << "Validation:" << (isValid ? "SUCCESS" : "FAILED")
+
+    const QString correctKey = generateUnlockKey(serialNumber, deviceType, featureCode);
+    const bool isValid = !correctKey.isEmpty() && normalizedKey == correctKey;
+
+    qDebug() << "Unlock key validation:" << (isValid ? "SUCCESS" : "FAILED")
              << "- Serial:" << serialNumber
-             << "- Provided key:" << key
-             << "- Expected key:" << correctKey;
-    
+             << "- Device:" << normalizeDeviceType(deviceType)
+             << "- Feature:" << normalizeFeatureCode(featureCode);
+
     return isValid;
 }

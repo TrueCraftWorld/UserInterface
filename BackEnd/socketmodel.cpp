@@ -635,7 +635,7 @@ QStringList SocketModel::instrumNames(int socketId, int modeIndex, bool isCoag) 
         }
     }
     // Добавляем пункт "не выбран" в конец списка
-    names.append(QObject::tr("НЕ ВЫБРАН"));
+    names.append(tr("НЕ ВЫБРАН"));
     return names;
 }
 

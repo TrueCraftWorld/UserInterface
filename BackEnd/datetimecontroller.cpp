@@ -1,5 +1,6 @@
 #include "datetimecontroller.h"
 
+#include <QCoreApplication>
 #include <QDate>
 #include <QDateTime>
 #include <QDebug>
@@ -26,7 +27,7 @@ bool runTimedatectl(const QStringList &arguments, QString *errorMessage)
 
     if (!process.waitForStarted(3000)) {
         if (errorMessage) {
-            *errorMessage = QStringLiteral("Не удалось запустить timedatectl");
+            *errorMessage = QCoreApplication::translate("DateTimeController", "Не удалось запустить timedatectl");
         }
         return false;
     }
@@ -35,7 +36,7 @@ bool runTimedatectl(const QStringList &arguments, QString *errorMessage)
         process.kill();
         process.waitForFinished(1000);
         if (errorMessage) {
-            *errorMessage = QStringLiteral("timedatectl не завершился за отведённое время");
+            *errorMessage = QCoreApplication::translate("DateTimeController", "timedatectl не завершился за отведённое время");
         }
         return false;
     }
@@ -44,7 +45,7 @@ bool runTimedatectl(const QStringList &arguments, QString *errorMessage)
         if (errorMessage) {
             *errorMessage = processOutputError(
                         process,
-                        QStringLiteral("timedatectl завершился с ошибкой"));
+                        QCoreApplication::translate("DateTimeController", "timedatectl завершился с ошибкой"));
         }
         return false;
     }
@@ -80,7 +81,7 @@ bool DateTimeController::setDateTime(int year, int month, int day, int hour, int
     const QTime time(hour, minute, second);
 
     if (!date.isValid() || !time.isValid()) {
-        setLastError(QStringLiteral("Некорректная дата или время"));
+        setLastError(tr("Некорректная дата или время"));
         return false;
     }
 

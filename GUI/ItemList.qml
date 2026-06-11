@@ -22,6 +22,7 @@ Rectangle {
 	property int selectedBorderWidth: 0
 	property int itemBorderWidth: 0
 	property bool keepSelectedItemAtTop: false
+	property int selectedItemRowsAbove: 2
 	property int noAutoScrollItemId: -1
 	property bool scrollSelectsItem: true
 	property int itemFontPixelSize: 18
@@ -123,7 +124,13 @@ Rectangle {
 		}
 
 		if (theView.currentIndex >= 0 && theView.currentIndex < theView.count) {
-			theView.positionViewAtIndex(theView.currentIndex, ListView.Beginning)
+			var index = theView.currentIndex
+			theView.positionViewAtIndex(index, ListView.Beginning)
+			var rowsAbove = Math.min(selectedItemRowsAbove, index)
+			if (rowsAbove > 0) {
+				var offset = rowsAbove * (listItemHeight + theView.spacing)
+				theView.contentY = Math.max(0, theView.contentY - offset)
+			}
 		}
 	}
 	ColumnLayout {
@@ -155,7 +162,9 @@ Rectangle {
 			footer: Item {
 				width: theView.width
 				height: itemList.keepSelectedItemAtTop
-						? Math.max(0, theView.height - itemList.listItemHeight - theView.spacing)
+						? Math.max(0, theView.height
+							- (itemList.selectedItemRowsAbove + 1) * itemList.listItemHeight
+							- itemList.selectedItemRowsAbove * theView.spacing)
 						: 0
 			}
 

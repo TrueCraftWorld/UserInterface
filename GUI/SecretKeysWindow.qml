@@ -1,7 +1,7 @@
 import QtQuick 2.15
 import QtQuick.Layouts 1.15
 import QtQuick.Controls 2.15
-import QtQuick.CuteKeyboard 1.0
+import QtQuick.CuteKeyboard 1.0 as CuteKeyboardUi
 import CuteKeyboard 1.0
 
 import StratifyLabs.UI 2.0
@@ -436,7 +436,7 @@ Item {
     }
     
     // Виртуальная клавиатура CuteKeyboard
-    InputPanel {
+    CuteKeyboardUi.InputPanel {
         id: inputPanel
 
         function tuneKeyboardTree(node) {

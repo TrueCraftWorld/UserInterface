@@ -2,7 +2,7 @@ import QtQuick 2.15
 import QtQuick.Layouts 1.15
 import QtQuick.Window 2.15
 import QtQuick.Controls 2.15
-import QtQuick.CuteKeyboard 1.0
+import QtQuick.CuteKeyboard 1.0 as CuteKeyboardUi
 import CuteKeyboard 1.0
 import StratifyLabs.UI 2.0
 import BackEnd 1.0
@@ -1466,7 +1466,7 @@ Window {
    Component {
       id: keyboardPanelComponent
 
-      InputPanel {
+      CuteKeyboardUi.InputPanel {
          id: inputPanel
          y: container.height
          languageLayout: container.keyboardPrimaryLayout()

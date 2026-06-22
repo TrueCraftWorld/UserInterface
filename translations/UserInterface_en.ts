@@ -1668,16 +1668,20 @@ EMPTY</translation>
         <translation>Activation controller is unavailable</translation>
     </message>
     <message>
-        <source>Неверный ключ</source>
-        <translation>Invalid key</translation>
+        <source>Опция №%1 успешно активирована</source>
+        <translation>Option #%1 activated successfully</translation>
     </message>
     <message>
-        <source>Активирован ключ №%1</source>
-        <translation>Key #%1 activated</translation>
+        <source>Извините, ключ не верный! Попробуйте ещё раз или обратитесь к производителю</source>
+        <translation>Sorry, the key is invalid! Please try again or contact the manufacturer</translation>
     </message>
     <message>
         <source>АКТИВИРОВАТЬ</source>
         <translation>ACTIVATE</translation>
+    </message>
+    <message>
+        <source>ЗАКРЫТЬ</source>
+        <translation>CLOSE</translation>
     </message>
     <message>
         <source>Сначала сохраните серийный номер аппарата</source>

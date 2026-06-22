@@ -104,7 +104,7 @@ int main(int argc, char *argv[])
     qputenv("QT_LOGGING_RULES", "qt.qpa.input=false");
 
     OnyxApp app(argc, argv);
-    QCoreApplication::setApplicationVersion("1.1");
+    QCoreApplication::setApplicationVersion("1.3");
 
     // Устанавливаем кастомный обработчик для вывода только имени файла (без пути)
     qInstallMessageHandler(messageHandler);

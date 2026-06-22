@@ -1668,16 +1668,20 @@ VACÍO</translation>
         <translation>El controlador de activación no está disponible</translation>
     </message>
     <message>
-        <source>Неверный ключ</source>
-        <translation>Clave no válida</translation>
+        <source>Опция №%1 успешно активирована</source>
+        <translation>Opción n.º %1 activada correctamente</translation>
     </message>
     <message>
-        <source>Активирован ключ №%1</source>
-        <translation>Clave n.º %1 activada</translation>
+        <source>Извините, ключ не верный! Попробуйте ещё раз или обратитесь к производителю</source>
+        <translation>Lo sentimos, la clave no es válida. Inténtelo de nuevo o contacte con el fabricante</translation>
     </message>
     <message>
         <source>АКТИВИРОВАТЬ</source>
         <translation>ACTIVAR</translation>
+    </message>
+    <message>
+        <source>ЗАКРЫТЬ</source>
+        <translation>CERRAR</translation>
     </message>
     <message>
         <source>Сначала сохраните серийный номер аппарата</source>

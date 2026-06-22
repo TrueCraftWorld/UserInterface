@@ -129,7 +129,7 @@ Item {
                         
                         TextField {
                             id: serialNumberInput
-                            width: 170
+                            width: 150
                             height: 40
                             font.pixelSize: 16
                             placeholderText: "260000"
@@ -143,11 +143,6 @@ Item {
                                 radius: 5
                             }
                         }
-                    }
-
-                    Row {
-                        spacing: 15
-                        anchors.horizontalCenter: parent.horizontalCenter
 
                         SLabel {
                             style: "label-secondary sm"
@@ -157,7 +152,7 @@ Item {
 
                         ComboBox {
                             id: generationDeviceType
-                            width: 170
+                            width: 150
                             height: 40
                             model: secretKeysRoot.deviceTypeOptions
                             currentIndex: 1
@@ -290,11 +285,6 @@ Item {
                                 radius: 5
                             }
                         }
-                    }
-
-                    Row {
-                        spacing: 15
-                        anchors.horizontalCenter: parent.horizontalCenter
 
                         SLabel {
                             style: "label-secondary sm"
@@ -304,7 +294,7 @@ Item {
 
                         ComboBox {
                             id: validationDeviceType
-                            width: 170
+                            width: 150
                             height: 40
                             model: secretKeysRoot.deviceTypeOptions
                             currentIndex: 1

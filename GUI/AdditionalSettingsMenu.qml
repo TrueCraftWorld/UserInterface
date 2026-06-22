@@ -6,7 +6,7 @@ Item {
     id: additionalSettingsRoot
 
     signal returnButtonPressed()
-    signal serviceMenuButtonPressed()
+    signal serviceMenuButtonPressed(string accessLevel)
     signal logFileButtonPressed()
     signal dateTimeSettingsButtonPressed()
 
@@ -25,10 +25,25 @@ Item {
         return savedJson.readString("serviceMenuNoPassword", "0") === "1"
     }
 
-    function isServiceMenuPasswordValid(value) {
+    function normalizeServicePassword(value) {
         var normalized = String(value).trim().toLowerCase()
         normalized = normalized.replace(/\u0430/g, "a")
-        return normalized === "145a"
+        return normalized
+    }
+
+    function resolveServiceMenuAccessLevel(value) {
+        var normalized = normalizeServicePassword(value)
+        if (normalized === "145a") {
+            return "full"
+        }
+        if (normalized === "123") {
+            return "limited"
+        }
+        return ""
+    }
+
+    function isServiceMenuPasswordValid(value) {
+        return resolveServiceMenuAccessLevel(value) !== ""
     }
 
     function serialNumberValue() {
@@ -64,7 +79,7 @@ Item {
 
     function requestServiceMenuAccess() {
         if (additionalSettingsRoot.isServiceMenuNoPasswordEnabled()) {
-            additionalSettingsRoot.serviceMenuButtonPressed()
+            additionalSettingsRoot.serviceMenuButtonPressed("full")
         } else {
             servicePasswordDialog.passwordError = ""
             servicePasswordDialog.open()
@@ -286,11 +301,12 @@ Item {
         }
 
         function trySubmit() {
-            if (additionalSettingsRoot.isServiceMenuPasswordValid(servicePasswordInput.text)) {
+            var accessLevel = additionalSettingsRoot.resolveServiceMenuAccessLevel(servicePasswordInput.text)
+            if (accessLevel !== "") {
                 servicePasswordInput.text = ""
                 servicePasswordDialog.passwordError = ""
                 servicePasswordDialog.close()
-                additionalSettingsRoot.serviceMenuButtonPressed()
+                additionalSettingsRoot.serviceMenuButtonPressed(accessLevel)
                 return
             }
             servicePasswordDialog.passwordError = qsTr("Неверный пароль")
@@ -342,6 +358,9 @@ Item {
         id: featureUnlockDialog
         property string passwordError: ""
         property string successMessage: ""
+        property bool activationSucceeded: false
+        readonly property bool showInputMode: !activationSucceeded && passwordError.length === 0
+        readonly property bool showCloseOnly: activationSucceeded || passwordError.length > 0
         modal: true
         width: Math.min(additionalSettingsRoot.width * 0.92, 820)
         height: 420
@@ -360,6 +379,7 @@ Item {
 
                 Label {
                     Layout.fillWidth: true
+                    visible: featureUnlockDialog.showInputMode
                     text: qsTr("Для активации дополнительных опций введите ключ")
                     wrapMode: Text.WordWrap
                     horizontalAlignment: Text.AlignHCenter
@@ -371,6 +391,7 @@ Item {
                     id: featureUnlockInput
                     Layout.fillWidth: true
                     Layout.preferredHeight: 64
+                    visible: featureUnlockDialog.showInputMode
                     placeholderText: qsTr("123456789012")
                     echoMode: TextInput.Normal
                     maximumLength: 12
@@ -396,7 +417,8 @@ Item {
 
                 Label {
                     Layout.fillWidth: true
-                    visible: featureUnlockInput.text.length > 0
+                    visible: featureUnlockDialog.showInputMode
+                            && featureUnlockInput.text.length > 0
                     text: additionalSettingsRoot.formattedUnlockKey(featureUnlockInput.text)
                     color: "#5A6478"
                     horizontalAlignment: Text.AlignHCenter
@@ -405,36 +427,52 @@ Item {
 
                 Label {
                     Layout.fillWidth: true
-                    visible: featureUnlockDialog.successMessage.length > 0
+                    visible: featureUnlockDialog.activationSucceeded
                     text: featureUnlockDialog.successMessage
                     color: "#2E7D32"
                     wrapMode: Text.WordWrap
                     horizontalAlignment: Text.AlignHCenter
-                    font.pixelSize: 22
+                    font.pixelSize: 30
+                    font.bold: true
                 }
 
                 Label {
                     Layout.fillWidth: true
-                    visible: featureUnlockDialog.passwordError.length > 0
+                    visible: !featureUnlockDialog.activationSucceeded
+                            && featureUnlockDialog.passwordError.length > 0
                     text: featureUnlockDialog.passwordError
                     color: "#dc2626"
                     wrapMode: Text.WordWrap
                     horizontalAlignment: Text.AlignHCenter
-                    font.pixelSize: 22
+                    font.pixelSize: 28
+                    font.bold: true
                 }
 
                 Item { Layout.fillHeight: true }
             }
         }
 
+        function resetActivationState() {
+            featureUnlockDialog.activationSucceeded = false
+            featureUnlockDialog.passwordError = ""
+            featureUnlockDialog.successMessage = ""
+        }
+
         function trySubmit() {
+            if (featureUnlockDialog.activationSucceeded) {
+                featureUnlockDialog.close()
+                return
+            }
+
             featureUnlockDialog.successMessage = ""
             if (additionalSettingsRoot.serialNumberValue() < 260000) {
                 featureUnlockDialog.passwordError = qsTr("Сначала сохраните серийный номер аппарата")
+                Qt.inputMethod.hide()
                 return
             }
             if (typeof featureUnlock === "undefined" || !featureUnlock) {
                 featureUnlockDialog.passwordError = qsTr("Контроллер активации недоступен")
+                Qt.inputMethod.hide()
                 return
             }
 
@@ -445,19 +483,19 @@ Item {
             if (activatedKey > 0) {
                 featureUnlockInput.text = ""
                 featureUnlockDialog.passwordError = ""
-                featureUnlockDialog.successMessage = qsTr("Активирован ключ №%1").arg(activatedKey)
-                Qt.callLater(function() {
-                    featureUnlockDialog.close()
-                })
+                featureUnlockDialog.successMessage = qsTr("Опция №%1 успешно активирована").arg(activatedKey)
+                featureUnlockDialog.activationSucceeded = true
+                Qt.inputMethod.hide()
                 return
             }
-            featureUnlockDialog.passwordError = qsTr("Неверный ключ")
+            featureUnlockDialog.successMessage = ""
+            featureUnlockDialog.passwordError = qsTr("Извините, ключ не верный! Попробуйте ещё раз или обратитесь к производителю")
+            Qt.inputMethod.hide()
         }
 
         onOpened: {
             featureUnlockInput.text = ""
-            featureUnlockDialog.passwordError = ""
-            featureUnlockDialog.successMessage = ""
+            featureUnlockDialog.resetActivationState()
             Qt.callLater(function() {
                 featureUnlockInput.forceActiveFocus()
             })
@@ -465,7 +503,7 @@ Item {
 
         onClosed: {
             featureUnlockInput.focus = false
-            featureUnlockDialog.successMessage = ""
+            featureUnlockDialog.resetActivationState()
             Qt.inputMethod.hide()
         }
 
@@ -479,20 +517,37 @@ Item {
                 spacing: 16
 
                 DialogActionButton {
+                    id: featureUnlockCancelButton
                     Layout.preferredWidth: 200
                     Layout.fillHeight: true
+                    visible: featureUnlockDialog.showInputMode
                     text: qsTr("ОТМЕНА")
                     onPressed: featureUnlockDialog.close()
                 }
 
-                Item { Layout.fillWidth: true }
+                Item {
+                    Layout.fillWidth: true
+                    visible: featureUnlockDialog.showInputMode
+                }
 
                 DialogActionButton {
+                    id: featureUnlockActivateButton
                     Layout.preferredWidth: 260
                     Layout.fillHeight: true
+                    visible: featureUnlockDialog.showInputMode
                     text: qsTr("АКТИВИРОВАТЬ")
                     primary: true
                     onPressed: featureUnlockDialog.trySubmit()
+                }
+
+                DialogActionButton {
+                    id: featureUnlockCloseButton
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    visible: featureUnlockDialog.showCloseOnly
+                    text: qsTr("ЗАКРЫТЬ")
+                    primary: true
+                    onPressed: featureUnlockDialog.close()
                 }
             }
         }

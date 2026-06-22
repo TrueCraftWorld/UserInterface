@@ -58,6 +58,26 @@ Item {
         return slash >= 0 ? src.substring(slash + 1) : src
     }
 
+    property string serviceMenuAccessLevel: "full"
+
+    function navigateToServiceMenu(accessLevel) {
+        serviceMenuAccessLevel = accessLevel || "full"
+        navigateToWithProperties("qrc:/ServiceMenu.qml", {
+            "accessLevel": serviceMenuAccessLevel
+        })
+    }
+
+    function isServiceMenuScreenAllowed(base) {
+        if (serviceMenuAccessLevel !== "limited") {
+            return true
+        }
+        return base === "ServiceMenu.qml"
+                || base === "updateWindow.qml"
+                || base === "WifiFileReceive.qml"
+                || base === "AboutScreen.qml"
+                || base === "logUpdate.qml"
+    }
+
     function isServiceMenuChildScreenBaseName(base) {
         return base === "SerialNumberSettings.qml"
                 || base === "updateWindow.qml"
@@ -172,6 +192,9 @@ Item {
                     }
                     if (menuLoader.item.secretKeysButtonPressed) {
                         menuLoader.item.secretKeysButtonPressed.connect(function() {
+                            if (!isServiceMenuScreenAllowed("SecretKeysWindow.qml")) {
+                                return
+                            }
                             navigateTo("qrc:/SecretKeysWindow.qml")
                         })
                     }
@@ -193,11 +216,11 @@ Item {
                         })
                     }
                     if (menuLoader.item.serviceMenuButtonPressed) {
-                        menuLoader.item.serviceMenuButtonPressed.connect(function() {
+                        menuLoader.item.serviceMenuButtonPressed.connect(function(accessLevel) {
                             if (loaderSourceBaseName() === "MainMenu.qml") {
                                 navigateTo("qrc:/SettingsMenu.qml")
                             } else {
-                                navigateTo("qrc:/ServiceMenu.qml")
+                                navigateToServiceMenu(accessLevel)
                             }
                         })
                     }
@@ -224,26 +247,41 @@ Item {
                     }
                     if (menuLoader.item.serialNumberButtonPressed) {
                         menuLoader.item.serialNumberButtonPressed.connect(function() {
+                            if (!isServiceMenuScreenAllowed("SerialNumberSettings.qml")) {
+                                return
+                            }
                             navigateTo("qrc:/SerialNumberSettings.qml")
                         })
                     }
                     if (menuLoader.item.softwareUpdateButtonPressed) {
                         menuLoader.item.softwareUpdateButtonPressed.connect(function() {
+                            if (!isServiceMenuScreenAllowed("updateWindow.qml")) {
+                                return
+                            }
                             navigateTo("qrc:/updateWindow.qml")
                         })
                     }
                     if (menuLoader.item.wifiFileReceiveButtonPressed) {
                         menuLoader.item.wifiFileReceiveButtonPressed.connect(function() {
+                            if (!isServiceMenuScreenAllowed("WifiFileReceive.qml")) {
+                                return
+                            }
                             navigateTo("qrc:/WifiFileReceive.qml")
                         })
                     }
                     if (menuLoader.item.wifiSettingsButtonPressed) {
                         menuLoader.item.wifiSettingsButtonPressed.connect(function() {
+                            if (!isServiceMenuScreenAllowed("WiFiConnector.qml")) {
+                                return
+                            }
                             navigateTo("qrc:/WiFiConnector.qml")
                         })
                     }
                     if (menuLoader.item.aboutButtonPressed) {
                         menuLoader.item.aboutButtonPressed.connect(function() {
+                            if (!isServiceMenuScreenAllowed("AboutScreen.qml")) {
+                                return
+                            }
                             navigateToWithProperties("qrc:/AboutScreen.qml", {
                                 "serialNumber": savedJsonString("serialNumber"),
                                 "deviceType": savedJsonString("deviceType"),
@@ -253,16 +291,25 @@ Item {
                     }
                     if (menuLoader.item.specialCommandsButtonPressed) {
                         menuLoader.item.specialCommandsButtonPressed.connect(function() {
+                            if (!isServiceMenuScreenAllowed("SpecialCommands.qml")) {
+                                return
+                            }
                             navigateTo("qrc:/SpecialCommands.qml")
                         })
                     }
                     if (menuLoader.item.featureOptionsButtonPressed) {
                         menuLoader.item.featureOptionsButtonPressed.connect(function() {
+                            if (!isServiceMenuScreenAllowed("FeatureOptionsManager.qml")) {
+                                return
+                            }
                             navigateTo("qrc:/FeatureOptionsManager.qml")
                         })
                     }
                     if (menuLoader.item.touchScreenTestButtonPressed) {
                         menuLoader.item.touchScreenTestButtonPressed.connect(function() {
+                            if (!isServiceMenuScreenAllowed("TouchScreenTest.qml")) {
+                                return
+                            }
                             navigateTo("qrc:/TouchScreenTest.qml")
                         })
                     }
@@ -278,6 +325,9 @@ Item {
                     }
                     if (menuLoader.item.logUpdateButtonPressed) {
                         menuLoader.item.logUpdateButtonPressed.connect(function() {
+                            if (!isServiceMenuScreenAllowed("logUpdate.qml")) {
+                                return
+                            }
                             navigateTo("qrc:/logUpdate.qml")
                         })
                     }
@@ -330,7 +380,7 @@ Item {
         function onReturnButtonPressed() {
             var base = loaderSourceBaseName()
             if (isServiceMenuChildScreenBaseName(base)) {
-                navigateTo("qrc:/ServiceMenu.qml")
+                navigateToServiceMenu(serviceMenuAccessLevel)
             } else if (isAdditionalSettingsChildScreenBaseName(base)) {
                 navigateTo("qrc:/AdditionalSettingsMenu.qml")
             } else if (isSettingsMenuChildScreenBaseName(base)) {
@@ -338,6 +388,7 @@ Item {
             } else if (base === "AdditionalSettingsMenu.qml") {
                 navigateTo("qrc:/SettingsMenu.qml")
             } else if (base === "ServiceMenu.qml") {
+                serviceMenuAccessLevel = "full"
                 navigateTo("qrc:/AdditionalSettingsMenu.qml")
             } else if (base === "SettingsMenu.qml") {
                 if (closeOnServiceRootReturn) {

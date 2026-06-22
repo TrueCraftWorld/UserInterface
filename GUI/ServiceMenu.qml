@@ -17,6 +17,9 @@ Item {
     signal specialCommandsButtonPressed()
     signal secretKeysButtonPressed()
     signal featureOptionsButtonPressed()
+
+    property string accessLevel: "full"
+    readonly property bool isLimitedAccess: accessLevel === "limited"
     readonly property int menuButtonWidth: 550
     readonly property int menuButtonHeight: 96
     readonly property int menuColumnsSpacing: 24
@@ -51,6 +54,7 @@ Item {
 
         SButton {
             id: specialCommandsButton
+            visible: !serviceMenuRoot.isLimitedAccess
             style: "btn-primary lg"
             Layout.preferredWidth: serviceMenuRoot.menuButtonWidth
             Layout.preferredHeight: serviceMenuRoot.menuButtonHeight
@@ -60,6 +64,7 @@ Item {
 
         SButton {
             id: serialNumberButton
+            visible: !serviceMenuRoot.isLimitedAccess
             style: "btn-primary lg"
             Layout.preferredWidth: serviceMenuRoot.menuButtonWidth
             Layout.preferredHeight: serviceMenuRoot.menuButtonHeight
@@ -87,6 +92,7 @@ Item {
 
         SButton {
             id: wifiSettingsButton
+            visible: !serviceMenuRoot.isLimitedAccess
             style: "btn-primary lg"
             Layout.preferredWidth: serviceMenuRoot.menuButtonWidth
             Layout.preferredHeight: serviceMenuRoot.menuButtonHeight
@@ -105,6 +111,7 @@ Item {
 
         SButton {
             id: touchScreenTestButton
+            visible: !serviceMenuRoot.isLimitedAccess
             style: "btn-primary lg"
             Layout.preferredWidth: serviceMenuRoot.menuButtonWidth
             Layout.preferredHeight: serviceMenuRoot.menuButtonHeight
@@ -123,6 +130,7 @@ Item {
 
         SButton {
             id: secretKeysButton
+            visible: !serviceMenuRoot.isLimitedAccess
             style: "btn-primary lg"
             Layout.preferredWidth: serviceMenuRoot.menuButtonWidth
             Layout.preferredHeight: serviceMenuRoot.menuButtonHeight
@@ -132,6 +140,7 @@ Item {
 
         SButton {
             id: featureOptionsButton
+            visible: !serviceMenuRoot.isLimitedAccess
             style: "btn-primary lg"
             Layout.preferredWidth: serviceMenuRoot.menuButtonWidth
             Layout.preferredHeight: serviceMenuRoot.menuButtonHeight

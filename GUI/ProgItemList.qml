@@ -23,7 +23,6 @@ Rectangle {
     property string pendingDeleteName: ""
     property int pendingSubProgParentIndex: -1
     property string pendingSubProgParentName: ""
-    property bool endoscopyEnabled: false
 
     readonly property color fotekBlue: "#264093"
     readonly property color fotekOrange: "#faa731"
@@ -52,28 +51,6 @@ Rectangle {
         id: subProgsModel
     }
 
-    function readEndoscopyEnabled() {
-        return typeof savedJson !== "undefined"
-                && savedJson
-                && savedJson.readString("endoscopyEnabled", "0") === "1"
-    }
-
-    function isEndoscopyScopeId(scopeId) {
-        return parseInt(scopeId) === 5
-    }
-
-    function isScopeLocked(scopeId) {
-        return !endoscopyEnabled && isEndoscopyScopeId(scopeId)
-    }
-
-    function firstUnlockedScopeIndex() {
-        for (var i = 0; i < scopeModel.count; ++i) {
-            if (!scopeModel.get(i).locked)
-                return i
-        }
-        return -1
-    }
-
     function updateModel() {
         progsModel.clear()
         itemNameArr = recomHandle.progNameList
@@ -96,7 +73,6 @@ Rectangle {
     }
 
     function init() {
-        endoscopyEnabled = readEndoscopyEnabled()
         scopeModel.clear()
         itemNameArr = recomHandle.scopeNameList
         itemIdArr = recomHandle.scopeIdList
@@ -108,15 +84,13 @@ Rectangle {
             scopeModel.append({
                                   itemId: itemIdArr[i],
                                   itemName: itemNameArr[i],
-                                  rowIndex: i,
-                                  locked: isScopeLocked(itemIdArr[i])
+                                  rowIndex: i
                               })
         }
         scopeList.innerModel = scopeModel
         var selectedIndex = recomHandle.scopeIdx
-        if (selectedIndex >= 0 && selectedIndex < scopeModel.count
-                && scopeModel.get(selectedIndex).locked) {
-            selectedIndex = firstUnlockedScopeIndex()
+        if (selectedIndex >= scopeModel.count) {
+            selectedIndex = scopeModel.count > 0 ? scopeModel.count - 1 : -1
             if (selectedIndex >= 0)
                 recomHandle.scopeIdx = selectedIndex
         }
@@ -701,8 +675,6 @@ Rectangle {
     Connections {
         target: scopeList
         function onNewIndexSelected(index) {
-            if (index >= 0 && index < scopeModel.count && scopeModel.get(index).locked)
-                return
             recomHandle.scopeIdx = index
             recProgs.updateModel()
         }
@@ -733,10 +705,6 @@ Rectangle {
     Connections {
         target: progList
         function onNewIndexSelected(index) {
-            if (scopeList.curIndex >= 0 && scopeList.curIndex < scopeModel.count
-                    && scopeModel.get(scopeList.curIndex).locked) {
-                return
-            }
             if (recProgs.recommended && recomHandle.hasSubPrograms(index)) {
                 recProgs.showSubProgramsPanel(index)
                 return

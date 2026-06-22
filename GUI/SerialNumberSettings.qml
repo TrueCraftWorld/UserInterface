@@ -11,7 +11,6 @@ Item {
     property string serialNumber: ""
     property string deviceType: ""
     property string featureNotes: ""
-    property bool serviceMenuNoPassword: false
     readonly property var deviceTypeOptions: ["ONYX-M", "ONYX-AM"]
     readonly property int minSerialNumber: 260000
     readonly property int maxSerialNumber: 1000000
@@ -27,7 +26,6 @@ Item {
             savedJson.saveString("serialNumber", serialRoot.serialNumber)
             savedJson.saveString("deviceType", serialRoot.deviceType)
             savedJson.saveString("featureNotes", serialRoot.featureNotes)
-            savedJson.saveString("serviceMenuNoPassword", serialRoot.serviceMenuNoPassword ? "1" : "0")
         }
 
         if (typeof remoteUpdater !== "undefined" && remoteUpdater) {
@@ -42,7 +40,6 @@ Item {
             serialRoot.serialNumber = savedJson.readString("serialNumber", "")
             serialRoot.deviceType = savedJson.readString("deviceType", "")
             serialRoot.featureNotes = savedJson.readString("featureNotes", "")
-            serialRoot.serviceMenuNoPassword = savedJson.readString("serviceMenuNoPassword", "0") === "1"
         }
         if (deviceTypeOptions.indexOf(serialRoot.deviceType) < 0) {
             serialRoot.deviceType = deviceTypeOptions[1]
@@ -69,13 +66,6 @@ Item {
         serialRoot.deviceType = value
         if (serialRoot.serialValid) {
             serialRoot.serialSaveStatus = qsTr("Не сохранено")
-        }
-    }
-
-    function setServiceMenuNoPassword(enabled) {
-        serialRoot.serviceMenuNoPassword = enabled
-        if (typeof savedJson !== "undefined" && savedJson) {
-            savedJson.saveString("serviceMenuNoPassword", enabled ? "1" : "0")
         }
     }
 
@@ -208,18 +198,6 @@ Item {
             }
         }
 
-    }
-
-    SButton {
-        id: noPasswordButton
-        style: serialRoot.serviceMenuNoPassword ? "btn-danger" : "btn-secondary"
-        text: qsTr("Вход без пароля")
-        onPressed: serialRoot.setServiceMenuNoPassword(!serialRoot.serviceMenuNoPassword)
-        anchors {
-            horizontalCenter: parent.horizontalCenter
-            bottom: saveButton.top
-            bottomMargin: 12
-        }
     }
 
     SButton {

@@ -43,6 +43,13 @@ public:
         ReadyToPowerOff = 0x6F,         // Команда на выключение питания
 
         SignalAlarm = 0x80,             // Выдача звукового сигнала (аварии)
+        Volume1 = 0x81,                 // Громкость, уровень 1
+        Volume2 = 0x82,
+        Volume3 = 0x83,
+        Volume4 = 0x84,
+        Volume5 = 0x85,
+        Volume6 = 0x86,
+        Volume7 = 0x87,                 // Громкость, уровень 7
 
         CurrentVersion = 0xE0,          // Запрос версий ПО
         Erase = 0xE1,                   // Стереть память под прошивку
@@ -213,12 +220,15 @@ public:
     /// Упаковать mcVersions в QVariantList и отправить в sigFirmwareVersionsChanged.
     void publishFirmwareVersions();
 
-    // Методы для установки состояния из PeriphHandler
+    int uartRate() const;
+
 public slots:
+    void setUartRate(int newUartRate);
     void start();
     /// Загрузка hex из файла (вызов из потока LinkStm)
     void startFirmwareUpdateFromFile(const QString &filePath, const QString &versionStr, int mcUnitRaw);
     void argonBlow();
+    void setVolume(int level);
     void setEnableActivation(bool enable);
     void setNeutralElDivided(bool divided);
     void setAutoSSmode(quint8 mode);
@@ -344,6 +354,8 @@ private:
     bool m_debugUart = false;
     bool m_readyToPowerOffPending = false;
     QByteArray m_readyToPowerOffData;
+
+    int m_uartRate;
 };
 
 #endif // LINKSTM_H

@@ -3,6 +3,7 @@
 #include "BackEnd/recomprogloader.h"
 #include "BackEnd/userprogloader.h"
 #include "BackEnd/jsonstorage.h"
+#include "BackEnd/featureunlockcontroller.h"
 #include "socket.h"
 #include "onyxapp.h"
 #include "EshfProgStringBuilder.h"
@@ -373,6 +374,24 @@ const   QString insertUserProgQuery = QString(
                                       ")");
 const QString queryConditionModes = "BI_MONO = %1 AND CUT_COAG = %2 AND id IN (%3)";
 
+QList<QVariantList> filterModesByFeatureKey(const QList<QVariantList> &modes,
+                                            FeatureUnlockController *featureUnlock)
+{
+	if (!featureUnlock) {
+		return modes;
+	}
+
+	QList<QVariantList> filtered;
+	filtered.reserve(modes.size());
+	for (const QVariantList &item : modes) {
+		const QString keyField = item.size() > 7 ? item.at(7).toString() : QString();
+		if (featureUnlock->isKeyRequirementMet(keyField)) {
+			filtered.append(item);
+		}
+	}
+	return filtered;
+}
+
 }
 
 ProgLoader::ProgLoader(QObject *parent)
@@ -480,10 +499,14 @@ void ProgLoader::defaultSocketInit(bool clear)
 	// Получаем все режимы из БД
 	QList<QVariantList> allModes = m_dbReaderPtr->slotSendSelectQuery(
 	                                   QStringList{"Modes"},
-	                                   QStringList{"id"},
+	                                   QStringList{"id", "KEY"},
 	                                   QString("1=1%1").arg(deviceModeFilterCondition()));
 	allowedModesId.reserve(allModes.size());
 	for (const auto& item : allModes) {
+		const QString keyField = item.size() > 1 ? item.at(1).toString() : QString();
+		if (m_featureUnlock && !m_featureUnlock->isKeyRequirementMet(keyField)) {
+			continue;
+		}
 		allowedModesId.push_back(item.at(0).toInt());
 	}
 
@@ -525,12 +548,13 @@ void ProgLoader::defaultSocketInit(bool clear)
 				bool isCoag = (halfSocket == 0);
 				QMap<int, SurgModePtr> modes;
 				QList<QVariantList> modesList = m_dbReaderPtr->slotSendSelectQuery(QStringList{"Modes"},
-				                                                                   QStringList{"MaxPower",DbLocale::column("Name"), "id", "Num", DbLocale::column("Brief"), DbLocale::column("Descript"), "ENDO_REG"},
+				                                                                   QStringList{"MaxPower",DbLocale::column("Name"), "id", "Num", DbLocale::column("Brief"), DbLocale::column("Descript"), "ENDO_REG", "KEY"},
 				                                                                   queryConditionModes
 				                                                                   .arg(socket->socketType() <= Onyx::BIPOLAR_2 ? 0 : 1)
 				                                                                   .arg(halfSocket)
 				                                                                   .arg(makeCommaSeparatedNumbers(allowedModesId))
 				                                                                   + deviceModeFilterCondition());
+				modesList = filterModesByFeatureKey(modesList, m_featureUnlock);
 
 				// Сортируем по Num (index 3)
 				std::sort(modesList.begin(), modesList.end(),
@@ -829,11 +853,12 @@ bool ProgLoader::freeSettingsSocketInit(bool clear)
             QList<QVariantList> modesList = m_dbReaderPtr->slotSendSelectQuery(
                         QStringList{"Modes"},
                         QStringList{"MaxPower",DbLocale::column("Name"), "id", "Num",
-                                    DbLocale::column("Brief"), DbLocale::column("Descript"), "ENDO_REG"},
+                                    DbLocale::column("Brief"), DbLocale::column("Descript"), "ENDO_REG", "KEY"},
                         queryConditionModes
                                     .arg(socket->socketType() <= Onyx::BIPOLAR_2 ? 0 : 1)
                                     .arg(halfSocket)
                                     + deviceModeFilterCondition());
+            modesList = filterModesByFeatureKey(modesList, m_featureUnlock);
             
             std::sort(modesList.begin(), modesList.end(),
                 [](const QVariantList& a, const QVariantList& b) {
@@ -952,7 +977,18 @@ std::map<int, QString> ProgLoader::getProgs(int scopeID)
 std::map<int, QString> ProgLoader::getCategories()
 {
 	const std::unique_ptr<ProgLoaderBase> loader{getLoader(m_curLoaderType)};
-	return loader->getCategories();
+	auto categories = loader->getCategories();
+	if (!m_featureUnlock) {
+		return categories;
+	}
+
+	std::map<int, QString> filtered;
+	for (const auto &item : categories) {
+		if (!m_featureUnlock->isScopeLocked(item.first)) {
+			filtered.insert(item);
+		}
+	}
+	return filtered;
 }
 
 void ProgLoader::deleteUserProg(int id)
@@ -1350,9 +1386,9 @@ ProgLoaderBase *ProgLoader::getLoader(progType type)
 
 	switch (type) {
 	case ptRecom:
-		return new RecomProgLoader(argonProgramsEnabled());
+		return new RecomProgLoader(deviceHasArgon());
 	case ptUser:
-		return new UserProgLoader(argonProgramsEnabled());
+		return new UserProgLoader(deviceHasArgon());
 	default:
 		break;
 	}
@@ -1364,6 +1400,14 @@ void ProgLoader::setJsonStorage(JsonStorage *jsonStorage)
 	m_jsonStorage = jsonStorage;
 }
 
+void ProgLoader::setFeatureUnlockController(FeatureUnlockController *controller)
+{
+	m_featureUnlock = controller;
+	if (m_featureUnlock && !m_dbReaderPtr.isNull()) {
+		m_featureUnlock->setDatabaseReader(m_dbReaderPtr.data());
+	}
+}
+
 bool ProgLoader::deviceHasArgon() const
 {
 	if (m_jsonStorage.isNull()) {
@@ -1373,24 +1417,6 @@ bool ProgLoader::deviceHasArgon() const
 	const QString deviceType = m_jsonStorage->readString(QStringLiteral("deviceType"),
 	                                                     QStringLiteral("ONYX-AM")).trimmed().toUpper();
 	return deviceType != QStringLiteral("ONYX-M");
-}
-
-bool ProgLoader::argonModesEnabled() const
-{
-	if (!deviceHasArgon()) {
-		return false;
-	}
-	if (m_jsonStorage.isNull()) {
-		return false;
-	}
-
-	return m_jsonStorage->readString(QStringLiteral("argonModesEnabled"),
-	                                 QStringLiteral("0")) == QStringLiteral("1");
-}
-
-bool ProgLoader::argonProgramsEnabled() const
-{
-	return deviceHasArgon() && argonModesEnabled();
 }
 
 QString ProgLoader::deviceModeFilterCondition() const
@@ -1538,12 +1564,13 @@ void ProgLoader::fillHalfSocket(int halfSocket,
 		modesList = m_dbReaderPtr->slotSendSelectQuery(
 		            QStringList{"Modes"},
 		            QStringList{"MaxPower",DbLocale::column("Name"), "id", "Num",
-		                        DbLocale::column("Brief"), DbLocale::column("Descript"), "ENDO_REG"},
+		                        DbLocale::column("Brief"), DbLocale::column("Descript"), "ENDO_REG", "KEY"},
 		            queryConditionModes
 		            .arg(biMonoFlag)
 		            .arg(halfSocket)
 		            .arg(makeCommaSeparatedNumbers(allowedModesId))
 		            + deviceModeFilterCondition());
+		modesList = filterModesByFeatureKey(modesList, m_featureUnlock);
 	}
 
 	// Сортируем по Num (index 3)

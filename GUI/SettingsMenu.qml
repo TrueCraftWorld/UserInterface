@@ -2,616 +2,451 @@ import QtQuick 2.15
 import QtQuick.Layouts 1.15
 import QtQuick.Controls 2.15
 
-import StratifyLabs.UI 2.0
-
 Item {
     id: settingsMenuRoot
 
     signal returnButtonPressed()
-    signal serviceMenuButtonPressed()
-    signal logFileButtonPressed()
+    signal additionalSettingsButtonPressed()
     signal infoButtonPressed()
     signal languageButtonPressed()
-    signal dateTimeSettingsButtonPressed()
 
-    property bool endoscopyEnabled: false
-    property bool argonModesEnabled: false
+    property int volumeLevel: 7
 
-    readonly property int menuButtonWidth: 550
-    readonly property int menuButtonHeight: 96
-    readonly property int menuColumnsSpacing: 24
-    readonly property int unlockButtonFontSize: 24
+    property color fotekBlue: "#264093"
+    property color fotekOrange: "#faa731"
+    readonly property string iconsBasePath: "file:///home/kikorik/FOTEK/Images/icons/"
+    readonly property int screenMargin: 34
+    readonly property int mainSpacing: 24
+    readonly property int headerHeight: 70
+    readonly property int menuActionLabelSize: 34
+    readonly property int menuActionSmallLabelSize: 28
+    readonly property string currentLanguage: (typeof container !== "undefined" && container)
+            ? container.normalizedLanguage(container.language)
+            : "ru"
 
-    function readEndoscopyEnabled() {
-        return typeof savedJson !== "undefined"
-                && savedJson
-                && savedJson.readString("endoscopyEnabled", "0") === "1"
-    }
-
-    function readArgonModesEnabled() {
-        return typeof savedJson !== "undefined"
-                && savedJson
-                && savedJson.readString("argonModesEnabled", "0") === "1"
-    }
-
-    function isOnyxAm() {
+    function readVolumeLevel() {
         if (typeof savedJson === "undefined" || !savedJson) {
-            return true
+            return 7
         }
-        return String(savedJson.readString("deviceType", "ONYX-AM")).trim().toUpperCase() === "ONYX-AM"
+        return savedJson.readInt("volume", 7)
     }
 
-    function serialNumberValue() {
-        if (typeof savedJson === "undefined" || !savedJson) {
-            return -1
-        }
-        var serialText = String(savedJson.readString("serialNumber", "")).trim()
-        if (!/^\d+$/.test(serialText)) {
-            return -1
-        }
-        return parseInt(serialText, 10)
-    }
-
-    function deviceTypeValue() {
-        if (typeof savedJson === "undefined" || !savedJson) {
-            return "ONYX-AM"
-        }
-        return String(savedJson.readString("deviceType", "ONYX-AM")).trim().toUpperCase()
-    }
-
-    function isUnlockKeyValid(featureCode, value) {
-        var serial = serialNumberValue()
-        if (serial < 260000 || serial > 1000000) {
-            return false
-        }
-        if (typeof keyGenerator === "undefined" || !keyGenerator) {
-            return false
-        }
-        return keyGenerator.validateUnlockKey(serial, deviceTypeValue(), featureCode, unlockKeyDigits(value))
-    }
-
-    function unlockKeyDigits(value) {
-        return String(value === undefined || value === null ? "" : value).replace(/\D/g, "").substring(0, 12)
-    }
-
-    function formattedUnlockKey(value) {
-        var digits = unlockKeyDigits(value)
-        var groups = []
-        for (var i = 0; i < digits.length; i += 3) {
-            groups.push(digits.substring(i, i + 3))
-        }
-        return groups.join("-")
-    }
-
-    function saveEndoscopyEnabled(enabled) {
-        endoscopyEnabled = enabled
+    function saveVolumeLevel(level) {
+        var clamped = Math.max(1, Math.min(7, Math.round(level)))
+        volumeLevel = clamped
         if (typeof savedJson !== "undefined" && savedJson) {
-            savedJson.saveString("endoscopyEnabled", enabled ? "1" : "0")
+            savedJson.saveInt("volume", clamped)
+        }
+        if (typeof appControl !== "undefined" && appControl) {
+            appControl.setVolumeLevel(clamped)
         }
     }
 
-    function saveArgonModesEnabled(enabled) {
-        argonModesEnabled = enabled
-        if (typeof savedJson !== "undefined" && savedJson) {
-            savedJson.saveString("argonModesEnabled", enabled ? "1" : "0")
+    function setLanguage(langCode) {
+        if (typeof container === "undefined" || !container) {
+            return
         }
-    }
-
-    function isServiceMenuNoPasswordEnabled() {
-        if (typeof savedJson === "undefined" || !savedJson) {
-            return false
-        }
-        return savedJson.readString("serviceMenuNoPassword", "0") === "1"
-    }
-
-    function isServiceMenuPasswordValid(value) {
-        var normalized = String(value).trim().toLowerCase()
-        normalized = normalized.replace(/\u0430/g, "a")
-        return normalized === "145a"
-    }
-
-    function requestServiceMenuAccess() {
-        if (settingsMenuRoot.isServiceMenuNoPasswordEnabled()) {
-            settingsMenuRoot.serviceMenuButtonPressed()
-        } else {
-            servicePasswordDialog.passwordError = ""
-            servicePasswordDialog.open()
-        }
-    }
-
-    function requestEndoscopyUnlock() {
-        endoscopyPasswordDialog.passwordError = ""
-        endoscopyPasswordDialog.open()
-    }
-
-    function requestArgonUnlock() {
-        argonPasswordDialog.passwordError = ""
-        argonPasswordDialog.open()
+        container.language = langCode
     }
 
     Component.onCompleted: {
-        endoscopyEnabled = readEndoscopyEnabled()
-        argonModesEnabled = readArgonModesEnabled()
+        volumeLevel = readVolumeLevel()
     }
 
     Rectangle {
         anchors.fill: parent
-        color: "darkslategray"
+        color: "#B8BEC8"
     }
 
-    SLabel {
-        id: screenTitle
-        style: "label-primary lg"
-        text: qsTr("Настройки")
+    Item {
+        id: headerArea
         anchors {
             top: parent.top
+            horizontalCenter: parent.horizontalCenter
+            topMargin: settingsMenuRoot.screenMargin - 8
+        }
+        width: parent.width - settingsMenuRoot.screenMargin * 2
+        height: settingsMenuRoot.headerHeight
+
+        Text {
+            id: screenTitle
+            text: qsTr("НАСТРОЙКИ")
+            anchors.centerIn: parent
+            color: settingsMenuRoot.fotekBlue
+            font.pixelSize: 48
+            font.bold: true
+        }
+    }
+
+    Item {
+        id: footerArea
+        height: 72
+        anchors {
             left: parent.left
             right: parent.right
-        }
-    }
-
-    GridLayout {
-        anchors {
-            top: screenTitle.bottom
-            topMargin: 36
-            horizontalCenter: parent.horizontalCenter
-        }
-        columns: 2
-        columnSpacing: settingsMenuRoot.menuColumnsSpacing
-        rowSpacing: 20
-        width: settingsMenuRoot.menuButtonWidth * 2 + settingsMenuRoot.menuColumnsSpacing
-
-        SButton {
-            style: "btn-primary lg"
-            Layout.preferredWidth: settingsMenuRoot.menuButtonWidth
-            Layout.preferredHeight: settingsMenuRoot.menuButtonHeight
-            text: qsTr("Сервисное меню")
-            onPressed: settingsMenuRoot.requestServiceMenuAccess()
-        }
-
-        SButton {
-            style: "btn-primary lg"
-            Layout.preferredWidth: settingsMenuRoot.menuButtonWidth
-            Layout.preferredHeight: settingsMenuRoot.menuButtonHeight
-            text: qsTr("Журнал событий")
-            onPressed: settingsMenuRoot.logFileButtonPressed()
-        }
-
-        SButton {
-            style: "btn-primary lg"
-            Layout.preferredWidth: settingsMenuRoot.menuButtonWidth
-            Layout.preferredHeight: settingsMenuRoot.menuButtonHeight
-            text: qsTr("ИНФО")
-            onPressed: settingsMenuRoot.infoButtonPressed()
-        }
-
-        SButton {
-            style: "btn-primary lg"
-            Layout.preferredWidth: settingsMenuRoot.menuButtonWidth
-            Layout.preferredHeight: settingsMenuRoot.menuButtonHeight
-            text: qsTr("RU / EN / ES")
-            onPressed: settingsMenuRoot.languageButtonPressed()
-        }
-
-        SButton {
-            style: "btn-primary lg"
-            Layout.preferredWidth: settingsMenuRoot.menuButtonWidth
-            Layout.preferredHeight: settingsMenuRoot.menuButtonHeight
-            text: qsTr("Настройка даты и времени")
-            onPressed: settingsMenuRoot.dateTimeSettingsButtonPressed()
-        }
-
-        SButton {
-            visible: !settingsMenuRoot.endoscopyEnabled
-            style: "btn-primary lg"
-            Layout.preferredWidth: settingsMenuRoot.menuButtonWidth
-            Layout.preferredHeight: settingsMenuRoot.menuButtonHeight
-            text: qsTr("Разблокировка эндоскопических функций")
-            contentItem: Text {
-                text: parent.text
-                color: "white"
-                font.pixelSize: settingsMenuRoot.unlockButtonFontSize
-                font.bold: true
-                horizontalAlignment: Text.AlignHCenter
-                verticalAlignment: Text.AlignVCenter
-                wrapMode: Text.WordWrap
-                elide: Text.ElideNone
-            }
-            onPressed: settingsMenuRoot.requestEndoscopyUnlock()
-        }
-
-        SButton {
-            visible: settingsMenuRoot.isOnyxAm() && !settingsMenuRoot.argonModesEnabled
-            style: "btn-primary lg"
-            Layout.preferredWidth: settingsMenuRoot.menuButtonWidth
-            Layout.preferredHeight: settingsMenuRoot.menuButtonHeight
-            text: qsTr("Разблокировка аргонусиленной коагуляции")
-            contentItem: Text {
-                text: parent.text
-                color: "white"
-                font.pixelSize: settingsMenuRoot.unlockButtonFontSize
-                font.bold: true
-                horizontalAlignment: Text.AlignHCenter
-                verticalAlignment: Text.AlignVCenter
-                wrapMode: Text.WordWrap
-                elide: Text.ElideNone
-            }
-            onPressed: settingsMenuRoot.requestArgonUnlock()
-        }
-    }
-
-    SButton {
-        id: retButton
-        style: "btn-secondary"
-        text: qsTr("Назад")
-        onPressed: settingsMenuRoot.returnButtonPressed()
-        anchors {
-            left: parent.left
             bottom: parent.bottom
-            margins: 15
+            leftMargin: settingsMenuRoot.screenMargin
+            rightMargin: settingsMenuRoot.screenMargin
+            bottomMargin: settingsMenuRoot.screenMargin
+        }
+
+        DialogActionButton {
+            id: retButton
+            width: 180
+            height: parent.height
+            text: qsTr("НАЗАД")
+            secondaryColor: settingsMenuRoot.fotekBlue
+            secondaryBorderWidth: 1
+            secondaryBorderColor: "#1E3274"
+            cornerRadius: 20
+            labelPixelSize: 30
+            onPressed: settingsMenuRoot.returnButtonPressed()
+            anchors {
+                left: parent.left
+                verticalCenter: parent.verticalCenter
+            }
+        }
+
+        Text {
+            id: footerDateTime
+            anchors {
+                right: parent.right
+                verticalCenter: parent.verticalCenter
+            }
+            text: (typeof dateTimeController !== "undefined" && dateTimeController)
+                  ? dateTimeController.currentDateTime
+                  : ""
+            color: settingsMenuRoot.fotekBlue
+            font.pixelSize: 26
+            font.bold: true
         }
     }
 
-    Dialog {
-        id: servicePasswordDialog
-        property string passwordError: ""
-        modal: true
-        width: Math.min(settingsMenuRoot.width * 0.92, 760)
-        height: 380
-        x: (settingsMenuRoot.width - width) / 2
-        y: (settingsMenuRoot.height - height) / 2
-        title: ""
-
-        contentItem: Rectangle {
-            color: "white"
-            radius: 8
-
-            ColumnLayout {
-                anchors.fill: parent
-                anchors.margins: 28
-                spacing: 16
-
-                Label {
-                    Layout.fillWidth: true
-                    text: qsTr("Для доступа к сервисным функциям введите пароль")
-                    wrapMode: Text.WordWrap
-                    horizontalAlignment: Text.AlignHCenter
-                    font.pixelSize: 28
-                    font.bold: true
-                }
-
-                TextField {
-                    id: servicePasswordInput
-                    Layout.fillWidth: true
-                    Layout.preferredHeight: 64
-                    placeholderText: qsTr("Пароль")
-                    echoMode: TextInput.Password
-                    selectByMouse: true
-                    font.pixelSize: 24
-                    color: "black"
-                    background: Rectangle {
-                        color: "#f5f5f5"
-                        border.color: servicePasswordInput.activeFocus ? "#4a9eff" : "#7a7a7a"
-                        border.width: 2
-                        radius: 6
-                    }
-                    onAccepted: servicePasswordDialog.trySubmit()
-                }
-
-                Label {
-                    Layout.fillWidth: true
-                    visible: servicePasswordDialog.passwordError.length > 0
-                    text: servicePasswordDialog.passwordError
-                    color: "#dc2626"
-                    wrapMode: Text.WordWrap
-                    horizontalAlignment: Text.AlignHCenter
-                    font.pixelSize: 22
-                }
-
-                Item { Layout.fillHeight: true }
-            }
-        }
-
-        function trySubmit() {
-            if (settingsMenuRoot.isServiceMenuPasswordValid(servicePasswordInput.text)) {
-                servicePasswordInput.text = ""
-                servicePasswordDialog.passwordError = ""
-                servicePasswordDialog.close()
-                settingsMenuRoot.serviceMenuButtonPressed()
-                return
-            }
-            servicePasswordDialog.passwordError = qsTr("Неверный пароль")
-        }
-
-        onOpened: {
-            servicePasswordInput.text = ""
-            servicePasswordDialog.passwordError = ""
-            Qt.callLater(function() {
-                servicePasswordInput.forceActiveFocus()
-            })
-        }
-
-        onClosed: {
-            servicePasswordInput.focus = false
-            Qt.inputMethod.hide()
-        }
-
-        footer: Rectangle {
-            color: "transparent"
-            implicitHeight: 108
-
-            RowLayout {
-                anchors.fill: parent
-                anchors.margins: 20
-                spacing: 16
-
-                DialogActionButton {
-                    Layout.preferredWidth: 200
-                    Layout.fillHeight: true
-                    text: qsTr("ОТМЕНА")
-                    onPressed: servicePasswordDialog.close()
-                }
-
-                Item { Layout.fillWidth: true }
-
-                DialogActionButton {
-                    Layout.preferredWidth: 200
-                    Layout.fillHeight: true
-                    text: qsTr("ВОЙТИ")
-                    primary: true
-                    onPressed: servicePasswordDialog.trySubmit()
-                }
-            }
-        }
+    Timer {
+        interval: 1000
+        repeat: true
+        running: typeof dateTimeController !== "undefined" && dateTimeController
+        onTriggered: dateTimeController.refresh()
     }
 
-    Dialog {
-        id: endoscopyPasswordDialog
-        property string passwordError: ""
-        modal: true
-        width: Math.min(settingsMenuRoot.width * 0.92, 820)
-        height: 380
-        x: (settingsMenuRoot.width - width) / 2
-        y: (settingsMenuRoot.height - height) / 2
-        title: ""
+    Item {
+        id: actionsArea
+        anchors {
+            top: headerArea.bottom
+            topMargin: 26
+            left: parent.left
+            right: parent.right
+            bottom: footerArea.top
+            bottomMargin: settingsMenuRoot.mainSpacing
+            leftMargin: settingsMenuRoot.screenMargin
+            rightMargin: settingsMenuRoot.screenMargin
+        }
 
-        contentItem: Rectangle {
-            color: "white"
-            radius: 8
+        ColumnLayout {
+            anchors.fill: parent
+            spacing: settingsMenuRoot.mainSpacing
 
-            ColumnLayout {
-                anchors.fill: parent
-                anchors.margins: 28
-                spacing: 16
+            Item {
+                Layout.fillWidth: true
+                Layout.preferredHeight: 148
 
-                Label {
-                    Layout.fillWidth: true
-                    text: qsTr("Для разблокировки эндоскопических функций введите ключ")
-                    wrapMode: Text.WordWrap
-                    horizontalAlignment: Text.AlignHCenter
-                    font.pixelSize: 28
-                    font.bold: true
-                }
+                RowLayout {
+                    anchors.fill: parent
+                    spacing: settingsMenuRoot.mainSpacing
 
-                TextField {
-                    id: endoscopyPasswordInput
-                    Layout.fillWidth: true
-                    Layout.preferredHeight: 64
-                    placeholderText: qsTr("123-456-789-012")
-                    echoMode: TextInput.Normal
-                    maximumLength: 15
-                    inputMethodHints: Qt.ImhDigitsOnly
-                    selectByMouse: true
-                    font.pixelSize: 24
-                    color: "black"
-                    background: Rectangle {
-                        color: "#f5f5f5"
-                        border.color: endoscopyPasswordInput.activeFocus ? "#4a9eff" : "#7a7a7a"
-                        border.width: 2
-                        radius: 6
-                    }
-                    onTextChanged: {
-                        var formatted = settingsMenuRoot.formattedUnlockKey(text)
-                        if (text !== formatted) {
-                            text = formatted
-                            cursorPosition = text.length
+                    Item {
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+
+                        Text {
+                            text: qsTr("ГРОМКОСТЬ")
+                            anchors {
+                                top: parent.top
+                                horizontalCenter: parent.horizontalCenter
+                            }
+                            color: settingsMenuRoot.fotekBlue
+                            font.pixelSize: 28
+                            font.bold: true
+                        }
+
+                        Slider {
+                            id: volumeSlider
+                            anchors {
+                                top: parent.top
+                                topMargin: 52
+                                left: parent.left
+                                right: parent.right
+                                leftMargin: 12
+                                rightMargin: 12
+                            }
+                            from: 1
+                            to: 7
+                            stepSize: 1
+                            snapMode: Slider.SnapAlways
+                            value: settingsMenuRoot.volumeLevel
+                            onPressedChanged: {
+                                if (!pressed) {
+                                    settingsMenuRoot.saveVolumeLevel(value)
+                                }
+                            }
+                            onMoved: settingsMenuRoot.volumeLevel = Math.round(value)
+
+                            background: Rectangle {
+                                x: volumeSlider.leftPadding
+                                y: volumeSlider.topPadding + volumeSlider.availableHeight / 2 - height / 2
+                                implicitWidth: 200
+                                implicitHeight: 8
+                                width: volumeSlider.availableWidth
+                                height: implicitHeight
+                                radius: 4
+                                color: "#D7DCE3"
+
+                                Rectangle {
+                                    width: volumeSlider.visualPosition * parent.width
+                                    height: parent.height
+                                    color: settingsMenuRoot.fotekOrange
+                                    radius: 4
+                                }
+                            }
+
+                            handle: Rectangle {
+                                x: volumeSlider.leftPadding + volumeSlider.visualPosition
+                                      * (volumeSlider.availableWidth - width)
+                                y: volumeSlider.topPadding + volumeSlider.availableHeight / 2 - height / 2
+                                implicitWidth: 28
+                                implicitHeight: 28
+                                radius: 14
+                                color: "white"
+                                border.color: settingsMenuRoot.fotekBlue
+                                border.width: 2
+                            }
                         }
                     }
-                    onAccepted: endoscopyPasswordDialog.trySubmit()
+
+                    Item {
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+
+                        Text {
+                            text: qsTr("ЯЗЫК")
+                            anchors {
+                                top: parent.top
+                                horizontalCenter: parent.horizontalCenter
+                            }
+                            color: settingsMenuRoot.fotekBlue
+                            font.pixelSize: 28
+                            font.bold: true
+                        }
+
+                        RowLayout {
+                            anchors {
+                                top: parent.top
+                                topMargin: 44
+                                right: parent.right
+                            }
+                            spacing: 20
+
+                            LanguageFlagButton {
+                                langCode: "ru"
+                                langLabel: "RU"
+                                selected: settingsMenuRoot.currentLanguage === "ru"
+                                onChosen: settingsMenuRoot.setLanguage(langCode)
+                            }
+
+                            LanguageFlagButton {
+                                langCode: "en"
+                                langLabel: "EN"
+                                selected: settingsMenuRoot.currentLanguage === "en"
+                                onChosen: settingsMenuRoot.setLanguage(langCode)
+                            }
+
+                            LanguageFlagButton {
+                                langCode: "es"
+                                langLabel: "ES"
+                                selected: settingsMenuRoot.currentLanguage === "es"
+                                onChosen: settingsMenuRoot.setLanguage(langCode)
+                            }
+                        }
+                    }
                 }
+            }
 
-                Label {
-                    Layout.fillWidth: true
-                    visible: endoscopyPasswordDialog.passwordError.length > 0
-                    text: endoscopyPasswordDialog.passwordError
-                    color: "#dc2626"
-                    wrapMode: Text.WordWrap
-                    horizontalAlignment: Text.AlignHCenter
-                    font.pixelSize: 22
+            MenuActionButton {
+                Layout.fillWidth: true
+                Layout.preferredHeight: 112
+                text: qsTr("СВЕДЕНИЯ ОБ АППАРАТЕ")
+                labelCentered: true
+                iconSource: ""
+                iconSize: 0
+                accentColor: settingsMenuRoot.fotekOrange
+                textColor: settingsMenuRoot.fotekBlue
+                labelPixelSize: settingsMenuRoot.menuActionLabelSize
+                cornerRadius: 20
+                onPressed: settingsMenuRoot.infoButtonPressed()
+            }
+
+            Item { Layout.fillHeight: true }
+
+            MenuActionButton {
+                Layout.fillWidth: true
+                Layout.preferredHeight: 112
+                text: qsTr("ДОПОЛНИТЕЛЬНЫЕ НАСТРОЙКИ")
+                labelCentered: true
+                iconSource: ""
+                iconSize: 0
+                accentColor: settingsMenuRoot.fotekOrange
+                textColor: settingsMenuRoot.fotekBlue
+                labelPixelSize: settingsMenuRoot.menuActionSmallLabelSize
+                maxLabelLines: 2
+                cornerRadius: 20
+                onPressed: settingsMenuRoot.additionalSettingsButtonPressed()
+            }
+        }
+    }
+
+    component LanguageFlagButton: Button {
+        id: flagButton
+        property string langCode: "ru"
+        property string langLabel: "RU"
+        property bool selected: false
+        signal chosen()
+
+        implicitWidth: 132
+        implicitHeight: 96
+        padding: 0
+
+        background: Rectangle {
+            radius: 16
+            color: "white"
+            border.width: flagButton.selected ? 3 : 1
+            border.color: flagButton.selected ? settingsMenuRoot.fotekOrange : "#8A93A3"
+        }
+
+        contentItem: ColumnLayout {
+            spacing: 8
+
+            Item {
+                Layout.alignment: Qt.AlignHCenter
+                Layout.preferredWidth: 72
+                Layout.preferredHeight: 44
+
+                Loader {
+                    anchors.fill: parent
+                    sourceComponent: {
+                        if (flagButton.langCode === "ru")
+                            return russianFlagComponent
+                        if (flagButton.langCode === "en")
+                            return englishFlagComponent
+                        return spanishFlagComponent
+                    }
                 }
+            }
 
-                Item { Layout.fillHeight: true }
+            Text {
+                Layout.alignment: Qt.AlignHCenter
+                text: flagButton.langLabel
+                color: settingsMenuRoot.fotekBlue
+                font.pixelSize: 22
+                font.bold: flagButton.selected
             }
         }
 
-        function trySubmit() {
-            if (settingsMenuRoot.serialNumberValue() < 260000) {
-                endoscopyPasswordDialog.passwordError = qsTr("Сначала сохраните серийный номер аппарата")
-                return
-            }
-            if (settingsMenuRoot.isUnlockKeyValid("ENDO", endoscopyPasswordInput.text)) {
-                endoscopyPasswordInput.text = ""
-                endoscopyPasswordDialog.passwordError = ""
-                settingsMenuRoot.saveEndoscopyEnabled(true)
-                endoscopyPasswordDialog.close()
-                return
-            }
-            endoscopyPasswordDialog.passwordError = qsTr("Неверный пароль")
-        }
+        onPressed: flagButton.chosen()
+    }
 
-        onOpened: {
-            endoscopyPasswordInput.text = ""
-            endoscopyPasswordDialog.passwordError = ""
-            Qt.callLater(function() {
-                endoscopyPasswordInput.forceActiveFocus()
-            })
-        }
-
-        onClosed: {
-            endoscopyPasswordInput.focus = false
-            Qt.inputMethod.hide()
-        }
-
-        footer: Rectangle {
-            color: "transparent"
-            implicitHeight: 108
-
-            RowLayout {
+    Component {
+        id: russianFlagComponent
+        Item {
+            Rectangle {
                 anchors.fill: parent
-                anchors.margins: 20
-                spacing: 16
+                radius: 4
+                color: "white"
+                border.width: 1
+                border.color: "#5C6575"
+                clip: true
 
-                DialogActionButton {
-                    Layout.preferredWidth: 200
-                    Layout.fillHeight: true
-                    text: qsTr("ОТМЕНА")
-                    onPressed: endoscopyPasswordDialog.close()
+                Rectangle {
+                    anchors {
+                        left: parent.left
+                        right: parent.right
+                        top: parent.top
+                    }
+                    height: parent.height / 3
+                    color: "white"
                 }
 
-                Item { Layout.fillWidth: true }
+                Rectangle {
+                    anchors {
+                        left: parent.left
+                        right: parent.right
+                        verticalCenter: parent.verticalCenter
+                    }
+                    height: parent.height / 3
+                    color: "#0039A6"
+                }
 
-                DialogActionButton {
-                    Layout.preferredWidth: 260
-                    Layout.fillHeight: true
-                    text: qsTr("РАЗБЛОКИРОВАТЬ")
-                    primary: true
-                    onPressed: endoscopyPasswordDialog.trySubmit()
+                Rectangle {
+                    anchors {
+                        left: parent.left
+                        right: parent.right
+                        bottom: parent.bottom
+                    }
+                    height: parent.height / 3
+                    color: "#D52B1E"
                 }
             }
         }
     }
 
-    Dialog {
-        id: argonPasswordDialog
-        property string passwordError: ""
-        modal: true
-        width: Math.min(settingsMenuRoot.width * 0.92, 820)
-        height: 380
-        x: (settingsMenuRoot.width - width) / 2
-        y: (settingsMenuRoot.height - height) / 2
-        title: ""
-
-        contentItem: Rectangle {
-            color: "white"
-            radius: 8
-
-            ColumnLayout {
+    Component {
+        id: englishFlagComponent
+        Item {
+            Rectangle {
                 anchors.fill: parent
-                anchors.margins: 28
-                spacing: 16
+                radius: 4
+                color: "#B22234"
+                border.width: 1
+                border.color: "#5C6575"
+                clip: true
 
-                Label {
-                    Layout.fillWidth: true
-                    text: qsTr("Для разблокировки аргонусиленной коагуляции введите ключ")
-                    wrapMode: Text.WordWrap
-                    horizontalAlignment: Text.AlignHCenter
-                    font.pixelSize: 28
-                    font.bold: true
-                }
-
-                TextField {
-                    id: argonPasswordInput
-                    Layout.fillWidth: true
-                    Layout.preferredHeight: 64
-                    placeholderText: qsTr("123-456-789-012")
-                    echoMode: TextInput.Normal
-                    maximumLength: 15
-                    inputMethodHints: Qt.ImhDigitsOnly
-                    selectByMouse: true
-                    font.pixelSize: 24
-                    color: "black"
-                    background: Rectangle {
-                        color: "#f5f5f5"
-                        border.color: argonPasswordInput.activeFocus ? "#4a9eff" : "#7a7a7a"
-                        border.width: 2
-                        radius: 6
+                Repeater {
+                    model: 3
+                    Rectangle {
+                        width: parent.width
+                        height: parent.height / 7
+                        y: (index * 2 + 1) * parent.height / 7
+                        color: "white"
                     }
-                    onTextChanged: {
-                        var formatted = settingsMenuRoot.formattedUnlockKey(text)
-                        if (text !== formatted) {
-                            text = formatted
-                            cursorPosition = text.length
-                        }
-                    }
-                    onAccepted: argonPasswordDialog.trySubmit()
                 }
 
-                Label {
-                    Layout.fillWidth: true
-                    visible: argonPasswordDialog.passwordError.length > 0
-                    text: argonPasswordDialog.passwordError
-                    color: "#dc2626"
-                    wrapMode: Text.WordWrap
-                    horizontalAlignment: Text.AlignHCenter
-                    font.pixelSize: 22
+                Rectangle {
+                    width: parent.width * 0.42
+                    height: parent.height * 0.54
+                    color: "#3C3B6E"
                 }
-
-                Item { Layout.fillHeight: true }
             }
         }
+    }
 
-        function trySubmit() {
-            if (settingsMenuRoot.serialNumberValue() < 260000) {
-                argonPasswordDialog.passwordError = qsTr("Сначала сохраните серийный номер аппарата")
-                return
-            }
-            if (settingsMenuRoot.isUnlockKeyValid("ARGON", argonPasswordInput.text)) {
-                argonPasswordInput.text = ""
-                argonPasswordDialog.passwordError = ""
-                settingsMenuRoot.saveArgonModesEnabled(true)
-                argonPasswordDialog.close()
-                return
-            }
-            argonPasswordDialog.passwordError = qsTr("Неверный пароль")
-        }
-
-        onOpened: {
-            argonPasswordInput.text = ""
-            argonPasswordDialog.passwordError = ""
-            Qt.callLater(function() {
-                argonPasswordInput.forceActiveFocus()
-            })
-        }
-
-        onClosed: {
-            argonPasswordInput.focus = false
-            Qt.inputMethod.hide()
-        }
-
-        footer: Rectangle {
-            color: "transparent"
-            implicitHeight: 108
-
-            RowLayout {
+    Component {
+        id: spanishFlagComponent
+        Item {
+            Rectangle {
                 anchors.fill: parent
-                anchors.margins: 20
-                spacing: 16
+                radius: 4
+                color: "#AA151B"
+                border.width: 1
+                border.color: "#5C6575"
+                clip: true
 
-                DialogActionButton {
-                    Layout.preferredWidth: 200
-                    Layout.fillHeight: true
-                    text: qsTr("ОТМЕНА")
-                    onPressed: argonPasswordDialog.close()
-                }
-
-                Item { Layout.fillWidth: true }
-
-                DialogActionButton {
-                    Layout.preferredWidth: 260
-                    Layout.fillHeight: true
-                    text: qsTr("РАЗБЛОКИРОВАТЬ")
-                    primary: true
-                    onPressed: argonPasswordDialog.trySubmit()
+                Rectangle {
+                    anchors {
+                        left: parent.left
+                        right: parent.right
+                        verticalCenter: parent.verticalCenter
+                    }
+                    height: parent.height / 2
+                    color: "#F1BF00"
                 }
             }
         }

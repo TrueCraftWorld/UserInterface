@@ -29,6 +29,7 @@
 #include "BackEnd/UpdateLogManager.h"
 #include "BackEnd/datetimecontroller.h"
 #include "BackEnd/translationcontroller.h"
+#include "BackEnd/featureunlockcontroller.h"
 
 // Умный указатель на файл логирования
 QScopedPointer<QFile>   m_logFile;
@@ -135,6 +136,9 @@ int main(int argc, char *argv[])
     // Создаём генератор секретных ключей
     KeyGenerator *keyGen = new KeyGenerator();
 
+    auto *featureUnlock = new FeatureUnlockController(&app);
+    featureUnlock->setKeyGenerator(keyGen);
+
     auto *dateTimeController = new DateTimeController(&app);
 
     QQmlApplicationEngine engine;
@@ -159,15 +163,18 @@ int main(int argc, char *argv[])
     initMap->insert("featureNotes", "");
     initMap->insert("serviceMenuNoPassword", "0");
     initMap->insert("endoscopyEnabled", "0");
-    initMap->insert("argonModesEnabled", "0");
     initMap->insert("totalRuntimeMs", 0);
     initMap->insert("totalActivationMs", 0);
     initMap->insert("httpUploadListenAddress", "");
     initMap->insert("httpUploadPublicBaseUrl", "");
     initMap->insert("httpUploadTrustProxyHeaders", "0");
+    initMap->insert("volume", 7);
     m_savedJson = new JsonStorage(nullptr, initMap);
     ctrl->setJsonStorage(m_savedJson);
+    featureUnlock->setJsonStorage(m_savedJson);
+    ctrl->setFeatureUnlockController(featureUnlock);
     engine.rootContext()->setContextProperty("savedJson", m_savedJson);
+    engine.rootContext()->setContextProperty("featureUnlock", featureUnlock);
 
     auto *deviceLog = new DeviceLogManager(m_savedJson, ctrl->getSocketModel(), &app);
     engine.rootContext()->setContextProperty(QStringLiteral("deviceLog"), deviceLog);
@@ -271,6 +278,7 @@ int main(int argc, char *argv[])
 
     // Связываем LinkStm с ControlCenter для обработки UART-данных
     ctrl->setLinkStm(m_linkStm);
+    ctrl->setVolumeLevel(m_savedJson->readInt(QStringLiteral("volume"), 7));
 
     qDebug() << "Start";
 

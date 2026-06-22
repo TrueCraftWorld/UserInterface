@@ -19,12 +19,16 @@ public:
 
     Q_INVOKABLE void saveString(const QString& key, const QString& value);
     Q_INVOKABLE QString readString(const QString& key, const QString& defaultValue = QString()) const;
+    Q_INVOKABLE void saveInt(const QString& key, int value);
+    Q_INVOKABLE int readInt(const QString& key, int defaultValue = 0) const;
 //    template <typename T> void save(QString key, T);
 //    template <typename T> bool read(QString key, T*);
 
 signals:
 
 private:
+    void applyVolume(int level);
+
     QJsonDocument m_document;
     QJsonObject m_object;
 

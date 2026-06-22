@@ -1,5 +1,6 @@
 #include "controlcenter.h"
 #include "DeviceLogManager.h"
+#include "featureunlockcontroller.h"
 #include "proghandle.h"
 
 #include <QProcess>
@@ -14,6 +15,39 @@
 #include <QVector>
 #include <QVariant>
 #include <QElapsedTimer>
+
+namespace {
+
+bool runLoginAction(const QString &program, const QStringList &args, QString *errorMessage)
+{
+    QProcess proc;
+    proc.start(program, args);
+    if (!proc.waitForStarted(3000)) {
+        if (errorMessage) {
+            *errorMessage = proc.errorString();
+        }
+        return false;
+    }
+
+    proc.waitForFinished(10000);
+    if (proc.state() == QProcess::Running) {
+        return true;
+    }
+
+    if (proc.exitStatus() == QProcess::NormalExit && proc.exitCode() == 0) {
+        return true;
+    }
+
+    if (errorMessage) {
+        const QString stderrText = QString::fromUtf8(proc.readAllStandardError()).trimmed();
+        *errorMessage = stderrText.isEmpty()
+                ? QStringLiteral("код выхода %1").arg(proc.exitCode())
+                : stderrText;
+    }
+    return false;
+}
+
+} // namespace
 
 std::vector<int> m_rolesSaveTriggered = {
     SocketModel::SocketRoles::CoagModeId,
@@ -235,6 +269,25 @@ void ControlCenter::setJsonStorage(JsonStorage *jsonStorage)
 
 	m_progLoader->setJsonStorage(jsonStorage);
 	initSockets();
+}
+
+void ControlCenter::setFeatureUnlockController(FeatureUnlockController *controller)
+{
+	m_featureUnlock = controller;
+	if (!m_progLoader.isNull()) {
+		m_progLoader->setFeatureUnlockController(controller);
+	}
+	if (!controller) {
+		return;
+	}
+
+	connect(controller, &FeatureUnlockController::activatedKeysChanged,
+	        this, [this]() {
+		initSockets();
+		if (!m_handle.isNull()) {
+			emit m_handle->updateScopes(m_handle->isRecomProgs());
+		}
+	});
 }
 
 void ControlCenter::setLinkStm(LinkStm* linkStm)
@@ -483,8 +536,52 @@ void ControlCenter::shutdownSystemFromUi()
     if (m_deviceLog) {
         m_deviceLog->finalizeSession();
     }
-    logPowerOff(QStringLiteral("Выключение roc-RK3566 запрошено кнопкой в интерфейсе"));
+    logPowerOff(QStringLiteral("poweroff через сервисное меню"));
     shutdownSystem();
+}
+
+void ControlCenter::resetSystemFromUi()
+{
+    if (m_shutdownStarted) {
+        return;
+    }
+
+    m_powerOffConfirmationActive = false;
+    m_powerOffRequested = true;
+    if (m_periphery) {
+        m_periphery->setEnableActivation(false);
+    }
+    if (m_deviceLog) {
+        m_deviceLog->finalizeSession();
+    }
+    logPowerOff(QStringLiteral("reboot через сервисное меню"));
+    resetSystem();
+}
+
+void ControlCenter::resetSystem()
+{
+    if (m_shutdownStarted) {
+        return;
+    }
+
+    m_shutdownStarted = true;
+    logPowerOff(QStringLiteral("Запуск системной команды перезагрузки roc-RK3566"));
+
+    const QList<QPair<QString, QStringList>> rebootActions = {
+        {QStringLiteral("systemctl"), {QStringLiteral("reboot")}},
+        {QStringLiteral("shutdown"), {QStringLiteral("-r"), QStringLiteral("now")}},
+        {QStringLiteral("reboot"), {}},
+    };
+
+    for (const auto &action : rebootActions) {
+        QString error;
+        if (runLoginAction(action.first, action.second, &error)) {
+            return;
+        }
+        logPowerOff(QStringLiteral("reboot %1: %2").arg(action.first, error));
+    }
+
+    logPowerOff(QStringLiteral("Не удалось запустить системную команду перезагрузки"));
 }
 
 void ControlCenter::shutdownSystem()
@@ -518,6 +615,15 @@ void ControlCenter::setNeutralResistPollEnabled(bool enabled)
                               Q_ARG(bool, enabled));
 }
 
+void ControlCenter::setVolumeLevel(int level)
+{
+    if (m_linkStm.isNull()) {
+        return;
+    }
+    QMetaObject::invokeMethod(m_linkStm.data(), "setVolume", Qt::QueuedConnection,
+                              Q_ARG(int, level));
+}
+
 bool ControlCenter::loadProgram(int progId, bool clear)
 {
 	if (m_progLoader.isNull())
@@ -549,6 +655,25 @@ void ControlCenter::setDebugUartEnabled(bool enabled)
         clearDebugOverlay();
     }
     emit debugUartEnabledChanged();
+}
+
+int ControlCenter::uartRate() const
+{
+    return m_uartRate;
+}
+
+void ControlCenter::setUartRate(int rate)
+{
+    const int normalizedRate = rate == 500 ? 500 : 50;
+    if (m_uartRate == normalizedRate) {
+        return;
+    }
+    m_uartRate = normalizedRate;
+    if (!m_linkStm.isNull()) {
+        QMetaObject::invokeMethod(m_linkStm.data(), "setUartRate", Qt::QueuedConnection,
+                                  Q_ARG(int, normalizedRate));
+    }
+    emit uartRateChanged();
 }
 
 bool ControlCenter::cpuMonitorVisible() const

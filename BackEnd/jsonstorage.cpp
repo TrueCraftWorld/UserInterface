@@ -1,16 +1,69 @@
 #include "jsonstorage.h"
 #include <QFile>
 #include <QFileInfo>
+#include <QSaveFile>
 #include <QDir>
 #include <QVariantMap>
 #include <QDebug>
+#include <QProcess>
+
+#include <fcntl.h>
+#include <unistd.h>
+
+// ---------------------------------------------------------------------------
+// JsonStorage — постоянное хранилище настроек приложения (save.json).
+//
+// Файл: /var/lib/qtpr/save.json (см. jsonstorage.h).
+// Используется из QML через контекстное свойство savedJson.
+//
+// Критично для встраиваемой платформы (Armbian на одноплатнике): при резком
+// обесточивании обычная запись через QFile::write() может остаться только в
+// page cache ядра и не попасть на носитель. После перезагрузки приложение
+// читает старую версию файла — настройки «сбрасываются».
+//
+// Поэтому запись реализована как:
+//   1) QSaveFile — запись во временный файл и атомарный rename (без «битого»
+//      save.json при сбое посередине записи);
+//   2) fsync файла — принудительный сброс данных на диск до commit();
+//   3) fsync каталога — фиксация метаданных (имя файла после rename).
+// ---------------------------------------------------------------------------
 
 namespace {
 
+// Синхронизирует каталог на диск.
+//
+// После rename() новый inode уже на диске, но запись каталога (связь имя→файл)
+// может ещё быть в кэше. fsync по дескриптору каталога (O_DIRECTORY) снижает
+// риск потери файла или «невидимости» save.json после внезапного отключения
+// питания. На некоторых ФС/ядрах шаг может не поддерживаться — тогда пишем
+// предупреждение, но основная защита уже обеспечена fsync'ом самого файла.
+bool fsyncDirectory(const QString &path)
+{
+    const QByteArray encodedPath = QFile::encodeName(path);
+    const int dirFd = ::open(encodedPath.constData(), O_RDONLY | O_DIRECTORY);
+    if (dirFd < 0) {
+        qWarning() << "JsonStorage: failed to open directory for sync" << path;
+        return false;
+    }
+
+    const bool synced = ::fsync(dirFd) == 0;
+    if (!synced) {
+        qWarning() << "JsonStorage: failed to sync directory" << path;
+    }
+    ::close(dirFd);
+    return synced;
+}
+
+// Записывает весь JSON-объект в filePath одной транзакцией.
+//
+// Возвращает true только если данные гарантированно дошли до носителя
+// (в пределах гарантий ОС/ФС). При любой ошибке целевой filePath не
+// перезаписывается частично — QSaveFile::cancelWriting() откатывает temp.
 bool writeJsonObjectToFile(const QString &filePath, const QJsonObject &object)
 {
-    QFile jsonFile(filePath);
-    if (!jsonFile.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
+    // QSaveFile пишет во временный файл рядом с целевым и делает rename при commit().
+    QSaveFile jsonFile(filePath);
+    if (!jsonFile.open(QIODevice::WriteOnly)) {
         qWarning() << "JsonStorage: failed to open" << filePath
                    << "for writing:" << jsonFile.errorString();
         return false;
@@ -22,12 +75,53 @@ bool writeJsonObjectToFile(const QString &filePath, const QJsonObject &object)
         qWarning() << "JsonStorage: failed to fully write" << filePath
                    << "- written" << written << "of" << jsonBytes.size()
                    << "bytes:" << jsonFile.errorString();
-        jsonFile.close();
+        jsonFile.cancelWriting();
         return false;
     }
 
-    jsonFile.close();
+    // flush() сбрасывает буферы Qt; fsync() — буферы ядра на физический носитель.
+    // Делаем это до commit(), пока открыт дескриптор временного файла.
+    if (!jsonFile.flush() || ::fsync(jsonFile.handle()) != 0) {
+        qWarning() << "JsonStorage: failed to sync" << filePath
+                   << "before commit:" << jsonFile.errorString();
+        jsonFile.cancelWriting();
+        return false;
+    }
+
+    // Атомарная подмена save.json готовым содержимым.
+    if (!jsonFile.commit()) {
+        qWarning() << "JsonStorage: failed to commit" << filePath
+                   << ":" << jsonFile.errorString();
+        return false;
+    }
+
+    fsyncDirectory(QFileInfo(filePath).absolutePath());
     return true;
+}
+
+void applyVolumeLevel(int level)
+{
+    const int clamped = qBound(1, level, 7);
+    const int percent = clamped * 100 / 7;
+
+    QProcess pactlProcess;
+    pactlProcess.start(QStringLiteral("pactl"),
+                       {QStringLiteral("set-sink-volume"),
+                        QStringLiteral("@DEFAULT_SINK@"),
+                        QString::number(percent) + QStringLiteral("%")});
+    if (pactlProcess.waitForStarted(1000) && pactlProcess.waitForFinished(2000)
+            && pactlProcess.exitStatus() == QProcess::NormalExit
+            && pactlProcess.exitCode() == 0) {
+        return;
+    }
+
+    QProcess amixerProcess;
+    amixerProcess.start(QStringLiteral("amixer"),
+                        {QStringLiteral("sset"),
+                         QStringLiteral("Master"),
+                         QString::number(percent) + QStringLiteral("%")});
+    amixerProcess.waitForStarted(1000);
+    amixerProcess.waitForFinished(2000);
 }
 
 } // namespace
@@ -35,13 +129,17 @@ bool writeJsonObjectToFile(const QString &filePath, const QJsonObject &object)
 JsonStorage::JsonStorage(QObject *parent, QVariantMap* initMap)
     : QObject{parent}
 {
+    // Каталог /var/lib/qtpr может отсутствовать на первом запуске или после
+    // прошивки — создаём заранее, иначе последующая запись не сработает.
     QFileInfo info(JSON_FILE_NAME);
     QDir dir = info.absoluteDir();
     if (!dir.exists() && !dir.mkpath(dir.absolutePath())) {
         qWarning() << "JsonStorage: failed to create directory" << dir.absolutePath();
     }
 
-    // Одноразовая миграция со старого пути, если новый файл ещё не создан
+    // Одноразовая миграция со старого пути (/home/kikorik/FOTEK/OnyxLog/save.json),
+    // если новый продакшен-файл ещё не создан. Копия, не move — старый файл
+    // остаётся как резерв на случай отката.
     if (!QFile::exists(JSON_FILE_NAME) && QFile::exists(LEGACY_JSON_FILE_NAME)) {
         if (!QFile::copy(LEGACY_JSON_FILE_NAME, JSON_FILE_NAME)) {
             qWarning() << "JsonStorage: failed to migrate legacy file from"
@@ -51,12 +149,14 @@ JsonStorage::JsonStorage(QObject *parent, QVariantMap* initMap)
 
     QFile jsonFile(JSON_FILE_NAME);
     if (QFile::exists(JSON_FILE_NAME) && jsonFile.open(QIODevice::ReadOnly)) {
+        // Нормальный путь: загружаем существующие настройки в память.
         const QByteArray jsonData = jsonFile.readAll();
         m_document = QJsonDocument::fromJson(jsonData);
         m_object = m_document.object();
         jsonFile.close();
     } else {
-        // Если файла нет или он не читается, создаём из дефолтной карты
+        // Первый запуск, повреждённый или недоступный файл — инициализация
+        // дефолтами из main.cpp (initMap) и немедленная запись на диск.
         if (initMap) {
             m_object = QJsonObject::fromVariantMap(*initMap);
         } else {
@@ -67,16 +167,20 @@ JsonStorage::JsonStorage(QObject *parent, QVariantMap* initMap)
         writeJsonObjectToFile(JSON_FILE_NAME, m_object);
     }
 
+    applyVolume(readInt(QStringLiteral("volume"), 7));
 }
 
 JsonStorage::~JsonStorage()
 {
-   // save();
+    // Явного save() при уничтожении нет: каждый save()/saveString() уже
+    // синхронно пишет полный JSON на диск (см. writeJsonObjectToFile).
 }
 
 void JsonStorage::save(QString key, QJsonValue data)
-//template <typename T> void JsonStorage::save(QString key, T data)
 {
+    // Обновляем in-memory копию и сразу перезаписываем весь файл.
+    // Модель «один ключ — один полный dump»: просто и надёжно для небольшого
+    // save.json; при росте числа частых записей можно перейти на батчинг.
     m_object[key] = data;
     m_document.setObject(m_object);
 
@@ -96,12 +200,13 @@ bool JsonStorage::read(QString key, QJsonValue* data)
         return false;
     QJsonValue savedData = m_object[key];
     *data = savedData;
-//    qDebug() << "в " << key << " лежит " << savedData.toInt();
     return true;
 }
 
 void JsonStorage::saveString(const QString& key, const QString& value)
 {
+    // Обёртка для QML: все строковые флаги (endoscopyEnabled, serviceMenuNoPassword
+    // и т.д.) хранятся как строки "0"/"1" в JSON.
     save(key, QJsonValue(value));
 }
 
@@ -110,4 +215,25 @@ QString JsonStorage::readString(const QString& key, const QString& defaultValue)
     if (!m_object.contains(key))
         return defaultValue;
     return m_object.value(key).toString(defaultValue);
+}
+
+void JsonStorage::saveInt(const QString& key, int value)
+{
+    save(key, QJsonValue(value));
+
+    if (key == QStringLiteral("volume")) {
+        applyVolume(value);
+    }
+}
+
+int JsonStorage::readInt(const QString& key, int defaultValue) const
+{
+    if (!m_object.contains(key))
+        return defaultValue;
+    return m_object.value(key).toInt(defaultValue);
+}
+
+void JsonStorage::applyVolume(int level)
+{
+    applyVolumeLevel(level);
 }

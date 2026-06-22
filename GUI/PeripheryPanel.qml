@@ -70,6 +70,7 @@ Rectangle {
             flowRate: periphHandle.argonFlowRate
             realFlowRate: periphHandle.argonRealRate
             isActivation: periphHandle.activation
+            isBlowing: periphHandle.argonBlowing
             activCylinderFirst: periphHandle.activCylinderFirst
         }
 

@@ -67,14 +67,19 @@ Item {
                 || base === "AboutScreen.qml"
                 || base === "SpecialCommands.qml"
                 || base === "SecretKeysWindow.qml"
+                || base === "FeatureOptionsManager.qml"
                 || base === "logUpdate.qml"
     }
 
     function isSettingsMenuChildScreenBaseName(base) {
+        return base === "AdditionalSettingsMenu.qml"
+                || base === "StartupInfoScreen.qml"
+    }
+
+    function isAdditionalSettingsChildScreenBaseName(base) {
         return base === "ServiceMenu.qml"
                 || base === "LogFileScreen.qml"
                 || base === "DateTimeSettings.qml"
-                || base === "StartupInfoScreen.qml"
     }
 
     signal returnButtonPressed()
@@ -133,6 +138,9 @@ Item {
                     if (menuLoader.item.logFileButtonPressed) {
                         menuLoader.item.logFileButtonPressed.disconnect()
                     }
+                    if (menuLoader.item.additionalSettingsButtonPressed) {
+                        menuLoader.item.additionalSettingsButtonPressed.disconnect()
+                    }
                     if (menuLoader.item.dateTimeSettingsButtonPressed) {
                         menuLoader.item.dateTimeSettingsButtonPressed.disconnect()
                     }
@@ -141,6 +149,9 @@ Item {
                     }
                     if (menuLoader.item.specialCommandsButtonPressed) {
                         menuLoader.item.specialCommandsButtonPressed.disconnect()
+                    }
+                    if (menuLoader.item.featureOptionsButtonPressed) {
+                        menuLoader.item.featureOptionsButtonPressed.disconnect()
                     }
                 } catch(e) {
                     // Игнорируем ошибки отключения
@@ -188,6 +199,11 @@ Item {
                             } else {
                                 navigateTo("qrc:/ServiceMenu.qml")
                             }
+                        })
+                    }
+                    if (menuLoader.item.additionalSettingsButtonPressed) {
+                        menuLoader.item.additionalSettingsButtonPressed.connect(function() {
+                            navigateTo("qrc:/AdditionalSettingsMenu.qml")
                         })
                     }
                     if (menuLoader.item.infoButtonPressed) {
@@ -238,6 +254,11 @@ Item {
                     if (menuLoader.item.specialCommandsButtonPressed) {
                         menuLoader.item.specialCommandsButtonPressed.connect(function() {
                             navigateTo("qrc:/SpecialCommands.qml")
+                        })
+                    }
+                    if (menuLoader.item.featureOptionsButtonPressed) {
+                        menuLoader.item.featureOptionsButtonPressed.connect(function() {
+                            navigateTo("qrc:/FeatureOptionsManager.qml")
                         })
                     }
                     if (menuLoader.item.touchScreenTestButtonPressed) {
@@ -310,8 +331,14 @@ Item {
             var base = loaderSourceBaseName()
             if (isServiceMenuChildScreenBaseName(base)) {
                 navigateTo("qrc:/ServiceMenu.qml")
+            } else if (isAdditionalSettingsChildScreenBaseName(base)) {
+                navigateTo("qrc:/AdditionalSettingsMenu.qml")
             } else if (isSettingsMenuChildScreenBaseName(base)) {
                 navigateTo("qrc:/SettingsMenu.qml")
+            } else if (base === "AdditionalSettingsMenu.qml") {
+                navigateTo("qrc:/SettingsMenu.qml")
+            } else if (base === "ServiceMenu.qml") {
+                navigateTo("qrc:/AdditionalSettingsMenu.qml")
             } else if (base === "SettingsMenu.qml") {
                 if (closeOnServiceRootReturn) {
                     closeMe()

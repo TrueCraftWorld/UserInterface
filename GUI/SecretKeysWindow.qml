@@ -11,13 +11,10 @@ Item {
     signal returnButtonPressed()
 
     readonly property var deviceTypeOptions: ["ONYX-M", "ONYX-AM"]
-    readonly property var featureOptions: [
-        qsTr("Эндоскопические функции"),
-        qsTr("Аргонусиленная коагуляция")
-    ]
+    readonly property var featureKeyOptions: ["1", "2", "3", "4", "5", "6", "7", "8", "9"]
 
-    function featureCode(index) {
-        return index === 1 ? "ARGON" : "ENDO"
+    function featureCodeForKeyOption(keyOption) {
+        return String(keyOption)
     }
 
     function uiLanguage() {
@@ -165,18 +162,24 @@ Item {
                             model: secretKeysRoot.deviceTypeOptions
                             currentIndex: 1
                         }
+                    }
+
+                    Row {
+                        spacing: 15
+                        anchors.horizontalCenter: parent.horizontalCenter
 
                         SLabel {
                             style: "label-secondary sm"
-                            text: qsTr("Функция:")
+                            text: qsTr("Номер ключа:")
                             anchors.verticalCenter: parent.verticalCenter
                         }
 
                         ComboBox {
-                            id: generationFeature
-                            width: 400
+                            id: generationFeatureKey
+                            width: 80
                             height: 40
-                            model: secretKeysRoot.featureOptions
+                            model: secretKeysRoot.featureKeyOptions
+                            currentIndex: 0
                         }
                     }
                     
@@ -189,7 +192,7 @@ Item {
                                 var serial = parseInt(serialNumberInput.text)
                                 var key = keyGenerator.generateUnlockKey(serial,
                                                                          generationDeviceType.currentText,
-                                                                         secretKeysRoot.featureCode(generationFeature.currentIndex))
+                                                                         secretKeysRoot.featureCodeForKeyOption(generationFeatureKey.currentText))
                                 generatedKeyDisplay.text = key
                                 generationResult.text = qsTr("✓ Ключ сгенерирован успешно!")
                                 generationResult.color = "#4ade80"
@@ -306,18 +309,24 @@ Item {
                             model: secretKeysRoot.deviceTypeOptions
                             currentIndex: 1
                         }
+                    }
+
+                    Row {
+                        spacing: 15
+                        anchors.horizontalCenter: parent.horizontalCenter
 
                         SLabel {
                             style: "label-secondary sm"
-                            text: qsTr("Функция:")
+                            text: qsTr("Номер ключа:")
                             anchors.verticalCenter: parent.verticalCenter
                         }
 
                         ComboBox {
-                            id: validationFeature
-                            width: 400
+                            id: validationFeatureKey
+                            width: 80
                             height: 40
-                            model: secretKeysRoot.featureOptions
+                            model: secretKeysRoot.featureKeyOptions
+                            currentIndex: 0
                         }
                     }
                     
@@ -358,7 +367,7 @@ Item {
                                 var serial = parseInt(checkSerialInput.text)
                                 var isValid = keyGenerator.validateUnlockKey(serial,
                                                                             validationDeviceType.currentText,
-                                                                            secretKeysRoot.featureCode(validationFeature.currentIndex),
+                                                                            secretKeysRoot.featureCodeForKeyOption(validationFeatureKey.currentText),
                                                                             keyToValidate.text)
                                 
                                 if (isValid) {
@@ -419,7 +428,7 @@ Item {
                     
                     SLabel {
                         style: "label-secondary sm"
-                        text: qsTr("• Для каждого типа аппарата и функции формируется отдельный 12-значный ключ")
+                        text: qsTr("• Для каждого типа аппарата и номера ключа формируется отдельный 12-значный код")
                         wrapMode: Text.WordWrap
                         width: parent.width
                     }

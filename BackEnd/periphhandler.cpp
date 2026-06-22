@@ -13,6 +13,7 @@ PeriphHandler::PeriphHandler(QObject *parent)
     m_autoSSmode(0),
     m_argonFlowRate(80),
     m_argonRealRate(0),
+    m_argonBlowing(false),
     m_activCylinderFirst(true),  // По умолчанию активен первый баллон
     m_wirelessPedalCharge(0),
     m_enableActivation(true),
@@ -24,7 +25,15 @@ PeriphHandler::PeriphHandler(QObject *parent)
     m_autoDelayMs(0),
     m_neutralResistText(QStringLiteral("—"))
 {
+    m_blowMaxTimer = new QTimer(this);
+    m_blowMaxTimer->setSingleShot(true);
+    m_blowMaxTimer->setInterval(5000);
+    connect(m_blowMaxTimer, &QTimer::timeout, this, &PeriphHandler::stopArgonBlow);
 
+    m_blowMatchHoldTimer = new QTimer(this);
+    m_blowMatchHoldTimer->setSingleShot(true);
+    m_blowMatchHoldTimer->setInterval(1000);
+    connect(m_blowMatchHoldTimer, &QTimer::timeout, this, &PeriphHandler::stopArgonBlow);
 }
 
 void PeriphHandler::unitStateHandler(Onyx::UnitState state)
@@ -54,6 +63,9 @@ void PeriphHandler::unitStateHandler(Onyx::UnitState state)
 		m_argonRealRate = state.argonRealRate;
 		// qDebug() << "РЕАЛЬНЫЙ РАСХОД: " << m_argonRealRate;
 		emit argonRealRateChanged(m_argonRealRate);
+	}
+	if (m_argonBlowing) {
+		checkArgonBlowMatch();
 	}
 
 	// Обновляем состояние активации на основе activOutput
@@ -150,10 +162,54 @@ void PeriphHandler::onNeutralResistReceived(const QByteArray &data)
 
 void PeriphHandler::argonBlow()
 {
-	// TODO: Отправить команду продувки аргона через LinkStm
-	// Например: m_linkStm->sendArgonBlowCommand();
+	if (m_argonBlowing) {
+		return;
+	}
+
+	m_argonBlowing = true;
+	emit argonBlowingChanged(m_argonBlowing);
+	emit sigArgonBlow();
+
+	m_blowMatchHoldTimer->stop();
+	m_blowMaxTimer->start();
 	qDebug() << "Argon blow command triggered";
-    emit sigArgonBlow();
+}
+
+bool PeriphHandler::argonBlowing() const
+{
+	return m_argonBlowing;
+}
+
+void PeriphHandler::checkArgonBlowMatch()
+{
+	if (!m_argonBlowing) {
+		return;
+	}
+
+	if (m_argonRealRate == m_argonFlowRate) {
+		if (!m_blowMatchHoldTimer->isActive()) {
+			m_blowMatchHoldTimer->start();
+		}
+	} else {
+		m_blowMatchHoldTimer->stop();
+	}
+}
+
+void PeriphHandler::stopArgonBlow()
+{
+	if (!m_argonBlowing) {
+		return;
+	}
+
+	m_argonBlowing = false;
+	emit argonBlowingChanged(m_argonBlowing);
+	m_blowMaxTimer->stop();
+	m_blowMatchHoldTimer->stop();
+
+	if (!m_activation && m_argonRealRate != 0) {
+		m_argonRealRate = 0;
+		emit argonRealRateChanged(m_argonRealRate);
+	}
 }
 
 quint8 PeriphHandler::argonRealRate() const
@@ -260,10 +316,17 @@ void PeriphHandler::setActivationActive(bool active)
 		return;
 	}
 
+	if (active && m_argonBlowing) {
+		m_argonBlowing = false;
+		emit argonBlowingChanged(m_argonBlowing);
+		m_blowMaxTimer->stop();
+		m_blowMatchHoldTimer->stop();
+	}
+
 	m_activation = active;
 	emit activationChanged(m_activation);
 
-	if (!active && m_argonRealRate != 0) {
+	if (!active && m_argonRealRate != 0 && !m_argonBlowing) {
 		m_argonRealRate = 0;
 		emit argonRealRateChanged(m_argonRealRate);
 	}

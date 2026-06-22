@@ -99,12 +99,10 @@ QString KeyGenerator::normalizeDeviceType(const QString &deviceType) const
 QString KeyGenerator::normalizeFeatureCode(const QString &featureCode) const
 {
     const QString normalized = featureCode.trimmed().toUpper();
-    if (normalized == QStringLiteral("ARGON")
-            || normalized == QStringLiteral("ARGON_COAG")
-            || normalized == QStringLiteral("ARGON_MODES")) {
-        return QStringLiteral("ARGON");
+    if (normalized == QStringLiteral("ENDO")) {
+        return QStringLiteral("1");
     }
-    return QStringLiteral("ENDO");
+    return normalized;
 }
 
 QString KeyGenerator::deviceSalt(const QString &deviceType) const
@@ -116,9 +114,11 @@ QString KeyGenerator::deviceSalt(const QString &deviceType) const
 
 QString KeyGenerator::featureSalt(const QString &featureCode) const
 {
-    return normalizeFeatureCode(featureCode) == QStringLiteral("ARGON")
-            ? QStringLiteral("ArgonCoagUnlockSalt-73A91D")
-            : QStringLiteral("EndoscopyUnlockSalt-C58E20");
+    const QString code = normalizeFeatureCode(featureCode);
+    if (code == QStringLiteral("1")) {
+        return QStringLiteral("EndoscopyUnlockSalt-C58E20");
+    }
+    return QStringLiteral("OnyxFeatureKeySalt-%1-v1").arg(code);
 }
 
 QString KeyGenerator::generateUnlockKey(int serialNumber,

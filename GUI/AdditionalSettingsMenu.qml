@@ -1,0 +1,500 @@
+import QtQuick 2.15
+import QtQuick.Layouts 1.15
+import QtQuick.Controls 2.15
+
+Item {
+    id: additionalSettingsRoot
+
+    signal returnButtonPressed()
+    signal serviceMenuButtonPressed()
+    signal logFileButtonPressed()
+    signal dateTimeSettingsButtonPressed()
+
+    property color fotekBlue: "#264093"
+    property color fotekOrange: "#faa731"
+    readonly property int screenMargin: 34
+    readonly property int mainSpacing: 24
+    readonly property int headerHeight: 70
+    readonly property int menuActionLabelSize: 34
+    readonly property int menuActionSmallLabelSize: 28
+
+    function isServiceMenuNoPasswordEnabled() {
+        if (typeof savedJson === "undefined" || !savedJson) {
+            return false
+        }
+        return savedJson.readString("serviceMenuNoPassword", "0") === "1"
+    }
+
+    function isServiceMenuPasswordValid(value) {
+        var normalized = String(value).trim().toLowerCase()
+        normalized = normalized.replace(/\u0430/g, "a")
+        return normalized === "145a"
+    }
+
+    function serialNumberValue() {
+        if (typeof savedJson === "undefined" || !savedJson) {
+            return -1
+        }
+        var serialText = String(savedJson.readString("serialNumber", "")).trim()
+        if (!/^\d+$/.test(serialText)) {
+            return -1
+        }
+        return parseInt(serialText, 10)
+    }
+
+    function deviceTypeValue() {
+        if (typeof savedJson === "undefined" || !savedJson) {
+            return "ONYX-AM"
+        }
+        return String(savedJson.readString("deviceType", "ONYX-AM")).trim().toUpperCase()
+    }
+
+    function unlockKeyDigits(value) {
+        return String(value === undefined || value === null ? "" : value).replace(/\D/g, "").substring(0, 12)
+    }
+
+    function formattedUnlockKey(value) {
+        var digits = unlockKeyDigits(value)
+        var groups = []
+        for (var i = 0; i < digits.length; i += 3) {
+            groups.push(digits.substring(i, i + 3))
+        }
+        return groups.join("-")
+    }
+
+    function requestServiceMenuAccess() {
+        if (additionalSettingsRoot.isServiceMenuNoPasswordEnabled()) {
+            additionalSettingsRoot.serviceMenuButtonPressed()
+        } else {
+            servicePasswordDialog.passwordError = ""
+            servicePasswordDialog.open()
+        }
+    }
+
+    function requestFeatureUnlock() {
+        featureUnlockDialog.passwordError = ""
+        featureUnlockDialog.open()
+    }
+
+    Rectangle {
+        anchors.fill: parent
+        color: "#8A929E"
+    }
+
+    Item {
+        id: headerArea
+        anchors {
+            top: parent.top
+            horizontalCenter: parent.horizontalCenter
+            topMargin: additionalSettingsRoot.screenMargin - 8
+        }
+        width: parent.width - additionalSettingsRoot.screenMargin * 2
+        height: additionalSettingsRoot.headerHeight
+
+        Text {
+            text: qsTr("ДОПОЛНИТЕЛЬНЫЕ НАСТРОЙКИ")
+            anchors.centerIn: parent
+            color: additionalSettingsRoot.fotekBlue
+            font.pixelSize: 40
+            font.bold: true
+            horizontalAlignment: Text.AlignHCenter
+            wrapMode: Text.WordWrap
+            width: parent.width
+        }
+    }
+
+    Item {
+        id: footerArea
+        height: 72
+        anchors {
+            left: parent.left
+            right: parent.right
+            bottom: parent.bottom
+            leftMargin: additionalSettingsRoot.screenMargin
+            rightMargin: additionalSettingsRoot.screenMargin
+            bottomMargin: additionalSettingsRoot.screenMargin
+        }
+
+        DialogActionButton {
+            width: 180
+            height: parent.height
+            text: qsTr("НАЗАД")
+            secondaryColor: additionalSettingsRoot.fotekBlue
+            secondaryBorderWidth: 1
+            secondaryBorderColor: "#1E3274"
+            cornerRadius: 20
+            labelPixelSize: 30
+            onPressed: additionalSettingsRoot.returnButtonPressed()
+            anchors {
+                left: parent.left
+                verticalCenter: parent.verticalCenter
+            }
+        }
+
+        Text {
+            anchors {
+                right: parent.right
+                verticalCenter: parent.verticalCenter
+            }
+            text: (typeof dateTimeController !== "undefined" && dateTimeController)
+                  ? dateTimeController.currentDateTime
+                  : ""
+            color: additionalSettingsRoot.fotekBlue
+            font.pixelSize: 26
+            font.bold: true
+        }
+    }
+
+    Timer {
+        interval: 1000
+        repeat: true
+        running: typeof dateTimeController !== "undefined" && dateTimeController
+        onTriggered: dateTimeController.refresh()
+    }
+
+    ColumnLayout {
+        anchors {
+            top: headerArea.bottom
+            topMargin: 26
+            left: parent.left
+            right: parent.right
+            bottom: footerArea.top
+            bottomMargin: additionalSettingsRoot.mainSpacing
+            leftMargin: additionalSettingsRoot.screenMargin
+            rightMargin: additionalSettingsRoot.screenMargin
+        }
+        spacing: additionalSettingsRoot.mainSpacing
+
+        MenuActionButton {
+            Layout.fillWidth: true
+            Layout.preferredHeight: 112
+            text: qsTr("ЖУРНАЛ СОБЫТИЙ")
+            labelCentered: true
+            iconSource: ""
+            iconSize: 0
+            accentColor: additionalSettingsRoot.fotekOrange
+            textColor: additionalSettingsRoot.fotekBlue
+            labelPixelSize: additionalSettingsRoot.menuActionLabelSize
+            cornerRadius: 20
+            onPressed: additionalSettingsRoot.logFileButtonPressed()
+        }
+
+        MenuActionButton {
+            Layout.fillWidth: true
+            Layout.preferredHeight: 112
+            text: qsTr("НАСТРОЙКА ДАТЫ И ВРЕМЕНИ")
+            labelCentered: true
+            iconSource: ""
+            iconSize: 0
+            accentColor: additionalSettingsRoot.fotekOrange
+            textColor: additionalSettingsRoot.fotekBlue
+            labelPixelSize: additionalSettingsRoot.menuActionLabelSize
+            cornerRadius: 20
+            onPressed: additionalSettingsRoot.dateTimeSettingsButtonPressed()
+        }
+
+        MenuActionButton {
+            Layout.fillWidth: true
+            Layout.preferredHeight: 112
+            text: qsTr("АКТИВАЦИЯ ДОПОЛНИТЕЛЬНЫХ ОПЦИЙ")
+            labelCentered: true
+            iconSource: ""
+            iconSize: 0
+            accentColor: additionalSettingsRoot.fotekOrange
+            textColor: additionalSettingsRoot.fotekBlue
+            labelPixelSize: additionalSettingsRoot.menuActionSmallLabelSize
+            maxLabelLines: 2
+            cornerRadius: 20
+            onPressed: additionalSettingsRoot.requestFeatureUnlock()
+        }
+
+        Item { Layout.fillHeight: true }
+
+        MenuActionButton {
+            Layout.fillWidth: true
+            Layout.preferredHeight: 112
+            text: qsTr("СЕРВИСНОЕ МЕНЮ")
+            labelCentered: true
+            iconSource: ""
+            iconSize: 0
+            accentColor: additionalSettingsRoot.fotekOrange
+            textColor: additionalSettingsRoot.fotekBlue
+            labelPixelSize: additionalSettingsRoot.menuActionLabelSize
+            cornerRadius: 20
+            onPressed: additionalSettingsRoot.requestServiceMenuAccess()
+        }
+    }
+
+    Dialog {
+        id: servicePasswordDialog
+        property string passwordError: ""
+        modal: true
+        width: Math.min(additionalSettingsRoot.width * 0.92, 760)
+        height: 380
+        x: (additionalSettingsRoot.width - width) / 2
+        y: (additionalSettingsRoot.height - height) / 2
+        title: ""
+
+        contentItem: Rectangle {
+            color: "white"
+            radius: 8
+
+            ColumnLayout {
+                anchors.fill: parent
+                anchors.margins: 28
+                spacing: 16
+
+                Label {
+                    Layout.fillWidth: true
+                    text: qsTr("Для доступа к сервисным функциям введите пароль")
+                    wrapMode: Text.WordWrap
+                    horizontalAlignment: Text.AlignHCenter
+                    font.pixelSize: 28
+                    font.bold: true
+                }
+
+                TextField {
+                    id: servicePasswordInput
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 64
+                    placeholderText: qsTr("Пароль")
+                    echoMode: TextInput.Password
+                    selectByMouse: true
+                    font.pixelSize: 24
+                    color: "black"
+                    background: Rectangle {
+                        color: "#f5f5f5"
+                        border.color: servicePasswordInput.activeFocus ? "#4a9eff" : "#7a7a7a"
+                        border.width: 2
+                        radius: 6
+                    }
+                    onAccepted: servicePasswordDialog.trySubmit()
+                }
+
+                Label {
+                    Layout.fillWidth: true
+                    visible: servicePasswordDialog.passwordError.length > 0
+                    text: servicePasswordDialog.passwordError
+                    color: "#dc2626"
+                    wrapMode: Text.WordWrap
+                    horizontalAlignment: Text.AlignHCenter
+                    font.pixelSize: 22
+                }
+
+                Item { Layout.fillHeight: true }
+            }
+        }
+
+        function trySubmit() {
+            if (additionalSettingsRoot.isServiceMenuPasswordValid(servicePasswordInput.text)) {
+                servicePasswordInput.text = ""
+                servicePasswordDialog.passwordError = ""
+                servicePasswordDialog.close()
+                additionalSettingsRoot.serviceMenuButtonPressed()
+                return
+            }
+            servicePasswordDialog.passwordError = qsTr("Неверный пароль")
+        }
+
+        onOpened: {
+            servicePasswordInput.text = ""
+            servicePasswordDialog.passwordError = ""
+            Qt.callLater(function() {
+                servicePasswordInput.forceActiveFocus()
+            })
+        }
+
+        onClosed: {
+            servicePasswordInput.focus = false
+            Qt.inputMethod.hide()
+        }
+
+        footer: Rectangle {
+            color: "transparent"
+            implicitHeight: 108
+
+            RowLayout {
+                anchors.fill: parent
+                anchors.margins: 20
+                spacing: 16
+
+                DialogActionButton {
+                    Layout.preferredWidth: 200
+                    Layout.fillHeight: true
+                    text: qsTr("ОТМЕНА")
+                    onPressed: servicePasswordDialog.close()
+                }
+
+                Item { Layout.fillWidth: true }
+
+                DialogActionButton {
+                    Layout.preferredWidth: 200
+                    Layout.fillHeight: true
+                    text: qsTr("ВОЙТИ")
+                    primary: true
+                    onPressed: servicePasswordDialog.trySubmit()
+                }
+            }
+        }
+    }
+
+    Dialog {
+        id: featureUnlockDialog
+        property string passwordError: ""
+        property string successMessage: ""
+        modal: true
+        width: Math.min(additionalSettingsRoot.width * 0.92, 820)
+        height: 420
+        x: (additionalSettingsRoot.width - width) / 2
+        y: (additionalSettingsRoot.height - height) / 2
+        title: ""
+
+        contentItem: Rectangle {
+            color: "white"
+            radius: 8
+
+            ColumnLayout {
+                anchors.fill: parent
+                anchors.margins: 28
+                spacing: 16
+
+                Label {
+                    Layout.fillWidth: true
+                    text: qsTr("Для активации дополнительных опций введите ключ")
+                    wrapMode: Text.WordWrap
+                    horizontalAlignment: Text.AlignHCenter
+                    font.pixelSize: 28
+                    font.bold: true
+                }
+
+                TextField {
+                    id: featureUnlockInput
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 64
+                    placeholderText: qsTr("123456789012")
+                    echoMode: TextInput.Normal
+                    maximumLength: 12
+                    inputMethodHints: Qt.ImhDigitsOnly | Qt.ImhNoPredictiveText
+                    selectByMouse: true
+                    font.pixelSize: 24
+                    color: "black"
+                    background: Rectangle {
+                        color: "#f5f5f5"
+                        border.color: featureUnlockInput.activeFocus ? "#4a9eff" : "#7a7a7a"
+                        border.width: 2
+                        radius: 6
+                    }
+                    onTextChanged: {
+                        var digits = additionalSettingsRoot.unlockKeyDigits(text)
+                        if (text !== digits) {
+                            text = digits
+                            cursorPosition = text.length
+                        }
+                    }
+                    onAccepted: featureUnlockDialog.trySubmit()
+                }
+
+                Label {
+                    Layout.fillWidth: true
+                    visible: featureUnlockInput.text.length > 0
+                    text: additionalSettingsRoot.formattedUnlockKey(featureUnlockInput.text)
+                    color: "#5A6478"
+                    horizontalAlignment: Text.AlignHCenter
+                    font.pixelSize: 22
+                }
+
+                Label {
+                    Layout.fillWidth: true
+                    visible: featureUnlockDialog.successMessage.length > 0
+                    text: featureUnlockDialog.successMessage
+                    color: "#2E7D32"
+                    wrapMode: Text.WordWrap
+                    horizontalAlignment: Text.AlignHCenter
+                    font.pixelSize: 22
+                }
+
+                Label {
+                    Layout.fillWidth: true
+                    visible: featureUnlockDialog.passwordError.length > 0
+                    text: featureUnlockDialog.passwordError
+                    color: "#dc2626"
+                    wrapMode: Text.WordWrap
+                    horizontalAlignment: Text.AlignHCenter
+                    font.pixelSize: 22
+                }
+
+                Item { Layout.fillHeight: true }
+            }
+        }
+
+        function trySubmit() {
+            featureUnlockDialog.successMessage = ""
+            if (additionalSettingsRoot.serialNumberValue() < 260000) {
+                featureUnlockDialog.passwordError = qsTr("Сначала сохраните серийный номер аппарата")
+                return
+            }
+            if (typeof featureUnlock === "undefined" || !featureUnlock) {
+                featureUnlockDialog.passwordError = qsTr("Контроллер активации недоступен")
+                return
+            }
+
+            var activatedKey = featureUnlock.tryActivateWithUnlockKey(
+                        additionalSettingsRoot.serialNumberValue(),
+                        additionalSettingsRoot.deviceTypeValue(),
+                        featureUnlockInput.text)
+            if (activatedKey > 0) {
+                featureUnlockInput.text = ""
+                featureUnlockDialog.passwordError = ""
+                featureUnlockDialog.successMessage = qsTr("Активирован ключ №%1").arg(activatedKey)
+                Qt.callLater(function() {
+                    featureUnlockDialog.close()
+                })
+                return
+            }
+            featureUnlockDialog.passwordError = qsTr("Неверный ключ")
+        }
+
+        onOpened: {
+            featureUnlockInput.text = ""
+            featureUnlockDialog.passwordError = ""
+            featureUnlockDialog.successMessage = ""
+            Qt.callLater(function() {
+                featureUnlockInput.forceActiveFocus()
+            })
+        }
+
+        onClosed: {
+            featureUnlockInput.focus = false
+            featureUnlockDialog.successMessage = ""
+            Qt.inputMethod.hide()
+        }
+
+        footer: Rectangle {
+            color: "transparent"
+            implicitHeight: 108
+
+            RowLayout {
+                anchors.fill: parent
+                anchors.margins: 20
+                spacing: 16
+
+                DialogActionButton {
+                    Layout.preferredWidth: 200
+                    Layout.fillHeight: true
+                    text: qsTr("ОТМЕНА")
+                    onPressed: featureUnlockDialog.close()
+                }
+
+                Item { Layout.fillWidth: true }
+
+                DialogActionButton {
+                    Layout.preferredWidth: 260
+                    Layout.fillHeight: true
+                    text: qsTr("АКТИВИРОВАТЬ")
+                    primary: true
+                    onPressed: featureUnlockDialog.trySubmit()
+                }
+            }
+        }
+    }
+}

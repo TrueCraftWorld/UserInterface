@@ -16,6 +16,7 @@ Item {
     signal logUpdateButtonPressed()
     signal specialCommandsButtonPressed()
     signal secretKeysButtonPressed()
+    signal featureOptionsButtonPressed()
     readonly property int menuButtonWidth: 550
     readonly property int menuButtonHeight: 96
     readonly property int menuColumnsSpacing: 24
@@ -127,6 +128,15 @@ Item {
             Layout.preferredHeight: serviceMenuRoot.menuButtonHeight
             text: qsTr("Секретные ключи")
             onPressed: serviceMenuRoot.secretKeysButtonPressed()
+        }
+
+        SButton {
+            id: featureOptionsButton
+            style: "btn-primary lg"
+            Layout.preferredWidth: serviceMenuRoot.menuButtonWidth
+            Layout.preferredHeight: serviceMenuRoot.menuButtonHeight
+            text: qsTr("Управление опциями")
+            onPressed: serviceMenuRoot.featureOptionsButtonPressed()
         }
     }
     

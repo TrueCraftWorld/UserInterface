@@ -14,6 +14,7 @@ Rectangle {
     property int flowRate: 5               // Уровень расхода (л/мин) - установленный
     property int realFlowRate: 0           // Реальный расход аргона во время активации
     property bool isActivation: false      // Активация в данный момент
+    property bool isBlowing: false       // Продувка аргона в данный момент
     property int minFlowRate: 10
     property int maxFlowRate: 80
     property bool showControls: true       // Показывать элементы управления (в развернутом состоянии)
@@ -21,7 +22,8 @@ Rectangle {
     property bool activCylinderFirst: true // Активный баллон 1 (или 2)
 
     readonly property color compactLabelColor: compactOnLightBackground ? "#2c2c2c" : "white"
-    readonly property int displayedArgonRate: isActivation ? realFlowRate : flowRate
+    readonly property int displayedArgonRate: (isActivation || isBlowing) ? realFlowRate : flowRate
+    readonly property bool showRealFlow: isActivation || isBlowing
 
     function formatFlowRate(rate) {
         var value = Math.max(0, rate)
@@ -285,7 +287,7 @@ Rectangle {
 //                font.pixelSize: step * 3
                 font.bold: true
                 // В развернутом виде — тёмный текст, в свернутом (PeripheryPanel) — светлый для тёмного фона
-                color: isActivation
+                color: showRealFlow
                        ? "#000000"
                        : (argonRoot.showControls ? "#2c2c2c" : argonRoot.compactLabelColor)
             }
@@ -399,8 +401,7 @@ Rectangle {
             anchors.bottomMargin: 30
             radius: 10
             visible: showControls
-            property bool isPressed: false
-            color: isPressed ? fotekOrange : fotekBlue
+            color: isBlowing ? fotekOrange : fotekBlue
             border {
                 color: "#558B2F"
                 width: 3
@@ -411,27 +412,14 @@ Rectangle {
                 text: qsTr("ПРОДУТЬ")
                 font.pixelSize: buttonStep * 2
                 font.bold: true
-                color: blowButton.isPressed ? "black" : "white"
+                color: isBlowing ? "black" : "white"
             }
             
             MouseArea {
                 id: blowMA
                 anchors.fill: parent
-                onPressed: {
-                    // Визуальная обратная связь
-                    blowButton.isPressed = true
-                    blowTimer.restart()
-                    
-                    // Отправка сигнала
-                    argonBlow()
-                }
-            }
-            
-            Timer {
-                id: blowTimer
-                interval: 300
-                repeat: false
-                onTriggered: blowButton.isPressed = false
+                enabled: !isBlowing
+                onPressed: argonBlow()
             }
         }
     }

@@ -12,11 +12,12 @@ HEADERS += \
     $$PWD/datetimecontroller.h \
     $$PWD/DeviceLogManager.h \
     $$PWD/UpdateLogManager.h \
-    $$PWD/EshfProgStringBuilder.h \
+    $$PWD/featureunlockcontroller.h \
     $$PWD/Structures.h \
     $$PWD/controlcenter.h \
     $$PWD/HttpUploadController.h \
     $$PWD/databasereader.h \
+    $$PWD/EshfProgStringBuilder.h \
     $$PWD/halfsocket.h \
     $$PWD/instrimageprovider.h \
     $$PWD/instrument.h \
@@ -47,10 +48,11 @@ SOURCES += \
     $$PWD/datetimecontroller.cpp \
     $$PWD/DeviceLogManager.cpp \
     $$PWD/UpdateLogManager.cpp \
-    $$PWD/EshfProgStringBuilder.cpp \
+    $$PWD/featureunlockcontroller.cpp \
     $$PWD/controlcenter.cpp \
     $$PWD/HttpUploadController.cpp \
     $$PWD/databasereader.cpp \
+    $$PWD/EshfProgStringBuilder.cpp \
     $$PWD/halfsocket.cpp \
     $$PWD/instrimageprovider.cpp \
     $$PWD/instrument.cpp \

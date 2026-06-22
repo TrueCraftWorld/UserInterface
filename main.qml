@@ -71,7 +71,6 @@ Window {
         }
         var deviceType = String(savedJson.readString("deviceType", "ONYX-AM")).trim().toUpperCase()
         return deviceType === "ONYX-AM"
-                && savedJson.readString("argonModesEnabled", "0") === "1"
     }
 
     function refreshArgonAvailability() {
@@ -1017,7 +1016,7 @@ Window {
                 }
                 onReleased: {
                     if (argonDrawer.opened) argonDrawer.close()
-                    if (neutralDrawer.opened) neutralDrawer.close()
+                    if (neutralDrawer.opened) neutralDrawer.attemptClose()
                     if (pedDrawer.opened) pedDrawer.close()
                     mouse.accepted = true
                 }

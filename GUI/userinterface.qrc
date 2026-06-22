@@ -25,6 +25,7 @@
         <file>MenuActionButton.qml</file>
         <file>MenuLoader.qml</file>
         <file>SettingsMenu.qml</file>
+        <file>AdditionalSettingsMenu.qml</file>
         <file>DateTimeSettings.qml</file>
         <file>ServiceMenu.qml</file>
         <file>SpecialCommands.qml</file>
@@ -40,11 +41,13 @@
         <file>ArgCylinder.qml</file>
         <file>ArgonDrawer.qml</file>
         <file>NeutralDrawer.qml</file>
+        <file>NeutralPowerWarningDialog.qml</file>
         <file>PeripheryPanel.qml</file>
         <file>NeutralButton.qml</file>
         <file>VideoPlayer.qml</file>
         <file>SystemMonitor.qml</file>
         <file>SecretKeysWindow.qml</file>
+        <file>FeatureOptionsManager.qml</file>
         <file>DialogActionButton.qml</file>
         <file>ProgSaveDialog.qml</file>
         <file>StartupInfoScreen.qml</file>

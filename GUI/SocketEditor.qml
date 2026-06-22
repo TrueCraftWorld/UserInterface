@@ -65,35 +65,14 @@ Popup {
         return socId <= 1 ? "bimode" : "monomode"
     }
 
-    function endoscopyEnabled() {
-        return typeof savedJson !== "undefined"
-                && savedJson
-                && savedJson.readString("endoscopyEnabled", "0") === "1"
-    }
-
-    function deviceType() {
-        return typeof savedJson !== "undefined" && savedJson
-                ? String(savedJson.readString("deviceType", "ONYX-AM")).trim().toUpperCase()
-                : "ONYX-AM"
-    }
-
-    function argonModesEnabled() {
-        if (deviceType() !== "ONYX-AM") {
-            return true
+    function isModeLockedAt(index) {
+        if (typeof featureUnlock === "undefined" || !featureUnlock) {
+            return false
         }
-        return typeof savedJson !== "undefined"
-                && savedJson
-                && savedJson.readString("argonModesEnabled", "0") === "1"
-    }
-
-    function isEndoscopyModeId(modeId) {
-        var id = parseInt(modeId)
-        return id >= 13 && id <= 18
-    }
-
-    function isArgonModeNum(modeNum) {
-        var num = parseInt(modeNum)
-        return num >= 17 && num <= 20
+        if (index < 0 || index >= modeIds.length) {
+            return false
+        }
+        return featureUnlock.isModeLocked(parseInt(modeIds[index]))
     }
 
     function updateModeModel() {
@@ -101,17 +80,12 @@ Popup {
         modeNums = modeEditor.modeNamesNums()
         modeIds = modeEditor.modeNamesIds()
         var modeNames = modeEditor.modeNames
-        var endoscopyAvailable = endoscopyEnabled()
-        var argonAvailable = argonModesEnabled()
         for (var i = 0; i < modeNames.length; ++i) {
             var modeNum = i < modeNums.length ? modeNums[i] : "0"
             modeModel.append({
                                  itemId: modeNum,
                                  itemName: modeNames[i],
-                                 locked: (!endoscopyAvailable
-                                          && i < modeIds.length
-                                          && isEndoscopyModeId(modeIds[i]))
-                                         || (!argonAvailable && isArgonModeNum(modeNum))
+                                 locked: isModeLockedAt(i)
                              })
         }
         modeListView.innerModel = modeModel
@@ -301,6 +275,46 @@ Popup {
         root.close()
     }
 
+    function isMonopolarSocket() {
+        var socketName = modeEditor.socketName ? String(modeEditor.socketName).toUpperCase() : ""
+        return socketName.indexOf("МОНО") !== -1 || socketName.indexOf("MONO") !== -1
+    }
+
+    function neutralMaxPower() {
+        return neutralPowerWarningDialog.maxPowerForNeutralSize(periphHandle.neutralSize)
+    }
+
+    function needsNeutralPowerWarning() {
+        if (!isMonopolarSocket() || !modeSelected())
+            return false
+
+        var maxPower = neutralMaxPower()
+        if (maxPower >= 400)
+            return false
+
+        return modeEditor.currentPower > maxPower
+    }
+
+    function finishCommitAndClose() {
+        modeEditor.commitChanges()
+        recomHandle.saveCurrentState()
+        root.close()
+    }
+
+    function attemptCommitAndClose() {
+        if (neutralPowerWarningDialog.opened)
+            return
+
+        if (needsNeutralPowerWarning()) {
+            neutralPowerWarningDialog.socketName = modeEditor.socketName
+            neutralPowerWarningDialog.maxNeutralPower = neutralMaxPower()
+            neutralPowerWarningDialog.showWarning()
+            return
+        }
+
+        finishCommitAndClose()
+    }
+
     function currentModeId() {
         var currentMode = modeEditor.currentMode
         if (!currentMode || currentMode.id === undefined || currentMode.id === null) {
@@ -429,6 +443,15 @@ Popup {
 
     ListModel { id: modeModel }
     ListModel { id: instrModel }
+
+    Connections {
+        target: typeof featureUnlock !== "undefined" ? featureUnlock : null
+        function onActivatedKeysChanged() {
+            if (root.visible) {
+                updateModeModel()
+            }
+        }
+    }
 
     Rectangle {
         anchors.fill: parent
@@ -1383,11 +1406,7 @@ Popup {
                 cornerRadius: 20
                 labelPixelSize: 30
                 labelColor: "white"
-                onPressed: {
-                    modeEditor.commitChanges()
-                    recomHandle.saveCurrentState()
-                    root.close()
-                }
+                onPressed: attemptCommitAndClose()
             }
         }
     }
@@ -1534,6 +1553,17 @@ Popup {
                     }
                 }
             }
+        }
+    }
+
+    NeutralPowerWarningDialog {
+        id: neutralPowerWarningDialog
+
+        onContinueChosen: root.finishCommitAndClose()
+
+        onReduceChosen: {
+            modeEditor.updateParameter("currentpower", root.neutralMaxPower())
+            root.finishCommitAndClose()
         }
     }
 }

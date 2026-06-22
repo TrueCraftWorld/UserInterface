@@ -743,6 +743,27 @@ SETTING</translation>
     </message>
 </context>
 <context>
+    <name>NeutralPowerWarningDialog</name>
+    <message>
+        <source>Опасность перегрева области наложения нейтрального электрода (НЭ)! Мощность выхода %1 превышает безопасный уровень для выбранного НЭ (макс %2).
+ПРОДОЛЖИТЬ с текущим уровнем мощности?
+ИЛИ
+ПОНИЗИТЬ мощность до безопасного уровня?</source>
+        <translation>Danger of overheating in the neutral electrode (NE) application area! %1 output power exceeds the safety level for the selected NE (max %2).
+CONTINUE with the current power level?
+OR
+REDUCE power to a safe level?</translation>
+    </message>
+    <message>
+        <source>ПРОДОЛЖИТЬ</source>
+        <translation>CONTINUE</translation>
+    </message>
+    <message>
+        <source>ПОНИЗИТЬ</source>
+        <translation>REDUCE</translation>
+    </message>
+</context>
+<context>
     <name>NeutralEl</name>
     <message>
         <source>&lt; 5кг
@@ -1352,6 +1373,10 @@ EMPTY</translation>
         <translation>Unit type:</translation>
     </message>
     <message>
+        <source>Номер ключа:</source>
+        <translation>Key number:</translation>
+    </message>
+    <message>
         <source>Функция:</source>
         <translation>Feature:</translation>
     </message>
@@ -1404,8 +1429,8 @@ EMPTY</translation>
         <translation>• Keys are generated with the SHA-256 cryptographic algorithm</translation>
     </message>
     <message>
-        <source>• Для каждого типа аппарата и функции формируется отдельный 12-значный ключ</source>
-        <translation>• A separate 12-digit key is generated for each unit type and feature</translation>
+        <source>• Для каждого типа аппарата и номера ключа формируется отдельный 12-значный код</source>
+        <translation>• A separate 12-digit code is generated for each unit type and key number</translation>
     </message>
     <message>
         <source>• Соседние номера гарантированно имеют различные ключи</source>
@@ -1506,47 +1531,105 @@ EMPTY</translation>
         <translation>Secret keys</translation>
     </message>
     <message>
+        <source>Управление опциями</source>
+        <translation>Option management</translation>
+    </message>
+</context>
+<context>
+    <name>FeatureOptionsManager</name>
+    <message>
+        <source>Управление опциями</source>
+        <translation>Option management</translation>
+    </message>
+    <message>
         <source>Назад</source>
         <translation>back</translation>
+    </message>
+    <message>
+        <source>Ключ №%1: ВКЛ</source>
+        <translation>Key #%1: ON</translation>
+    </message>
+    <message>
+        <source>Ключ №%1: ВЫКЛ</source>
+        <translation>Key #%1: OFF</translation>
+    </message>
+    <message>
+        <source>Все ключи: ВКЛ</source>
+        <translation>All keys: ON</translation>
+    </message>
+    <message>
+        <source>Все ключи: ВЫКЛ</source>
+        <translation>All keys: OFF</translation>
     </message>
 </context>
 <context>
     <name>SettingsMenu</name>
     <message>
-        <source>Настройки</source>
+        <source>НАСТРОЙКИ</source>
         <translation>SETTINGS</translation>
     </message>
     <message>
-        <source>Сервисное меню</source>
-        <translation>SERVICE SETTINGS</translation>
+        <source>СВЕДЕНИЯ ОБ АППАРАТЕ</source>
+        <translation>DEVICE INFORMATION</translation>
     </message>
     <message>
-        <source>Журнал событий</source>
-        <translation>Event log</translation>
+        <source>ЯЗЫК</source>
+        <translation>LANGUAGE</translation>
     </message>
     <message>
-        <source>ИНФО</source>
-        <translation>INFO</translation>
+        <source>ГРОМКОСТЬ</source>
+        <translation>VOLUME</translation>
     </message>
     <message>
-        <source>RU / EN / ES</source>
-        <translation>RU / EN / ES</translation>
+        <source>ДОПОЛНИТЕЛЬНЫЕ НАСТРОЙКИ</source>
+        <translation>ADDITIONAL SETTINGS</translation>
     </message>
     <message>
-        <source>Настройка даты и времени</source>
-        <translation>Date and Time</translation>
+        <source>РАЗБЛОКИРОВКА ЭНДОСКОПИИ</source>
+        <translation>UNLOCK ENDOSCOPY</translation>
     </message>
     <message>
-        <source>Разблокировка эндоскопических функций</source>
-        <translation>Unlock endoscopic features</translation>
+        <source>НАЗАД</source>
+        <translation>BACK</translation>
     </message>
     <message>
-        <source>Разблокировка аргонусиленной коагуляции</source>
-        <translation>Unlock argon-enhanced coagulation</translation>
+        <source>Для разблокировки эндоскопических функций введите ключ</source>
+        <translation>Enter the key to unlock endoscopic features</translation>
     </message>
     <message>
-        <source>Назад</source>
-        <translation>back</translation>
+        <source>123-456-789-012</source>
+        <translation>123-456-789-012</translation>
+    </message>
+    <message>
+        <source>Сначала сохраните серийный номер аппарата</source>
+        <translation>Save the device serial number first</translation>
+    </message>
+    <message>
+        <source>РАЗБЛОКИРОВАТЬ</source>
+        <translation>UNLOCK</translation>
+    </message>
+</context>
+<context>
+    <name>AdditionalSettingsMenu</name>
+    <message>
+        <source>ДОПОЛНИТЕЛЬНЫЕ НАСТРОЙКИ</source>
+        <translation>ADDITIONAL SETTINGS</translation>
+    </message>
+    <message>
+        <source>СЕРВИСНОЕ МЕНЮ</source>
+        <translation>SERVICE MENU</translation>
+    </message>
+    <message>
+        <source>ЖУРНАЛ СОБЫТИЙ</source>
+        <translation>EVENT LOG</translation>
+    </message>
+    <message>
+        <source>НАСТРОЙКА ДАТЫ И ВРЕМЕНИ</source>
+        <translation>DATE AND TIME</translation>
+    </message>
+    <message>
+        <source>НАЗАД</source>
+        <translation>BACK</translation>
     </message>
     <message>
         <source>Для доступа к сервисным функциям введите пароль</source>
@@ -1569,24 +1652,36 @@ EMPTY</translation>
         <translation>LOG IN</translation>
     </message>
     <message>
-        <source>Для разблокировки эндоскопических функций введите ключ</source>
-        <translation>Enter the key to unlock endoscopic features</translation>
+        <source>АКТИВАЦИЯ ДОПОЛНИТЕЛЬНЫХ ОПЦИЙ</source>
+        <translation>ACTIVATE ADDITIONAL OPTIONS</translation>
+    </message>
+    <message>
+        <source>Для активации дополнительных опций введите ключ</source>
+        <translation>Enter the key to activate additional options</translation>
     </message>
     <message>
         <source>123-456-789-012</source>
         <translation>123-456-789-012</translation>
     </message>
     <message>
+        <source>Контроллер активации недоступен</source>
+        <translation>Activation controller is unavailable</translation>
+    </message>
+    <message>
+        <source>Неверный ключ</source>
+        <translation>Invalid key</translation>
+    </message>
+    <message>
+        <source>Активирован ключ №%1</source>
+        <translation>Key #%1 activated</translation>
+    </message>
+    <message>
+        <source>АКТИВИРОВАТЬ</source>
+        <translation>ACTIVATE</translation>
+    </message>
+    <message>
         <source>Сначала сохраните серийный номер аппарата</source>
         <translation>Save the device serial number first</translation>
-    </message>
-    <message>
-        <source>РАЗБЛОКИРОВАТЬ</source>
-        <translation>UNLOCK</translation>
-    </message>
-    <message>
-        <source>Для разблокировки аргонусиленной коагуляции введите ключ</source>
-        <translation>Enter the key to unlock argon-enhanced coagulation</translation>
     </message>
 </context>
 <context>
@@ -1764,14 +1859,6 @@ EMPTY</translation>
     <message>
         <source>СПЕЦ КОМАНДЫ</source>
         <translation>SPECIAL COMMANDS</translation>
-    </message>
-    <message>
-        <source>Эндоскопия: ВКЛ</source>
-        <translation>Endoscopy: ON</translation>
-    </message>
-    <message>
-        <source>Эндоскопия: ВЫКЛ</source>
-        <translation>Endoscopy: OFF</translation>
     </message>
     <message>
         <source>Режимы с аргоном: ВКЛ</source>

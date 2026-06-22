@@ -6,9 +6,92 @@ import BackEnd 1.0
 Drawer {
     id: neutralDrawerRoot
 
+    readonly property int monopolarSocketType1: 3
+    readonly property int monopolarSocketType2: 4
+
+    property var pendingPowerViolations: []
+
     interactive: false
     modal: false
     closePolicy: Popup.NoAutoClose
+
+    function neutralMaxPower() {
+        return neutralPowerWarningDialog.maxPowerForNeutralSize(periphHandle.neutralSize)
+    }
+
+    function isMonopolarSocketRow(row) {
+        if (!theModel || row < 0 || row >= theModel.rowCount())
+            return false
+
+        var socketIndex = theModel.index(row, 0)
+        if (!socketIndex.valid)
+            return false
+
+        var polarity = theModel.data(socketIndex, SocketModel.SocketPolarity)
+        return polarity === monopolarSocketType1 || polarity === monopolarSocketType2
+    }
+
+    function collectPowerViolations() {
+        var violations = []
+        var maxPower = neutralMaxPower()
+        if (maxPower >= 400 || !theModel)
+            return violations
+
+        for (var row = 0; row < theModel.rowCount(); ++row) {
+            if (!isMonopolarSocketRow(row))
+                continue
+
+            var socketIndex = theModel.index(row, 0)
+            var socketName = theModel.data(socketIndex, SocketModel.SocketName)
+
+            var cutModeId = theModel.data(socketIndex, SocketModel.CutModeId)
+            var cutModePower = theModel.data(socketIndex, SocketModel.CutModePower)
+            if (Number(cutModeId) !== 1000 && Number(cutModePower) > maxPower) {
+                violations.push({
+                                    row: row,
+                                    socketName: socketName,
+                                    isCoag: false
+                                })
+            }
+
+            var coagModeId = theModel.data(socketIndex, SocketModel.CoagModeId)
+            var coagModePower = theModel.data(socketIndex, SocketModel.CoagModePower)
+            if (Number(coagModeId) !== 1000 && Number(coagModePower) > maxPower) {
+                violations.push({
+                                    row: row,
+                                    socketName: socketName,
+                                    isCoag: true
+                                })
+            }
+        }
+
+        return violations
+    }
+
+    function reduceViolationsToSafeLevel(violations) {
+        var maxPower = neutralMaxPower()
+        for (var i = 0; i < violations.length; ++i) {
+            var violation = violations[i]
+            var roleName = violation.isCoag ? "coagmodepower" : "cutmodepower"
+            theModel.qmlSetData(violation.row, maxPower, roleName)
+        }
+    }
+
+    function attemptClose() {
+        if (!opened || neutralPowerWarningDialog.opened)
+            return
+
+        var violations = collectPowerViolations()
+        if (violations.length === 0) {
+            close()
+            return
+        }
+
+        pendingPowerViolations = violations
+        neutralPowerWarningDialog.socketName = violations[0].socketName
+        neutralPowerWarningDialog.maxNeutralPower = neutralMaxPower()
+        neutralPowerWarningDialog.showWarning()
+    }
 
     onOpened: {
         if (typeof appControl !== "undefined" && appControl) {
@@ -146,7 +229,7 @@ Drawer {
         onReleased: function(mouse) {
             var deltaX = mouse.x - startX
             if (isSwipeGesture && deltaX < -minSwipeDistance)
-                neutralDrawerRoot.close()
+                neutralDrawerRoot.attemptClose()
             isSwipeGesture = false
         }
     }
@@ -162,7 +245,7 @@ Drawer {
         width: 68
         height: 68
         z: 1001
-        onPressed: neutralDrawerRoot.close()
+        onPressed: neutralDrawerRoot.attemptClose()
 
         background: Rectangle {
             color: "transparent"
@@ -185,6 +268,21 @@ Drawer {
         }
         function onNeutralSizeSelected(size) {
             periphHandle.neutralSize = size
+        }
+    }
+
+    NeutralPowerWarningDialog {
+        id: neutralPowerWarningDialog
+
+        onContinueChosen: neutralDrawerRoot.close()
+
+        onReduceChosen: {
+            neutralDrawerRoot.reduceViolationsToSafeLevel(neutralDrawerRoot.pendingPowerViolations)
+            neutralDrawerRoot.close()
+        }
+
+        onClosed: {
+            neutralDrawerRoot.pendingPowerViolations = []
         }
     }
 }

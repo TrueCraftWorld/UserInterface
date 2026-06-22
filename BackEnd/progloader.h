@@ -7,6 +7,7 @@
 #include "instrument.h"
 #include "databasereader.h"
 #include "jsonstorage.h"
+#include "featureunlockcontroller.h"
 #include "socketmodel.h"
 #include "Structures.h"
 
@@ -100,6 +101,7 @@ public:
 	
 	void setSocketModelPtr(QSharedPointer<SocketModel> newSocketModelPtr);
 	void setJsonStorage(JsonStorage *jsonStorage);
+	void setFeatureUnlockController(FeatureUnlockController *controller);
 
 	int addUserScope(const QString& name);
 	
@@ -123,8 +125,6 @@ private:
 	QSharedPointer<DataBaseReader> listsDbForProg(int progId) const;
 	QSharedPointer<DataBaseReader> progsDbForProg(int progId) const;
 	bool deviceHasArgon() const;
-	bool argonModesEnabled() const;
-	bool argonProgramsEnabled() const;
 	QString deviceModeFilterCondition() const;
 	std::vector<int> filterModesForDevice(const std::vector<int>& modeIds) const;
 
@@ -132,6 +132,7 @@ private:
 	QSharedPointer<DataBaseReader> m_userDbReaderPtr;
 	QSharedPointer<SocketModel> m_socketModelPtr;
 	QPointer<JsonStorage> m_jsonStorage;
+	FeatureUnlockController *m_featureUnlock = nullptr;
 	progType m_curLoaderType = ptRecom;
 	QList<QList<QPair<int, QString>>> m_lastProgSubLists;
 };

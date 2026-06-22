@@ -743,6 +743,27 @@ MODO LIBRE</translation>
     </message>
 </context>
 <context>
+    <name>NeutralPowerWarningDialog</name>
+    <message>
+        <source>Опасность перегрева области наложения нейтрального электрода (НЭ)! Мощность выхода %1 превышает безопасный уровень для выбранного НЭ (макс %2).
+ПРОДОЛЖИТЬ с текущим уровнем мощности?
+ИЛИ
+ПОНИЗИТЬ мощность до безопасного уровня?</source>
+        <translation>¡Peligro de sobrecalentamiento en la área de aplicación del electrodo neutro (EN)! El nivel de potencia en modo %1 supera el nivel seguro para el EN seleccionado (máx. %2).
+¿CONTINUAR con el nivel de potencia actual?
+O
+¿REDUCIR la potencia a un nivel seguro?</translation>
+    </message>
+    <message>
+        <source>ПРОДОЛЖИТЬ</source>
+        <translation>CONTINUAR</translation>
+    </message>
+    <message>
+        <source>ПОНИЗИТЬ</source>
+        <translation>REDUCIR</translation>
+    </message>
+</context>
+<context>
     <name>NeutralEl</name>
     <message>
         <source>&lt; 5кг
@@ -1352,6 +1373,10 @@ VACÍO</translation>
         <translation>Tipo de equipo:</translation>
     </message>
     <message>
+        <source>Номер ключа:</source>
+        <translation>Número de clave:</translation>
+    </message>
+    <message>
         <source>Функция:</source>
         <translation>Función:</translation>
     </message>
@@ -1404,8 +1429,8 @@ VACÍO</translation>
         <translation>• Las claves se generan con el algoritmo criptográfico SHA-256</translation>
     </message>
     <message>
-        <source>• Для каждого типа аппарата и функции формируется отдельный 12-значный ключ</source>
-        <translation>• Se genera una clave distinta de 12 dígitos para cada tipo de equipo y función</translation>
+        <source>• Для каждого типа аппарата и номера ключа формируется отдельный 12-значный код</source>
+        <translation>• Para cada tipo de equipo y número de clave se genera un código de 12 dígitos</translation>
     </message>
     <message>
         <source>• Соседние номера гарантированно имеют различные ключи</source>
@@ -1506,47 +1531,105 @@ VACÍO</translation>
         <translation>Claves secretas</translation>
     </message>
     <message>
+        <source>Управление опциями</source>
+        <translation>Gestión de opciones</translation>
+    </message>
+</context>
+<context>
+    <name>FeatureOptionsManager</name>
+    <message>
+        <source>Управление опциями</source>
+        <translation>Gestión de opciones</translation>
+    </message>
+    <message>
         <source>Назад</source>
         <translation>atrás</translation>
+    </message>
+    <message>
+        <source>Ключ №%1: ВКЛ</source>
+        <translation>Clave n.º %1: ACTIVADA</translation>
+    </message>
+    <message>
+        <source>Ключ №%1: ВЫКЛ</source>
+        <translation>Clave n.º %1: DESACTIVADA</translation>
+    </message>
+    <message>
+        <source>Все ключи: ВКЛ</source>
+        <translation>Todas las claves: ACTIVADAS</translation>
+    </message>
+    <message>
+        <source>Все ключи: ВЫКЛ</source>
+        <translation>Todas las claves: DESACTIVADAS</translation>
     </message>
 </context>
 <context>
     <name>SettingsMenu</name>
     <message>
-        <source>Настройки</source>
+        <source>НАСТРОЙКИ</source>
         <translation>AJUSTES</translation>
     </message>
     <message>
-        <source>Сервисное меню</source>
-        <translation>AJUSTES DE SERVICIO</translation>
+        <source>СВЕДЕНИЯ ОБ АППАРАТЕ</source>
+        <translation>INFORMACIÓN DEL EQUIPO</translation>
     </message>
     <message>
-        <source>Журнал событий</source>
-        <translation>Registro de eventos</translation>
+        <source>ЯЗЫК</source>
+        <translation>IDIOMA</translation>
     </message>
     <message>
-        <source>ИНФО</source>
-        <translation>INFO</translation>
+        <source>ГРОМКОСТЬ</source>
+        <translation>VOLUMEN</translation>
     </message>
     <message>
-        <source>RU / EN / ES</source>
-        <translation>RU / EN / ES</translation>
+        <source>ДОПОЛНИТЕЛЬНЫЕ НАСТРОЙКИ</source>
+        <translation>AJUSTES ADICIONALES</translation>
     </message>
     <message>
-        <source>Настройка даты и времени</source>
-        <translation>Fecha y hora</translation>
+        <source>РАЗБЛОКИРОВКА ЭНДОСКОПИИ</source>
+        <translation>DESBLOQUEAR ENDOSCOPIA</translation>
     </message>
     <message>
-        <source>Разблокировка эндоскопических функций</source>
-        <translation>Desbloquear funciones endoscópicas</translation>
+        <source>НАЗАД</source>
+        <translation>ATRÁS</translation>
     </message>
     <message>
-        <source>Разблокировка аргонусиленной коагуляции</source>
-        <translation>Desbloquear coagulación asistida por argón</translation>
+        <source>Для разблокировки эндоскопических функций введите ключ</source>
+        <translation>Introduzca la clave para desbloquear las funciones endoscópicas</translation>
     </message>
     <message>
-        <source>Назад</source>
-        <translation>atrás</translation>
+        <source>123-456-789-012</source>
+        <translation>123-456-789-012</translation>
+    </message>
+    <message>
+        <source>Сначала сохраните серийный номер аппарата</source>
+        <translation>Guarde primero el número de serie del equipo</translation>
+    </message>
+    <message>
+        <source>РАЗБЛОКИРОВАТЬ</source>
+        <translation>DESBLOQUEAR</translation>
+    </message>
+</context>
+<context>
+    <name>AdditionalSettingsMenu</name>
+    <message>
+        <source>ДОПОЛНИТЕЛЬНЫЕ НАСТРОЙКИ</source>
+        <translation>AJUSTES ADICIONALES</translation>
+    </message>
+    <message>
+        <source>СЕРВИСНОЕ МЕНЮ</source>
+        <translation>MENÚ DE SERVICIO</translation>
+    </message>
+    <message>
+        <source>ЖУРНАЛ СОБЫТИЙ</source>
+        <translation>REGISTRO DE EVENTOS</translation>
+    </message>
+    <message>
+        <source>НАСТРОЙКА ДАТЫ И ВРЕМЕНИ</source>
+        <translation>FECHA Y HORA</translation>
+    </message>
+    <message>
+        <source>НАЗАД</source>
+        <translation>ATRÁS</translation>
     </message>
     <message>
         <source>Для доступа к сервисным функциям введите пароль</source>
@@ -1569,24 +1652,36 @@ VACÍO</translation>
         <translation>ENTRAR</translation>
     </message>
     <message>
-        <source>Для разблокировки эндоскопических функций введите ключ</source>
-        <translation>Introduzca la clave para desbloquear las funciones endoscópicas</translation>
+        <source>АКТИВАЦИЯ ДОПОЛНИТЕЛЬНЫХ ОПЦИЙ</source>
+        <translation>ACTIVAR OPCIONES ADICIONALES</translation>
+    </message>
+    <message>
+        <source>Для активации дополнительных опций введите ключ</source>
+        <translation>Introduzca la clave para activar opciones adicionales</translation>
     </message>
     <message>
         <source>123-456-789-012</source>
         <translation>123-456-789-012</translation>
     </message>
     <message>
+        <source>Контроллер активации недоступен</source>
+        <translation>El controlador de activación no está disponible</translation>
+    </message>
+    <message>
+        <source>Неверный ключ</source>
+        <translation>Clave no válida</translation>
+    </message>
+    <message>
+        <source>Активирован ключ №%1</source>
+        <translation>Clave n.º %1 activada</translation>
+    </message>
+    <message>
+        <source>АКТИВИРОВАТЬ</source>
+        <translation>ACTIVAR</translation>
+    </message>
+    <message>
         <source>Сначала сохраните серийный номер аппарата</source>
         <translation>Guarde primero el número de serie del equipo</translation>
-    </message>
-    <message>
-        <source>РАЗБЛОКИРОВАТЬ</source>
-        <translation>DESBLOQUEAR</translation>
-    </message>
-    <message>
-        <source>Для разблокировки аргонусиленной коагуляции введите ключ</source>
-        <translation>Introduzca la clave para desbloquear la coagulación asistida por argón</translation>
     </message>
 </context>
 <context>
@@ -1764,14 +1859,6 @@ VACÍO</translation>
     <message>
         <source>СПЕЦ КОМАНДЫ</source>
         <translation>COMANDOS ESPECIALES</translation>
-    </message>
-    <message>
-        <source>Эндоскопия: ВКЛ</source>
-        <translation>Endoscopia: ON</translation>
-    </message>
-    <message>
-        <source>Эндоскопия: ВЫКЛ</source>
-        <translation>Endoscopia: OFF</translation>
     </message>
     <message>
         <source>Режимы с аргоном: ВКЛ</source>

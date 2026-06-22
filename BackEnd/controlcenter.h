@@ -14,6 +14,7 @@
 #include "linkstm.h"
 
 class DeviceLogManager;
+class FeatureUnlockController;
 class JsonStorage;
 
 /**
@@ -25,6 +26,7 @@ class ControlCenter : public QObject
 	Q_OBJECT
     Q_PROPERTY(QString debugOverlayText READ debugOverlayText NOTIFY debugOverlayTextChanged)
     Q_PROPERTY(bool debugUartEnabled READ debugUartEnabled WRITE setDebugUartEnabled NOTIFY debugUartEnabledChanged)
+    Q_PROPERTY(int uartRate READ uartRate WRITE setUartRate NOTIFY uartRateChanged)
     Q_PROPERTY(bool cpuMonitorVisible READ cpuMonitorVisible WRITE setCpuMonitorVisible NOTIFY cpuMonitorVisibleChanged)
 
 public:
@@ -71,25 +73,31 @@ public:
 	void setLinkStm(LinkStm* linkStm);
 	void setDeviceLogManager(DeviceLogManager *deviceLog);
 	void setJsonStorage(JsonStorage *jsonStorage);
+	void setFeatureUnlockController(class FeatureUnlockController *controller);
 
 	QPointer<PeriphHandler> getPeripheryHandle() const;
 
 	Q_INVOKABLE void cancelPowerOff();
 	Q_INVOKABLE void confirmPowerOff();
     Q_INVOKABLE void shutdownSystemFromUi();
+    Q_INVOKABLE void resetSystemFromUi();
 	Q_INVOKABLE bool loadProgram(int progId, bool clear);
 	Q_INVOKABLE void setNeutralResistPollEnabled(bool enabled);
+    Q_INVOKABLE void setVolumeLevel(int level);
     Q_INVOKABLE void appendDebugOverlayLine(const QString &line);
     Q_INVOKABLE void clearDebugOverlay();
     QString debugOverlayText() const;
     bool debugUartEnabled() const;
     void setDebugUartEnabled(bool enabled);
+    int uartRate() const;
+    void setUartRate(int rate);
     bool cpuMonitorVisible() const;
     void setCpuMonitorVisible(bool visible);
 
 signals:
     void debugOverlayTextChanged();
     void debugUartEnabledChanged();
+    void uartRateChanged();
     void cpuMonitorVisibleChanged();
     void powerOffConfirmationRequested(int timeoutSeconds);
 
@@ -98,6 +106,7 @@ public slots:
 
 private slots:
     void shutdownSystem();
+    void resetSystem();
 
 private:
 	QSharedPointer<SocketModel> m_socketModel;
@@ -106,6 +115,7 @@ private:
 	QPointer<ProgHandle> m_handle;
 	QPointer<ProgLoader> m_progLoader;
 	QPointer<PeriphHandler> m_periphery;
+	FeatureUnlockController *m_featureUnlock = nullptr;
 	QPointer<LinkStm> m_linkStm;
 	DeviceLogManager *m_deviceLog = nullptr;
     int m_autoDelay = 0; // Задержка автозапуска в мс (runtime)
@@ -115,6 +125,7 @@ private:
     QStringList m_debugOverlayLines;
     QString m_debugOverlayText;
     bool m_debugUartEnabled = false;
+    int m_uartRate = 50;
     bool m_cpuMonitorVisible = false;
     static constexpr int kDebugOverlayMaxLines = 40;
 

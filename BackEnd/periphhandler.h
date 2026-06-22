@@ -20,6 +20,7 @@ class PeriphHandler : public QObject
 	Q_PROPERTY(bool argonCylinder2Connected READ argonCylinder2Connected NOTIFY argonCylinder2ConnectedChanged)
 	Q_PROPERTY(quint8 argonFlowRate READ argonFlowRate WRITE setArgonFlowRate NOTIFY sigArgonFlowRateChanged)
 	Q_PROPERTY(quint8 argonRealRate READ argonRealRate NOTIFY argonRealRateChanged)
+	Q_PROPERTY(bool argonBlowing READ argonBlowing NOTIFY argonBlowingChanged)
 	Q_PROPERTY(bool activCylinderFirst READ activCylinderFirst WRITE setActivCylinderFirst NOTIFY activCylinderFirstChanged)
 	Q_PROPERTY(bool enableActivation READ enableActivation WRITE setEnableActivation NOTIFY enableActivationChanged)
 	Q_PROPERTY(bool activation READ activation NOTIFY activationChanged)
@@ -92,6 +93,7 @@ public:
 	 * @return значение реальной скорости потока аргона
 	 */
 	quint8 argonRealRate() const;
+	bool argonBlowing() const;
 
 	/**
 	 * @brief Возвращает активный баллон аргона
@@ -152,6 +154,8 @@ public slots:
 
 private:
 	static QString formatNeutralResistData(const QByteArray &data);
+	void checkArgonBlowMatch();
+	void stopArgonBlow();
 
 	bool m_argonCylinder1Connected;         // Подключение баллона 1
 	bool m_argonCylinder2Connected;         // Баллона 2
@@ -162,6 +166,9 @@ private:
 	quint8 m_autoSSmode;                    // Режим AutoStop
 	quint8 m_argonFlowRate;                 // Скорость потока аргона (установленная)
 	quint8 m_argonRealRate;                 // Реальная скорость потока аргона
+	bool m_argonBlowing;                    // Продувка аргона выполняется
+	QTimer *m_blowMaxTimer;
+	QTimer *m_blowMatchHoldTimer;
 	bool m_activCylinderFirst;              // Активный баллон (true - первый, false - второй)
 	quint8 m_wirelessPedalCharge;           // Заряд беспроводной педали
 	bool m_enableActivation;                // Запрет активации (открыты popup)
@@ -187,6 +194,7 @@ signals:
 	void sigArgonFlowRateChanged(quint8 rate);
     void sigArgonBlow();
 	void argonRealRateChanged(quint8 rate);
+	void argonBlowingChanged(bool blowing);
 	void activCylinderFirstChanged(bool first);
 	void enableActivationChanged(bool enable);
 	void activationChanged(bool active);

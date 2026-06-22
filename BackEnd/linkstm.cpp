@@ -20,7 +20,8 @@ LinkStm::LinkStm(QObject *parent)
     m_neutralElDivided(true),
     m_argonFlowRate(0),
     m_comState(IDLE),
-    m_debugUart(false)
+    m_debugUart(false),
+    m_uartRate(50)
 {
     // Регистрируем типы для использования в Qt::QueuedConnection
     qRegisterMetaType<Onyx::UnitState>("Onyx::UnitState");
@@ -59,6 +60,16 @@ void LinkStm::argonBlow()
     argonBlowCommand.mc = MC_COM;
     argonBlowCommand.data.clear();
     setTxCommand(argonBlowCommand);
+}
+
+void LinkStm::setVolume(int level)
+{
+    const int clamped = qBound(1, level, 7);
+    UartTx volumeCommand;
+    volumeCommand.com = static_cast<quint8>(SignalAlarm + clamped);
+    volumeCommand.mc = MC_COM;
+    volumeCommand.data.clear();
+    setTxCommand(volumeCommand);
 }
 
 void LinkStm::requestReadyToPowerOff()
@@ -316,7 +327,7 @@ void LinkStm::sendCommand()
                 power = m_socketList[activeSocket.id].coagModePower;
 
             }
-            if (m_enableActivation && (mode < 32) && (power > 0) && (power < 400)) {
+            if (m_enableActivation && (mode < 32) && (power > 0) && (power <= 400)) {
                     activeSocket.autoMode = m_socketList[activeSocket.id].autoMode > 0 ? true : false;
                     QElapsedTimer m_elapsedTimer;
                     m_elapsedTimer.start();
@@ -454,7 +465,7 @@ void LinkStm::sendCommand()
         m_uartTimer->setInterval(200);
         break;
     default:
-        m_uartTimer->setInterval(250);
+        m_uartTimer->setInterval(m_uartRate);
 //        m_uartTimer->setInterval(50);
     }
 
@@ -660,6 +671,7 @@ void LinkStm::readRxCommand()
             if (m_rxCommand.data.size() >= 2) {
                 unitState.argonRealRate = static_cast<quint8>(m_rxCommand.data.at(1)) & 0x3F; // Реальный расход от 0,0 до 8,0 (0-80)
             }
+            forceUnitStateEmit = true;
         }
         break;
     // Присылаемые ошибки
@@ -786,6 +798,16 @@ bool LinkStm::checkCommandList(const UartTx &newTxCommand)
         }
     }
     return true;
+}
+
+int LinkStm::uartRate() const
+{
+    return m_uartRate;
+}
+
+void LinkStm::setUartRate(int newUartRate)
+{
+    m_uartRate = newUartRate;
 }
 
 void LinkStm::setMc(const McUnit &newMc)

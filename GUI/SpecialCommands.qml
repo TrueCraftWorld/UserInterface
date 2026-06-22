@@ -10,42 +10,27 @@ Item {
     signal returnButtonPressed()
     signal deleteAllUserProgsRequested()
 
-    property bool endoscopyEnabled: false
-    property bool argonModesEnabled: false
+    property bool serviceMenuNoPassword: false
 
     readonly property int menuButtonWidth: 550
     readonly property int menuButtonHeight: 112
     readonly property int menuColumnsSpacing: 24
 
-    function readEndoscopyEnabled() {
+    function readServiceMenuNoPassword() {
         return typeof savedJson !== "undefined"
                 && savedJson
-                && savedJson.readString("endoscopyEnabled", "0") === "1"
+                && savedJson.readString("serviceMenuNoPassword", "0") === "1"
     }
 
-    function readArgonModesEnabled() {
-        return typeof savedJson !== "undefined"
-                && savedJson
-                && savedJson.readString("argonModesEnabled", "0") === "1"
-    }
-
-    function saveEndoscopyEnabled(enabled) {
-        endoscopyEnabled = enabled
+    function saveServiceMenuNoPassword(enabled) {
+        serviceMenuNoPassword = enabled
         if (typeof savedJson !== "undefined" && savedJson) {
-            savedJson.saveString("endoscopyEnabled", enabled ? "1" : "0")
-        }
-    }
-
-    function saveArgonModesEnabled(enabled) {
-        argonModesEnabled = enabled
-        if (typeof savedJson !== "undefined" && savedJson) {
-            savedJson.saveString("argonModesEnabled", enabled ? "1" : "0")
+            savedJson.saveString("serviceMenuNoPassword", enabled ? "1" : "0")
         }
     }
 
     Component.onCompleted: {
-        endoscopyEnabled = readEndoscopyEnabled()
-        argonModesEnabled = readArgonModesEnabled()
+        serviceMenuNoPassword = readServiceMenuNoPassword()
     }
 
     Rectangle {
@@ -76,23 +61,12 @@ Item {
         width: specialCommandsRoot.menuButtonWidth * 2 + specialCommandsRoot.menuColumnsSpacing
 
         SButton {
-            id: endoscopyButton
-            style: specialCommandsRoot.endoscopyEnabled ? "btn-primary lg" : "btn-danger lg"
+            id: noPasswordButton
+            style: specialCommandsRoot.serviceMenuNoPassword ? "btn-danger lg" : "btn-primary lg"
             Layout.preferredWidth: specialCommandsRoot.menuButtonWidth
             Layout.preferredHeight: specialCommandsRoot.menuButtonHeight
-            text: specialCommandsRoot.endoscopyEnabled
-                  ? qsTr("Эндоскопия: ВКЛ") : qsTr("Эндоскопия: ВЫКЛ")
-            onPressed: specialCommandsRoot.saveEndoscopyEnabled(!specialCommandsRoot.endoscopyEnabled)
-        }
-
-        SButton {
-            id: argonModesButton
-            style: specialCommandsRoot.argonModesEnabled ? "btn-primary lg" : "btn-danger lg"
-            Layout.preferredWidth: specialCommandsRoot.menuButtonWidth
-            Layout.preferredHeight: specialCommandsRoot.menuButtonHeight
-            text: specialCommandsRoot.argonModesEnabled
-                  ? qsTr("Режимы с аргоном: ВКЛ") : qsTr("Режимы с аргоном: ВЫКЛ")
-            onPressed: specialCommandsRoot.saveArgonModesEnabled(!specialCommandsRoot.argonModesEnabled)
+            text: qsTr("Вход без пароля")
+            onPressed: specialCommandsRoot.saveServiceMenuNoPassword(!specialCommandsRoot.serviceMenuNoPassword)
         }
 
         SButton {
@@ -107,6 +81,21 @@ Item {
                 if (typeof appControl === "undefined" || !appControl)
                     return
                 appControl.debugUartEnabled = !appControl.debugUartEnabled
+            }
+        }
+
+        SButton {
+            id: uartRateButton
+            style: (typeof appControl !== "undefined" && appControl && appControl.uartRate === 500)
+                   ? "btn-outline-success lg" : "btn-primary lg"
+            Layout.preferredWidth: specialCommandsRoot.menuButtonWidth
+            Layout.preferredHeight: specialCommandsRoot.menuButtonHeight
+            text: (typeof appControl !== "undefined" && appControl && appControl.uartRate === 500)
+                  ? qsTr("UART 500 мс") : qsTr("UART 50 мс")
+            onPressed: {
+                if (typeof appControl === "undefined" || !appControl)
+                    return
+                appControl.uartRate = appControl.uartRate === 50 ? 500 : 50
             }
         }
 
@@ -130,11 +119,24 @@ Item {
             style: "btn-danger lg"
             Layout.preferredWidth: specialCommandsRoot.menuButtonWidth
             Layout.preferredHeight: specialCommandsRoot.menuButtonHeight
-            text: qsTr("Выкл")
+            text: qsTr("ВЫКЛ одноплатника")
             onPressed: {
                 if (typeof appControl === "undefined" || !appControl)
                     return
                 appControl.shutdownSystemFromUi()
+            }
+        }
+
+        SButton {
+            id: resetButton
+            style: "btn-danger lg"
+            Layout.preferredWidth: specialCommandsRoot.menuButtonWidth
+            Layout.preferredHeight: specialCommandsRoot.menuButtonHeight
+            text: qsTr("RESET одноплатника")
+            onPressed: {
+                if (typeof appControl === "undefined" || !appControl)
+                    return
+                appControl.resetSystemFromUi()
             }
         }
 
@@ -154,12 +156,9 @@ Item {
         SButton {
             id: deleteAllUserProgsButton
             style: "btn-danger lg"
-            Layout.columnSpan: 2
-            Layout.alignment: Qt.AlignHCenter
-            Layout.topMargin: 4
-            Layout.preferredWidth: specialCommandsRoot.menuButtonWidth * 2 + specialCommandsRoot.menuColumnsSpacing
-            Layout.preferredHeight: 106
-            text: qsTr("Удалить все пользовательские программы")
+            Layout.preferredWidth: specialCommandsRoot.menuButtonWidth
+            Layout.preferredHeight: specialCommandsRoot.menuButtonHeight
+            text: qsTr("Удалить программы\nпользователя")
             onPressed: confirmDeleteDialog.open()
         }
     }
